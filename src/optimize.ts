@@ -33,14 +33,14 @@ const ENCOUNTERS_DIR = path.resolve(__dirname, '..', 'encounters')
  *  -1  combattant 2 gagne
  *   0  incapacitation mutuelle ou timeout
  */
-function quickCombat(
+async function quickCombat(
   encounter: EncounterConfig,
   char1:     Character,
   char2:     Character,
   cfg1:      AgentConfig,
   cfg2:      AgentConfig,
   getGuard:  GuardProvider,
-): number {
+): Promise<number> {
   let states = new Map<string, CombatantState>([
     [char1.name, initCombatant(char1)],
     [char2.name, initCombatant(char2)],
@@ -55,8 +55,8 @@ function quickCombat(
       if (maintenanceEntry) maintenance.push(maintenanceEntry)
     }
 
-    // Résolution par vagues
-    const { states: next } = resolveRoundWaves(
+    // Résolution par vagues (scripted uniquement dans l'optimiseur)
+    const { states: next } = await resolveRoundWaves(
       states, r + 1, getGuard, maintenance,
       (cur) => [
         planNextAction(cur.get(char1.name)!, cur.get(char2.name)!, cfg1),
@@ -76,7 +76,7 @@ function quickCombat(
 
 interface Cell { w1: number; w2: number; n: number }
 
-function evalGrid(
+async function evalGrid(
   encounter:    EncounterConfig,
   char1:        Character,
   char2:        Character,
@@ -86,7 +86,7 @@ function evalGrid(
   thresholds1:  number[],
   thresholds2:  number[],
   runsPerCell:  number,
-): Map<string, Cell> {
+): Promise<Map<string, Cell>> {
   const results = new Map<string, Cell>()
   const total   = thresholds1.length * thresholds2.length
   let   done    = 0
@@ -98,7 +98,7 @@ function evalGrid(
 
       let w1 = 0, w2 = 0
       for (let i = 0; i < runsPerCell; i++) {
-        const r = quickCombat(encounter, char1, char2, cfg1, cfg2, getGuard)
+        const r = await quickCombat(encounter, char1, char2, cfg1, cfg2, getGuard)
         if (r > 0) w1++
         else if (r < 0) w2++
       }
@@ -238,13 +238,15 @@ async function optimize(): Promise<void> {
 
   const runsPerCell = Number(arg2) || 300
 
-  const encounter = await loadEncounter(encounterPath)
-  const [f1, f2]  = encounter.factions
-  const char1     = await loadCharacter(resolveCharacterPath(f1.characters[0]))
-  const char2     = await loadCharacter(resolveCharacterPath(f2.characters[0]))
+  const encounter  = await loadEncounter(encounterPath)
+  const [f1, f2]   = encounter.factions
+  const charCfg1   = f1.characters[0]
+  const charCfg2   = f2.characters[0]
+  const char1      = await loadCharacter(resolveCharacterPath(charCfg1.sheet))
+  const char2      = await loadCharacter(resolveCharacterPath(charCfg2.sheet))
 
-  const cfg1Base: AgentConfig = { persona: f1.persona, targetId: char2.name, allowedActions: f1.allowedActions }
-  const cfg2Base: AgentConfig = { persona: f2.persona, targetId: char1.name, allowedActions: f2.allowedActions }
+  const cfg1Base: AgentConfig = { persona: charCfg1.persona, targetId: char2.name, allowedActions: f1.allowedActions }
+  const cfg2Base: AgentConfig = { persona: charCfg2.persona, targetId: char1.name, allowedActions: f2.allowedActions }
 
   // Guard providers : ne dépendent pas du seuil de Respiration — créés une seule fois
   const gp1 = makeGuardProvider(cfg1Base)
@@ -262,12 +264,12 @@ async function optimize(): Promise<void> {
   const sep = '═'.repeat(62)
   console.log(`\n${sep}`)
   console.log(`  🔬 Optimiseur de stratégie — ${encounter.name}`)
-  console.log(`  ${char1.name} [${f1.persona}]  vs  ${char2.name} [${f2.persona}]`)
+  console.log(`  ${char1.name} [${charCfg1.persona}]  vs  ${char2.name} [${charCfg2.persona}]`)
   console.log(`  ${thresholds1.length}×${thresholds2.length} combinaisons × ${runsPerCell} runs = ${totalCombats.toLocaleString()} combats`)
   console.log(sep)
 
   const start   = Date.now()
-  const results = evalGrid(
+  const results = await evalGrid(
     encounter, char1, char2, cfg1Base, cfg2Base, getGuard,
     thresholds1, thresholds2, runsPerCell,
   )

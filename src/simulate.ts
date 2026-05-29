@@ -20,14 +20,14 @@ import { ALL_CHARACTERISTICS, ALL_SKILLS } from './character/data'
 import type { Character, CharacteristicName, SkillName } from './character/types'
 
 import { loadEncounter, resolveCharacterPath } from './encounter/io'
-import type { EncounterConfig, EncounterFaction } from './encounter/types'
+import type { EncounterConfig, EncounterFaction, EncounterCharacter, AgentType } from './encounter/types'
 
 import {
   initCombatant, resetRoundTokensWithLog, isDefeated, effChar, resistanceThreshold,
 } from './combat/combatant'
 import { resolveRoundWaves } from './combat/round'
 import type { GuardProvider, PlannedAction } from './combat/round'
-import { planNextAction, makeGuardProvider } from './combat/agent'
+import { planNextAction, planRoundAI, makeGuardProvider } from './combat/agent'
 import type { AgentConfig }  from './combat/agent'
 import type {
   CombatantState, CombatLog, CombatantSummary, RoundLog,
@@ -78,24 +78,37 @@ async function simulate(): Promise<void> {
     console.warn('⚠️  Plusieurs personnages par faction détectés — seul le premier sera utilisé (mode 1v1).')
   }
 
-  const char1 = await loadCharacter(resolveCharacterPath(faction1.characters[0]))
-  const char2 = await loadCharacter(resolveCharacterPath(faction2.characters[0]))
+  const charConfig1 = faction1.characters[0]
+  const charConfig2 = faction2.characters[0]
 
-  printHeader(encounter.name, encounter.description, faction1, faction2, char1, char2)
+  const char1 = await loadCharacter(resolveCharacterPath(charConfig1.sheet))
+  const char2 = await loadCharacter(resolveCharacterPath(charConfig2.sheet))
+
+  // ── LLM guard: pas de batch si un agent LLM est présent ─────────────────────
+  const hasLLM = charConfig1.agent === 'llm' || charConfig2.agent === 'llm'
+  if (hasLLM && runCount > 1) {
+    throw new Error(
+      `Le mode LLM ne peut pas être utilisé en mode batch.\n` +
+      `Limitez à 1 run (argument omis ou "1") pour utiliser un agent LLM.`
+    )
+  }
+
+  printHeader(encounter.name, encounter.description, faction1, faction2, char1, char2, charConfig1, charConfig2)
 
   // ── Agent configs ─────────────────────────────────────────────────────────────
   const cfg1: AgentConfig = {
-    persona:        faction1.persona,
+    persona:        charConfig1.persona,
     targetId:       char2.name,
     allowedActions: faction1.allowedActions,
   }
   const cfg2: AgentConfig = {
-    persona:        faction2.persona,
+    persona:        charConfig2.persona,
     targetId:       char1.name,
     allowedActions: faction2.allowedActions,
   }
 
-  // ── Guard provider (stateless — réutilisable entre les runs) ────────────────
+  // ── Guard provider (scripted, stateless — réutilisable entre les runs) ───────
+  // La garde reste scripted même pour les agents LLM : trop coûteux à déléguer au modèle.
   const guardProviders = new Map([
     [char1.name, makeGuardProvider(cfg1)],
     [char2.name, makeGuardProvider(cfg2)],
@@ -109,7 +122,7 @@ async function simulate(): Promise<void> {
 
   // ── Mode 1 run ──────────────────────────────────────────────────────────────
   if (runCount === 1) {
-    const log = runCombat(encounter, char1, char2, cfg1, cfg2, getGuard)
+    const log = await runCombat(encounter, char1, char2, cfg1, cfg2, getGuard, charConfig1.agent, charConfig2.agent)
     for (const roundLog of log.rounds) printRound(roundLog)
     const reportPath = path.join(REPORTS_DIR, `${log.id}.json`)
     await writeFile(reportPath, JSON.stringify(log, null, 2), 'utf-8')
@@ -119,9 +132,10 @@ async function simulate(): Promise<void> {
   }
 
   // ── Mode batch ──────────────────────────────────────────────────────────────
+  // (hasLLM est false ici — garanti par la guard ci-dessus)
   const logs: CombatLog[] = []
   for (let i = 1; i <= runCount; i++) {
-    const log = runCombat(encounter, char1, char2, cfg1, cfg2, getGuard)
+    const log = await runCombat(encounter, char1, char2, cfg1, cfg2, getGuard)
     logs.push(log)
     printRunLine(i, runCount, log)
   }
@@ -148,16 +162,22 @@ async function simulate(): Promise<void> {
 
 /**
  * Exécute un combat complet et retourne le CombatLog sans rien afficher.
- * Peut être appelé N fois en mode batch.
+ * Peut être appelé N fois en mode batch (scripted uniquement).
+ * En mode LLM, appelé une seule fois.
+ *
+ * @param agentType1  Type d'agent pour char1 ('scripted' par défaut)
+ * @param agentType2  Type d'agent pour char2 ('scripted' par défaut)
  */
-function runCombat(
-  encounter: EncounterConfig,
-  char1:     Character,
-  char2:     Character,
-  cfg1:      AgentConfig,
-  cfg2:      AgentConfig,
-  getGuard:  GuardProvider,
-): CombatLog {
+async function runCombat(
+  encounter:  EncounterConfig,
+  char1:      Character,
+  char2:      Character,
+  cfg1:       AgentConfig,
+  cfg2:       AgentConfig,
+  getGuard:   GuardProvider,
+  agentType1: AgentType = 'scripted',
+  agentType2: AgentType = 'scripted',
+): Promise<CombatLog> {
   const startMs = Date.now()
 
   let states = new Map<string, CombatantState>([
@@ -179,16 +199,20 @@ function runCombat(
       if (maintenanceEntry) maintenanceEntries.push(maintenanceEntry)
     }
 
-    // Résolution par vagues (une action par combattant par vague)
-    const { states: next, log } = resolveRoundWaves(
+    // Résolution par vagues — le planner peut être sync ou async
+    const { states: next, log } = await resolveRoundWaves(
       states, roundNumber, getGuard, maintenanceEntries,
-      (currentStates) => {
+      async (currentStates) => {
         const s1 = currentStates.get(char1.name)!
         const s2 = currentStates.get(char2.name)!
-        return [
-          planNextAction(s1, s2, cfg1),
-          planNextAction(s2, s1, cfg2),
-        ].filter((p): p is PlannedAction => p !== null)
+
+        // Les deux planners tournent en parallèle (gain latence en mode LLM)
+        const [plans1, plans2] = await Promise.all([
+          planFor(agentType1, s1, s2, cfg1),
+          planFor(agentType2, s2, s1, cfg2),
+        ])
+
+        return [...plans1, ...plans2]
       },
     )
     states = next
@@ -222,6 +246,28 @@ function runCombat(
   }
 }
 
+// ─── Agent planner helper ─────────────────────────────────────────────────────
+
+/**
+ * Dispatch action planning to the appropriate agent implementation.
+ * Always returns a Promise<PlannedAction[]> for a uniform async interface.
+ *
+ * - 'scripted'  → planNextAction (sync, wrapped in Promise.resolve)
+ * - 'llm'       → planRoundAI (async, Claude API)
+ */
+async function planFor(
+  agentType: AgentType,
+  self:      CombatantState,
+  opponent:  CombatantState,
+  cfg:       AgentConfig,
+): Promise<PlannedAction[]> {
+  if (agentType === 'llm') {
+    return planRoundAI(self, opponent, cfg)
+  }
+  const action = planNextAction(self, opponent, cfg)
+  return action ? [action] : []
+}
+
 // ─── Console display — mode 1 run ─────────────────────────────────────────────
 
 function printHeader(
@@ -231,6 +277,8 @@ function printHeader(
   faction2:      EncounterFaction,
   char1:         Character,
   char2:         Character,
+  charCfg1:      EncounterCharacter,
+  charCfg2:      EncounterCharacter,
 ): void {
   const sep = '═'.repeat(62)
   console.log(`\n${sep}`)
@@ -246,17 +294,22 @@ function printHeader(
   }
   console.log(sep)
 
-  for (const [char, faction] of [[char1, faction1], [char2, faction2]] as [Character, EncounterFaction][]) {
-    const s  = initCombatant(char)
-    const rt = resistanceThreshold(s)
+  const charCfgs = [charCfg1, charCfg2]
+  for (const [idx, [char, faction]] of ([[char1, faction1], [char2, faction2]] as [Character, EncounterFaction][]).entries()) {
+    const charCfg = charCfgs[idx]
+    const s      = initCombatant(char)
+    const rt     = resistanceThreshold(s)
     const allowed = faction.allowedActions.length
       ? `[${faction.allowedActions.join(', ')}]`
       : '[toutes]'
+    const agentTag = charCfg.agent === 'llm'
+      ? `🤖 llm:${charCfg.persona}`
+      : charCfg.persona
     console.log(
       `  ${char.name.padEnd(18)}` +
       `  For ${effChar(s,'strength')}  Agi ${effChar(s,'agility')}` +
       `  Vig ${effChar(s,'vigor')}  Acu ${effChar(s,'acuity')}` +
-      `  │  rés ${rt}  ⚡ ${s.maxReactions}  [${faction.persona}]`
+      `  │  rés ${rt}  ⚡ ${s.maxReactions}  [${agentTag}]`
     )
     console.log(`    Actions : ${allowed}`)
   }

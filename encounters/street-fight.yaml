@@ -7,17 +7,17 @@ maxRounds: 20
 
 factions:
   - name: "Cogneur"
-    persona: aggressive
     characters:
-      - characterSheets/Brawler_powerful.yaml
+      - sheet: characterSheets/Brawler_powerful.yaml
+        persona: aggressive
     allowedActions:
       - unarmed-attack
       - respiration
 
   - name: "Endurant"
-    persona: cautious
     characters:
-      - characterSheets/Brawler_enduring.yaml
+      - sheet: characterSheets/Brawler_enduring.yaml
+        persona: cautious
     allowedActions:
       - unarmed-attack
       - respiration

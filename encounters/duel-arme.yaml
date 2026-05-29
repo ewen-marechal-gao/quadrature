@@ -8,18 +8,18 @@ maxRounds: 20
 
 factions:
   - name: "Dueliste puissant"
-    persona: aggressive
     characters:
-      - characterSheets/Duelist_powerful.yaml
+      - sheet: characterSheets/Duelist_powerful.yaml
+        persona: aggressive
     allowedActions:
       - armed-attack
       - stabilize
       - respiration
 
   - name: "Dueliste précis"
-    persona: opportunist
     characters:
-      - characterSheets/Duelist_precise.yaml
+      - sheet: characterSheets/Duelist_precise.yaml
+        persona: opportunist
     allowedActions:
       - armed-attack
       - stabilize

@@ -5,7 +5,7 @@
 import path            from 'path'
 import { readFile }    from 'fs/promises'
 import { parse }       from 'yaml'
-import type { EncounterConfig, EncounterFaction } from './types'
+import type { EncounterConfig, EncounterFaction, EncounterCharacter, AgentType } from './types'
 
 /** Absolute path to the simulator root (directory containing package.json) */
 export const SIMULATOR_ROOT = path.resolve(__dirname, '..', '..')
@@ -42,13 +42,29 @@ export async function loadEncounter(filePath: string): Promise<EncounterConfig> 
     throw new Error(`Encounter YAML must define exactly 2 factions in: ${filePath}`)
 
   // ── Per-faction validation ─────────────────────────────────────────────────
+  const VALID_AGENT_TYPES: AgentType[] = ['scripted', 'llm']
+
   for (const faction of raw.factions as EncounterFaction[]) {
     if (!faction.name || typeof faction.name !== 'string')
       throw new Error(`Encounter faction missing required field "name" in: ${filePath}`)
-    if (!faction.persona)
-      throw new Error(`Faction "${faction.name}" missing required field "persona" in: ${filePath}`)
     if (!Array.isArray(faction.characters) || faction.characters.length === 0)
       throw new Error(`Faction "${faction.name}" must list at least one character in: ${filePath}`)
+
+    // ── Per-character validation ─────────────────────────────────────────────
+    for (const char of faction.characters as EncounterCharacter[]) {
+      if (!char.sheet || typeof char.sheet !== 'string')
+        throw new Error(
+          `A character in faction "${faction.name}" is missing required field "sheet" in: ${filePath}`
+        )
+      if (!char.persona)
+        throw new Error(
+          `Character "${char.sheet}" in faction "${faction.name}" is missing required field "persona" in: ${filePath}`
+        )
+      if (char.agent !== undefined && !VALID_AGENT_TYPES.includes(char.agent))
+        throw new Error(
+          `Character "${char.sheet}" has invalid agent type "${char.agent}" — expected one of: ${VALID_AGENT_TYPES.join(', ')} in: ${filePath}`
+        )
+    }
 
     // allowedActions is optional; default to empty (= no restriction)
     if (!Array.isArray(faction.allowedActions)) {

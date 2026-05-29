@@ -266,16 +266,17 @@ export function resolveRound(
  * @param round        Round number (1-based, for logging)
  * @param getGuard     Callback invoked once per target per round to choose a guard
  * @param maintenance  Maintenance entries from resetRoundTokensWithLog (logged but not re-applied)
- * @param getPlans     Called each wave; returns actions for this wave (empty = stop)
+ * @param getPlans     Called each wave; returns actions for this wave (empty = stop).
+ *                     May be synchronous or asynchronous (e.g. LLM agent).
  * @returns Updated state map and a structured RoundLog
  */
-export function resolveRoundWaves(
+export async function resolveRoundWaves(
   inputStates: ReadonlyMap<string, CombatantState>,
   round:       number,
   getGuard:    GuardProvider,
   maintenance: MaintenanceEntry[],
-  getPlans:    (currentStates: ReadonlyMap<string, CombatantState>) => PlannedAction[],
-): { states: Map<string, CombatantState>; log: RoundLog } {
+  getPlans:    (currentStates: ReadonlyMap<string, CombatantState>) => PlannedAction[] | Promise<PlannedAction[]>,
+): Promise<{ states: Map<string, CombatantState>; log: RoundLog }> {
 
   const guardCache = new Map<string, CachedGuard>()
   const allPhases: PhaseLog[] = []
@@ -285,7 +286,7 @@ export function resolveRoundWaves(
   const MAX_WAVES = 10
 
   for (let wave = 0; wave < MAX_WAVES; wave++) {
-    const plans = getPlans(states)
+    const plans = await Promise.resolve(getPlans(states))
     if (plans.length === 0) break
 
     const { states: next, phaseLogs } = resolveWave(states, plans, getGuard, guardCache)
