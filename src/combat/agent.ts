@@ -22,8 +22,9 @@
 import { createLLM, ToolHalt } from '@node-llm/core'
 import type { ToolDefinition }  from '@node-llm/core'
 
-import type { CombatantState } from './types'
+import type { CombatantState }    from './types'
 import type { ActionId, GuardId } from './types'
+import type { PhaseLog }          from './types'
 import type { PlannedAction, GuardProvider } from './round'
 import { ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction, availableGuards } from './actions'
 import { spendActionCost, effChar, isDefeated } from './combatant'
@@ -52,6 +53,77 @@ export interface AgentConfig {
    * Used by the strategy optimiser. When absent, the persona default is used.
    */
   respirationThreshold?: number
+}
+
+// ─── LLM session ─────────────────────────────────────────────────────────────
+
+/**
+ * Persistent conversation context for one LLM-driven combatant.
+ *
+ * The Chat instance keeps the full conversation history: system prompt (rules +
+ * persona) is sent only once. Each subsequent action call receives only the
+ * delta (current state + opponent's previous actions) as a new user message.
+ *
+ * `pendingContext` accumulates opponent-action summaries between waves;
+ * it is prepended to the next combat-state prompt and then cleared.
+ */
+export interface LLMAgentSession {
+  /** node-llm Chat instance — carries full conversation history */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly chat:        any
+  /** ID of the combatant this session belongs to */
+  readonly combatantId: string
+  /** Opponent-action summary to prepend to the next state prompt (consumed on use) */
+  pendingContext:       string | null
+}
+
+/**
+ * Initialise a persistent LLM session for a combatant.
+ * The system prompt (rules + persona) is set here and never repeated.
+ * Call once before the combat loop; pass the session to planRoundAI each turn.
+ */
+export function createAgentSession(combatantId: string, config: AgentConfig): LLMAgentSession {
+  const llm  = createLLM({ provider: 'mistral', mistralApiKey: process.env.MISTRAL_API_KEY })
+  const chat = llm.chat(AI_MODEL).withSystemPrompt(buildSystemPrompt(config.persona))
+  return { chat, combatantId, pendingContext: null }
+}
+
+/**
+ * Record the OPPONENT's visible actions from the last wave into the session,
+ * so the combatant can factor them in when planning their next action.
+ *
+ * Visible info: action label, target, roll, result, damage notes, battle cry.
+ * NOT included: reasoning (private internal thought of the opponent).
+ *
+ * The summary is stored in `pendingContext` and consumed on the next planRoundAI call.
+ */
+export function recordOpponentActions(
+  session:    LLMAgentSession,
+  phaseLogs:  PhaseLog[],
+  opponentId: string,
+): void {
+  const entries = phaseLogs.flatMap(p => p.actions).filter(e => e.actorId === opponentId)
+  if (entries.length === 0) return
+
+  const lines: string[] = ['[Actions adverses lors de la vague précédente]']
+
+  for (const e of entries) {
+    const label  = ACTION_DEFS[e.action]?.label ?? e.action
+    const target = e.targetId
+      ? ` → ${e.targetId === session.combatantId ? 'TOI' : e.targetId}`
+      : ' (action personnelle)'
+    const roll   = e.checkRoll ? ` — jet ${e.checkRoll.total} vs DD:${e.threshold}` : ''
+    const result = e.hit ? '✅ Touché' : '❌ Raté/Égratigné'
+    const notes  = e.notes.length ? `  (${e.notes.join(' | ')})` : ''
+    const cry    = e.battleCry ? `\n  💬 "${e.battleCry}"` : ''
+    lines.push(`${e.actorId} : ${label}${target}${roll} — ${result}${notes}${cry}`)
+  }
+
+  // Accumulate — if multiple waves happen before the next planRoundAI call,
+  // we keep all of them (shouldn't happen in practice but safe)
+  session.pendingContext = session.pendingContext
+    ? `${session.pendingContext}\n\n${lines.join('\n')}`
+    : lines.join('\n')
 }
 
 // ─── Scripted agent ───────────────────────────────────────────────────────────
@@ -214,21 +286,29 @@ function makePlanActionTool(usable: ActionId[]): ToolDefinition {
 /**
  * Plan one action for a combatant's round using the Mistral API via node-llm (async).
  *
- * Uses function calling with tool_choice: 'required' to guarantee a valid, parseable
- * response. `halt()` stops the tool loop after exactly one API call.
+ * When a `session` is provided:
+ *  - The Chat instance is reused (system prompt already in history → no repeat)
+ *  - Any `pendingContext` (opponent's last-wave actions) is prepended to the
+ *    state prompt and then cleared, keeping the model informed of combat events
+ *
+ * When no session is provided (legacy / backward compat):
+ *  - A fresh Chat is created with the full system prompt
+ *
+ * Uses function calling with tool_choice: 'required' to guarantee a valid,
+ * parseable response. `halt()` stops the tool loop after exactly one API call.
  * Falls back to the scripted agent if the API call fails.
  *
  * @throws Never — errors fall back to `planRound` with a logged warning.
  */
 export async function planRoundAI(
-  self:     CombatantState,
-  opponent: CombatantState,
-  config:   AgentConfig,
+  self:      CombatantState,
+  opponent:  CombatantState,
+  config:    AgentConfig,
+  session?:  LLMAgentSession,
 ): Promise<PlannedAction[]> {
   if (isDefeated(self)) return []
 
   try {
-    const llm      = createLLM({ provider: 'mistral', mistralApiKey: process.env.MISTRAL_API_KEY })
     const unlocked = unlockedActions(self).filter(id => isActionAllowed(id, config))
     const usable   = usableActions(self).filter(id => isActionAllowed(id, config))
 
@@ -236,11 +316,23 @@ export async function planRoundAI(
 
     const PlanActionTool = makePlanActionTool(usable)
 
-    const response = await llm
-      .chat(AI_MODEL)
-      .withSystemPrompt(buildSystemPrompt(config.persona))
-      .withTools([PlanActionTool], { choice: 'required', calls: 'one' })
-      .ask(buildCombatPrompt(self, opponent, unlocked, usable))
+    // Build the state prompt, optionally prepended with opponent's last actions
+    const statePrompt   = buildCombatPrompt(self, opponent, unlocked, usable)
+    const userMessage   = session?.pendingContext
+      ? `${session.pendingContext}\n\n${statePrompt}`
+      : statePrompt
+    if (session) session.pendingContext = null  // consumed
+
+    // Use the persistent chat session or create a fresh one (no session = backward compat)
+    const chat = session
+      ? session.chat
+      : createLLM({ provider: 'mistral', mistralApiKey: process.env.MISTRAL_API_KEY })
+          .chat(AI_MODEL)
+          .withSystemPrompt(buildSystemPrompt(config.persona))
+
+    const response = await chat
+      .withTools([PlanActionTool], { choice: 'required', calls: 'one', replace: true })
+      .ask(userMessage)
 
     // Le halt a encodé les trois champs en JSON
     const parsed = JSON.parse(response.content.trim()) as {

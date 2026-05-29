@@ -270,16 +270,20 @@ export function resolveRound(
  * @param round        Round number (1-based, for logging)
  * @param getGuard     Callback invoked once per target per round to choose a guard
  * @param maintenance  Maintenance entries from resetRoundTokensWithLog (logged but not re-applied)
- * @param getPlans     Called each wave; returns actions for this wave (empty = stop).
- *                     May be synchronous or asynchronous (e.g. LLM agent).
+ * @param getPlans        Called each wave; returns actions for this wave (empty = stop).
+ *                        May be synchronous or asynchronous (e.g. LLM agent).
+ * @param onWaveResolved  Optional callback invoked synchronously after each wave is
+ *                        resolved, BEFORE the next getPlans call. Used for real-time
+ *                        display and to update persistent LLM session context.
  * @returns Updated state map and a structured RoundLog
  */
 export async function resolveRoundWaves(
-  inputStates: ReadonlyMap<string, CombatantState>,
-  round:       number,
-  getGuard:    GuardProvider,
-  maintenance: MaintenanceEntry[],
-  getPlans:    (currentStates: ReadonlyMap<string, CombatantState>) => PlannedAction[] | Promise<PlannedAction[]>,
+  inputStates:     ReadonlyMap<string, CombatantState>,
+  round:           number,
+  getGuard:        GuardProvider,
+  maintenance:     MaintenanceEntry[],
+  getPlans:        (currentStates: ReadonlyMap<string, CombatantState>) => PlannedAction[] | Promise<PlannedAction[]>,
+  onWaveResolved?: (phaseLogs: PhaseLog[]) => void,
 ): Promise<{ states: Map<string, CombatantState>; log: RoundLog }> {
 
   const guardCache = new Map<string, CachedGuard>()
@@ -296,6 +300,9 @@ export async function resolveRoundWaves(
     const { states: next, phaseLogs } = resolveWave(states, plans, getGuard, guardCache)
     states = next
     allPhases.push(...phaseLogs)
+
+    // Notify: display + LLM context update — BEFORE the next getPlans call
+    onWaveResolved?.(phaseLogs)
 
     // Stop early if all combatants are defeated mid-round
     if ([...states.values()].every(isDefeated)) break

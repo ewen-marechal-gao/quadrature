@@ -29,11 +29,14 @@ import {
 } from './combat/combatant'
 import { resolveRoundWaves } from './combat/round'
 import type { GuardProvider, PlannedAction } from './combat/round'
-import { planNextAction, planRoundAI, makeGuardProvider } from './combat/agent'
-import type { AgentConfig }  from './combat/agent'
+import {
+  planNextAction, planRoundAI, makeGuardProvider,
+  createAgentSession, recordOpponentActions,
+} from './combat/agent'
+import type { AgentConfig, LLMAgentSession } from './combat/agent'
 import type {
-  CombatantState, CombatLog, CombatantSummary, RoundLog,
-  CombatOutcome, ActionLogEntry, MaintenanceEntry,
+  CombatantState, CombatLog, CombatantSummary, RoundLog, PhaseLog,
+  CombatOutcome, ActionLogEntry, MaintenanceEntry, CombatantSnapshot,
 } from './combat/types'
 import {RollResult} from './types'
 
@@ -122,10 +125,29 @@ async function simulate(): Promise<void> {
 
   await mkdir(REPORTS_DIR, { recursive: true })
 
-  // ── Mode 1 run ──────────────────────────────────────────────────────────────
+  // ── Mode 1 run — callbacks temps réel ──────────────────────────────────────
   if (runCount === 1) {
-    const log = await runCombat(encounter, char1, char2, cfg1, cfg2, getGuard, charConfig1.agent, charConfig2.agent)
-    for (const roundLog of log.rounds) printRound(roundLog)
+    const log = await runCombat(
+      encounter, char1, char2, cfg1, cfg2, getGuard,
+      charConfig1.agent ?? 'scripted', charConfig2.agent ?? 'scripted',
+      {
+        onRoundStart: (round, maintenance) => {
+          console.log(`\n  ── ROUND ${round} ${'─'.repeat(52 - round.toString().length)}`)
+          if (maintenance.length > 0) {
+            console.log('  [entretien]')
+            for (const entry of maintenance) printMaintenance(entry)
+          }
+        },
+        onWave: (phaseLogs) => {
+          for (const phase of phaseLogs) {
+            if (phase.actions.length === 0) continue
+            console.log(`  [init ${phase.initiative}]`)
+            for (const entry of phase.actions) printAction(entry)
+          }
+        },
+        onRoundEnd: (snapshots) => printRoundEnd(snapshots),
+      },
+    )
     const reportPath = path.join(REPORTS_DIR, `${log.id}.json`)
     await writeFile(reportPath, JSON.stringify(log, null, 2), 'utf-8')
     printStats(computeStats([log]), encounter.name)
@@ -134,7 +156,7 @@ async function simulate(): Promise<void> {
   }
 
   // ── Mode batch ──────────────────────────────────────────────────────────────
-  // (hasLLM est false ici — garanti par la guard ci-dessus)
+  // (hasLLM est false ici — garanti par la guard ci-dessus ; pas de callbacks)
   const logs: CombatLog[] = []
   for (let i = 1; i <= runCount; i++) {
     const log = await runCombat(encounter, char1, char2, cfg1, cfg2, getGuard)
@@ -160,15 +182,31 @@ async function simulate(): Promise<void> {
   console.log(`  📊 ${statsPath}\n`)
 }
 
-// ─── Combat loop (pur, sans I/O) ─────────────────────────────────────────────
+// ─── Combat loop ─────────────────────────────────────────────────────────────
 
 /**
- * Exécute un combat complet et retourne le CombatLog sans rien afficher.
- * Peut être appelé N fois en mode batch (scripted uniquement).
- * En mode LLM, appelé une seule fois.
+ * Callbacks fired during combat for real-time display.
+ * All are optional — absent callbacks produce no side effects.
+ */
+interface CombatCallbacks {
+  /** Called once per round, before any wave, after maintenance is applied */
+  onRoundStart?: (round: number, maintenance: MaintenanceEntry[]) => void
+  /** Called after each wave is fully resolved, before the next wave's plans are requested */
+  onWave?:       (phaseLogs: PhaseLog[]) => void
+  /** Called after end-of-round processing (wound conversion, status ticks) */
+  onRoundEnd?:   (snapshots: CombatantSnapshot[]) => void
+}
+
+/**
+ * Exécute un combat complet et retourne le CombatLog.
+ *
+ * En mode LLM, les sessions sont créées une seule fois avant la boucle.
+ * Le system prompt (règles + persona) n'est envoyé qu'une fois par combattant.
+ * Les callbacks permettent l'affichage temps réel et la mise à jour du contexte.
  *
  * @param agentType1  Type d'agent pour char1 ('scripted' par défaut)
  * @param agentType2  Type d'agent pour char2 ('scripted' par défaut)
+ * @param callbacks   Hooks optionnels pour affichage en temps réel
  */
 async function runCombat(
   encounter:  EncounterConfig,
@@ -179,8 +217,13 @@ async function runCombat(
   getGuard:   GuardProvider,
   agentType1: AgentType = 'scripted',
   agentType2: AgentType = 'scripted',
+  callbacks?: CombatCallbacks,
 ): Promise<CombatLog> {
   const startMs = Date.now()
+
+  // Créer les sessions LLM une seule fois — le system prompt n'est envoyé qu'une fois
+  const session1 = agentType1 === 'llm' ? createAgentSession(char1.name, cfg1) : undefined
+  const session2 = agentType2 === 'llm' ? createAgentSession(char2.name, cfg2) : undefined
 
   let states = new Map<string, CombatantState>([
     [char1.name, initCombatant(char1)],
@@ -201,24 +244,33 @@ async function runCombat(
       if (maintenanceEntry) maintenanceEntries.push(maintenanceEntry)
     }
 
+    callbacks?.onRoundStart?.(roundNumber, maintenanceEntries)
+
     // Résolution par vagues — le planner peut être sync ou async
     const { states: next, log } = await resolveRoundWaves(
       states, roundNumber, getGuard, maintenanceEntries,
       async (currentStates) => {
         const s1 = currentStates.get(char1.name)!
         const s2 = currentStates.get(char2.name)!
-
         // Les deux planners tournent en parallèle (gain latence en mode LLM)
         const [plans1, plans2] = await Promise.all([
-          planFor(agentType1, s1, s2, cfg1),
-          planFor(agentType2, s2, s1, cfg2),
+          planFor(agentType1, s1, s2, cfg1, session1),
+          planFor(agentType2, s2, s1, cfg2, session2),
         ])
-
         return [...plans1, ...plans2]
+      },
+      (phaseLogs) => {
+        // Mise à jour du contexte LLM avec les actions adverses (avant la prochaine vague)
+        if (session1) recordOpponentActions(session1, phaseLogs, char2.name)
+        if (session2) recordOpponentActions(session2, phaseLogs, char1.name)
+        // Affichage temps réel
+        callbacks?.onWave?.(phaseLogs)
       },
     )
     states = next
     roundLogs.push(log)
+
+    callbacks?.onRoundEnd?.(log.endOfRound)
 
     const dead1 = isDefeated(states.get(char1.name)!)
     const dead2 = isDefeated(states.get(char2.name)!)
@@ -255,16 +307,17 @@ async function runCombat(
  * Always returns a Promise<PlannedAction[]> for a uniform async interface.
  *
  * - 'scripted'  → planNextAction (sync, wrapped in Promise.resolve)
- * - 'llm'       → planRoundAI (async, Claude API)
+ * - 'llm'       → planRoundAI with persistent session
  */
 async function planFor(
   agentType: AgentType,
   self:      CombatantState,
   opponent:  CombatantState,
   cfg:       AgentConfig,
+  session?:  LLMAgentSession,
 ): Promise<PlannedAction[]> {
   if (agentType === 'llm') {
-    return planRoundAI(self, opponent, cfg)
+    return planRoundAI(self, opponent, cfg, session)
   }
   const action = planNextAction(self, opponent, cfg)
   return action ? [action] : []
@@ -318,29 +371,12 @@ function printHeader(
   console.log(sep)
 }
 
-function printRound(log: RoundLog): void {
-  console.log(`\n  ── ROUND ${log.round} ${'─'.repeat(52 - log.round.toString().length)}`)
-
-  if (log.maintenance.length > 0) {
-    console.log('  [entretien]')
-    for (const entry of log.maintenance) {
-      printMaintenance(entry)
-    }
-  }
-
-  for (const phase of log.phases) {
-    if (phase.actions.length === 0) continue
-    console.log(`  [init ${phase.initiative}]`)
-    for (const entry of phase.actions) {
-      printAction(entry)
-    }
-  }
-
-  // Vitaux de fin de round
+/** Vitaux de fin de round (appelé via callback onRoundEnd) */
+function printRoundEnd(snapshots: CombatantSnapshot[]): void {
   console.log()
-  for (const snap of log.endOfRound) {
-    const status = snap.status.length ? `  ⚑ ${snap.status.join(' ')}` : ''
-    const chars  = Object.entries(snap.charWounds)
+  for (const snap of snapshots) {
+    const status  = snap.status.length ? `  ⚑ ${snap.status.join(' ')}` : ''
+    const chars   = Object.entries(snap.charWounds)
       .map(([c, w]) => `${c.slice(0, 3)}⁻${w}`)
       .join(' ')
     const charStr = chars ? `  ⟨${chars}⟩` : ''
