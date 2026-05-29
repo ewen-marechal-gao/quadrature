@@ -23,6 +23,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
     "colors": "^1.4.0",
+    "dotenv": "^17.4.2",
     "yaml": "^2.9.0"
   }
 }

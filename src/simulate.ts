@@ -11,6 +11,8 @@
  * Mode N runs : une ligne par run + tableau de stats + rapport JSON agrégé.
  */
 
+import 'dotenv/config'
+
 import path                     from 'path'
 import { mkdir, writeFile }     from 'fs/promises'
 import colors                   from 'colors/safe'
