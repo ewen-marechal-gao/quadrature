@@ -1,0 +1,27 @@
+{
+  "name": "quadrature-simulator",
+  "version": "0.1.0",
+  "description": "Simulateur du système de jets de dés pour le TTRPG Quadrature",
+  "main": "dist/index.js",
+  "scripts": {
+    "demo": "ts-node src/demo.ts",
+    "simulate": "ts-node src/simulate.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.0.0",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
+    "colors": "^1.4.0",
+    "yaml": "^2.9.0"
+  }
+}

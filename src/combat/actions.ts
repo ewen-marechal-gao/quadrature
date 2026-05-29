@@ -1,0 +1,489 @@
+/**
+ * Action and guard definitions for the Quadrature combat module.
+ *
+ * Design principles:
+ *  - Each ActionDef owns its effect-resolution logic via `resolve()`.
+ *    No external switch/case needed to compute outcomes.
+ *  - Each GuardDef owns its roll (`rollDC`) and reaction-spend logic (`effects`).
+ *    The guard roll is encapsulated here, not scattered across call sites.
+ *  - All external code calls the unified `resolveAction()`.
+ *    There is no separate path for attacks vs self-actions.
+ *  - Encaisser costs 0 reactions: it is the passive default guard, always available.
+ *  - Active guards (Esquive, Parade, Blocage) cost 1 reaction on first use per round.
+ *
+ * Success rule (§Résolution): checkRoll.total >= threshold  (equal = success)
+ */
+
+import type { CharacteristicName, SkillName } from '../character/types'
+import type { RollParams, RollResult } from '../types'
+import type {
+  ActionId, GuardId, ActionCost,
+  CombatantState, CombatEffect, ResolvedAction,
+} from './types'
+import { buildPool, roll } from '../dieSystem'
+import { effChar, isDefeated } from './combatant'
+import { STATUS_DEFS } from './status'
+
+// ─── ActionDef ────────────────────────────────────────────────────────────────
+
+export interface ActionDef {
+  id:            ActionId
+  label:         string
+  /**
+   * Short tactical description of this action, used in AI prompts.
+   * Summarises cost context, hit/miss/crit/flaw outcomes in one line.
+   */
+  description:   string
+  initiative:    number
+  cost:          ActionCost
+  prerequisite?: { skill: SkillName; minValue: number }
+  /** True for Respiration / Stabiliser: must be the first action of the round (🟢) */
+  requiresFirstAction: boolean
+  rollChar:      CharacteristicName
+  rollSkill:     SkillName
+  /** True for self-targeted actions: roll vs fixed DC, no opponent, no guard */
+  selfTargeted:  boolean
+  /** DC formula for self-targeted actions (reads live state for dynamic values) */
+  getDC?:        (actor: CombatantState) => number
+  /**
+   * Compute all CombatEffects and log notes for this action's outcome.
+   * Called after `checkRoll.total >= dc` has been evaluated.
+   *
+   * For offensive actions `target` is always defined.
+   * For self-targeted actions `target` is undefined (actor effects only).
+   */
+  resolve(
+    outcome: { hit: boolean; critical: boolean; flaw: boolean },
+    actor:   CombatantState,
+    target?: CombatantState,
+  ): { effects: CombatEffect[]; notes: string[] }
+}
+
+// ─── GuardDef ─────────────────────────────────────────────────────────────────
+
+export interface GuardDef {
+  id:          GuardId
+  label:       string
+  cost:        ActionCost
+  rollChar:    CharacteristicName
+  rollSkill:   SkillName
+  isAvailable: (defender: CombatantState) => boolean
+  /**
+   * Roll this guard and return the full result.
+   * The total becomes the DC for any incoming attack this round.
+   */
+  rollDC(snapshot: CombatantState): RollResult
+  /**
+   * Compute CombatEffects and notes for using this guard as a reaction.
+   *
+   * isFirstUse = true  → first attack on this target this round:
+   *   non-absorb guards spend 1 reaction; flaw = +1💧 to defender.
+   * isFirstUse = false → cached guard reused; no additional cost or effect.
+   */
+  effects(
+    outcome:    { flaw: boolean },
+    defender:   CombatantState,
+    isFirstUse: boolean,
+  ): { effects: CombatEffect[]; notes: string[] }
+}
+
+// ─── ActionContext (input to resolveAction) ───────────────────────────────────
+
+export interface ActionContext {
+  /** Threshold the actor's check must meet or beat */
+  dc:      number
+  /** The roll that established the DC (guard roll for vs-attacks) */
+  dcRoll?: RollResult
+  /** Which guard was used (vs-attacks only) */
+  guardId?: GuardId
+  /**
+   * Pre-computed guard-reaction data.
+   * Pass `{ effects: [], notes: [] }` for self-actions and cached guard re-uses.
+   */
+  guardReaction: { effects: CombatEffect[]; notes: string[] }
+  /** Target snapshot for offensive actions; undefined for self-actions */
+  target?: CombatantState
+}
+
+// ─── Guard factories ──────────────────────────────────────────────────────────
+
+/** Build a `rollDC` function from a static char + skill pair */
+function makeGuardRoll(char: CharacteristicName, skill: SkillName) {
+  return (snap: CombatantState): RollResult =>
+    roll(buildPool(rollParamsFrom(snap, char, skill)))
+}
+
+/**
+ * Build a guard `effects` function.
+ *  reactionCost = 0 → Encaisser: never spends a reaction; still flaws.
+ *  reactionCost = 1 → Active guard: spends 1⚡ on first use this round.
+ */
+function makeGuardEffects(reactionCost: number) {
+  return (
+    outcome:    { flaw: boolean },
+    defender:   CombatantState,
+    isFirstUse: boolean,
+  ): { effects: CombatEffect[]; notes: string[] } => {
+    const effects: CombatEffect[] = []
+    const notes:   string[]       = []
+    if (isFirstUse && reactionCost > 0) {
+      effects.push({ targetId: defender.id, kind: 'spend-reaction' })
+    }
+    if (outcome.flaw) {
+      effects.push({ targetId: defender.id, kind: 'add-fatigue', amount: 1 })
+      notes.push('⚠️ Défaut de Garde — défenseur +1💧')
+    }
+    return { effects, notes }
+  }
+}
+
+// ─── Roll params builder ──────────────────────────────────────────────────────
+
+/**
+ * Build RollParams from a CombatantState snapshot.
+ * Uses effective characteristic values (value − wounds, min 0).
+ */
+/**
+ * Build RollParams from a CombatantState snapshot.
+ * Uses effective characteristic values (value − wounds, min 0).
+ * Active statuses with rollDisadvantage (e.g. Essoufflé 😮‍💨) are accumulated
+ * into the disadvantages field automatically.
+ */
+export function rollParamsFrom(
+  state:    CombatantState,
+  charName: CharacteristicName,
+  skill:    SkillName,
+  opts:     Pick<RollParams, 'advantages' | 'disadvantages'> = {},
+): RollParams {
+  const statusDisadvantages = state.status.reduce(
+    (sum, id) => sum + (STATUS_DEFS[id]?.rollDisadvantage ?? 0),
+    0,
+  )
+  return {
+    characteristic: effChar(state, charName),
+    skill:          state.skills[skill],
+    ...opts,
+    disadvantages: (opts.disadvantages ?? 0) + statusDisadvantages,
+  }
+}
+
+// ─── Action definitions ───────────────────────────────────────────────────────
+
+export const ACTION_DEFS: Record<ActionId, ActionDef> = {
+
+  // ── Attaque armée ────────────────────────────────────────────────────────────
+  'armed-attack': {
+    id: 'armed-attack', label: 'Attaque armée',
+    description: 'Frappe avec une arme. Succès : 3💢 sur la cible, Échec : 1💢. Critique : cible à terre 🔻. Défaut : +1💧 pour toi.',
+    initiative: 5,
+    cost: { actions: 2, reactions: 0, endPlayerRound: false },
+    requiresFirstAction: false,
+    rollChar: 'strength', rollSkill: 'power',
+    selfTargeted: false,
+    resolve({ hit, critical, flaw }, actor, target) {
+      if (!target) return { effects: [], notes: [] }
+      const fx: CombatEffect[] = []
+      const notes: string[]    = []
+      fx.push({ targetId: target.id, kind: 'light-wound', amount: hit ? 3 : 1 })
+      notes.push(hit ? '✅ Touché — 3💢' : '❌ Égratigné — 1💢')
+      if (flaw) {
+        fx.push({ targetId: actor.id, kind: 'add-fatigue', amount: 1 })
+        notes.push('⚠️ Maladresse — attaquant +1💧')
+      }
+      if (critical) {
+        fx.push({ targetId: target.id, kind: 'add-status', status: 'knockdown' })
+        notes.push('✴️ Critique — cible à terre 🔻')
+      }
+      return { effects: fx, notes }
+    },
+  },
+
+  // ── Attaque à mains nues ──────────────────────────────────────────────────────
+  // Cannot be absorbed (Encaisser) — only Esquive / Parade / Dérobade.
+  // Guard validity is the GuardProvider's responsibility (agent level).
+  'unarmed-attack': {
+    id: 'unarmed-attack', label: 'Attaque à mains nues',
+    description: 'Attaque rapide sans arme, inflige de la fatigue. Succès : 3💧 sur la cible, Échec : 1💧. Critique : cible sonnée 💫. Défaut : +1💧 pour toi. Ne peut être encaissée.',
+    initiative: 3,
+    cost: { actions: 1, reactions: 0, endPlayerRound: false },
+    requiresFirstAction: false,
+    rollChar: 'strength', rollSkill: 'power',
+    selfTargeted: false,
+    resolve({ hit, critical, flaw }, actor, target) {
+      if (!target) return { effects: [], notes: [] }
+      const fx: CombatEffect[] = []
+      const notes: string[]    = []
+      fx.push({ targetId: target.id, kind: 'add-fatigue', amount: hit ? 3 : 1 })
+      notes.push(hit ? '✅ Touché — 3💧' : '❌ Effleuré — 1💧')
+      if (flaw) {
+        fx.push({ targetId: actor.id, kind: 'add-fatigue', amount: 1 })
+        notes.push('⚠️ Maladresse — attaquant +1💧')
+      }
+      if (critical) {
+        fx.push({ targetId: target.id, kind: 'add-status', status: 'stunned' })
+        notes.push('✴️ Critique — cible sonnée 💫')
+      }
+      return { effects: fx, notes }
+    },
+  },
+
+  // ── Frappe brutale ────────────────────────────────────────────────────────────
+  'brutal-strike': {
+    id: 'brutal-strike', label: 'Frappe brutale',
+    description: 'Coup dévastateur à haut risque. Succès : 1💔 blessure grave, Échec : 2💢. Critique : cible sonnée 💫. Coûte 1💧 à toi en plus des PA.',
+    initiative: 6,
+    cost: { actions: 2, reactions: 0, endPlayerRound: false, fatigue: 1 },
+    prerequisite: { skill: 'power', minValue: 1 },
+    requiresFirstAction: false,
+    rollChar: 'strength', rollSkill: 'power',
+    selfTargeted: false,
+    resolve({ hit, critical }, _actor, target) {
+      if (!target) return { effects: [], notes: [] }
+      const fx: CombatEffect[] = []
+      const notes: string[]    = []
+      if (hit) {
+        fx.push({ targetId: target.id, kind: 'heavy-wound' })
+        notes.push('✅ Touché — 1💔 blessure grave')
+      } else {
+        fx.push({ targetId: target.id, kind: 'light-wound', amount: 2 })
+        notes.push('❌ Raté — 2💢')
+      }
+      if (critical) {
+        fx.push({ targetId: target.id, kind: 'add-status', status: 'stunned' })
+        notes.push('✴️ Critique — cible sonnée 💫')
+      }
+      return { effects: fx, notes }
+    },
+  },
+
+  // ── Frappe vive ───────────────────────────────────────────────────────────────
+  'sharp-strike': {
+    id: 'sharp-strike', label: 'Frappe vive',
+    description: 'Attaque agile et précise. Succès : 2💢, Échec : 1💢. Critique : hémorragie 🩸 sur la cible. Défaut : +1💧 pour toi. Coûte 1💧 à toi en plus des PA.',
+    initiative: 3,
+    cost: { actions: 1, reactions: 0, endPlayerRound: false, fatigue: 1 },
+    prerequisite: { skill: 'precision', minValue: 1 },
+    requiresFirstAction: false,
+    rollChar: 'agility', rollSkill: 'precision',
+    selfTargeted: false,
+    resolve({ hit, critical, flaw }, actor, target) {
+      if (!target) return { effects: [], notes: [] }
+      const fx: CombatEffect[] = []
+      const notes: string[]    = []
+      fx.push({ targetId: target.id, kind: 'light-wound', amount: hit ? 2 : 1 })
+      notes.push(hit ? '✅ Touché — 2💢' : '❌ Égratigné — 1💢')
+      if (flaw) {
+        fx.push({ targetId: actor.id, kind: 'add-fatigue', amount: 1 })
+        notes.push('⚠️ Maladresse — attaquant +1💧')
+      }
+      if (critical) {
+        fx.push({ targetId: target.id, kind: 'add-status', status: 'hemorrhage' })
+        notes.push('✴️ Critique — hémorragie 🩸')
+      }
+      return { effects: fx, notes }
+    },
+  },
+
+  // ── Respiration ───────────────────────────────────────────────────────────────
+  'respiration': {
+    id: 'respiration', label: 'Respiration',
+    description: 'Régulation du souffle (première action uniquement). Retire Essoufflé 💨 toujours. Succès : retire (1 + Endurance)💧. Critique : +1💧 bonus. Échec : retire 1💧. Défaut : perd 1 PA. DD = fatigue actuelle.',
+    initiative: 1,
+    cost: { actions: 1, reactions: 0, endPlayerRound: false },
+    prerequisite: { skill: 'endurance', minValue: 1 },
+    requiresFirstAction: true,
+    rollChar: 'vigor', rollSkill: 'endurance',
+    selfTargeted: true,
+    getDC: (actor) => actor.fatigue,
+    resolve({ hit, critical, flaw }, actor) {
+      const aId = actor.id
+      const fx: CombatEffect[] = []
+      const notes: string[]    = []
+      // Immediate: remove winded (always fires regardless of roll)
+      fx.push({ targetId: aId, kind: 'remove-status', status: 'winded' })
+      // Fatigue recovery
+      const endurance  = actor.skills.endurance
+      const baseAmount = hit ? 1 + endurance : 1
+      const bonus      = critical ? 1 : 0
+      fx.push({ targetId: aId, kind: 'remove-fatigue', amount: baseAmount + bonus })
+      notes.push(hit
+        ? `✅ Récupération — retire ${baseAmount + bonus}💧` + (critical ? ' (✴️ +1)' : '')
+        : '❌ Partiel — retire 1💧')
+      if (flaw) {
+        fx.push({ targetId: aId, kind: 'spend-actions', amount: 1 })
+        notes.push('⚠️ Maladresse — perd 1 PA')
+      }
+      return { effects: fx, notes }
+    },
+  },
+
+  // ── Stabiliser ────────────────────────────────────────────────────────────────
+  'stabilize': {
+    id: 'stabilize', label: 'Stabiliser',
+    description: 'Premiers soins (première action uniquement). Retire Hémorragie 🩸 toujours. Succès : soigne (1 + Récupération)💢. Critique : +1⚡. Échec : soigne 1💢. Défaut : perd 1 PA. DD = 8 + blessures graves.',
+    initiative: 1,
+    cost: { actions: 1, reactions: 0, endPlayerRound: false },
+    prerequisite: { skill: 'recovery', minValue: 1 },
+    requiresFirstAction: true,
+    rollChar: 'vigor', rollSkill: 'recovery',
+    selfTargeted: true,
+    getDC: (actor) => 8 + actor.heavyWounds,
+    resolve({ hit, critical, flaw }, actor) {
+      const aId = actor.id
+      const fx: CombatEffect[] = []
+      const notes: string[]    = []
+      // Immediate: remove hemorrhage (always fires regardless of roll)
+      fx.push({ targetId: aId, kind: 'remove-status', status: 'hemorrhage' })
+      // Light wound healing
+      const recovery   = actor.skills.recovery
+      const healAmount = hit ? 1 + recovery : 1
+      fx.push({ targetId: aId, kind: 'heal-wounds', amount: healAmount })
+      notes.push(hit
+        ? `✅ Stabilisation — soigne ${healAmount}💢`
+        : '❌ Partiel — soigne 1💢')
+      if (critical) {
+        fx.push({ targetId: aId, kind: 'add-reaction', amount: 1 })
+        notes.push('✴️ Critique — gagne 1⚡')
+      }
+      if (flaw) {
+        fx.push({ targetId: aId, kind: 'spend-actions', amount: 1 })
+        notes.push('⚠️ Maladresse — perd 1 PA')
+      }
+      return { effects: fx, notes }
+    },
+  },
+}
+
+// ─── Guard definitions ────────────────────────────────────────────────────────
+
+export const GUARD_DEFS: Record<GuardId, GuardDef> = {
+
+  // Encaisser: passive default — costs 0 reactions, always available
+  absorb: {
+    id: 'absorb', label: 'Encaisser',
+    cost: { actions: 0, reactions: 0, endPlayerRound: false },
+    rollChar: 'vigor', rollSkill: 'recovery',
+    isAvailable: () => true,
+    rollDC:  makeGuardRoll('vigor', 'recovery'),
+    effects: makeGuardEffects(0),
+  },
+
+  // Esquive: active reaction — costs 1⚡ on first use
+  dodge: {
+    id: 'dodge', label: 'Esquive',
+    cost: { actions: 0, reactions: 1, endPlayerRound: false },
+    rollChar: 'agility', rollSkill: 'mobility',
+    isAvailable: (d) => !isDefeated(d),
+    rollDC:  makeGuardRoll('agility', 'mobility'),
+    effects: makeGuardEffects(1),
+  },
+
+  // Parade: active reaction — costs 1⚡; requires a weapon (power ≥ 1 as proxy)
+  parry: {
+    id: 'parry', label: 'Parade',
+    cost: { actions: 0, reactions: 1, endPlayerRound: false },
+    rollChar: 'acuity', rollSkill: 'vigilance',
+    isAvailable: (d) => d.skills.power >= 1,
+    rollDC:  makeGuardRoll('acuity', 'vigilance'),
+    effects: makeGuardEffects(1),
+  },
+
+  // Blocage: active reaction — costs 1⚡; requires a shield (robustness ≥ 2 as proxy)
+  block: {
+    id: 'block', label: 'Blocage',
+    cost: { actions: 0, reactions: 1, endPlayerRound: false },
+    rollChar: 'strength', rollSkill: 'robustness',
+    isAvailable: (d) => d.skills.robustness >= 2,
+    rollDC:  makeGuardRoll('strength', 'robustness'),
+    effects: makeGuardEffects(1),
+  },
+}
+
+// ─── Unified action resolution ────────────────────────────────────────────────
+
+/**
+ * Resolve a single action check — offensive or self-targeted.
+ *
+ * The caller is responsible for building the ActionContext:
+ *  - Offensive: call getOrRollGuard() in round.ts to get dc/dcRoll/guardReaction
+ *  - Self-action: ActionDef.getDC(actorLive) for dc; guardReaction = empty
+ *
+ * Hit condition: checkRoll.total >= ctx.dc  (equal = success, §Résolution)
+ */
+export function resolveAction(
+  actorSnapshot: CombatantState,
+  actionId:      ActionId,
+  ctx:           ActionContext,
+): ResolvedAction {
+  const action = ACTION_DEFS[actionId]
+
+  // Accumulate 🟩 advantages from the target's statuses (e.g. À terre 🙏, Inconscient 😵‍💫)
+  const targetAdvantages = ctx.target
+    ? ctx.target.status.reduce((sum, id) => sum + (STATUS_DEFS[id]?.attackerAdvantage ?? 0), 0)
+    : 0
+  const checkRoll = roll(buildPool(
+    rollParamsFrom(actorSnapshot, action.rollChar, action.rollSkill,
+      targetAdvantages > 0 ? { advantages: targetAdvantages } : {}),
+  ))
+
+  const hit      = checkRoll.total >= ctx.dc
+  const critical = checkRoll.critical
+  const flaw     = checkRoll.flaw
+
+  const { effects: actionEffects, notes: actionNotes } =
+    action.resolve({ hit, critical, flaw }, actorSnapshot, ctx.target)
+
+  return {
+    actorId:   actorSnapshot.id,
+    action:    actionId,
+    targetId:  ctx.target?.id,
+    checkRoll,
+    guardId:   ctx.guardId,
+    guardRoll: ctx.dcRoll,
+    threshold: ctx.dc,
+    hit,
+    critical,
+    flaw,
+    effects: [...ctx.guardReaction.effects, ...actionEffects],
+    notes:   [...ctx.guardReaction.notes,   ...actionNotes],
+  }
+}
+
+// ─── Availability checks ──────────────────────────────────────────────────────
+
+/**
+ * True if the combatant meets all prerequisites and conditions to use this action.
+ * Does NOT check resource costs (see canAffordAction).
+ */
+export function canUseAction(state: CombatantState, actionId: ActionId): boolean {
+  if (isDefeated(state)) return false
+  const def = ACTION_DEFS[actionId]
+  if (def.prerequisite && state.skills[def.prerequisite.skill] < def.prerequisite.minValue) return false
+  if (def.requiresFirstAction && state.firstActionPlayed) return false
+  return true
+}
+
+/**
+ * True if the combatant has enough resources to pay this action's cost.
+ * Does NOT check prerequisites (see canUseAction).
+ */
+export function canAffordAction(state: CombatantState, actionId: ActionId): boolean {
+  if (state.lastActionPlayed) return false
+  const cost = ACTION_DEFS[actionId].cost
+  if (cost.actions   > state.actions)   return false
+  if (cost.reactions > state.reactions) return false
+  if (cost.endPlayerRound && state.status.some(id => STATUS_DEFS[id]?.preventsEndRound)) return false
+  if ((cost.fatigue ?? 0) > 0 && state.fatigue + (cost.fatigue ?? 0) >= 20) return false
+  return true
+}
+
+/** True if the defender has reactions available and the guard is usable */
+export function canUseGuard(state: CombatantState, guardId: GuardId): boolean {
+  return state.reactions >= GUARD_DEFS[guardId].cost.reactions
+      && GUARD_DEFS[guardId].isAvailable(state)
+}
+
+/** All guards currently available to this combatant */
+export function availableGuards(state: CombatantState): GuardId[] {
+  return (['absorb', 'dodge', 'parry', 'block'] as GuardId[]).filter(g => canUseGuard(state, g))
+}

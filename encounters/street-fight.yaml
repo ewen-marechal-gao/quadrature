@@ -1,0 +1,23 @@
+name: "Bagarre de rue"
+description: >
+  Combat à mains nues dans une ruelle sombre. Pas d'armes, pas de techniques
+  avancées — juste la force brute et le souffle. Le premier à s'effondrer perd.
+
+maxRounds: 20
+
+factions:
+  - name: "Cogneur"
+    persona: aggressive
+    characters:
+      - characterSheets/Brawler_powerful.yaml
+    allowedActions:
+      - unarmed-attack
+      - respiration
+
+  - name: "Endurant"
+    persona: cautious
+    characters:
+      - characterSheets/Brawler_enduring.yaml
+    allowedActions:
+      - unarmed-attack
+      - respiration
