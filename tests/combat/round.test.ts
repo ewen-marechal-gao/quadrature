@@ -175,7 +175,8 @@ describe('resolveRound — end-of-round processing', () => {
     a = applyLightWounds(a, threshold + 1)  // one above the limit
     const { states } = resolveRound(new Map([[a.id, a]]), [], 1, alwaysAbsorb)
     expect(states.get('A')!.heavyWounds).toBe(1)
-    expect(states.get('A')!.lightWounds).toBe(0)
+    // Only the excess is removed; wounds up to the threshold carry over
+    expect(states.get('A')!.lightWounds).toBe(threshold)
   })
 
   it('light wounds exactly at the resistance threshold do NOT convert', () => {

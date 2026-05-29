@@ -36,6 +36,8 @@ export function initCombatant(char: Character): CombatantState {
     fatigue:           0,
     mentalState:       'focused',
     status:            [],
+    protection:        char.protection ?? 0,
+    tempProtection:    0,
     actions:           3,
     firstActionPlayed: false,
     lastActionPlayed:  false,
@@ -229,14 +231,45 @@ export function applyLightWounds(state: CombatantState, amount: number): Combata
 
 /**
  * Apply one heavy wound 💔 to a randomly chosen physical characteristic.
- * The wound is capped so the characteristic's effective value cannot go below 0.
- * Also increments the `heavyWounds` counter used for logging and DC calculations.
+ *
+ * Protection absorption (unless bypassProtection = true):
+ *   - Temporary protection points are consumed first (1 per wound absorbed).
+ *   - If tempProtection is exhausted, base protection is consumed next.
+ *   - Only when both pools are at 0 does the wound actually land.
+ *   - Pass bypassProtection = true for hemorrhage-triggered conversions
+ *     (§Hémorragie: ignores armor).
+ *
+ * Selection: only characteristics that still have remaining capacity (effective
+ * value > 0) are eligible. This matches the tabletop intent where each heavy
+ * wound actually reduces a characteristic point — it is never wasted on an
+ * already-exhausted slot.
+ *
+ * After applying, checks if ALL physical characteristics have been fully
+ * wounded (effective value = 0). If so, applies the 'near-death' status
+ * (§ Aux portes de la Mort: the character can no longer act).
  */
-export function applyHeavyWound(state: CombatantState): CombatantState {
-  const targetName = randomPhysicalChar()
+export function applyHeavyWound(state: CombatantState, bypassProtection = false): CombatantState {
+  // Absorb via temporary protection first, then base protection
+  if (!bypassProtection) {
+    if (state.tempProtection > 0) {
+      return { ...state, tempProtection: state.tempProtection - 1 }
+    }
+    if (state.protection > 0) {
+      return { ...state, protection: state.protection - 1 }
+    }
+  }
+
+  // Pick from characteristics that still have wound capacity
+  const eligible = PHYSICAL_CHARACTERISTICS.filter(name => {
+    const c = state.characteristics[name]
+    return c.value - c.wounds > 0
+  })
+  // If all are already exhausted (should not happen outside tests), fall back
+  const pool       = eligible.length > 0 ? eligible : PHYSICAL_CHARACTERISTICS
+  const targetName = pool[Math.floor(Math.random() * pool.length)]
   const current    = state.characteristics[targetName]
-  const newWounds  = Math.min(current.wounds + 1, current.value)
-  return {
+  const newWounds  = current.wounds + 1
+  let s: CombatantState = {
     ...state,
     heavyWounds: state.heavyWounds + 1,
     characteristics: {
@@ -244,12 +277,25 @@ export function applyHeavyWound(state: CombatantState): CombatantState {
       [targetName]: { ...current, wounds: newWounds },
     },
   }
+  // Check "Aux portes de la Mort": all physical characteristics at effective value 0
+  if (!s.status.includes('near-death') && !s.status.includes('incapacitated')) {
+    const allExhausted = PHYSICAL_CHARACTERISTICS.every(name => {
+      const c = s.characteristics[name]
+      return c.value - c.wounds <= 0
+    })
+    if (allExhausted) s = addStatus(s, 'near-death')
+  }
+  return s
 }
 
 /**
  * End-of-round processing:
- *  1. If lightWounds > resistanceThreshold → 1 heavy wound, lightWounds reset to 0
- *  2. For each active status, call its onRoundEnd hook and apply the resulting effects
+ *  1. Wound overflow: if lightWounds > resistanceThreshold → 1 heavy wound
+ *     - Hemorrhage active   → bypasses Protection (§Hémorragie ignores armor)
+ *     - No hemorrhage       → heavy wound is absorbed by tempProtection / protection
+ *     - Either way, only the excess above the threshold is removed (carry-over rule)
+ *  2. Temporary protection expires: any remaining tempProtection cleared to 0
+ *  3. Status end-of-round hooks
  *
  * Status hooks are called on the state snapshot from the start of this function
  * so they do not see each other's effects within the same tick.
@@ -258,16 +304,21 @@ export function processRoundEnd(state: CombatantState): CombatantState {
   let s = state
 
   // 1. Wound overflow
-  if (s.lightWounds > resistanceThreshold(s)) {
-    s = applyHeavyWound(s)
-    s = { ...s, lightWounds: 0 }
-    // Hémorragie: one 🩸 token consumed per conversion (binary approximation: status removed)
-    if (s.status.includes('hemorrhage')) {
-      s = removeStatus(s, 'hemorrhage')
+  const threshold = resistanceThreshold(s)
+  if (s.lightWounds > threshold) {
+    // Hémorragie bypasses protection; normal overflow respects it.
+    const hasHemorrhage = s.status.includes('hemorrhage')
+    s = applyHeavyWound(s, /* bypassProtection = */ hasHemorrhage)
+    s = { ...s, lightWounds: threshold }  // only the excess is removed (carry-over)
+    if (hasHemorrhage) {
+      s = removeStatus(s, 'hemorrhage')   // one 🩸 token consumed per conversion
     }
   }
 
-  // 2. Status end-of-round hooks (iterate over original status list to avoid
+  // 2. Temporary protection expires at round end
+  s = { ...s, tempProtection: 0 }
+
+  // 3. Status end-of-round hooks (iterate over original status list to avoid
   //    re-triggering statuses added by hooks within the same tick)
   for (const statusId of state.status) {
     const hook = STATUS_DEFS[statusId]?.onRoundEnd
@@ -336,12 +387,18 @@ export function shiftMentalState(
  * Add a status effect (deduplicates silently).
  * If the status has drainReactions = true, all reaction tokens are set to 0
  * immediately (e.g. Sonné drains reactions at the moment it is applied).
+ * If the status has drainActions = N, N action tokens are spent immediately
+ * (affects the current round, not deferred to the next).
  */
 export function addStatus(state: CombatantState, effect: StatusEffect): CombatantState {
   if (state.status.includes(effect)) return state
   let s = { ...state, status: [...state.status, effect] }
   if (STATUS_DEFS[effect]?.drainReactions) {
     s = { ...s, reactions: 0 }
+  }
+  const drainAct = STATUS_DEFS[effect]?.drainActions ?? 0
+  if (drainAct > 0) {
+    s = { ...s, actions: Math.max(0, s.actions - drainAct) }
   }
   return s
 }
@@ -394,9 +451,10 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'add-status':     return addStatus(s, effect.status)
     case 'remove-status':  return removeStatus(s, effect.status)
     case 'spend-actions':  return { ...s, actions: Math.max(0, s.actions - effect.amount) }
-    case 'add-reaction':   return addReaction(s, effect.amount)
-    case 'spend-reaction': return spendReaction(s)
-    case 'shift-mental':   return shiftMentalState(s, effect.direction)
+    case 'add-reaction':        return addReaction(s, effect.amount)
+    case 'spend-reaction':      return spendReaction(s)
+    case 'shift-mental':        return shiftMentalState(s, effect.direction)
+    case 'add-temp-protection': return { ...s, tempProtection: s.tempProtection + effect.amount }
   }
 }
 
@@ -427,18 +485,15 @@ export function toCombatantSnapshot(state: CombatantState): CombatantSnapshot {
     if (w > 0) charWounds[name] = w
   }
   return {
-    id:          state.id,
-    lightWounds: state.lightWounds,
-    heavyWounds: state.heavyWounds,
-    fatigue:     state.fatigue,
-    mentalState: state.mentalState,
-    status:      [...state.status],
+    id:             state.id,
+    lightWounds:    state.lightWounds,
+    heavyWounds:    state.heavyWounds,
+    fatigue:        state.fatigue,
+    mentalState:    state.mentalState,
+    status:         [...state.status],
     charWounds,
+    protection:     state.protection,
+    tempProtection: state.tempProtection,
   }
 }
 
-// ─── Internal helpers ─────────────────────────────────────────────────────────
-
-function randomPhysicalChar(): CharacteristicName {
-  return PHYSICAL_CHARACTERISTICS[Math.floor(Math.random() * PHYSICAL_CHARACTERISTICS.length)]
-}

@@ -38,7 +38,8 @@ export type StatusEffect =
   | 'stunned'       // 💫 Sonné       : −1 PA next round
   | 'knockdown'     // 🔻 À terre     : −1 PA next round (must spend action to stand)
   | 'winded'        // 💨 Essoufflé   : cannot use 🔴 token (endPlayerRound actions blocked)
-  | 'incapacitated' // ❌ Incapacité  : out of combat
+  | 'incapacitated' // ❌ Incapacité  : out of combat (fatigue ≥ 20)
+  | 'near-death'    // 😵 Aux portes de la Mort : out of combat (all physical characteristics at 0)
 
 // ─── Action economy ───────────────────────────────────────────────────────────
 
@@ -100,6 +101,19 @@ export interface CombatantState {
   /** Active status effects */
   status: StatusEffect[]
 
+  // ── Protection ──────────────────────────────────────────────────────────────
+  /**
+   * Remaining base protection points 🛡️ (from armor/equipment).
+   * Each point absorbs one incoming heavy wound 💔 (consumed on use).
+   * Hemorrhage bypasses this pool entirely (§Hémorragie).
+   */
+  protection:     number
+  /**
+   * Remaining temporary protection points 🛡️ — consumed before base protection.
+   * Granted by Block critical; cleared at round-end cleanup whether used or not.
+   */
+  tempProtection: number
+
   // ── Action economy ──────────────────────────────────────────────────────────
   /** Remaining Points d'Action this round (starts at 3: one 🟢 + one ⚫ + one 🔴) */
   actions:           number
@@ -130,7 +144,8 @@ export type CombatEffect = { targetId: string } & (
   | { kind: 'spend-actions';  amount: number }  // lose PA (flaw penalty etc.)
   | { kind: 'add-reaction';   amount: number }
   | { kind: 'spend-reaction' }                  // defender uses a guard (costs 1 ⚡)
-  | { kind: 'shift-mental';   direction: 'toward-terror' | 'toward-rage' | 'toward-focused' }
+  | { kind: 'shift-mental';        direction: 'toward-terror' | 'toward-rage' | 'toward-focused' }
+  | { kind: 'add-temp-protection'; amount: number }
 )
 
 // ─── Resolution records ───────────────────────────────────────────────────────
@@ -176,28 +191,36 @@ export interface MaintenanceEntry {
 
 /** Snapshot of a combatant's vitals at a single point in time */
 export interface CombatantSnapshot {
-  id:          string
-  lightWounds: number
-  heavyWounds: number
-  fatigue:     number
-  mentalState: MentalState
-  status:      StatusEffect[]
+  id:             string
+  lightWounds:    number
+  heavyWounds:    number
+  fatigue:        number
+  mentalState:    MentalState
+  status:         StatusEffect[]
   /** Only characteristics that have at least 1 wound (saves space) */
-  charWounds:  Partial<Record<CharacteristicName, number>>
+  charWounds:     Partial<Record<CharacteristicName, number>>
+  /** Remaining base protection points at this moment */
+  protection:     number
+  /** Remaining temporary protection points at this moment */
+  tempProtection: number
 }
 
 /** Log entry for a single action within a phase */
 export interface ActionLogEntry {
-  actorId:     string
-  action:      ActionId
-  targetId?:   string
-  checkRoll?: RollResult
-  guardId?:   GuardId
-  guardRoll?: RollResult
-  threshold:   number
-  hit:         boolean
-  effects:     CombatEffect[]
-  notes:       string[]
+  actorId:        string
+  action:         ActionId
+  targetId?:      string
+  checkRoll?:     RollResult
+  guardId?:       GuardId
+  guardRoll?:     RollResult
+  threshold:      number
+  hit:            boolean
+  effects:        CombatEffect[]
+  notes:          string[]
+  /** PA (⚫) available to the actor at the start of this wave, before cost was spent */
+  actorActions:   number
+  /** Reactions (⚡) available to the actor at the start of this wave */
+  actorReactions: number
 }
 
 /** All simultaneous actions sharing the same initiative value */

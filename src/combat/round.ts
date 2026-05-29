@@ -151,6 +151,9 @@ function resolveWave(
 
       const def = ACTION_DEFS[plan.action]
 
+      // Tokens the actor had at the start of this wave (before cost was spent)
+      const preSpend = inputStates.get(plan.actorId)
+
       // ── Self-targeted actions (Respiration, Stabiliser) ──────────────────
       if (def.selfTargeted) {
         // DC uses the live state (most current before this phase) for dynamic values
@@ -161,7 +164,7 @@ function resolveWave(
         }
         const resolved = resolveAction(actorSnap, plan.action, ctx)
         phaseEffects.push(...resolved.effects)
-        actionLogs.push(toActionLogEntry(resolved))
+        actionLogs.push(toActionLogEntry(resolved, preSpend?.actions ?? 0, preSpend?.reactions ?? 0))
         continue
       }
 
@@ -186,7 +189,7 @@ function resolveWave(
       }
       const resolved = resolveAction(actorSnap, plan.action, ctx)
       phaseEffects.push(...resolved.effects)
-      actionLogs.push(toActionLogEntry(resolved))
+      actionLogs.push(toActionLogEntry(resolved, preSpend?.actions ?? 0, preSpend?.reactions ?? 0))
     }
 
     // c. Apply all effects collected in this phase at once
@@ -366,23 +369,32 @@ function getOrRollGuard(
 
   const gd        = GUARD_DEFS[guardId]
   const guardRoll = gd.rollDC(targetSnap)
-  const reaction  = gd.effects({ flaw: guardRoll.flaw }, targetSnap, /* isFirstUse */ true)
+  const reaction  = gd.effects(
+    { flaw: guardRoll.flaw, critical: guardRoll.critical },
+    targetSnap, /* isFirstUse */ true,
+  )
 
   cache.set(targetId, { guardId, roll: guardRoll })
   return { guardId, guardRoll, reaction }
 }
 
-function toActionLogEntry(resolved: ResolvedAction): ActionLogEntry {
+function toActionLogEntry(
+  resolved:       ResolvedAction,
+  actorActions:   number,
+  actorReactions: number,
+): ActionLogEntry {
   return {
-    actorId:   resolved.actorId,
-    action:    resolved.action,
-    targetId:  resolved.targetId,
-    checkRoll: resolved.checkRoll,
-    guardId:   resolved.guardId,
-    guardRoll: resolved.guardRoll,
-    threshold: resolved.threshold,
-    hit:       resolved.hit,
-    effects:   resolved.effects,
-    notes:     resolved.notes,
+    actorId:        resolved.actorId,
+    action:         resolved.action,
+    targetId:       resolved.targetId,
+    checkRoll:      resolved.checkRoll,
+    guardId:        resolved.guardId,
+    guardRoll:      resolved.guardRoll,
+    threshold:      resolved.threshold,
+    hit:            resolved.hit,
+    effects:        resolved.effects,
+    notes:          resolved.notes,
+    actorActions,
+    actorReactions,
   }
 }

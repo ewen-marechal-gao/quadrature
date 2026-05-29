@@ -1,4 +1,6 @@
-name: "Precise Duelist"
+name: "Precise Duelist 🫰"
+inventory:
+  protection: 2
 people:
   name: Humain
   caracs: []
@@ -7,7 +9,7 @@ origin:
   caracs:
     - vigor
   skills:
-    - precision
+    - power
     - endurance
 training:
   skills:
@@ -17,12 +19,12 @@ characteristics:
   strength:
     value: 1
     wounds: 0
-    power: 0
+    power: 1
     robustness: 0
   agility:
     value: 2
     wounds: 0
-    precision: 2
+    precision: 1
     mobility: 1
   vigor:
     value: 2

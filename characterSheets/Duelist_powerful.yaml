@@ -1,21 +1,23 @@
-name: "Powerful Duelist"
+name: "Powerful Duelist 💪"
+inventory:
+  protection: 2
 people:
   name: Humain
   caracs: []
   skills: []
 origin:
   caracs:
-    - vigor
-  skills:
-    - power
-    - endurance
-training:
+    - strength
   skills:
     - power
     - robustness
+training:
+  skills:
+    - power
+    - recovery
 characteristics:
   strength:
-    value: 2
+    value: 3
     wounds: 0
     power: 2
     robustness: 1
@@ -28,7 +30,7 @@ characteristics:
     value: 2
     wounds: 0
     endurance: 1
-    recovery: 0
+    recovery: 1
   grace:
     value: 1
     wounds: 0

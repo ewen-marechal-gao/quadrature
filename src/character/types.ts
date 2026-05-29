@@ -63,6 +63,12 @@ export interface Character {
   training?: TrainingChoice
   characteristics: Record<CharacteristicName, CharacteristicState>
   skills:          Record<SkillName, number>
+  /**
+   * Base protection 🛡️ from armor / equipment.
+   * Each point absorbs one incoming heavy wound 💔; defaults to 0 if absent.
+   * Hemorrhage bypasses this protection entirely.
+   */
+  protection?: number
 }
 
 /** Stats computed from the character sheet — never stored, always derived */

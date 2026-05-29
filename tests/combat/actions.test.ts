@@ -169,12 +169,11 @@ describe('respiration resolve', () => {
     expect(effects).toContainEqual({ targetId: 'A', kind: 'spend-actions', amount: 1 })
   })
 
-  it('endurance ≥ 1 on hit → shifts mental state toward-calm', () => {
+  it('no shift-mental effect (removed from respiration)', () => {
     const actor = makeCombatant('A')
-    expect(actor.skills.endurance).toBeGreaterThanOrEqual(1)
     const { effects } = ACTION_DEFS['respiration'].resolve(
       { hit: true, critical: false, flaw: false }, actor)
-    expect(effects).toContainEqual({ targetId: 'A', kind: 'shift-mental', direction: 'toward-calm' })
+    expect(effects.every(fx => fx.kind !== 'shift-mental')).toBe(true)
   })
 })
 
@@ -216,6 +215,24 @@ describe('stabilize resolve', () => {
 })
 
 // ─── GuardDef.effects ─────────────────────────────────────────────────────────
+
+describe('GUARD_DEFS[absorb] — attackerAdvantage', () => {
+  it('absorb grants 1 attacker advantage (passive guard penalty)', () => {
+    expect(GUARD_DEFS['absorb'].attackerAdvantage).toBe(1)
+  })
+
+  it('dodge grants no attacker advantage', () => {
+    expect(GUARD_DEFS['dodge'].attackerAdvantage ?? 0).toBe(0)
+  })
+
+  it('parry grants no attacker advantage', () => {
+    expect(GUARD_DEFS['parry'].attackerAdvantage ?? 0).toBe(0)
+  })
+
+  it('block grants no attacker advantage', () => {
+    expect(GUARD_DEFS['block'].attackerAdvantage ?? 0).toBe(0)
+  })
+})
 
 describe('GUARD_DEFS[absorb].effects', () => {
   const defender = makeCombatant('B')
@@ -260,6 +277,37 @@ describe('GUARD_DEFS[parry].effects — same reaction cost as dodge', () => {
   it('first use: spends 1 reaction', () => {
     const { effects } = GUARD_DEFS['parry'].effects({ flaw: false }, makeCombatant('B'), true)
     expect(effects).toContainEqual({ targetId: 'B', kind: 'spend-reaction' })
+  })
+})
+
+describe('GUARD_DEFS[block].effects — critical grants temporary protection', () => {
+  const defender = makeCombatant('B')
+
+  it('critical → adds 1 temporary protection 🛡️ to the defender', () => {
+    const { effects } = GUARD_DEFS['block'].effects({ flaw: false, critical: true }, defender, true)
+    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-temp-protection', amount: 1 })
+  })
+
+  it('no critical → no temp-protection effect', () => {
+    const { effects } = GUARD_DEFS['block'].effects({ flaw: false, critical: false }, defender, true)
+    expect(effects.some(e => e.kind === 'add-temp-protection')).toBe(false)
+  })
+
+  it('critical note mentions protection temporaire', () => {
+    const { notes } = GUARD_DEFS['block'].effects({ flaw: false, critical: true }, defender, true)
+    expect(notes.some(n => n.includes('🛡️'))).toBe(true)
+  })
+
+  it('critical with first use: spends reaction AND adds temp protection', () => {
+    const { effects } = GUARD_DEFS['block'].effects({ flaw: false, critical: true }, defender, true)
+    expect(effects).toContainEqual({ targetId: 'B', kind: 'spend-reaction' })
+    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-temp-protection', amount: 1 })
+  })
+
+  it('flaw with critical: fatigue + temp protection both applied', () => {
+    const { effects } = GUARD_DEFS['block'].effects({ flaw: true, critical: true }, defender, true)
+    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-fatigue', amount: 1 })
+    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-temp-protection', amount: 1 })
   })
 })
 
@@ -349,6 +397,28 @@ describe('resolveAction', () => {
     expect(r.actorId).toBe('A')
     expect(r.action).toBe('armed-attack')
     expect(r.targetId).toBe('B')
+  })
+
+  it('guardId=absorb → note mentions avantage Encaisser', () => {
+    // The note must be present regardless of the roll outcome
+    for (let i = 0; i < 5; i++) {
+      const r = resolveAction(actor, 'armed-attack', {
+        dc: 0, guardId: 'absorb', guardReaction: noReaction, target,
+      })
+      expect(r.notes.some(n => n.includes('Encaisser'))).toBe(true)
+    }
+  })
+
+  it('guardId=dodge → no Encaisser advantage note', () => {
+    const r = resolveAction(actor, 'armed-attack', {
+      dc: 0, guardId: 'dodge', guardReaction: noReaction, target,
+    })
+    expect(r.notes.some(n => n.includes('Encaisser'))).toBe(false)
+  })
+
+  it('no guardId → no Encaisser advantage note', () => {
+    const r = resolveAction(actor, 'armed-attack', { dc: 0, guardReaction: noReaction, target })
+    expect(r.notes.some(n => n.includes('Encaisser'))).toBe(false)
   })
 })
 

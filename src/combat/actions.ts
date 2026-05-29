@@ -67,6 +67,26 @@ export interface GuardDef {
   cost:        ActionCost
   rollChar:    CharacteristicName
   rollSkill:   SkillName
+  /**
+   * Reaction speed of this guard.
+   * A guard can only be used against attacks whose initiative is strictly higher:
+   *   guardDef.initiative < attackDef.initiative
+   *
+   * Lower = faster = usable against more attacks.
+   *   absorb  0  — passive; always available (no initiative constraint)
+   *   dodge   2  — quick sidestep; reacts to sharp/unarmed(3), armed(5), brutal(6)
+   *   parry   4  — weapon discipline; reacts to armed(5), brutal(6) only
+   *   block   5  — heavy block; only reacts to brutal-strike(6)
+   */
+  initiative:  number
+  /**
+   * Number of 🟩 advantage dice granted to the **attacker** when this guard is chosen.
+   *
+   * Encaisser (absorb) grants 1 advantage: the defender accepts the blow without
+   * actively resisting, so the attacker rolls with a free advantage die.
+   * Active guards (dodge, parry, block) grant no advantage to the attacker.
+   */
+  attackerAdvantage?: number
   isAvailable: (defender: CombatantState) => boolean
   /**
    * Roll this guard and return the full result.
@@ -79,9 +99,12 @@ export interface GuardDef {
    * isFirstUse = true  → first attack on this target this round:
    *   non-absorb guards spend 1 reaction; flaw = +1💧 to defender.
    * isFirstUse = false → cached guard reused; no additional cost or effect.
+   *
+   * critical is optional (most guards ignore it); Block uses it to grant
+   * +1 🛡️ temporary protection on a critical roll (§Blocage).
    */
   effects(
-    outcome:    { flaw: boolean },
+    outcome:    { flaw: boolean; critical?: boolean },
     defender:   CombatantState,
     isFirstUse: boolean,
   ): { effects: CombatEffect[]; notes: string[] }
@@ -120,7 +143,7 @@ function makeGuardRoll(char: CharacteristicName, skill: SkillName) {
  */
 function makeGuardEffects(reactionCost: number) {
   return (
-    outcome:    { flaw: boolean },
+    outcome:    { flaw: boolean; critical?: boolean },
     defender:   CombatantState,
     isFirstUse: boolean,
   ): { effects: CombatEffect[]; notes: string[] } => {
@@ -176,7 +199,7 @@ export const ACTION_DEFS: Record<ActionId, ActionDef> = {
     id: 'armed-attack', label: 'Attaque armée',
     description: 'Frappe avec une arme. Succès : 3💢 sur la cible, Échec : 1💢. Critique : cible à terre 🔻. Défaut : +1💧 pour toi.',
     initiative: 5,
-    cost: { actions: 2, reactions: 0, endPlayerRound: false },
+    cost: { actions: 2, reactions: 0, fatigue: 0, endPlayerRound: false },
     requiresFirstAction: false,
     rollChar: 'strength', rollSkill: 'power',
     selfTargeted: false,
@@ -232,7 +255,7 @@ export const ACTION_DEFS: Record<ActionId, ActionDef> = {
     id: 'brutal-strike', label: 'Frappe brutale',
     description: 'Coup dévastateur à haut risque. Succès : 1💔 blessure grave, Échec : 2💢. Critique : cible sonnée 💫. Coûte 1💧 à toi en plus des PA.',
     initiative: 6,
-    cost: { actions: 2, reactions: 0, endPlayerRound: false, fatigue: 1 },
+    cost: { actions: 2, reactions: 0, endPlayerRound: false, fatigue: 2 },
     prerequisite: { skill: 'power', minValue: 1 },
     requiresFirstAction: false,
     rollChar: 'strength', rollSkill: 'power',
@@ -359,8 +382,12 @@ export const ACTION_DEFS: Record<ActionId, ActionDef> = {
 export const GUARD_DEFS: Record<GuardId, GuardDef> = {
 
   // Encaisser: passive default — costs 0 reactions, always available
+  // initiative 0: can always absorb any attack (no speed constraint)
+  // attackerAdvantage 1: no active resistance → attacker rolls with 1🟩
   absorb: {
     id: 'absorb', label: 'Encaisser',
+    initiative: 0,
+    attackerAdvantage: 1,
     cost: { actions: 0, reactions: 0, endPlayerRound: false },
     rollChar: 'vigor', rollSkill: 'recovery',
     isAvailable: () => true,
@@ -369,8 +396,10 @@ export const GUARD_DEFS: Record<GuardId, GuardDef> = {
   },
 
   // Esquive: active reaction — costs 1⚡ on first use
+  // initiative 2: quick sidestep, reacts to sharp-strike(3), armed-attack(5), brutal-strike(6)
   dodge: {
     id: 'dodge', label: 'Esquive',
+    initiative: 2,
     cost: { actions: 0, reactions: 1, endPlayerRound: false },
     rollChar: 'agility', rollSkill: 'mobility',
     isAvailable: (d) => !isDefeated(d),
@@ -379,8 +408,10 @@ export const GUARD_DEFS: Record<GuardId, GuardDef> = {
   },
 
   // Parade: active reaction — costs 1⚡; requires a weapon (power ≥ 1 as proxy)
+  // initiative 4: weapon discipline, reacts to armed-attack(5) and brutal-strike(6)
   parry: {
     id: 'parry', label: 'Parade',
+    initiative: 4,
     cost: { actions: 0, reactions: 1, endPlayerRound: false },
     rollChar: 'acuity', rollSkill: 'vigilance',
     isAvailable: (d) => d.skills.power >= 1,
@@ -389,13 +420,31 @@ export const GUARD_DEFS: Record<GuardId, GuardDef> = {
   },
 
   // Blocage: active reaction — costs 1⚡; requires a shield (robustness ≥ 2 as proxy)
+  // initiative 5: heavy block, only reacts to brutal-strike(6)
+  // ✴️ Critical: the shield absorbs the blow → defender gains +1 temporary protection 🛡️
   block: {
     id: 'block', label: 'Blocage',
+    initiative: 5,
     cost: { actions: 0, reactions: 1, endPlayerRound: false },
     rollChar: 'strength', rollSkill: 'robustness',
     isAvailable: (d) => d.skills.robustness >= 2,
-    rollDC:  makeGuardRoll('strength', 'robustness'),
-    effects: makeGuardEffects(1),
+    rollDC: makeGuardRoll('strength', 'robustness'),
+    effects(outcome, defender, isFirstUse) {
+      const effects: CombatEffect[] = []
+      const notes:   string[]       = []
+      if (isFirstUse) {
+        effects.push({ targetId: defender.id, kind: 'spend-reaction' })
+      }
+      if (outcome.flaw) {
+        effects.push({ targetId: defender.id, kind: 'add-fatigue', amount: 1 })
+        notes.push('⚠️ Défaut de Garde — défenseur +1💧')
+      }
+      if (outcome.critical) {
+        effects.push({ targetId: defender.id, kind: 'add-temp-protection', amount: 1 })
+        notes.push('✴️ Critique — bouclier absorbe le choc (+1🛡️ temporaire)')
+      }
+      return { effects, notes }
+    },
   },
 }
 
@@ -421,9 +470,14 @@ export function resolveAction(
   const targetAdvantages = ctx.target
     ? ctx.target.status.reduce((sum, id) => sum + (STATUS_DEFS[id]?.attackerAdvantage ?? 0), 0)
     : 0
+  // Accumulate 🟩 advantages from the guard choice (Encaisser grants 1 advantage to the attacker)
+  const guardAdvantage = ctx.guardId != null
+    ? (GUARD_DEFS[ctx.guardId].attackerAdvantage ?? 0)
+    : 0
+  const totalAdvantages = targetAdvantages + guardAdvantage
   const checkRoll = roll(buildPool(
     rollParamsFrom(actorSnapshot, action.rollChar, action.rollSkill,
-      targetAdvantages > 0 ? { advantages: targetAdvantages } : {}),
+      totalAdvantages > 0 ? { advantages: totalAdvantages } : {}),
   ))
 
   const hit      = checkRoll.total >= ctx.dc
@@ -432,6 +486,11 @@ export function resolveAction(
 
   const { effects: actionEffects, notes: actionNotes } =
     action.resolve({ hit, critical, flaw }, actorSnapshot, ctx.target)
+
+  // Log the guard-based advantage so it appears in the action trace
+  const guardAdvantageNotes: string[] = guardAdvantage > 0
+    ? [`🟩 Avantage — Encaisser (défense passive)`]
+    : []
 
   return {
     actorId:   actorSnapshot.id,
@@ -445,7 +504,7 @@ export function resolveAction(
     critical,
     flaw,
     effects: [...ctx.guardReaction.effects, ...actionEffects],
-    notes:   [...ctx.guardReaction.notes,   ...actionNotes],
+    notes:   [...ctx.guardReaction.notes, ...guardAdvantageNotes, ...actionNotes],
   }
 }
 

@@ -15,11 +15,17 @@ interface YamlCharacteristicBlock {
   [skill: string]: number   // the 2 skills belonging to this characteristic
 }
 
+interface YamlInventory {
+  /** Base protection points 🛡️ from armor/equipment */
+  protection?: number
+}
+
 interface YamlShape {
-  name:    string
-  people?: { name: string; caracs: string[]; skills: string[] }
-  origin?: { caracs: string[]; skills: string[] }
-  training?: { skills: string[] }
+  name:       string
+  inventory?: YamlInventory
+  people?:    { name: string; caracs: string[]; skills: string[] }
+  origin?:    { caracs: string[]; skills: string[] }
+  training?:  { skills: string[] }
   characteristics: Record<string, YamlCharacteristicBlock>
 }
 
@@ -43,8 +49,12 @@ export function serializeToYaml(char: Character): string {
     }
   }
 
+  const inventoryBlock: YamlInventory = {}
+  if ((char.protection ?? 0) > 0) inventoryBlock.protection = char.protection
+
   const yamlObj: YamlShape = {
     name: char.name,
+    ...(Object.keys(inventoryBlock).length > 0 && { inventory: inventoryBlock }),
     ...(char.people   && { people:   char.people }),
     ...(char.origin   && { origin:   char.origin }),
     ...(char.training && { training: char.training }),
@@ -86,11 +96,16 @@ export function deserializeFromYaml(yamlStr: string): Character {
     }
   }
 
+  const protection = raw.inventory?.protection
+    ? Number(raw.inventory.protection)
+    : undefined
+
   const char: Character = {
     name: raw.name,
-    ...(raw.people   && { people:   raw.people   as PeopleChoice }),
-    ...(raw.origin   && { origin:   raw.origin   as OriginChoice }),
-    ...(raw.training && { training: raw.training as TrainingChoice }),
+    ...(raw.people    && { people:     raw.people   as PeopleChoice }),
+    ...(raw.origin    && { origin:     raw.origin   as OriginChoice }),
+    ...(raw.training  && { training:   raw.training as TrainingChoice }),
+    ...(protection != null && protection > 0 && { protection }),
     characteristics,
     skills,
   }
