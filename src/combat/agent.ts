@@ -182,16 +182,32 @@ function makePlanActionTool(usable: ActionId[]): ToolDefinition {
       parameters:  {
         type:       'object',
         properties: {
+          reasoning: {
+            type:        'string',
+            description:
+              'Ton raisonnement interne : pourquoi ce choix, quels risques, quelle tactique. ' +
+              'Non visible par ton adversaire — parle librement.',
+          },
           action: {
             type:        'string',
             enum:        usable,
             description: "L'action à effectuer ce tour.",
           },
+          battleCry: {
+            type:        'string',
+            description:
+              'Une courte expression à voix haute : cri de guerre, provocation, réaction à la douleur… ' +
+              'Visible de tous. Cohérent avec ta persona.',
+          },
         },
-        required: ['action'],
+        required: ['reasoning', 'action', 'battleCry'],
       },
     },
-    handler: async (args) => new ToolHalt((args as { action: string }).action),
+    handler: async (args) => {
+      const a = args as { action: string; battleCry: string; reasoning: string }
+      // Le halt encode action|battleCry|reasoning pour transmission à planRoundAI
+      return new ToolHalt(JSON.stringify({ action: a.action, battleCry: a.battleCry, reasoning: a.reasoning }))
+    },
   }
 }
 
@@ -226,13 +242,24 @@ export async function planRoundAI(
       .withTools([PlanActionTool], { choice: 'required', calls: 'one' })
       .ask(buildCombatPrompt(self, opponent, unlocked, usable))
 
-    const actionId = response.content.trim() as ActionId
+    // Le halt a encodé les trois champs en JSON
+    const parsed = JSON.parse(response.content.trim()) as {
+      action:    string
+      battleCry: string
+      reasoning: string
+    }
 
+    const actionId = parsed.action as ActionId
     if (!usable.includes(actionId)) {
       throw new Error(`AI agent: illegal action "${actionId}" (not in usable list)`)
     }
 
-    const plan: PlannedAction = { actorId: self.id, action: actionId }
+    const plan: PlannedAction = {
+      actorId:   self.id,
+      action:    actionId,
+      battleCry: parsed.battleCry || undefined,
+      reasoning: parsed.reasoning || undefined,
+    }
     if (!ACTION_DEFS[actionId].selfTargeted) {
       plan.targetId = config.targetId
     }

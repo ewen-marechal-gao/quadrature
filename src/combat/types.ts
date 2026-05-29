@@ -221,6 +221,10 @@ export interface ActionLogEntry {
   actorActions:   number
   /** Reactions (⚡) available to the actor at the start of this wave */
   actorReactions: number
+  /** Cri de guerre, provocation ou réaction émotionnelle — visible de tous (agent LLM) */
+  battleCry?:     string
+  /** Raisonnement interne de l'agent — invisible à l'adversaire, affiché en grisé dans les logs */
+  reasoning?:     string
 }
 
 /** All simultaneous actions sharing the same initiative value */

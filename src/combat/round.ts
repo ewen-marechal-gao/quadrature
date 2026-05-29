@@ -61,6 +61,10 @@ export interface PlannedAction {
   action:     ActionId
   /** Target of an offensive action. Undefined for self-targeted actions. */
   targetId?:  string
+  /** Cri de guerre ou réaction émotionnelle — visible dans les logs (agent LLM) */
+  battleCry?: string
+  /** Raisonnement interne de l'agent — non transmis à l'adversaire (agent LLM) */
+  reasoning?: string
 }
 
 /**
@@ -164,7 +168,7 @@ function resolveWave(
         }
         const resolved = resolveAction(actorSnap, plan.action, ctx)
         phaseEffects.push(...resolved.effects)
-        actionLogs.push(toActionLogEntry(resolved, preSpend?.actions ?? 0, preSpend?.reactions ?? 0))
+        actionLogs.push(toActionLogEntry(resolved, preSpend?.actions ?? 0, preSpend?.reactions ?? 0, plan.battleCry, plan.reasoning))
         continue
       }
 
@@ -189,7 +193,7 @@ function resolveWave(
       }
       const resolved = resolveAction(actorSnap, plan.action, ctx)
       phaseEffects.push(...resolved.effects)
-      actionLogs.push(toActionLogEntry(resolved, preSpend?.actions ?? 0, preSpend?.reactions ?? 0))
+      actionLogs.push(toActionLogEntry(resolved, preSpend?.actions ?? 0, preSpend?.reactions ?? 0, plan.battleCry, plan.reasoning))
     }
 
     // c. Apply all effects collected in this phase at once
@@ -383,6 +387,8 @@ function toActionLogEntry(
   resolved:       ResolvedAction,
   actorActions:   number,
   actorReactions: number,
+  battleCry?:     string,
+  reasoning?:     string,
 ): ActionLogEntry {
   return {
     actorId:        resolved.actorId,
@@ -397,5 +403,7 @@ function toActionLogEntry(
     notes:          resolved.notes,
     actorActions,
     actorReactions,
+    ...(battleCry && { battleCry }),
+    ...(reasoning && { reasoning }),
   }
 }

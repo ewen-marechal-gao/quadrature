@@ -379,9 +379,17 @@ function printAction(e: ActionLogEntry): void {
     line = `    ${tokens}${e.actorId}: ${e.action} ${roll}${dc}${outcome}`
   }
 
+  // Cri de guerre — visible de tous, affiché avant le résultat
+  if (e.battleCry) {
+    console.log(`    ${colors.cyan(`💬 "${e.battleCry}"`)}`)
+  }
   console.log(line)
   for (const note of e.notes) {
     console.log(`      ${note}`)
+  }
+  // Raisonnement interne — non transmis à l'adversaire, affiché en grisé
+  if (e.reasoning) {
+    console.log(colors.grey(`      💭 ${e.reasoning}`))
   }
 }
 
