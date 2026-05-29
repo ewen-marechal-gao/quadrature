@@ -150,6 +150,19 @@ describe('planRound — prerequisite enforcement', () => {
 })
 
 // ─── makeGuardProvider ────────────────────────────────────────────────────────
+//
+// Guard selection is now stats-optimal + initiative-filtered (no persona bias):
+//   1. Only guards with initiative < attack.initiative are eligible.
+//   2. Among those, pick the guard with the highest effChar + skill score.
+//   3. Ties broken by active-guard preference (dodge > parry > block > absorb).
+//
+// TestFighter: AGI 3 mobility 2, VIG 3 recovery 2, ACU 2 vigilance 2.
+//   vs armed-attack (init 5): dodge(2<5 ✓), parry(4<5 ✓), absorb(0<5 ✓)
+//     dodge score = AGI 3 + mob 2 = 5 ; absorb score = VIG 3 + rec 2 = 5
+//     → tied, active-guard tiebreak → dodge wins
+//   vs sharp-strike (init 3): dodge(2<3 ✓), parry(4<3 ✗), absorb(0<3 ✓)
+//     only dodge and absorb eligible → dodge wins
+//   vs brutal-strike (init 6): all eligible → dodge wins (tie with absorb, active first)
 
 describe('makeGuardProvider', () => {
   it('always returns a guard that is in the available list', () => {
@@ -160,27 +173,48 @@ describe('makeGuardProvider', () => {
     expect(available).toContain(chosen)
   })
 
-  it('aggressive persona prefers dodge (when available)', () => {
+  it('picks dodge for TestFighter vs armed-attack (best stat profile, initiative ✓)', () => {
+    // TestFighter: dodge AGI3+mob2=5, absorb VIG3+rec2=5, parry ACU2+vig2=4
+    // dodge and absorb tied → active-guard tiebreak → dodge
     const provider = makeGuardProvider(cfgAggressive)
-    const b = makeCombatant('B')  // reactions=3 ≥ 1, not incapacitated → dodge available
+    const b = makeCombatant('B')
     const available = availableGuards(b)
     const chosen = provider('B', b, available, 'A', 'armed-attack')
     expect(chosen).toBe('dodge')
   })
 
-  it('inexperienced persona always returns absorb', () => {
-    const provider = makeGuardProvider(cfgInexperienced)
+  it('excludes parry vs sharp-strike (parry initiative 4 ≥ sharp-strike initiative 3)', () => {
+    // Only dodge(2) and absorb(0) pass the initiative filter for sharp-strike(3)
+    // TestFighter: dodge score=5 > absorb score=5, tiebreak → dodge
+    const provider = makeGuardProvider(cfgOpportunist)
     const b = makeCombatant('B')
     const available = availableGuards(b)
-    const chosen = provider('B', b, available, 'A', 'armed-attack')
+    const chosen = provider('B', b, available, 'A', 'sharp-strike')
+    expect(chosen).toBe('dodge')
+    expect(chosen).not.toBe('parry')  // parry is too slow for sharp-strike
+  })
+
+  it('picks absorb when stats favour it (high VIG+recovery, low AGI)', () => {
+    // Force a combatant with VIG 5 recovery 2, AGI 0, mobility 0
+    const lowAgi = makeCombatant('B', {
+      characteristics: {
+        ...makeCharacter().characteristics,
+        agility: { value: 0, wounds: 0 },
+        vigor:   { value: 5, wounds: 0 },
+      },
+      skills: { ...makeCharacter().skills, mobility: 0, recovery: 2 },
+    })
+    const provider = makeGuardProvider(cfgAggressive)
+    const available = availableGuards(lowAgi)
+    const chosen = provider('B', lowAgi, available, 'A', 'armed-attack')
+    // absorb: VIG5+rec2=7 ; dodge: AGI0+mob0=0 → absorb wins
     expect(chosen).toBe('absorb')
   })
 
-  it('falls back to absorb when the preferred guard is not in the available list', () => {
-    // Force an empty available list except absorb (0 reactions → no active guards)
-    const provider = makeGuardProvider(cfgAggressive)  // prefers dodge
+  it('falls back to absorb when only absorb passes the initiative filter', () => {
+    // 0 reactions → only absorb available
+    const provider = makeGuardProvider(cfgAggressive)
     const b = makeCombatant('B')
-    // Override reactions to 0 so only absorb is available
     const zeroReactions = { ...b, reactions: 0 }
     const available = availableGuards(zeroReactions)
     expect(available).toEqual(['absorb'])

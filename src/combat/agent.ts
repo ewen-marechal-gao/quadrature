@@ -44,6 +44,11 @@ export interface AgentConfig {
    * Absent or empty = no restriction (all valid actions available).
    */
   allowedActions?: ActionId[]
+  /**
+   * Override the persona's default fatigue threshold for triggering Respiration.
+   * Used by the strategy optimiser. When absent, the persona default is used.
+   */
+  respirationThreshold?: number
 }
 
 // ─── Scripted agent ───────────────────────────────────────────────────────────
@@ -135,15 +140,19 @@ export function planRound(
 /**
  * Build a GuardProvider for a scripted agent.
  *
- * The callback is invoked by resolveRound the first time this combatant is
- * attacked in a round. Guard selection follows the same persona priorities as
- * offensive planning but uses the provided `available` list directly (safe,
- * since resolveRound already filters by canUseGuard).
+ * Guard selection is stats-optimal and initiative-aware:
+ *  1. Filter: keep only guards whose `initiative < attack.initiative`
+ *     (the guard must react faster than the incoming attack).
+ *     `absorb` (initiative 0) always passes — it is the passive fallback.
+ *  2. Score: for each eligible guard compute
+ *     `effChar(state, guard.rollChar) + state.skills[guard.rollSkill]`
+ *  3. Pick: highest score. Ties are broken by preferring active guards
+ *     (dodge > parry > block > absorb) — equal pool quality, but active
+ *     guards can improve with extra reactions.
  */
-export function makeGuardProvider(config: AgentConfig): GuardProvider {
-  return (_targetId, state, available) => {
-    const preferred = selectGuard(state, config.persona)
-    return (preferred !== null && available.includes(preferred)) ? preferred : 'absorb'
+export function makeGuardProvider(_config: AgentConfig): GuardProvider {
+  return (_targetId, state, available, _attackerId, actionId) => {
+    return selectGuardByStats(state, available, actionId)
   }
 }
 
@@ -222,29 +231,43 @@ function isActionAllowed(actionId: ActionId, config: AgentConfig): boolean {
 // ─── Guard selection (scripted) ───────────────────────────────────────────────
 
 /**
- * Select the preferred guard for this combatant's round.
- * Returns null → resolveRound auto-selects 'absorb' as fallback.
+ * Select the guard with the best expected dice pool against a specific attack.
  *
- * Priority per persona:
- *  aggressive:    dodge > parry > absorb     (stay mobile, counterattack ready)
- *  cautious:      parry > block > dodge > absorb  (best available defence)
- *  opportunist:   parry > dodge > absorb     (balanced)
- *  inexperienced: absorb                     (simple, always works)
+ * Step 1 — Initiative filter:
+ *   Only guards with `guardDef.initiative < attackDef.initiative` are eligible.
+ *   `absorb` (initiative 0) always passes and acts as the last-resort fallback.
+ *
+ * Step 2 — Stat score:
+ *   Score = effChar(state, guard.rollChar) + state.skills[guard.rollSkill]
+ *   Higher score → larger pool → better expected guard roll.
+ *
+ * Step 3 — Tiebreak:
+ *   Equal scores: prefer active guards (dodge > parry > block > absorb).
+ *   Active guards benefit from future reaction bonuses; absorb never does.
  */
-function selectGuard(self: CombatantState, persona: AgentPersona): GuardId | null {
-  const available = availableGuards(self)
+function selectGuardByStats(
+  state:     CombatantState,
+  available: GuardId[],
+  attackId:  ActionId,
+): GuardId {
+  const attackInit = ACTION_DEFS[attackId].initiative
 
-  const priorities: Record<AgentPersona, GuardId[]> = {
-    aggressive:    ['dodge', 'parry', 'absorb'],
-    cautious:      ['parry', 'block', 'dodge', 'absorb'],
-    opportunist:   ['parry', 'dodge', 'absorb'],
-    inexperienced: ['absorb'],
-  }
+  // Canonical priority for tiebreaking (active guards first)
+  const TIEBREAK_ORDER: GuardId[] = ['dodge', 'parry', 'block', 'absorb']
 
-  for (const g of priorities[persona]) {
-    if (available.includes(g)) return g
-  }
-  return null
+  // Filter by initiative, then score
+  const eligible = available
+    .filter(id => GUARD_DEFS[id].initiative < attackInit)
+    .map(id => {
+      const gd    = GUARD_DEFS[id]
+      const score = effChar(state, gd.rollChar) + state.skills[gd.rollSkill]
+      const rank  = TIEBREAK_ORDER.indexOf(id)   // lower rank = higher priority
+      return { id, score, rank }
+    })
+    .sort((a, b) => b.score - a.score || a.rank - b.rank)
+
+  // absorb (initiative 0) always passes the filter, so eligible is never empty
+  return eligible[0]?.id ?? 'absorb'
 }
 
 // ─── Self-action selection (scripted) ────────────────────────────────────────
@@ -267,10 +290,10 @@ function selectSelfAction(
 ): ActionId | null {
   const { persona } = config
 
-  const fatigueThreshold: Record<AgentPersona, number> = {
-    aggressive:    15,
+  const fatigueThresholdDefault: Record<AgentPersona, number> = {
+    aggressive:    10,
     cautious:       8,
-    opportunist:   10,
+    opportunist:    8,
     inexperienced: 20,  // cap — never triggers from fatigue alone
   }
   const heavyWoundThreshold: Record<AgentPersona, number> = {
@@ -280,10 +303,12 @@ function selectSelfAction(
     inexperienced:  3,
   }
 
+  const fatigueThreshold = config.respirationThreshold ?? fatigueThresholdDefault[persona]
+
   // Respiration: clears winded or reduces fatigue
   const wantRespiration =
     state.status.includes('winded') ||
-    state.fatigue >= fatigueThreshold[persona]
+    state.fatigue >= fatigueThreshold
 
   if (wantRespiration
     && isActionAllowed('respiration', config)

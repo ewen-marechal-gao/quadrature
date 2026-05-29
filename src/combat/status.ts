@@ -22,6 +22,10 @@
  *  drainReactions
  *    → true → set reactions to 0 immediately when status is applied (addStatus).
  *
+ *  drainActions
+ *    → N → spend N action tokens immediately when status is applied (addStatus).
+ *    → Unlike actionPenalty (applied at round start), this affects the current round.
+ *
  *  rollDisadvantage
  *    → Number of 🟥 dice added to every roll made by this combatant.
  *    → Applied in rollParamsFrom (actions.ts) and therefore also to guard rolls.
@@ -69,6 +73,13 @@ export interface StatusDef {
    * is applied via addStatus. Used by Sonné 🫨.
    */
   drainReactions?: boolean
+
+  /**
+   * Number of action tokens to spend immediately when the status is applied via
+   * addStatus. Used by Sonné 🫨 so the stunned combatant loses an action in the
+   * current round (not deferred to the next).
+   */
+  drainActions?: number
 
   /**
    * Number of disadvantage dice 🟥 added to every roll made by this combatant
@@ -119,16 +130,18 @@ export const STATUS_DEFS: Record<StatusEffect, StatusDef> = {
 
   // ── Sonné 🫨 ───────────────────────────────────────────────────────────────
   //
-  // Real rule: le personnage perd toutes ses réactions (immédiat) et dispose
-  // d'une ⚫ de moins lors de son prochain tour.
+  // Real rule: le personnage perd toutes ses réactions (immédiat) et perd une ⚫
+  // immédiatement (manche en cours, pas la suivante). Le statut est retiré en
+  // début de manche suivante sans pénalité supplémentaire.
   stunned: {
     id: 'stunned', label: 'Sonné', icon: '🫨',
     description:
-      'Le personnage perd immédiatement toutes ses réactions ⚡. ' +
-      'Il dispose d\'une ⚫ de moins lors de son prochain tour, puis le statut est retiré. ' +
+      'Le personnage perd immédiatement toutes ses réactions ⚡ et une ⚫ d\'action (manche en cours). ' +
+      'Le statut est retiré en début de manche suivante sans pénalité supplémentaire. ' +
       'Infligé par un Critique d\'Attaque à mains nues, Frappe brutale ou Bousculade.',
     drainReactions: true,
-    onTokenReset: () => ({ actionPenalty: 1, clear: true }),
+    drainActions: 1,
+    onTokenReset: () => ({ actionPenalty: 0, clear: true }),
   },
 
   // ── À terre 🙏 ─────────────────────────────────────────────────────────────
@@ -179,6 +192,26 @@ export const STATUS_DEFS: Record<StatusEffect, StatusDef> = {
       'Ne peut effectuer que l\'action Reprendre Conscience (simulateur : aucune action). ' +
       'Échoue automatiquement à tous les jets de garde. ' +
       'Les attaques en mêlée contre lui bénéficient de 🟩.',
+    incapacitates: true,
+    attackerAdvantage: 1,
+  },
+
+  // ── Aux portes de la Mort 😵 ──────────────────────────────────────────────
+  //
+  // Real rule: déclenché quand toutes les caractéristiques physiques arrivent à 0.
+  // Le personnage ne peut plus agir, échoue automatiquement à tous les jets de garde,
+  // +🟩 pour les attaques en mêlée contre lui. À chaque fin de manche, il effectue
+  // un Test contre la Mort (Récupération + Vigueur vs 5 + blessures légères) :
+  // échec = mort, succès = guérit 1💢.
+  // Simulateur : incapacité immédiate (le test contre la mort n'est pas simulé).
+  'near-death': {
+    id: 'near-death', label: 'Aux portes de la Mort', icon: '😵',
+    description:
+      'Déclenché quand toutes les caractéristiques physiques sont à 0 (blessures = valeurs). ' +
+      'Le personnage ne peut plus agir. Échoue automatiquement à tous les jets de défense. ' +
+      'Les attaques en mêlée contre lui bénéficient de 🟩. ' +
+      'Test contre la Mort à chaque fin de manche (Récupération + Vigueur vs 5 + blessures légères). ' +
+      'Simulateur : incapacité immédiate.',
     incapacitates: true,
     attackerAdvantage: 1,
   },
