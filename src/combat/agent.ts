@@ -569,15 +569,113 @@ Utilise TOUJOURS l'outil plan_action pour déclarer ton action.`
  *                  — shown with full descriptions so Claude understands the toolkit.
  * @param usable    Subset affordable and legal THIS turn — shown as the restricted choice list.
  */
+/**
+ * Render the active statuses of a combatant with explicit mechanical consequences.
+ *
+ * Using `perspective`:
+ *  - 'self'     → describes consequences in second person ("tu perds…")
+ *  - 'opponent' → describes consequences in third person ("il perd…")
+ *
+ * This avoids the LLM misattributing a self-debuff (e.g. stunned) to the opponent
+ * when it appears in the state context.
+ */
+function buildStatusBlock(state: CombatantState, perspective: 'self' | 'opponent'): string {
+  if (state.status.length === 0) return '  aucun'
+
+  const T = perspective === 'self'
+    ? { subj: 'TU',  verb: 'tu',  poss: 'ta',  adj: 'tes',  prefix: '⚠️  TOI' }
+    : { subj: 'IL',  verb: 'il',  poss: 'sa',  adj: 'ses',  prefix: '    adversaire' }
+
+  const lines: string[] = []
+
+  for (const statusId of state.status) {
+    const def = STATUS_DEFS[statusId]
+    const icon = def.icon
+    const label = def.label
+
+    const impacts: string[] = []
+
+    // Immediate PA/reaction drain (drainActions / drainReactions) — already applied
+    if (def.drainActions) {
+      if (perspective === 'self') {
+        impacts.push(`${T.verb} as déjà perdu ${def.drainActions}⚫ ce round (déduit à l'application)`)
+      } else {
+        impacts.push(`${T.verb} a déjà perdu ${def.drainActions}⚫ ce round`)
+      }
+    }
+    if (def.drainReactions) {
+      if (perspective === 'self') {
+        impacts.push(`${T.adj} ⚡ réactions ont été vidées ce round`)
+      } else {
+        impacts.push(`${T.adj} ⚡ réactions ont été vidées`)
+      }
+    }
+
+    // Next round PA penalty
+    if (def.onTokenReset) {
+      const preview = def.onTokenReset(state)
+      if (preview.actionPenalty > 0) {
+        impacts.push(`${T.verb} perdra ${preview.actionPenalty}⚫ supplémentaire(s) au début du prochain round`)
+      }
+      if (preview.clear) {
+        impacts.push('statut retiré au début du prochain round')
+      }
+    }
+
+    // Roll disadvantage
+    if (def.rollDisadvantage) {
+      if (perspective === 'self') {
+        impacts.push(`TOUS ${T.adj} jets ont 🟥 (désavantage)`)
+      } else {
+        impacts.push(`tous ${T.adj} jets ont 🟥 (${T.poss} précision est réduite)`)
+      }
+    }
+
+    // Attacker advantage
+    if (def.attackerAdvantage) {
+      if (perspective === 'self') {
+        impacts.push(`les attaquants en mêlée ont 🟩 contre toi`)
+      } else {
+        impacts.push(`tes attaques en mêlée ont 🟩 contre lui`)
+      }
+    }
+
+    // Hemorrhage: bypass protection on next wound conversion
+    if (statusId === 'hemorrhage') {
+      if (perspective === 'self') {
+        impacts.push('la prochaine conversion de blessures légères ignorera TA protection 🛡️')
+      } else {
+        impacts.push('la prochaine conversion de blessures légères ignorera SA protection 🛡️ — profites-en')
+      }
+    }
+
+    // Incapacitation
+    if (def.incapacitates) {
+      if (perspective === 'self') {
+        impacts.push('TU NE PEUX PLUS AGIR')
+      } else {
+        impacts.push('il est hors de combat')
+      }
+    }
+
+    const impactStr = impacts.length > 0
+      ? impacts.map(i => `       • ${i}`).join('\n')
+      : `       • (aucun effet mécanique supplémentaire ce tour)`
+
+    lines.push(`  ${icon} ${label}\n${impactStr}`)
+  }
+
+  return lines.join('\n')
+}
+
 function buildCombatPrompt(
   self:     CombatantState,
   opponent: CombatantState,
   unlocked: ActionId[],
   usable:   ActionId[],
 ): string {
-  const statusStr = (s: CombatantState) => s.status.length > 0 ? s.status.join(', ') : 'aucun'
   const charLine  = (s: CombatantState) =>
-    `Str ${effChar(s,'strength')} Agi ${effChar(s,'agility')} Vig ${effChar(s,'vigor')} Acu ${effChar(s,'acuity')}`
+    `For ${effChar(s,'strength')}  Agi ${effChar(s,'agility')}  Vig ${effChar(s,'vigor')}  Acu ${effChar(s,'acuity')}`
 
   const actionCatalogue = unlocked.map(id => {
     const d    = ACTION_DEFS[id]
@@ -591,14 +689,16 @@ function buildCombatPrompt(
 
   return `=== TON ÉTAT (${self.id}) ===
 PA restants : ${self.actions}/3  |  ⚡ Réactions : ${self.reactions}/${self.maxReactions}
-Fatigue     : ${self.fatigue}/20  |  État mental : ${self.mentalState}
-💢 Blessures légères : ${self.lightWounds}  |  💔 Blessures graves : ${self.heavyWounds}
-Statuts : ${statusStr(self)}  |  ${charLine(self)}
+Fatigue     : ${self.fatigue}/20  |  ${charLine(self)}
+💢 Blessures légères : ${self.lightWounds}  |  💔 Blessures graves : ${self.heavyWounds}  |  🛡️ Protection : ${self.protection}
+Statuts qui TE touchent :
+${buildStatusBlock(self, 'self')}
 
 === ADVERSAIRE (${opponent.id}) ===
-Fatigue     : ${opponent.fatigue}/20  |  État mental : ${opponent.mentalState}
-💢 Blessures légères : ${opponent.lightWounds}  |  💔 Blessures graves : ${opponent.heavyWounds}
-Statuts : ${statusStr(opponent)}
+Fatigue     : ${opponent.fatigue}/20  |  ${charLine(opponent)}
+💢 Blessures légères : ${opponent.lightWounds}  |  💔 Blessures graves : ${opponent.heavyWounds}  |  🛡️ Protection : ${opponent.protection}
+Statuts qui touchent L'ADVERSAIRE :
+${buildStatusBlock(opponent, 'opponent')}
 
 === TON ARSENAL (actions débloquées) ===
 ${actionCatalogue}
