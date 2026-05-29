@@ -1,0 +1,29 @@
+name: "Duel libre"
+description: >
+  Les deux duelistes sont libres d'exploiter tout leur arsenal. Le puissant peut
+  déclencher une Frappe brutale dévastatrice au prix de sa fatigue ; le précis
+  enchaîne Attaque armée et Frappe vive pour accumuler blessures et hémorragies.
+  Un duel de styles opposés.
+
+maxRounds: 20
+
+factions:
+  - name: "Dueliste puissant"
+    persona: aggressive
+    characters:
+      - characterSheets/Duelist_powerful.yaml
+    allowedActions:
+      - armed-attack
+      - brutal-strike
+      - stabilize
+      - respiration
+
+  - name: "Dueliste précis"
+    persona: opportunist
+    characters:
+      - characterSheets/Duelist_precise.yaml
+    allowedActions:
+      - armed-attack
+      - sharp-strike
+      - stabilize
+      - respiration

@@ -1,0 +1,26 @@
+name: "Duel à l'épée"
+description: >
+  Un duel codifié entre deux combattants armés. Seule l'attaque directe et les
+  premiers soins sont autorisés — pas de techniques spéciales, pas de fatigue
+  délibérée. La victoire appartient à celui qui encaisse le mieux et frappe le plus juste.
+
+maxRounds: 20
+
+factions:
+  - name: "Dueliste puissant"
+    persona: aggressive
+    characters:
+      - characterSheets/Duelist_powerful.yaml
+    allowedActions:
+      - armed-attack
+      - stabilize
+      - respiration
+
+  - name: "Dueliste précis"
+    persona: opportunist
+    characters:
+      - characterSheets/Duelist_precise.yaml
+    allowedActions:
+      - armed-attack
+      - stabilize
+      - respiration

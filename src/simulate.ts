@@ -35,6 +35,8 @@ import type {
 } from './combat/types'
 import {RollResult} from './types'
 
+import { computeStats, printStats } from './stats'
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const REPORTS_DIR    = path.resolve(__dirname, '..', 'combatReports')
@@ -111,6 +113,7 @@ async function simulate(): Promise<void> {
     for (const roundLog of log.rounds) printRound(roundLog)
     const reportPath = path.join(REPORTS_DIR, `${log.id}.json`)
     await writeFile(reportPath, JSON.stringify(log, null, 2), 'utf-8')
+    printStats(computeStats([log]), encounter.name)
     printFooter(log.outcome, reportPath, log.durationMs)
     return
   }
@@ -129,7 +132,16 @@ async function simulate(): Promise<void> {
   const reportPath  = path.join(REPORTS_DIR, `${batchId}.json`)
   await writeFile(reportPath, JSON.stringify(batchReport, null, 2), 'utf-8')
 
-  printBatchSummary(batchReport, reportPath)
+  const stats     = computeStats(logs)
+  const statsPath = path.join(REPORTS_DIR, `${batchId}.stats.json`)
+  // Infinity / -Infinity (from empty Acc) → null in JSON
+  const statsJson = JSON.stringify(stats, (_k, v) =>
+    typeof v === 'number' && !isFinite(v) ? null : v, 2)
+  await writeFile(statsPath, statsJson, 'utf-8')
+
+  printStats(stats, encounter.name)
+  console.log(`  📄 ${reportPath}`)
+  console.log(`  📊 ${statsPath}\n`)
 }
 
 // ─── Combat loop (pur, sans I/O) ─────────────────────────────────────────────
@@ -297,14 +309,22 @@ function printMaintenance(e: MaintenanceEntry): void {
 }
 
 function printAction(e: ActionLogEntry): void {
-  const target  = e.targetId  ? ` → ${e.targetId}` : ''
+  const tokens  = `[${e.actorActions}⚫][${e.actorReactions}⚡] `
   const roll    = e.checkRoll ? formatRoll(e.checkRoll) : ''
-  const guard   = e.guardId   ? `  garde:${e.guardId}(${e.guardRoll?.total ?? '?'})` : ''
-  const dc      = e.targetId  ? `  DD:${e.threshold}` : ''
-  const outcome = e.targetId  ? (e.hit ? '  ✅' : '  ❌') : ''
+  const dc      = `  DD:${e.threshold}`
+  const outcome = e.hit ? '  ✅' : '  ❌'
 
-  console.log(`    ${e.actorId}: ${e.action}${target} ${roll} vs ${guard}${dc}${outcome}`)
+  let line: string
+  if (e.targetId) {
+    // Offensive action: show target + guard roll
+    const guard = e.guardId ? `  garde:${e.guardId}(${e.guardRoll?.total ?? '?'})` : ''
+    line = `    ${tokens}${e.actorId}: ${e.action} → ${e.targetId} ${roll} vs${guard}${dc}${outcome}`
+  } else {
+    // Self-targeted action (Respiration, Stabiliser): no guard, no "vs"
+    line = `    ${tokens}${e.actorId}: ${e.action} ${roll}${dc}${outcome}`
+  }
 
+  console.log(line)
   for (const note of e.notes) {
     console.log(`      ${note}`)
   }
