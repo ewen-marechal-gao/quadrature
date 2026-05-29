@@ -7,17 +7,20 @@
  *    Each AgentPersona encodes different tactical priorities.
  *    Suitable for automated batch simulations and deterministic baselines.
  *
- * 2. AI agent (`planRoundAI`): async, calls the Claude API via tool_use.
- *    Each persona maps to a different system-prompt "voice", letting Claude
+ * 2. AI agent (`planRoundAI`): async, calls the Mistral API via node-llm.
+ *    Each persona maps to a different system-prompt "voice", letting the model
  *    reason about the state and pick an action naturally.
- *    Requires ANTHROPIC_API_KEY in the environment.
+ *    Requires MISTRAL_API_KEY in the environment (or a .env file).
+ *    node-llm (@node-llm/core) provides a provider-agnostic interface — swapper
+ *    vers OpenAI, Anthropic ou Ollama ne demande qu'un changement de config.
  *
  * Both return a `PlannedAction[]` compatible with `resolveRound`.
  * The scripted agent may plan up to three actions per round (depending on PA).
  * The AI agent plans exactly one action per round (simpler and more reliable).
  */
 
-import Anthropic from '@anthropic-ai/sdk'
+import { createLLM, ToolHalt } from '@node-llm/core'
+import type { ToolDefinition }  from '@node-llm/core'
 
 import type { CombatantState } from './types'
 import type { ActionId, GuardId } from './types'
@@ -158,14 +161,45 @@ export function makeGuardProvider(_config: AgentConfig): GuardProvider {
 
 // ─── AI agent ─────────────────────────────────────────────────────────────────
 
-/** Model used for AI decisions. Override via CLAUDE_MODEL env var. */
-const AI_MODEL = process.env.CLAUDE_MODEL ?? 'claude-3-5-haiku-20241022'
+/** Model used for AI decisions. Override via MISTRAL_MODEL env var. */
+const AI_MODEL = process.env.MISTRAL_MODEL ?? 'mistral-small-latest'
 
 /**
- * Plan one action for a combatant's round using the Claude API (async).
+ * Build a ToolDefinition whose handler captures the chosen action.
  *
- * Sends the combat state and available options to Claude as structured context.
- * Uses tool_use to guarantee a valid, parseable response.
+ * The schema enum is restricted to `usable` so the model can only pick
+ * actions that are currently affordable and legal.
+ *
+ * Returning `new ToolHalt(actionId)` stops the tool loop after a single API call —
+ * no second roundtrip. The halt content becomes `response.content`.
+ */
+function makePlanActionTool(usable: ActionId[]): ToolDefinition {
+  return {
+    type: 'function',
+    function: {
+      name:        'plan_action',
+      description: "Déclarer l'action que tu effectues ce tour de combat.",
+      parameters:  {
+        type:       'object',
+        properties: {
+          action: {
+            type:        'string',
+            enum:        usable,
+            description: "L'action à effectuer ce tour.",
+          },
+        },
+        required: ['action'],
+      },
+    },
+    handler: async (args) => new ToolHalt((args as { action: string }).action),
+  }
+}
+
+/**
+ * Plan one action for a combatant's round using the Mistral API via node-llm (async).
+ *
+ * Uses function calling with tool_choice: 'required' to guarantee a valid, parseable
+ * response. `halt()` stops the tool loop after exactly one API call.
  * Falls back to the scripted agent if the API call fails.
  *
  * @throws Never — errors fall back to `planRound` with a logged warning.
@@ -178,28 +212,21 @@ export async function planRoundAI(
   if (isDefeated(self)) return []
 
   try {
-    const client   = new Anthropic()
+    const llm      = createLLM({ provider: 'mistral', mistralApiKey: process.env.MISTRAL_API_KEY })
     const unlocked = unlockedActions(self).filter(id => isActionAllowed(id, config))
     const usable   = usableActions(self).filter(id => isActionAllowed(id, config))
 
     if (usable.length === 0) return []
 
-    const response = await client.messages.create({
-      model:      AI_MODEL,
-      max_tokens: 512,
-      system:     buildSystemPrompt(config.persona),
-      messages:   [{ role: 'user', content: buildCombatPrompt(self, opponent, unlocked, usable) }],
-      tools:      [PLAN_ACTION_TOOL],
-      tool_choice: { type: 'auto' },
-    })
+    const PlanActionTool = makePlanActionTool(usable)
 
-    const toolBlock = response.content.find(b => b.type === 'tool_use')
-    if (!toolBlock || toolBlock.type !== 'tool_use') {
-      throw new Error('AI agent: no tool_use block in response')
-    }
+    const response = await llm
+      .chat(AI_MODEL)
+      .withSystemPrompt(buildSystemPrompt(config.persona))
+      .withTools([PlanActionTool], { choice: 'required', calls: 'one' })
+      .ask(buildCombatPrompt(self, opponent, unlocked, usable))
 
-    const input    = toolBlock.input as { action: string }
-    const actionId = input.action as ActionId
+    const actionId = response.content.trim() as ActionId
 
     if (!usable.includes(actionId)) {
       throw new Error(`AI agent: illegal action "${actionId}" (not in usable list)`)
@@ -438,22 +465,6 @@ Tu tends à choisir des actions simples et tu ne remarques pas toujours les meil
 Tu fais du mieux que tu peux avec ta connaissance limitée du combat.`,
 }
 
-/** Tool definition for structured action declaration */
-const PLAN_ACTION_TOOL: Anthropic.Tool = {
-  name: 'plan_action',
-  description: "Déclarer l'action que tu effectues ce tour de combat.",
-  input_schema: {
-    type:       'object' as const,
-    properties: {
-      action: {
-        type:        'string',
-        enum:        ['armed-attack', 'unarmed-attack', 'brutal-strike', 'sharp-strike', 'respiration', 'stabilize'],
-        description: "L'action à effectuer ce tour.",
-      },
-    },
-    required: ['action'],
-  },
-}
 
 function buildSystemPrompt(persona: AgentPersona): string {
   // Build the status catalogue dynamically from STATUS_DEFS

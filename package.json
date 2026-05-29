@@ -22,6 +22,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
+    "@mistralai/mistralai": "^2.2.5",
+    "@node-llm/core": "^1.16.0",
     "colors": "^1.4.0",
     "dotenv": "^17.4.2",
     "yaml": "^2.9.0"
