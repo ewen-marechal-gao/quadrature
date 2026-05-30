@@ -4,7 +4,7 @@ description: >
   API indépendant — les deux planners tournent en parallèle à chaque vague.
   Mode 1 run uniquement (coût API).
 
-maxRounds: 20
+maxRounds: 10
 
 factions:
   - name: "Dueliste puissant"

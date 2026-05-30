@@ -268,7 +268,7 @@ function makePlanActionTool(usable: ActionId[]): ToolDefinition {
           battleCry: {
             type:        'string',
             description:
-              'Une courte expression à voix haute : cri de guerre, provocation, réaction à la douleur… ' +
+              "Une courte expression à voix haute : cri de guerre, provocation, réponse à l'adversaire, réaction aux actions précédentes." +
               'Visible de tous. Cohérent avec ta persona.',
           },
         },
