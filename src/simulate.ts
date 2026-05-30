@@ -225,6 +225,12 @@ async function runCombat(
   const session1 = agentType1 === 'llm' ? createAgentSession(char1.name, cfg1) : undefined
   const session2 = agentType2 === 'llm' ? createAgentSession(char2.name, cfg2) : undefined
 
+  // Délai minimum entre vagues pour les agents LLM (évite le rate-limit Mistral)
+  const hasLLM      = agentType1 === 'llm' || agentType2 === 'llm'
+  const rateLimitMs = hasLLM
+    ? Math.max(0, parseInt(process.env.MISTRAL_API_RATELIMIT_MS ?? '0', 10))
+    : 0
+
   let states = new Map<string, CombatantState>([
     [char1.name, initCombatant(char1)],
     [char2.name, initCombatant(char2)],
@@ -250,6 +256,7 @@ async function runCombat(
     const { states: next, log } = await resolveRoundWaves(
       states, roundNumber, getGuard, maintenanceEntries,
       async (currentStates) => {
+        const t0 = Date.now()
         const s1 = currentStates.get(char1.name)!
         const s2 = currentStates.get(char2.name)!
         // Les deux planners tournent en parallèle (gain latence en mode LLM)
@@ -257,6 +264,11 @@ async function runCombat(
           planFor(agentType1, s1, s2, cfg1, session1),
           planFor(agentType2, s2, s1, cfg2, session2),
         ])
+        // Rate limit : si les appels ont été plus rapides que le seuil, on attend le reste
+        if (rateLimitMs > 0) {
+          const elapsed = Date.now() - t0
+          if (elapsed < rateLimitMs) await new Promise<void>(r => setTimeout(r, rateLimitMs - elapsed))
+        }
         return [...plans1, ...plans2]
       },
       (phaseLogs) => {
