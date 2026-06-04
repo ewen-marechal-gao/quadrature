@@ -961,7 +961,7 @@
         color: var(--card-heading);
       }
 
-      .carac-value-input {
+      .carac-value-display {
         width: 36px;
         min-width: 36px;
         height: 16px;
@@ -973,14 +973,11 @@
         border-radius: 4px;
         background: var(--header-bg-start);
         color: var(--text-color);
-        margin-right: 0;
-        -moz-appearance: textfield;
-        appearance: textfield;
-      }
-      .carac-value-input::-webkit-inner-spin-button,
-      .carac-value-input::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        user-select: none;
       }
 
       .skills-container {
@@ -1113,7 +1110,7 @@
           }
 
           setupPortraitUpload(input, preview, placeholder, portraitActions);
-          var vigInput = document.getElementById("vigueur-input");
+          var vigInput = document.getElementById("vigueur-display");
           var robustesseStars = document.querySelectorAll(
             '#robustesse-stars input[type="checkbox"]',
           );
@@ -1123,7 +1120,7 @@
 
           function updateSanteHearts() {
             if (!vigInput || heartBoxes.length === 0) return;
-            var vig = parseInt(vigInput.value, 10);
+            var vig = parseInt(vigInput.textContent, 10);
             if (Number.isNaN(vig)) vig = 0;
             vig = Math.max(0, Math.min(5, vig));
             var robustesseCount = 0;
@@ -1145,7 +1142,6 @@
           }
 
           if (vigInput) {
-            vigInput.addEventListener("input", updateSanteHearts);
             vigInput.addEventListener("change", updateSanteHearts);
           }
           robustesseStars.forEach(function (star) {
@@ -1216,60 +1212,58 @@
             });
           });
 
-          var caracInputs = document.querySelectorAll(".carac-value-input");
-          function updateCaracCircles(input, fillCount) {
-            var row = input.closest(".carac-header");
-            if (!row) return;
-            var boxes = row.querySelectorAll(
-              '.attribute-dice input[type="checkbox"]',
-            );
-            var value = parseInt(input.value, 10);
-            if (Number.isNaN(value)) value = 0;
-            value = Math.max(0, Math.min(5, value));
-            input.value = value;
-
-            if (fillCount > value) {
-              fillCount = value;
-            }
-            if (value === 0) {
-              fillCount = 0;
-            }
-
-            boxes.forEach(function (box, index) {
-              var active = index < value;
-              box.classList.toggle("active", active);
-              box.disabled = !active;
-              box.classList.toggle("filled", active && index < fillCount);
+          function getSkillRank(skillDiceDiv) {
+            var n = 0;
+            skillDiceDiv.querySelectorAll('input[type="checkbox"]').forEach(function (c) {
+              if (c.checked) n++;
             });
-
-            return fillCount;
+            return n;
           }
-          caracInputs.forEach(function (input) {
-            var row = input.closest(".carac-header");
-            if (!row) return;
-            var boxes = row.querySelectorAll(
-              '.attribute-dice input[type="checkbox"]',
+
+          document.querySelectorAll(".row-carac").forEach(function (row) {
+            var display = row.querySelector(".carac-value-display");
+            if (!display) return;
+            var boxes = Array.prototype.slice.call(
+              row.querySelectorAll('.attribute-dice input[type="checkbox"]')
             );
             var fillCount = 0;
+
+            function computeValue() {
+              var bonus = 0;
+              row.querySelectorAll(".skill-dice").forEach(function (sd) {
+                var rank = getSkillRank(sd);
+                if (rank >= 2) bonus++;
+                if (rank >= 4) bonus++;
+              });
+              return 1 + bonus;
+            }
+
+            function applyCircles() {
+              var value = computeValue();
+              display.textContent = value;
+              if (fillCount > value) fillCount = value;
+              boxes.forEach(function (box, index) {
+                var active = index < value;
+                box.classList.toggle("active", active);
+                box.disabled = !active;
+                box.classList.toggle("filled", active && index < fillCount);
+              });
+              display.dispatchEvent(new Event("change", { bubbles: true }));
+            }
 
             boxes.forEach(function (box, index) {
               box.addEventListener("click", function () {
                 if (!box.classList.contains("active")) return;
-                if (index < fillCount) {
-                  fillCount = index;
-                } else {
-                  fillCount = index + 1;
-                }
-                fillCount = updateCaracCircles(input, fillCount);
+                fillCount = index < fillCount ? index : index + 1;
+                applyCircles();
               });
             });
-            input.addEventListener("input", function () {
-              fillCount = updateCaracCircles(input, fillCount);
+
+            row.querySelectorAll('.skill-dice input[type="checkbox"]').forEach(function (sc) {
+              sc.addEventListener("change", applyCircles);
             });
-            input.addEventListener("change", function () {
-              fillCount = updateCaracCircles(input, fillCount);
-            });
-            fillCount = updateCaracCircles(input, fillCount);
+
+            applyCircles();
           });
         });
       </script>
@@ -1493,14 +1487,7 @@
           <div class="features-group">
             <div class="row-carac">
               <div class="carac-header">
-                <input
-                  class="carac-value-input"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  value="1"
-                />
+                <span class="carac-value-display">1</span>
                 <span>FORCE</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /> <input type="checkbox" />
@@ -1535,14 +1522,7 @@
 
             <div class="row-carac">
               <div class="carac-header">
-                <input
-                  class="carac-value-input"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  value="1"
-                />
+                <span class="carac-value-display">1</span>
                 <span>AGILITÉ</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /> <input type="checkbox" />
@@ -1578,15 +1558,7 @@
 
             <div class="row-carac">
               <div class="carac-header">
-                <input
-                  id="vigueur-input"
-                  class="carac-value-input"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  value="1"
-                />
+                <span id="vigueur-display" class="carac-value-display">1</span>
                 <span>VIGUEUR</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1616,14 +1588,7 @@
 
             <div class="row-carac">
               <div class="carac-header">
-                <input
-                  class="carac-value-input"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  value="1"
-                />
+                <span class="carac-value-display">1</span>
                 <span>GRÂCE</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1653,14 +1618,7 @@
 
             <div class="row-carac">
               <div class="carac-header">
-                <input
-                  class="carac-value-input"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  value="1"
-                />
+                <span class="carac-value-display">1</span>
                 <span>ACUITÉ</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1883,14 +1841,7 @@
           <div class="features-group">
             <div class="row-carac">
               <div class="carac-header">
-                <input
-                  class="carac-value-input"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  value="1"
-                />
+                <span class="carac-value-display">1</span>
                 <span>VOLONTÉ</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1925,14 +1876,7 @@
 
             <div class="row-carac">
               <div class="carac-header">
-                <input
-                  class="carac-value-input"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  value="1"
-                />
+                <span class="carac-value-display">1</span>
                 <span>INTELLIGENCE</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1965,14 +1909,7 @@
 
             <div class="row-carac">
               <div class="carac-header">
-                <input
-                  class="carac-value-input"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  value="1"
-                />
+                <span class="carac-value-display">1</span>
                 <span>TÉNACITÉ</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -2002,14 +1939,7 @@
 
             <div class="row-carac">
               <div class="carac-header">
-                <input
-                  class="carac-value-input"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  value="1"
-                />
+                <span class="carac-value-display">1</span>
                 <span>CHARISME</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -2039,14 +1969,7 @@
 
             <div class="row-carac">
               <div class="carac-header">
-                <input
-                  class="carac-value-input"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  value="1"
-                />
+                <span class="carac-value-display">1</span>
                 <span>LUCIDITÉ</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -2101,7 +2024,7 @@
           if (
             normalizeText(span.textContent).indexOf(normalizeText(label)) !== -1
           ) {
-            return headers[i].querySelector(".carac-value-input");
+            return headers[i].querySelector(".carac-value-display");
           }
         }
         return null;
@@ -2148,7 +2071,7 @@
 
       function updateStabilityBoxes() {
         if (!tenaciteInput || stabilityBoxes.length === 0) return;
-        var ten = parseInt(tenaciteInput.value, 10);
+        var ten = parseInt(tenaciteInput.textContent, 10);
         if (Number.isNaN(ten)) ten = 0;
         ten = Math.max(0, Math.min(5, ten));
         var disc = 0;
@@ -2169,7 +2092,6 @@
       }
 
       if (tenaciteInput) {
-        tenaciteInput.addEventListener("input", updateStabilityBoxes);
         tenaciteInput.addEventListener("change", updateStabilityBoxes);
       }
       if (disciplineStars) {
