@@ -89,6 +89,13 @@
           print-color-adjust: exact;
         }
 
+        /* Empêche la page 2 vide : le body est fixé à la hauteur exacte d'une page A4 paysage */
+        body {
+          height: 210mm !important;
+          max-height: 210mm !important;
+          overflow: hidden !important;
+        }
+
         /* 2. On désactive le dégradé sombre de la carte centrale */
         .portrait-card::after {
           background: none !important;
