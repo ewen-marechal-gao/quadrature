@@ -1,0 +1,2185 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quadrature - Feuille de Personnage</title>
+    <style>
+      :root {
+        --bg-color: #1e1a16;
+        --sheet-bg-color: #2d2520;
+        --card-bg: #fefdf9;
+        --text-color: #2d2520;
+        --gold-comp: #b8860b;
+        --red-alert: #8b0000;
+        --dice-color-blue: #407bd5;
+        --dice-color-background: #7097d1;
+        --dice-skill-yellow: #ffae50;
+        --border-color: #5d4e37;
+        --header-bg-start: #f9f3e9;
+        --header-bg-end: #f4e8d8;
+        --header-text: #2d2520;
+        --header-border: #5d4e37;
+        --placeholder-text: #5d4e37;
+        --placeholder-bg-start: #f9f3e9;
+        --placeholder-bg-end: #f4e8d8;
+        --placeholder-border: #5d4e37;
+        --shadow-soft: rgba(93, 78, 55, 0.1);
+        --card-heading: #5d4e37;
+        --card-section-border: #5d4e37;
+        --card-section-bg: #fefdf9;
+        --muted-text: #444;
+        --muted-border: #999;
+        --muted-light-border: #ddd;
+        --active-border: #333;
+        --panel-bg: #f0f4ff;
+        --warning-border: #ef6c00;
+        --warning-bg: #fff3e0;
+        --danger-border: #c62828;
+        --danger-bg: #ffebee;
+        --danger-text: #d32f2f;
+        --neutral-bg: #fafafa;
+        --gray: #ccc;
+        --gray-dark: #666;
+        --gray-light: #a5a5a5;
+        --white: #fff;
+        --black: #000;
+        --print-bg: #fff;
+        --body-color: #202020;
+        --esprit-color: #202020;
+        --track-gradient-middle: #e6e6e6;
+        --etat-concentre-bg: #fffdf0;
+        --panel-light: #f9f9f9;
+        --rule-bg: #fafafa;
+        --rule-text: #222;
+        --print-border: #bbb;
+        --header-shadow: rgba(255, 255, 255, 0.5);
+        --input-bg: rgba(255, 255, 255, 0.6);
+        --input-border: #5d4e37;
+        --portrait-bg-start: #fefdf9;
+        --portrait-bg-end: #f9f3e9;
+        --portrait-border: #5d4e37;
+        --portrait-shadow: rgba(93, 78, 55, 0.15);
+        --portrait-upload-bg: #2b6cb0;
+        --portrait-upload-text: #fff;
+        --portrait-upload-hover: #8b6914;
+        --portrait-upload-hover-shadow: rgba(184, 134, 11, 0.3);
+        --button-bg: #b8860b;
+        --button-text: #fefdf9;
+        --button-border: #5d4e37;
+        --button-hover: #8b6914;
+        --button-hover-shadow: rgba(184, 134, 11, 0.3);
+        --skill-dice-selected: #b8860b;
+      }
+
+      @page {
+        size: A4 landscape;
+        margin: 0;
+      }
+
+      @media print {
+        /* 1. On force TOUS les arrière-plans en blanc pur pour économiser l'encre */
+        body,
+        .fiche-personnage-page {
+          background: #ffffff !important;
+          background-color: #ffffff !important;
+          margin: 0 !important;
+          box-shadow: none !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        /* 2. On désactive le dégradé sombre de la carte centrale */
+        .portrait-card::after {
+          background: none !important;
+          display: none !important;
+        }
+
+        /* 3. On masque les boutons d'interface */
+        .portrait-actions {
+          display: none !important;
+        }
+
+        /* 4. On repasse les labels de la colonne centrale en sombre pour le papier */
+        .header-fields label,
+        .bio-field-group label {
+          color: var(--text-color) !important;
+          text-shadow: none !important;
+        }
+
+        /* 5. Gestion des inputs et de la biographie pour l'impression */
+        .header-fields input[type="text"],
+        .bio-field-group textarea {
+          color: var(--text-color) !important;
+          border: 1px solid var(--border-color) !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+
+        /* 6. Disparition des placeholders à l'impression */
+        input::placeholder,
+        textarea::placeholder {
+          color: transparent !important;
+        }
+
+        /* 7. Si le champ est VIDE, on applique le fond clair pour écrire au crayon */
+        input[type="text"]:placeholder-shown,
+        textarea:placeholder-shown {
+          background-color: #fdfaf4 !important; /* Couleur très claire/crème pour le crayon */
+          border: 1px solid var(--border-color) !important; /* Bordure pointillée style "champ à remplir" */
+        }
+      }
+
+      /* 2. Le conteneur global (La feuille) */
+      .fiche-personnage-page {
+        width: 297mm;
+        height: 210mm;
+        box-sizing: border-box;
+
+        /* MARGE DE SÉCURITÉ : Les imprimantes ne peuvent pas imprimer "bord à bord".
+     Un padding de 10mm (1cm) assure que rien ne sera coupé par l'imprimante. */
+        padding: 5mm;
+
+        /* SÉCURITÉ ANTI-DÉBORDEMENT : Si du contenu dépasse, il est masqué.
+     Cela évite que le navigateur ne génère une page 2 blanche par erreur. */
+        overflow: hidden;
+
+        /* Mise en page interne : vos 3 colonnes (Corps / Portrait / Esprit) */
+        display: flex;
+        gap: 2mm; /* Espace entre les colonnes */
+
+        /* Optionnel : Joli rendu "feuille de papier" à l'écran pour le développement */
+        background: var(--bg-color);
+        background-color: var(--sheet-bg-color);
+        margin: 20px auto;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+      }
+
+      body {
+        background-color: var(--bg-color);
+        font-family: "Georgia", "Garamond", serif;
+        color: var(--text-color);
+        margin: 0;
+        padding: 0px;
+      }
+
+      .colonne-gauche {
+        width: 105mm;
+        display: flex;
+        flex-direction: column;
+        margin-right: -12mm; /* Débordement de 12mm sur l'illustration centrale */
+        position: relative;
+        z-index: 2;
+      }
+
+      .colonne-droite {
+        width: 105mm;
+        display: flex;
+        flex-direction: column;
+        margin-left: -12mm; /* Débordement de 12mm sur l'illustration centrale */
+        position: relative;
+        z-index: 2;
+      }
+
+      .colonne-centre {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        height: 100%;
+        z-index: 1;
+      }
+      .portrait-card {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #ffffff !important;
+        background-image: none !important;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.15);
+        display: block;
+        z-index: 1;
+      }
+      /* L'astuce du dégradé interne pour adoucir le haut et le bas de l'image */
+      .portrait-card::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* Dégradé équilibré haut/bas pour soutenir le texte et les boutons */
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.85) 0%,
+          rgba(0, 0, 0, 0.2) 25%,
+          transparent 50%,
+          rgba(0, 0, 0, 0.2) 75%,
+          rgba(0, 0, 0, 0.8) 100%
+        );
+        pointer-events: none;
+        z-index: 1;
+      }
+      /* L'image s'adapte maintenant à 100% de la zone sans déformation */
+      .portrait-card img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+        z-index: -2;
+      }
+      /* Boutons d'actions transparents de type interface technique */
+      .bottom-fields {
+        position: absolute;
+        bottom: 15px;
+        left: 0;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0 15px;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 12px; /* Espace entre les boutons et la biographie */
+      }
+
+      .portrait-actions {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* Style de la zone Biographie */
+      .bio-field-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+      }
+
+      .bio-field-group label {
+        color: var(--card-bg);
+        font-size: 8.5pt;
+        margin-bottom: 4px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      }
+
+      .bio-field-group textarea {
+        background: rgba(254, 253, 249, 0.15);
+        border: 1px solid rgba(254, 253, 249, 0.4);
+        color: #fefdf9;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-family: inherit;
+        font-size: 10pt;
+        text-align: center;
+        transition: all 0.2s;
+        backdrop-filter: blur(4px);
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 80mm; /* S'aligne harmonieusement avec la largeur de la carte */
+        resize: none; /* Empêche l'utilisateur de déformer la zone */
+        height: 30mm; /* Permet d'écrire sur 2 ou 3 lignes */
+      }
+
+      .bio-field-group textarea:focus {
+        background: rgba(254, 253, 249, 0.9);
+        border-color: var(--gold-comp);
+        color: var(--text-color);
+        outline: none;
+        box-shadow: 0 0 8px rgba(184, 134, 11, 0.5);
+      }
+      .portrait-actions label,
+      .portrait-actions button {
+        display: inline-block;
+        background: rgba(45, 37, 32, 0.65);
+        border: 1px solid rgba(254, 253, 249, 0.4);
+        color: #fefdf9;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-family: inherit;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+        backdrop-filter: blur(2px);
+        box-sizing: border-box;
+        margin: 0;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .portrait-actions label {
+        border-style: dashed;
+      }
+      .portrait-actions label:hover,
+      .portrait-actions button:hover {
+        background: var(--text-color);
+        border-color: var(--gold-comp);
+        color: #fefdf9;
+      }
+      .header-actions button {
+        display: inline-block;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        color: #ffffff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+      .header-actions button:hover {
+        background: var(--button-hover);
+        border-color: var(--gold-comp);
+        box-shadow: none;
+      }
+      .portrait-placeholder {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--placeholder-text);
+        background: linear-gradient(
+          180deg,
+          var(--placeholder-bg-start),
+          var(--placeholder-bg-end)
+        );
+        font-weight: 600;
+        font-size: 1.5rem;
+        border: none;
+        z-index: -1;
+      }
+      .header-fields {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 15px 15px 25px 15px;
+        z-index: 3; /* Au-dessus du dégradé */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .header-fields > div {
+        margin-bottom: 0;
+        display: flex;
+        gap: 10px; /* Aligne Nom et Peuple horizontalement dans le bandeau bas */
+      }
+      .header-fields label {
+        color: var(--card-bg);
+        font-size: 8.5pt;
+        margin-bottom: 4px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      }
+      .header-field-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+      }
+      .header-field-group.full-width {
+        width: 100%;
+      }
+      .header-field-group.full-width input[type="text"] {
+        width: 100%;
+        font-weight: 600;
+      }
+      .header-field-group.short-width input[type="text"] {
+        width: 140px;
+        font-size: 10pt;
+      }
+      /* Conteneur des deux champs alignés et centrés */
+      .header-fields-inputs {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        max-width: 62mm;
+      }
+      .header-fields input[type="text"] {
+        background: rgba(254, 253, 249, 0.15);
+        border: 1px solid rgba(254, 253, 249, 0.4);
+        color: #fefdf9;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-family: inherit;
+        font-size: 11pt;
+        text-align: center;
+        transition: all 0.2s;
+        backdrop-filter: blur(4px);
+        box-sizing: border-box;
+      }
+
+      .header-fields input[type="text"]:focus {
+        background: rgba(254, 253, 249, 0.9);
+        border-color: var(--gold-comp);
+        color: var(--text-color);
+        outline: none;
+        box-shadow: 0 0 8px rgba(184, 134, 11, 0.5);
+      }
+      .header-actions {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        z-index: 4;
+      }
+      .header-actions input[type="file"] {
+        display: none;
+      }
+      .header-actions button {
+        background: rgba(254, 253, 249, 0.15);
+        border: 1px solid rgba(254, 253, 249, 0.3);
+        color: #fefdf9;
+        padding: 4px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .header-actions label {
+        background: var(--button-bg);
+        color: var(--button-text);
+        border: 2px solid var(--button-border);
+        padding: 8px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        font-weight: bold;
+      }
+      .header-actions button:hover {
+        background: var(--card-bg);
+        color: var(--text-color);
+        border-color: var(--gold-comp);
+      }
+      .header-actions label:hover {
+        background: var(--text-color);
+        border-color: var(--gold-comp);
+      }
+
+      .dashboard {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 768px) {
+        .dashboard,
+        .matrix {
+          grid-template-columns: 1fr !important;
+        }
+      }
+
+      .card {
+        background: var(--card-bg);
+        border-radius: 4px;
+        border: 1.5px solid var(--border-color) !important;
+        padding: 5px;
+        box-shadow: 0 4px 15px var(--shadow-soft);
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        height: 100%;
+        z-index: 2; /* Force les cartes à passer AU-DESSUS de l'illustration */
+      }
+
+      .card h2 {
+        margin-top: 0;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 5px;
+        font-size: 12pt;
+        font-family: Georgia, serif;
+        font-weight: bold;
+        letter-spacing: 1px;
+        color: var(--card-heading);
+      }
+      .card h3 {
+        margin-top: 0;
+        margin-bottom: 2mm;
+        font-size: 10pt;
+        color: var(--card-heading);
+        font-weight: 600;
+      }
+      .card-section,
+      .features-group {
+        background: var(--card-section-bg);
+      }
+      .card-section {
+        height: 80mm;
+        overflow: auto;
+      }
+      .card-section h4 {
+        margin: 0 0 10px;
+        font-size: 1rem;
+      }
+      .features-group {
+        display: flex;
+        flex-direction: column;
+        gap: 1mm;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      /* --- Style des cases Stabilité --- */
+      .stability-container {
+        display: flex;
+        gap: 5px;
+        justify-content: space-between;
+      }
+      .stability-box {
+        width: 10mm !important;
+        height: 10mm !important;
+        box-sizing: content-box;
+        position: relative;
+        flex: 1;
+      }
+      .stability-box input[type="checkbox"] {
+        display: none;
+      }
+      .stability-box label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 1 / 1; /* Aligne en carrés parfaits peu importe la largeur */
+        border: 2px solid var(--esprit-color);
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 14pt;
+        cursor: pointer;
+        background: var(--white);
+        transition:
+          border-color 0.2s ease,
+          background-color 0.2s ease,
+          opacity 0.2s ease;
+      }
+      .stability-box.active label {
+        border-style: solid;
+        cursor: pointer;
+      }
+      .stability-box.inactive label {
+        border-style: dashed;
+        opacity: 0.6;
+        cursor: not-allowed;
+        border-color: var(--gray-light);
+        color: var(--gray-dark);
+      }
+      .stability-box input[type="checkbox"]:checked + label {
+        border-color: var(--gray-light);
+        text-decoration: line-through;
+      }
+      .stability-box label::before {
+        content: "◈";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+      .stability-box input[type="checkbox"]:checked + label::before {
+        content: "◇";
+        color: var(--gray-dark);
+      }
+      .stability-box .box-num {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        font-size: 8pt;
+        color: var(--gray-dark);
+        pointer-events: none;
+      }
+
+      /* Conteneur Vertical */
+      .piste-mentale-v {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      /* La ligne du "thermomètre" en tâche de fond derrière les boutons */
+      .piste-mentale-v::before {
+        content: "";
+        position: absolute;
+        top: 20px;
+        bottom: 20px;
+        left: 2.5mm; /* Aligné pile au centre des cases à cocher */
+        width: 4px;
+        background: linear-gradient(
+          to bottom,
+          var(--danger-bg),
+          var(--track-gradient-middle),
+          var(--panel-bg)
+        );
+        border: 1px solid var(--muted-border);
+        z-index: 1;
+      }
+
+      /* Ligne d'état */
+      .mental-v-row {
+        display: flex;
+        height: 7mm;
+        align-items: center;
+        margin: 2px 0;
+        cursor: pointer;
+        position: relative;
+        z-index: 2; /* Passe au-dessus de la ligne d'arrière-plan */
+        border-radius: 4px;
+        transition: background 0.2s;
+      }
+
+      /* Masquer le vrai bouton radio */
+      .mental-v-row input[type="radio"] {
+        display: none;
+      }
+
+      /* La case à cocher personnalisée (le curseur) */
+      .custom-check-v {
+        width: 22px;
+        height: 22px;
+        border: 2px solid var(--black);
+        background: var(--white);
+        border-radius: 4px;
+        margin-right: 15px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Style quand c'est sélectionné sur écran */
+      .mental-v-row input[type="radio"]:checked + .custom-check-v {
+        background: var(--black);
+      }
+      .mental-v-row input[type="radio"]:checked + .custom-check-v::after {
+        content: "➤";
+        color: var(--white);
+        font-weight: bold;
+        font-size: 10pt;
+      }
+
+      /* Alignement et gestion des textes */
+      .mental-v-name {
+        font-weight: bold;
+        font-size: 8pt;
+        width: 20mm; /* Aligne le début des règles proprement */
+        flex-shrink: 0;
+      }
+      .mental-v-rule {
+        font-size: 7pt;
+        color: var(--muted-text);
+        padding-left: 10px;
+        border-left: 1px solid var(--muted-light-border);
+      }
+
+      /* Légères teintes de fond pour l'impression (optionnel mais guide l'oeil) */
+      .etat-enrage {
+        background-color: rgba(255, 230, 230, 0.5);
+      }
+      .etat-furieux {
+        background-color: rgba(255, 240, 240, 0.5);
+      }
+      .etat-agressif {
+        background-color: rgba(255, 248, 245, 0.5);
+      }
+      .etat-concentre {
+        background-color: var(--etat-concentre-bg);
+      }
+      .etat-prudent {
+        background-color: rgba(245, 248, 255, 0.5);
+      }
+      .etat-panique {
+        background-color: rgba(240, 244, 255, 0.5);
+      }
+      .etat-terrifie {
+        background-color: rgba(230, 240, 255, 0.5);
+      }
+
+      /* En-têtes */
+      .sante-header,
+      .fatigue-header,
+      .stability-header {
+        display: flex;
+        flex-direction: row; /* Aligne sur une seule ligne horizontale */
+        justify-content: space-between; /* Pousse le titre à gauche et le sous-texte à droite */
+        align-items: flex-end; /* Aligne proprement les bas de textes ensemble */
+        border-bottom: 2px solid #333;
+        margin-bottom: 5px;
+      }
+      .sante-title,
+      .fatigue-title,
+      .stability-title {
+        font-weight: bold;
+        font-size: 10pt;
+      }
+      .sante-subtext,
+      .fatigue-subtext,
+      .stability-subtext {
+        font-size: 8pt;
+        color: var(--gray-dark);
+      }
+
+      /* --- Style des cases Santé --- */
+
+      .hearts-container {
+        display: flex;
+        gap: 5px;
+        justify-content: space-between;
+      }
+      .heart-box {
+        width: 10mm !important;
+        height: 10mm !important;
+        box-sizing: content-box;
+        position: relative;
+        flex: 1;
+      }
+      .heart-box input[type="checkbox"] {
+        display: none;
+      }
+      .heart-box label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 1 / 1; /* Aligne en carrés parfaits peu importe la largeur */
+        border: 2px solid var(--body-color);
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 10pt;
+        cursor: pointer;
+        background: var(--white);
+        transition:
+          border-color 0.2s ease,
+          background-color 0.2s ease,
+          opacity 0.2s ease;
+      }
+      .heart-box.active label {
+        border-style: solid;
+        cursor: pointer;
+      }
+      .heart-box.inactive label {
+        border-style: dashed;
+        opacity: 0.6;
+        cursor: not-allowed;
+        border-color: var(--gray-dark);
+        color: var(--gray-dark);
+      }
+      .heart-box input[type="checkbox"]:checked + label {
+        border-color: var(--gray-light);
+        color: var(--danger-text);
+        text-decoration: line-through;
+      }
+      .heart-box label::before {
+        content: " ";
+        position: absolute;
+        font-size: 12pt;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+      .heart-box input[type="checkbox"]:checked + label::before {
+        content: "🩸";
+        color: var(--danger-text);
+      }
+      .heart-box .box-num {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        font-size: 8pt;
+        color: var(--gray-dark);
+        pointer-events: none;
+      }
+
+      /* --- Style de la Matrice de Fatigue (10x2) --- */
+      .fatigue-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 4px; /* Espace minimal vertical entre les deux lignes */
+        background: var(--panel-light);
+        padding: 6px;
+        border: 1px solid var(--muted-border);
+        border-radius: 4px;
+        margin-bottom: 15px;
+      }
+      .fatigue-row {
+        display: flex;
+        gap: 4px; /* Espace horizontal entre les cases */
+        justify-content: space-between;
+      }
+      .fatigue-box {
+        flex: 1;
+        width: 10mm !important;
+        height: 10mm !important;
+        box-sizing: content-box;
+      }
+      .fatigue-box input[type="radio"] {
+        display: none;
+      }
+      .fatigue-box label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 1 / 1; /* Aligne en carrés parfaits peu importe la largeur */
+        border: 2px solid var(--gray-dark);
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 10pt;
+        cursor: pointer;
+        background: var(--white);
+        transition:
+          border-color 0.2s ease,
+          background-color 0.2s ease,
+          opacity 0.2s ease;
+      }
+
+      /* Repères visuels pour le papier (Bordures et couleurs légères) */
+      .fatigue-box.active-start label {
+        border: 2px dashed var(--active-border);
+        background: var(--panel-bg);
+      }
+      .fatigue-box.alert-threshold label {
+        border: 2px solid var(--warning-border);
+        background: var(--warning-bg);
+        color: var(--warning-border);
+      }
+      .fatigue-box.danger-threshold label {
+        border: 2px solid var(--danger-border);
+        background: var(--danger-bg);
+        color: var(--danger-border);
+      }
+
+      /* Remplissage de la fatigue actuelle (Écran) */
+      .fatigue-box input[type="radio"]:checked + label {
+        background: var(--active-border);
+        color: var(--white);
+        border-color: var(--active-border);
+      }
+
+      /* --- Règles à la suite --- */
+      .fatigue-rules-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .fatigue-rule-item {
+        font-size: 7pt;
+        line-height: 1.4;
+        color: var(--rule-text);
+        padding: 6px 10px;
+        background: var(--rule-bg);
+        border-left: 4px solid var(--gray-dark);
+        border-radius: 0 4px 4px 0;
+      }
+      .rule-orange {
+        border-left-color: var(
+          --warning-border
+        ); /* Rappel visuel pour la case 10 */
+      }
+      .rule-red {
+        border-left-color: var(
+          --danger-border
+        ); /* Rappel visuel pour la case 20 */
+      }
+
+      .special-target {
+        color: var(--red-alert);
+        font-weight: bold;
+      }
+
+      .column-corps h2 {
+        color: var(--body-color);
+        border-bottom-color: var(--body-color);
+      }
+      .column-esprit h2 {
+        color: var(--esprit-color);
+        border-bottom-color: var(--esprit-color);
+      }
+      .column-corps h3 {
+        color: var(--body-color);
+      }
+      .column-esprit h3 {
+        color: var(--esprit-color);
+      }
+
+      .column-esprit .row-carac {
+        border-left-color: var(--esprit-color);
+      }
+      .column-esprit .carac-header {
+        color: var(--esprit-color);
+      }
+      .column-corps .row-carac {
+        border-left-color: var(--body-color);
+      }
+      .column-corps .carac-header {
+        color: var(--body-color);
+      }
+
+      .row-carac {
+        background: var(--header-bg-start);
+        height: 17mm;
+        padding: 2px;
+        border-radius: 5px;
+        border-left: 4px solid var(--gold-comp);
+      }
+
+      .column-corps .row-carac {
+        border-left-color: var(--dice-color-blue);
+      }
+      .column-esprit .row-carac {
+        border-left-color: var(--dice-color-blue);
+      }
+
+      .carac-header {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 4px;
+        font-weight: bold;
+        font-size: 12pt;
+        margin-bottom: 5px;
+        color: var(--card-heading);
+      }
+
+      .carac-value-input {
+        width: 36px;
+        min-width: 36px;
+        height: 16px;
+        padding: 2px 2px;
+        font: inherit;
+        font-weight: bold;
+        text-align: center;
+        border: 1px solid var(--button-border);
+        border-radius: 4px;
+        background: var(--header-bg-start);
+        color: var(--text-color);
+        margin-right: 0;
+        -moz-appearance: textfield;
+        appearance: textfield;
+      }
+      .carac-value-input::-webkit-inner-spin-button,
+      .carac-value-input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .skills-container {
+        margin-left: 15px;
+        font-size: 8pt;
+        color: var(--text-color);
+      }
+
+      .skill-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 4px 0;
+      }
+
+      /* Custom Checkboxes Shape */
+      .attribute-dice {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .column-corps .attribute-dice {
+        color: var(--dice-color-blue);
+      }
+      .column-esprit .attribute-dice {
+        color: var(--dice-color-blue);
+      }
+      .attribute-dice input[type="checkbox"] {
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border: 1px dashed currentColor;
+        border-radius: 3px;
+        outline: none;
+        background: transparent;
+        cursor: default;
+        vertical-align: middle;
+        margin: 0;
+        pointer-events: none;
+        transition:
+          background-color 0.2s ease,
+          border-color 0.2s ease;
+      }
+      .attribute-dice input[type="checkbox"].active {
+        border-style: solid;
+        cursor: pointer;
+        pointer-events: auto;
+      }
+      .attribute-dice input[type="checkbox"].active:hover {
+        box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.12);
+      }
+      .attribute-dice input[type="checkbox"].filled {
+        background-color: currentColor;
+      }
+      .attribute-dice input[type="checkbox"]:disabled {
+        opacity: 0.5;
+      }
+
+      .skill-dice {
+        color: var(--card-heading);
+
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .skill-dice input[type="checkbox"] {
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border: 1px dashed currentColor;
+        border-radius: 3px;
+        outline: none;
+        background: transparent;
+        cursor: pointer;
+        vertical-align: middle;
+        margin: 0;
+        opacity: 0.5;
+        transition:
+          background-color 0.2s ease,
+          border-color 0.2s ease,
+          opacity 0.2s ease;
+      }
+      .skill-dice input[type="checkbox"]:checked {
+        background-color: var(--dice-skill-yellow);
+        border: 1px solid var(--dice-skill-yellow);
+        opacity: 1;
+      }
+
+      .counter-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .counter-item input {
+        width: 42px;
+        padding: 4px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="fiche-personnage-page">
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          // Portrait input in card
+          var input = document.getElementById("portraitInput");
+          var preview = document.getElementById("portraitPreview");
+          var placeholder = document.querySelector(".portrait-placeholder");
+          var portraitActions = document.querySelector(".portrait-actions");
+
+          function setupPortraitUpload(
+            uploadInput,
+            previewImg,
+            placeholderDiv,
+            actionButtons,
+          ) {
+            if (!uploadInput) return;
+            uploadInput.addEventListener("change", function (e) {
+              var file = e.target.files && e.target.files[0];
+              if (!file) return;
+              var reader = new FileReader();
+              reader.onload = function (evt) {
+                previewImg.src = evt.target.result;
+                previewImg.style.display = "block";
+                placeholderDiv.style.display = "none";
+              };
+              reader.readAsDataURL(file);
+            });
+          }
+
+          setupPortraitUpload(input, preview, placeholder, portraitActions);
+          var vigInput = document.getElementById("vigueur-input");
+          var robustesseStars = document.querySelectorAll(
+            '#robustesse-stars input[type="checkbox"]',
+          );
+          var heartBoxes = document.querySelectorAll(
+            ".sante-block .hearts-container .heart-box",
+          );
+
+          function updateSanteHearts() {
+            if (!vigInput || heartBoxes.length === 0) return;
+            var vig = parseInt(vigInput.value, 10);
+            if (Number.isNaN(vig)) vig = 0;
+            vig = Math.max(0, Math.min(5, vig));
+            var robustesseCount = 0;
+            robustesseStars.forEach(function (star) {
+              if (star.checked) robustesseCount += 1;
+            });
+            var total = Math.min(10, vig + robustesseCount);
+            heartBoxes.forEach(function (box, index) {
+              var input = box.querySelector('input[type="checkbox"]');
+              var active = index < total;
+              box.classList.toggle("active", active);
+              box.classList.toggle("inactive", !active);
+              if (!input) return;
+              if (!active) {
+                input.checked = false;
+              }
+              input.disabled = !active;
+            });
+          }
+
+          if (vigInput) {
+            vigInput.addEventListener("input", updateSanteHearts);
+            vigInput.addEventListener("change", updateSanteHearts);
+          }
+          robustesseStars.forEach(function (star) {
+            star.addEventListener("change", updateSanteHearts);
+          });
+          updateSanteHearts();
+
+          // Comportement des étoiles (sélection cumulative et bascule du dernier)
+          var starGroups = document.querySelectorAll(".skill-dice");
+          starGroups.forEach(function (group) {
+            var inputs = Array.prototype.slice.call(
+              group.querySelectorAll('input[type="checkbox"]'),
+            );
+
+            // stocker l'état avant clic
+            inputs.forEach(function (input) {
+              input.addEventListener("pointerdown", function () {
+                input._wasChecked = input.checked;
+              });
+            });
+
+            inputs.forEach(function (input, idx) {
+              input.addEventListener("click", function () {
+                var wasChecked = !!input._wasChecked;
+                var nowChecked = !!input.checked;
+                var anyHigher = inputs.slice(idx + 1).some(function (inp) {
+                  return inp.checked;
+                });
+                var changed = [];
+
+                if (nowChecked) {
+                  // l'utilisateur a coché n -> s'assurer que 1..n sont cochées
+                  inputs.forEach(function (inp, k) {
+                    var should = k <= idx;
+                    if (inp.checked !== should) {
+                      inp.checked = should;
+                      changed.push(inp);
+                    }
+                  });
+                } else {
+                  // l'utilisateur a décoché n
+                  if (anyHigher) {
+                    // s'il y a des étoiles plus hautes cochées, cliquer sur n doit sélectionner 1..n et désélectionner >n
+                    inputs.forEach(function (inp, k) {
+                      var should = k <= idx;
+                      if (inp.checked !== should) {
+                        inp.checked = should;
+                        changed.push(inp);
+                      }
+                    });
+                  } else {
+                    // sinon, on désélectionne la dernière étoile (garder 1..n-1)
+                    inputs.forEach(function (inp, k) {
+                      var should = k < idx;
+                      if (inp.checked !== should) {
+                        inp.checked = should;
+                        changed.push(inp);
+                      }
+                    });
+                  }
+                }
+
+                // déclencher 'change' pour les inputs modifiés
+                changed.forEach(function (inp) {
+                  inp.dispatchEvent(new Event("change", { bubbles: true }));
+                });
+              });
+            });
+          });
+
+          var caracInputs = document.querySelectorAll(".carac-value-input");
+          function updateCaracCircles(input, fillCount) {
+            var row = input.closest(".carac-header");
+            if (!row) return;
+            var boxes = row.querySelectorAll(
+              '.attribute-dice input[type="checkbox"]',
+            );
+            var value = parseInt(input.value, 10);
+            if (Number.isNaN(value)) value = 0;
+            value = Math.max(0, Math.min(5, value));
+            input.value = value;
+
+            if (fillCount > value) {
+              fillCount = value;
+            }
+            if (value === 0) {
+              fillCount = 0;
+            }
+
+            boxes.forEach(function (box, index) {
+              var active = index < value;
+              box.classList.toggle("active", active);
+              box.disabled = !active;
+              box.classList.toggle("filled", active && index < fillCount);
+            });
+
+            return fillCount;
+          }
+          caracInputs.forEach(function (input) {
+            var row = input.closest(".carac-header");
+            if (!row) return;
+            var boxes = row.querySelectorAll(
+              '.attribute-dice input[type="checkbox"]',
+            );
+            var fillCount = 0;
+
+            boxes.forEach(function (box, index) {
+              box.addEventListener("click", function () {
+                if (!box.classList.contains("active")) return;
+                if (index < fillCount) {
+                  fillCount = index;
+                } else {
+                  fillCount = index + 1;
+                }
+                fillCount = updateCaracCircles(input, fillCount);
+              });
+            });
+            input.addEventListener("input", function () {
+              fillCount = updateCaracCircles(input, fillCount);
+            });
+            input.addEventListener("change", function () {
+              fillCount = updateCaracCircles(input, fillCount);
+            });
+            fillCount = updateCaracCircles(input, fillCount);
+          });
+        });
+      </script>
+
+      <div class="colonne-gauche">
+        <div class="card column-corps">
+          <h2>Corps</h2>
+          <h3>Condition Physique & États</h3>
+          <div class="card-section">
+            <div class="sante-block">
+              <div class="sante-header">
+                <span class="sante-title">♥️ Résistance</span>
+                <span class="sante-subtext">(Vigueur + ✫ Robustesse)</span>
+              </div>
+
+              <div class="hearts-container">
+                <div class="heart-box">
+                  <input type="checkbox" id="sante-1" /><label for="sante-1"
+                    >1</label
+                  >
+                </div>
+                <div class="heart-box">
+                  <input type="checkbox" id="sante-2" /><label for="sante-2"
+                    >2</label
+                  >
+                </div>
+                <div class="heart-box">
+                  <input type="checkbox" id="sante-3" /><label for="sante-3"
+                    >3</label
+                  >
+                </div>
+                <div class="heart-box">
+                  <input type="checkbox" id="sante-4" /><label for="sante-4"
+                    >4</label
+                  >
+                </div>
+                <div class="heart-box">
+                  <input type="checkbox" id="sante-5" /><label for="sante-5"
+                    >5</label
+                  >
+                </div>
+                <div class="heart-box">
+                  <input type="checkbox" id="sante-6" /><label for="sante-6"
+                    >6</label
+                  >
+                </div>
+                <div class="heart-box">
+                  <input type="checkbox" id="sante-7" /><label for="sante-7"
+                    >7</label
+                  >
+                </div>
+                <div class="heart-box">
+                  <input type="checkbox" id="sante-8" /><label for="sante-8"
+                    >8</label
+                  >
+                </div>
+                <div class="heart-box">
+                  <input type="checkbox" id="sante-9" /><label for="sante-9"
+                    >9</label
+                  >
+                </div>
+                <div class="heart-box">
+                  <input type="checkbox" id="sante-10" /><label for="sante-10"
+                    >10</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="fatigue-block">
+              <div class="fatigue-header">
+                <span class="fatigue-title">💧Fatigue</span>
+                <span class="fatigue-subtext">Débute à 1 • Maximum 20</span>
+              </div>
+
+              <div class="fatigue-grid">
+                <div class="fatigue-row">
+                  <div class="fatigue-box active-start">
+                    <input type="radio" name="fatigue" id="f-1" checked /><label
+                      for="f-1"
+                      >1</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-2" /><label
+                      for="f-2"
+                      >2</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-3" /><label
+                      for="f-3"
+                      >3</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-4" /><label
+                      for="f-4"
+                      >4</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-5" /><label
+                      for="f-5"
+                      >5</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-6" /><label
+                      for="f-6"
+                      >6</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-7" /><label
+                      for="f-7"
+                      >7</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-8" /><label
+                      for="f-8"
+                      >8</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-9" /><label
+                      for="f-9"
+                      >9</label
+                    >
+                  </div>
+                  <div class="fatigue-box alert-threshold">
+                    <input type="radio" name="fatigue" id="f-10" /><label
+                      for="f-10"
+                      >10</label
+                    >
+                  </div>
+                </div>
+
+                <div class="fatigue-row">
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-11" /><label
+                      for="f-11"
+                      >11</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-12" /><label
+                      for="f-12"
+                      >12</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-13" /><label
+                      for="f-13"
+                      >13</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-14" /><label
+                      for="f-14"
+                      >14</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-15" /><label
+                      for="f-15"
+                      >15</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-16" /><label
+                      for="f-16"
+                      >16</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-17" /><label
+                      for="f-17"
+                      >17</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-18" /><label
+                      for="f-18"
+                      >18</label
+                    >
+                  </div>
+                  <div class="fatigue-box">
+                    <input type="radio" name="fatigue" id="f-19" /><label
+                      for="f-19"
+                      >19</label
+                    >
+                  </div>
+                  <div class="fatigue-box danger-threshold">
+                    <input type="radio" name="fatigue" id="f-20" /><label
+                      for="f-20"
+                      >20</label
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="fatigue-rules-list">
+                <div class="fatigue-rule-item rule-orange">
+                  <strong>⚠️ Épuisement (Fatigue ≥ 10) :</strong> Test
+                  d'Endurance obligatoire (🟨🟨 + 🟦 🆚 Fatigue). En cas
+                  d'échec, le personnage subit l'état <b>Essoufflé 😮‍💨</b>.
+                </div>
+                <div class="fatigue-rule-item rule-red">
+                  <strong>😵 Seuil de K.O. (Fatigue = 20) :</strong> Le
+                  personnage tombe immédiatement <b>À terre</b> et devient
+                  <b>Inconscient</b> (Échec automatique à tous les jets de
+                  défense).
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h3>Caractéristiques et Compétences</h3>
+          <div class="features-group">
+            <div class="row-carac">
+              <div class="carac-header">
+                <input
+                  class="carac-value-input"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  value="1"
+                />
+                <span>FORCE</span>
+                <div class="attribute-dice">
+                  <input type="checkbox" /> <input type="checkbox" />
+                  <input type="checkbox" /> <input type="checkbox" />
+                  <input type="checkbox" />
+                </div>
+              </div>
+              <div class="skills-container">
+                <div class="skill-item">
+                  <span>✫ Puissance</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" checked /><input
+                      type="checkbox"
+                      checked
+                    /><input type="checkbox" checked /><input
+                      type="checkbox"
+                    /><input type="checkbox" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>✫ Robustesse</span>
+                  <div class="skill-dice" id="robustesse-stars">
+                    <input type="checkbox" checked /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row-carac">
+              <div class="carac-header">
+                <input
+                  class="carac-value-input"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  value="1"
+                />
+                <span>AGILITÉ</span>
+                <div class="attribute-dice">
+                  <input type="checkbox" /> <input type="checkbox" />
+                  <input type="checkbox" /> <input type="checkbox" />
+                  <input type="checkbox" />
+                </div>
+              </div>
+              <div class="skills-container">
+                <div class="skill-item">
+                  <span>✫ Précision</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" checked /><input
+                      type="checkbox"
+                      checked
+                    /><input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>✫ Mobilité</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" checked /><input
+                      type="checkbox"
+                      checked
+                    /><input type="checkbox" checked /><input
+                      type="checkbox"
+                    /><input type="checkbox" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row-carac">
+              <div class="carac-header">
+                <input
+                  id="vigueur-input"
+                  class="carac-value-input"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  value="1"
+                />
+                <span>VIGUEUR</span>
+                <div class="attribute-dice">
+                  <input type="checkbox" /><input type="checkbox" /><input
+                    type="checkbox"
+                  /><input type="checkbox" /><input type="checkbox" />
+                </div>
+              </div>
+              <div class="skills-container">
+                <div class="skill-item">
+                  <span>✫ Endurance</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>✫ Récupération</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row-carac">
+              <div class="carac-header">
+                <input
+                  class="carac-value-input"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  value="1"
+                />
+                <span>GRÂCE</span>
+                <div class="attribute-dice">
+                  <input type="checkbox" /><input type="checkbox" /><input
+                    type="checkbox"
+                  /><input type="checkbox" /><input type="checkbox" />
+                </div>
+              </div>
+              <div class="skills-container">
+                <div class="skill-item">
+                  <span>✫ Prestance</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>✫ Mascarade</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row-carac">
+              <div class="carac-header">
+                <input
+                  class="carac-value-input"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  value="1"
+                />
+                <span>ACUITÉ</span>
+                <div class="attribute-dice">
+                  <input type="checkbox" /><input type="checkbox" /><input
+                    type="checkbox"
+                  /><input type="checkbox" /><input type="checkbox" />
+                </div>
+              </div>
+              <div class="skills-container">
+                <div class="skill-item">
+                  <span>✫ Observation</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>✫ Vigilance</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="colonne-centre">
+        <div class="portrait-card">
+          <img id="portraitPreview" alt="Portrait" style="display: none" />
+
+          <div class="header-fields">
+            <div class="header-fields-inputs">
+              <div class="header-field-group full-width">
+                <label>Nom du Personnage</label>
+                <input type="text" placeholder="— Saisir le nom —" />
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-fields">
+            <div class="portrait-actions">
+              <input
+                type="file"
+                id="portraitInput"
+                accept="image/*"
+                style="display: none"
+              />
+              <label for="portraitInput">Changer le portrait</label>
+              <button
+                type="button"
+                onclick="window.print()"
+                title="Imprimer / Exporter en PDF"
+              >
+                Imprimer
+              </button>
+            </div>
+
+            <div class="bio-field-group">
+              <label>Biographie</label>
+              <textarea
+                placeholder="— Histoire, origines, peuple, particularités —"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="colonne-droite">
+        <div class="card column-esprit">
+          <h2>Esprit</h2>
+          <h3>Condition Mentale & Stabilité</h3>
+          <div class="card-section">
+            <div class="stability-block">
+              <div class="stability-header">
+                <span class="stability-title">◇ Stabilité</span>
+                <span class="stability-subtext">(Ténacité + ✫ Discipline)</span>
+              </div>
+
+              <div class="stability-container">
+                <div class="stability-box">
+                  <input type="checkbox" id="stability-1" /><label
+                    for="stability-1"
+                    >1</label
+                  >
+                </div>
+                <div class="stability-box">
+                  <input type="checkbox" id="stability-2" /><label
+                    for="stability-2"
+                    >2</label
+                  >
+                </div>
+                <div class="stability-box">
+                  <input type="checkbox" id="stability-3" /><label
+                    for="stability-3"
+                    >3</label
+                  >
+                </div>
+                <div class="stability-box">
+                  <input type="checkbox" id="stability-4" /><label
+                    for="stability-4"
+                    >4</label
+                  >
+                </div>
+                <div class="stability-box">
+                  <input type="checkbox" id="stability-5" /><label
+                    for="stability-5"
+                    >5</label
+                  >
+                </div>
+                <div class="stability-box">
+                  <input type="checkbox" id="stability-6" /><label
+                    for="stability-6"
+                    >6</label
+                  >
+                </div>
+                <div class="stability-box">
+                  <input type="checkbox" id="stability-7" /><label
+                    for="stability-7"
+                    >7</label
+                  >
+                </div>
+                <div class="stability-box">
+                  <input type="checkbox" id="stability-8" /><label
+                    for="stability-8"
+                    >8</label
+                  >
+                </div>
+                <div class="stability-box">
+                  <input type="checkbox" id="stability-9" /><label
+                    for="stability-9"
+                    >9</label
+                  >
+                </div>
+                <div class="stability-box">
+                  <input type="checkbox" id="stability-10" /><label
+                    for="stability-10"
+                    >10</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="piste-mentale-v">
+              <label class="mental-v-row etat-enrage">
+                <input type="radio" name="etat_mental_v" value="enrage" />
+                <span class="custom-check-v"></span>
+                <span class="mental-v-name">Enragé</span>
+                <span class="mental-v-rule"
+                  >+1 fatigue 💧 supplémentaire à chaque action</span
+                >
+              </label>
+
+              <label class="mental-v-row etat-furieux">
+                <input type="radio" name="etat_mental_v" value="furieux" />
+                <span class="custom-check-v"></span>
+                <span class="mental-v-name">Furieux</span>
+                <span class="mental-v-rule"
+                  >🟥 aux jets sur les actions défensives</span
+                >
+              </label>
+
+              <label class="mental-v-row etat-agressif">
+                <input type="radio" name="etat_mental_v" value="agressif" />
+                <span class="custom-check-v"></span>
+                <span class="mental-v-name">Agressif</span>
+                <span class="mental-v-rule"
+                  >+1 relance sur les actions offensives</span
+                >
+              </label>
+
+              <label class="mental-v-row etat-concentre">
+                <input
+                  type="radio"
+                  name="etat_mental_v"
+                  value="concentre"
+                  checked
+                />
+                <span class="custom-check-v"></span>
+                <span class="mental-v-name">Concentré</span>
+                <span class="mental-v-rule">
+                  +1 réaction ⚡ au début de chaque manche</span
+                >
+              </label>
+
+              <label class="mental-v-row etat-prudent">
+                <input type="radio" name="etat_mental_v" value="prudent" />
+                <span class="custom-check-v"></span>
+                <span class="mental-v-name">Prudent</span>
+                <span class="mental-v-rule"
+                  >+1 relance sur les actions défensives</span
+                >
+              </label>
+
+              <label class="mental-v-row etat-panique">
+                <input type="radio" name="etat_mental_v" value="panique" />
+                <span class="custom-check-v"></span>
+                <span class="mental-v-name">Paniqué</span>
+                <span class="mental-v-rule"
+                  >🟥 aux jets sur les actions offensives</span
+                >
+              </label>
+
+              <label class="mental-v-row etat-terrifie">
+                <input type="radio" name="etat_mental_v" value="terrifie" />
+                <span class="custom-check-v"></span>
+                <span class="mental-v-name">Terrifié</span>
+                <span class="mental-v-rule"
+                  >Vous ne pouvez pas effectuer de réactions ⚡</span
+                >
+              </label>
+            </div>
+          </div>
+
+          <h3>Caractéristiques et Compétences</h3>
+
+          <div class="features-group">
+            <div class="row-carac">
+              <div class="carac-header">
+                <input
+                  class="carac-value-input"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  value="1"
+                />
+                <span>VOLONTÉ</span>
+                <div class="attribute-dice">
+                  <input type="checkbox" /><input type="checkbox" /><input
+                    type="checkbox"
+                  /><input type="checkbox" /><input type="checkbox" />
+                </div>
+              </div>
+              <div class="skills-container">
+                <div class="skill-item">
+                  <span>✫ Autorité</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" checked /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>✫ Discipline</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" checked /><input
+                      type="checkbox"
+                      checked
+                    /><input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row-carac">
+              <div class="carac-header">
+                <input
+                  class="carac-value-input"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  value="1"
+                />
+                <span>INTELLIGENCE</span>
+                <div class="attribute-dice">
+                  <input type="checkbox" /><input type="checkbox" /><input
+                    type="checkbox"
+                  /><input type="checkbox" /><input type="checkbox" />
+                </div>
+              </div>
+              <div class="skills-container">
+                <div class="skill-item">
+                  <span>✫ Logique</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>✫ Réactivité</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" checked /><input
+                      type="checkbox"
+                      checked
+                    /><input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row-carac">
+              <div class="carac-header">
+                <input
+                  class="carac-value-input"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  value="1"
+                />
+                <span>TÉNACITÉ</span>
+                <div class="attribute-dice">
+                  <input type="checkbox" /><input type="checkbox" /><input
+                    type="checkbox"
+                  /><input type="checkbox" /><input type="checkbox" />
+                </div>
+              </div>
+              <div class="skills-container">
+                <div class="skill-item">
+                  <span>✫ Conviction</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>✫ Résilience</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row-carac">
+              <div class="carac-header">
+                <input
+                  class="carac-value-input"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  value="1"
+                />
+                <span>CHARISME</span>
+                <div class="attribute-dice">
+                  <input type="checkbox" /><input type="checkbox" /><input
+                    type="checkbox"
+                  /><input type="checkbox" /><input type="checkbox" />
+                </div>
+              </div>
+              <div class="skills-container">
+                <div class="skill-item">
+                  <span>✫ Éloquence</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>✫ Manipulation</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row-carac">
+              <div class="carac-header">
+                <input
+                  class="carac-value-input"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  value="1"
+                />
+                <span>LUCIDITÉ</span>
+                <div class="attribute-dice">
+                  <input type="checkbox" /><input type="checkbox" /><input
+                    type="checkbox"
+                  /><input type="checkbox" /><input type="checkbox" />
+                </div>
+              </div>
+              <div class="skills-container">
+                <div class="skill-item">
+                  <span>✫ Clairvoyance</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>✫ Intuition</span>
+                  <div class="skill-dice">
+                    <input type="checkbox" /><input type="checkbox" /><input
+                      type="checkbox"
+                    /><input type="checkbox" /><input type="checkbox" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      function normalizeText(s) {
+        if (!s) return "";
+        try {
+          s = s.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+        } catch (e) {
+          s = s.replace(/[\u0300-\u036f]/g, "");
+        }
+        return s
+          .replace(/[^A-Z0-9 ]/gi, "")
+          .trim()
+          .toUpperCase();
+      }
+
+      function findCaracInputByLabel(label) {
+        var headers = document.querySelectorAll(".carac-header");
+        for (var i = 0; i < headers.length; i++) {
+          var span = headers[i].querySelector("span");
+          if (!span) continue;
+          if (
+            normalizeText(span.textContent).indexOf(normalizeText(label)) !== -1
+          ) {
+            return headers[i].querySelector(".carac-value-input");
+          }
+        }
+        return null;
+      }
+
+      function findSkillStarsByName(name) {
+        var items = document.querySelectorAll(".skill-item");
+        for (var i = 0; i < items.length; i++) {
+          var label = items[i].querySelector("span");
+          if (!label) continue;
+          if (
+            normalizeText(label.textContent).indexOf(normalizeText(name)) !== -1
+          ) {
+            var stars = items[i].querySelector(".skill-dice");
+            if (stars)
+              return Array.prototype.slice.call(
+                stars.querySelectorAll('input[type="checkbox"]'),
+              );
+          }
+        }
+        return null;
+      }
+
+      var tenaciteInput =
+        findCaracInputByLabel("TÉNACITÉ") || findCaracInputByLabel("TENACITE");
+      var disciplineStars = findSkillStarsByName("DISCIPLINE");
+      // Wrap numeric labels into a small span for styling (top-right)
+      function wrapBoxLabels(selector) {
+        var nodes = document.querySelectorAll(selector + " label");
+        nodes.forEach(function (label) {
+          if (label.querySelector(".box-num")) return;
+          var text = label.textContent || "";
+          var m = text.match(/\d+/);
+          var num = m ? m[0] : text.trim();
+          label.innerHTML = '<span class="box-num">' + num + "</span>";
+        });
+      }
+      wrapBoxLabels(".heart-box");
+      wrapBoxLabels(".stability-box");
+
+      var stabilityBoxes = Array.prototype.slice.call(
+        document.querySelectorAll(".stability-container .stability-box"),
+      );
+
+      function updateStabilityBoxes() {
+        if (!tenaciteInput || stabilityBoxes.length === 0) return;
+        var ten = parseInt(tenaciteInput.value, 10);
+        if (Number.isNaN(ten)) ten = 0;
+        ten = Math.max(0, Math.min(5, ten));
+        var disc = 0;
+        if (disciplineStars)
+          disciplineStars.forEach(function (s) {
+            if (s.checked) disc++;
+          });
+        var total = Math.min(stabilityBoxes.length, ten + disc);
+        stabilityBoxes.forEach(function (box, idx) {
+          var input = box.querySelector('input[type="checkbox"]');
+          var active = idx < total;
+          box.classList.toggle("active", active);
+          box.classList.toggle("inactive", !active);
+          if (!input) return;
+          input.disabled = !active;
+          if (!active) input.checked = false;
+        });
+      }
+
+      if (tenaciteInput) {
+        tenaciteInput.addEventListener("input", updateStabilityBoxes);
+        tenaciteInput.addEventListener("change", updateStabilityBoxes);
+      }
+      if (disciplineStars) {
+        disciplineStars.forEach(function (s) {
+          s.addEventListener("change", updateStabilityBoxes);
+        });
+      }
+
+      // Initial sync
+      updateStabilityBoxes();
+    });
+  </script>
+</html>
