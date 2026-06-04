@@ -2004,7 +2004,7 @@
       function findCaracInputByLabel(label) {
         var headers = document.querySelectorAll(".carac-header");
         for (var i = 0; i < headers.length; i++) {
-          var span = headers[i].querySelector("span");
+          var span = headers[i].querySelector("span:not(.carac-value-display)");
           if (!span) continue;
           if (
             normalizeText(span.textContent).indexOf(normalizeText(label)) !== -1
