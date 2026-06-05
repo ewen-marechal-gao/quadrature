@@ -73,6 +73,32 @@
         --button-hover: #8b6914;
         --button-hover-shadow: rgba(184, 134, 11, 0.3);
         --skill-dice-selected: #b8860b;
+        /* Shadows */
+        --shadow-card: var(--shadow-card);
+        --text-shadow-dark: var(--text-shadow-dark);
+        /* Portrait overlay gradient */
+        --portrait-overlay-heavy: var(--portrait-overlay-heavy);
+        --portrait-overlay-mid: var(--portrait-overlay-mid);
+        --portrait-overlay-edge: var(--portrait-overlay-edge);
+        /* Overlay inputs (on portrait background) */
+        --overlay-bg: var(--overlay-bg);
+        --overlay-border: var(--overlay-border);
+        --overlay-border-light: var(--overlay-border-light);
+        --overlay-focus-bg: var(--overlay-focus-bg);
+        --portrait-btn-bg: var(--portrait-btn-bg);
+        --header-btn-bg: var(--header-btn-bg);
+        --header-btn-border: var(--header-btn-border);
+        --gold-focus-shadow: var(--gold-focus-shadow);
+        --skill-hover-shadow: var(--skill-hover-shadow);
+        /* Mental state tint backgrounds */
+        --state-enraged-bg: rgba(255, 230, 230, 0.5);
+        --state-furious-bg: rgba(255, 240, 240, 0.5);
+        --state-aggressive-bg: rgba(255, 248, 245, 0.5);
+        --state-cautious-bg: rgba(245, 248, 255, 0.5);
+        --state-panicked-bg: rgba(240, 244, 255, 0.5);
+        --state-terrified-bg: rgba(230, 240, 255, 0.5);
+        /* Print */
+        --pencil-bg: var(--pencil-bg);
       }
 
       @page {
@@ -84,8 +110,8 @@
         /* 1. Force ALL backgrounds to pure white to save ink */
         body,
         .character-sheet-page {
-          background: #ffffff !important;
-          background-color: #ffffff !important;
+          background: var(--white) !important;
+          background-color: var(--white) !important;
           margin: 0 !important;
           box-shadow: none !important;
           -webkit-print-color-adjust: exact;
@@ -135,7 +161,7 @@
         /* 7. If field is EMPTY, apply light cream background for pencil writing */
         input[type="text"]:placeholder-shown,
         textarea:placeholder-shown {
-          background-color: #fdfaf4 !important; /* Very light/cream color for pencil */
+          background-color: var(--pencil-bg) !important; /* Very light/cream color for pencil */
           border: 1px solid var(--border-color) !important; /* Dashed border "fill-in field" style */
         }
       }
@@ -162,7 +188,7 @@
         background: var(--bg-color);
         background-color: var(--sheet-bg-color);
         margin: 20px auto;
-        box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 0 15px var(--shadow-card);
       }
 
       body {
@@ -205,11 +231,11 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: #ffffff !important;
+        background-color: var(--white) !important;
         background-image: none !important;
         border-radius: 4px;
         overflow: hidden;
-        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.15);
+        box-shadow: inset 0 0 20px var(--shadow-card);
         display: block;
         z-index: 1;
       }
@@ -224,11 +250,11 @@
         /* Balanced top/bottom gradient to support text and buttons */
         background: linear-gradient(
           to bottom,
-          rgba(0, 0, 0, 0.85) 0%,
-          rgba(0, 0, 0, 0.2) 25%,
+          var(--portrait-overlay-heavy) 0%,
+          var(--portrait-overlay-mid) 25%,
           transparent 50%,
-          rgba(0, 0, 0, 0.2) 75%,
-          rgba(0, 0, 0, 0.8) 100%
+          var(--portrait-overlay-mid) 75%,
+          var(--portrait-overlay-edge) 100%
         );
         pointer-events: none;
         z-index: 1;
@@ -280,13 +306,13 @@
         font-weight: bold;
         text-transform: uppercase;
         letter-spacing: 1px;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+        text-shadow: 0 1px 3px var(--text-shadow-dark);
       }
 
       .bio-field-group textarea {
-        background: rgba(254, 253, 249, 0.15);
-        border: 1px solid rgba(254, 253, 249, 0.4);
-        color: #fefdf9;
+        background: var(--overlay-bg);
+        border: 1px solid var(--overlay-border);
+        color: var(--card-bg);
         border-radius: 4px;
         padding: 6px 12px;
         font-family: inherit;
@@ -302,18 +328,18 @@
       }
 
       .bio-field-group textarea:focus {
-        background: rgba(254, 253, 249, 0.9);
+        background: var(--overlay-focus-bg);
         border-color: var(--gold-comp);
         color: var(--text-color);
         outline: none;
-        box-shadow: 0 0 8px rgba(184, 134, 11, 0.5);
+        box-shadow: 0 0 8px var(--gold-focus-shadow);
       }
       .portrait-actions label,
       .portrait-actions button {
         display: inline-block;
-        background: rgba(45, 37, 32, 0.65);
-        border: 1px solid rgba(254, 253, 249, 0.4);
-        color: #fefdf9;
+        background: var(--portrait-btn-bg);
+        border: 1px solid var(--overlay-border);
+        color: var(--card-bg);
         padding: 6px 12px;
         border-radius: 4px;
         cursor: pointer;
@@ -336,13 +362,13 @@
       .portrait-actions button:hover {
         background: var(--text-color);
         border-color: var(--gold-comp);
-        color: #fefdf9;
+        color: var(--card-bg);
       }
       .header-actions button {
         display: inline-block;
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        color: #ffffff;
+        background: var(--header-btn-bg);
+        border: 1px solid var(--header-btn-border);
+        color: var(--white);
         padding: 4px 8px;
         border-radius: 4px;
         cursor: pointer;
@@ -400,7 +426,7 @@
         font-weight: bold;
         text-transform: uppercase;
         letter-spacing: 1px;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+        text-shadow: 0 1px 3px var(--text-shadow-dark);
       }
       .header-field-group {
         display: flex;
@@ -429,9 +455,9 @@
         max-width: 62mm;
       }
       .header-fields input[type="text"] {
-        background: rgba(254, 253, 249, 0.15);
-        border: 1px solid rgba(254, 253, 249, 0.4);
-        color: #fefdf9;
+        background: var(--overlay-bg);
+        border: 1px solid var(--overlay-border);
+        color: var(--card-bg);
         border-radius: 4px;
         padding: 6px 12px;
         font-family: inherit;
@@ -443,11 +469,11 @@
       }
 
       .header-fields input[type="text"]:focus {
-        background: rgba(254, 253, 249, 0.9);
+        background: var(--overlay-focus-bg);
         border-color: var(--gold-comp);
         color: var(--text-color);
         outline: none;
-        box-shadow: 0 0 8px rgba(184, 134, 11, 0.5);
+        box-shadow: 0 0 8px var(--gold-focus-shadow);
       }
       .header-actions {
         position: absolute;
@@ -459,9 +485,9 @@
         display: none;
       }
       .header-actions button {
-        background: rgba(254, 253, 249, 0.15);
-        border: 1px solid rgba(254, 253, 249, 0.3);
-        color: #fefdf9;
+        background: var(--overlay-bg);
+        border: 1px solid var(--overlay-border-light);
+        color: var(--card-bg);
         padding: 4px 6px;
         border-radius: 4px;
         cursor: pointer;
@@ -705,25 +731,25 @@
 
       /* Subtle background tints for print (optional, guides the eye) */
       .state-enraged {
-        background-color: rgba(255, 230, 230, 0.5);
+        background-color: var(--state-enraged-bg);
       }
       .state-furious {
-        background-color: rgba(255, 240, 240, 0.5);
+        background-color: var(--state-furious-bg);
       }
       .state-aggressive {
-        background-color: rgba(255, 248, 245, 0.5);
+        background-color: var(--state-aggressive-bg);
       }
       .state-focused {
         background-color: var(--state-focused-bg);
       }
       .state-cautious {
-        background-color: rgba(245, 248, 255, 0.5);
+        background-color: var(--state-cautious-bg);
       }
       .state-panicked {
-        background-color: rgba(240, 244, 255, 0.5);
+        background-color: var(--state-panicked-bg);
       }
       .state-terrified {
-        background-color: rgba(230, 240, 255, 0.5);
+        background-color: var(--state-terrified-bg);
       }
 
       /* Section headers */
@@ -734,7 +760,7 @@
         flex-direction: row; /* Single horizontal line */
         justify-content: space-between; /* Title left, subtext right */
         align-items: flex-end; /* Align text baselines */
-        border-bottom: 2px solid #333;
+        border-bottom: 2px solid var(--active-border);
         margin-bottom: 5px;
       }
       .health-title,
@@ -1034,7 +1060,7 @@
         pointer-events: auto;
       }
       .attribute-dice input[type="checkbox"].active:hover {
-        box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.12);
+        box-shadow: 0 0 0 3px var(--skill-hover-shadow);
       }
       .attribute-dice input[type="checkbox"].filled {
         background-color: currentColor;
