@@ -1257,28 +1257,20 @@
         border-left: 1px solid var(--muted-light-border);
         padding-left: 4px;
       }
-      .inv-pocket-icon {
+      /* Pip gauge for pocket/packet capacity */
+      .inv-pip {
         font-size: 10pt;
         line-height: 1;
-      }
-      .inv-count-input {
-        width: 18px;
-        background: transparent;
+        opacity: 0.2;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        background: none;
         border: none;
-        border-bottom: 1px solid var(--muted-light-border);
-        font-family: inherit;
-        font-size: 8pt;
-        text-align: center;
-        color: var(--text-color);
         padding: 0;
       }
-      .inv-count-input:focus {
-        outline: none;
-      }
-      .inv-count-input::-webkit-inner-spin-button,
-      .inv-count-input::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-      }
+      .inv-pip.active { opacity: 1; }
+      .inv-pip:focus  { outline: none; }
 
       /* Quick-access (🔸) and small (▫) slot rows */
       .inv-quick-section {
@@ -1357,7 +1349,6 @@
         input.inv-item-input:placeholder-shown,
         input.inv-quick-input,
         input.inv-quick-input:placeholder-shown,
-        input.inv-count-input,
         input.inv-count-input:placeholder-shown {
           -webkit-appearance: none !important;
           appearance: none !important;
@@ -2541,7 +2532,7 @@
           </div>
 
           <!-- Emplacements rapides (🔸 combat pockets) -->
-          <h3>Emplacements rapides</h3>
+          <h3 class="inv-section-header">Emplacements rapides <span class="inv-charge"><span id="quick-used">0</span>&thinsp;/&thinsp;<span id="quick-total">0</span></span></h3>
           <div class="inv-quick-section">
             <div class="inv-quick-row">
               <span class="inv-quick-icon">🔸</span
@@ -2865,25 +2856,48 @@
           printIcon.textContent = "🔳";
           row.insertBefore(printIcon, sel.nextSibling);
 
-          // Pocket/packet count input (hidden by default)
+          // Pip gauge for pocket/packet capacity (hidden by default)
           var countWrap = document.createElement("div");
           countWrap.className = "inv-pocket-count";
-          var icon = document.createElement("span");
-          icon.className = "inv-pocket-icon";
-          var countInput = document.createElement("input");
-          countInput.type = "number";
-          countInput.min = "1";
-          countInput.max = "9";
-          countInput.className = "inv-count-input";
-          countWrap.appendChild(icon);
-          countWrap.appendChild(countInput);
+          var PIPS = 3;
+          var pipEls = [];
+          for (var p = 0; p < PIPS; p++) {
+            var pip = document.createElement("button");
+            pip.type = "button";
+            pip.className = "inv-pip";
+            countWrap.appendChild(pip);
+            pipEls.push(pip);
+          }
+          // Gauge click logic (IIFE captures pipEls per row)
+          (function (pips) {
+            function getActive() {
+              var n = 0;
+              pips.forEach(function (p) { if (p.classList.contains("active")) n++; });
+              return n;
+            }
+            function setCount(n) {
+              pips.forEach(function (p, i) { p.classList.toggle("active", i < n); });
+              updateQuickTotal();
+            }
+            pips.forEach(function (pip, idx) {
+              pip.addEventListener("click", function () {
+                setCount(getActive() === idx + 1 ? 0 : idx + 1);
+              });
+            });
+          })(pipEls);
           row.appendChild(countWrap);
 
           sel.addEventListener("change", function () {
             var type = this.value;
             var show = type === "pocket" || type === "packet";
             countWrap.style.display = show ? "flex" : "none";
-            if (show) icon.textContent = pocketIcons[type];
+            var pipIcon = type === "pocket" ? "🔸" : "📦";
+            if (show) {
+              pipEls.forEach(function (pip) { pip.textContent = pipIcon; });
+            } else {
+              pipEls.forEach(function (pip) { pip.classList.remove("active"); });
+              updateQuickTotal();
+            }
             updateSlotsUsed();
           });
         });
@@ -2906,6 +2920,32 @@
 
         largeSlotInputs.forEach(function (inp) {
           inp.addEventListener("input", updateSlotsUsed);
+        });
+
+        // Quick-slot capacity: sum of active pips across all pocket/packet rows
+        function updateQuickTotal() {
+          var total = 0;
+          document.querySelectorAll(".inv-slot-row .inv-pocket-count").forEach(function (wrap) {
+            if (wrap.style.display !== "none") {
+              wrap.querySelectorAll(".inv-pip.active").forEach(function () { total++; });
+            }
+          });
+          var el = document.getElementById("quick-total");
+          if (el) el.textContent = total;
+        }
+
+        // Quick-slot usage: count of filled Emplacements rapides rows
+        function updateQuickUsed() {
+          var used = 0;
+          document.querySelectorAll(".inv-quick-input").forEach(function (inp) {
+            if (inp.value.trim() !== "") used++;
+          });
+          var el = document.getElementById("quick-used");
+          if (el) el.textContent = used;
+        }
+
+        document.querySelectorAll(".inv-quick-input").forEach(function (inp) {
+          inp.addEventListener("input", updateQuickUsed);
         });
         // Wrap numeric labels into a small span for styling (top-right)
         function wrapBoxLabels(selector) {
@@ -2961,6 +3001,8 @@
         updateStabilityBoxes();
         updateChargeMax();
         updateSlotsUsed();
+        updateQuickTotal();
+        updateQuickUsed();
       });
     </script>
   </body>
