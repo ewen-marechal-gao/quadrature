@@ -1112,14 +1112,14 @@
 
           function updateHealthBoxes() {
             if (!vigorDisplay || healthBoxes.length === 0) return;
-            var vig = parseInt(vigorDisplay.textContent, 10);
-            if (Number.isNaN(vig)) vig = 0;
-            vig = Math.max(0, Math.min(5, vig));
-            var robustesseCount = 0;
+            var vigor = parseInt(vigorDisplay.textContent, 10);
+            if (Number.isNaN(vigor)) vigor = 0;
+            vigor = Math.max(0, Math.min(5, vigor));
+            var robustnessCount = 0;
             robustnessStars.forEach(function (star) {
-              if (star.checked) robustesseCount += 1;
+              if (star.checked) robustnessCount += 1;
             });
-            var total = Math.min(10, vig + robustesseCount);
+            var total = Math.min(10, vigor + robustnessCount);
             healthBoxes.forEach(function (box, index) {
               var input = box.querySelector('input[type="checkbox"]');
               var active = index < total;
