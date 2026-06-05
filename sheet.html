@@ -590,18 +590,32 @@
         min-height: 0;
       }
 
-      /* --- Stability box style --- */
-      .stability-container {
-        display: flex;
-        gap: 5px;
-        justify-content: space-between;
-      }
-      .stability-box {
+      /* --- Shared track box: size and number badge position --- */
+      .heart-box,
+      .stability-box,
+      .fatigue-box {
         width: 10mm !important;
         height: 10mm !important;
         box-sizing: content-box;
         position: relative;
         flex: 1;
+      }
+      .heart-box .box-num,
+      .stability-box .box-num,
+      .fatigue-box .box-num {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        font-size: 8pt;
+        color: var(--gray-dark);
+        pointer-events: none;
+      }
+
+      /* --- Stability box style --- */
+      .stability-container {
+        display: flex;
+        gap: 5px;
+        justify-content: space-between;
       }
       .stability-box input[type="checkbox"] {
         display: none;
@@ -649,15 +663,6 @@
         content: "◇";
         color: var(--gray-dark);
       }
-      .stability-box .box-num {
-        position: absolute;
-        top: 2px;
-        right: 4px;
-        font-size: 8pt;
-        color: var(--gray-dark);
-        pointer-events: none;
-      }
-
       /* Vertical container */
       .mental-track {
         display: flex;
@@ -794,13 +799,6 @@
         gap: 5px;
         justify-content: space-between;
       }
-      .heart-box {
-        width: 10mm !important;
-        height: 10mm !important;
-        box-sizing: content-box;
-        position: relative;
-        flex: 1;
-      }
       .heart-box input[type="checkbox"] {
         display: none;
       }
@@ -849,15 +847,6 @@
         content: "🩸";
         color: var(--danger-text);
       }
-      .heart-box .box-num {
-        position: absolute;
-        top: 2px;
-        right: 4px;
-        font-size: 8pt;
-        color: var(--gray-dark);
-        pointer-events: none;
-      }
-
       /* --- Fatigue grid style (10x2) --- */
       .fatigue-grid {
         display: flex;
@@ -875,10 +864,6 @@
         justify-content: space-between;
       }
       .fatigue-box {
-        flex: 1;
-        width: 10mm !important;
-        height: 10mm !important;
-        box-sizing: content-box;
       }
       .fatigue-box input[type="radio"] {
         display: none;
@@ -2133,6 +2118,7 @@
       }
       wrapBoxLabels(".heart-box");
       wrapBoxLabels(".stability-box");
+      wrapBoxLabels(".fatigue-box");
 
       var stabilityBoxes = Array.prototype.slice.call(
         document.querySelectorAll(".stability-container .stability-box"),
