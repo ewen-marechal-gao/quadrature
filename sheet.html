@@ -16,8 +16,8 @@
         --dice-color-background: #7097d1;
         --dice-skill-yellow: #ffae50;
         --fatigue-fill: #a8d4ef;
-        --exhausted-fill: #ef6c00;
-        --ko-fill: #c62828;
+        --exhaust: #ef6c00;
+        --ko: #c62828;
         --border-color: #5d4e37;
         --header-bg-start: #f9f3e9;
         --header-bg-end: #f4e8d8;
@@ -868,14 +868,14 @@
         border: 2px solid var(--gray-dark);
       }
       .fatigue-box.alert-threshold label {
-        border: 2px solid var(--exhausted-fill);
+        border: 2px solid var(--exhaust);
         background: transparent;
-        color: var(--exhausted-fill);
+        color: var(--exhaust);
       }
       .fatigue-box.danger-threshold label {
-        border: 2px solid var(--ko-fill);
+        border: 2px solid var(--ko);
         background: transparent;
-        color: var(--ko-fill);
+        color: var(--ko);
       }
 
       /* Current fatigue fill — gauge: boxes 1..N are filled in light blue */
@@ -883,9 +883,13 @@
         background: var(--fatigue-fill);
         color: var(--text-color);
       }
-      /* Boxes 11-20: exhausted fill color */
+      /* Boxes 11-19: semi-transparent exhaust fill */
       .fatigue-row:last-child .fatigue-box.gauge-filled label {
-        background: var(--exhausted-fill);
+        background: color-mix(in srgb, var(--exhaust) 40%, transparent);
+      }
+      /* Box 20: semi-transparent ko fill */
+      .fatigue-row:last-child .fatigue-box.danger-threshold.gauge-filled label {
+        background: color-mix(in srgb, var(--ko) 40%, transparent);
       }
       /* Waterline marker: outline on the currently selected box */
       .fatigue-box input[type="radio"]:checked + label {
