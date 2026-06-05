@@ -2562,7 +2562,7 @@
 
           <!-- Petits emplacements (▫ storage packets) — fill remaining space -->
           <div class="inv-small-section">
-            <h3>Petits emplacements</h3>
+            <h3 class="inv-section-header">Petits emplacements <span class="inv-charge"><span id="small-used">0</span>&thinsp;/&thinsp;<span id="small-total">0</span></span></h3>
             <div class="inv-quick-row">
               <span class="inv-quick-icon">▫</span
               ><input class="inv-quick-input" type="text" placeholder="—" />
@@ -2834,8 +2834,6 @@
           { value: "pocket", label: "🔸" },
           { value: "packet", label: "📦" },
         ];
-        var pocketIcons = { pocket: "🔸", packet: "▫" };
-
         document.querySelectorAll(".inv-slot-row").forEach(function (row) {
           // Type selector
           var sel = document.createElement("select");
@@ -2857,14 +2855,16 @@
           row.insertBefore(printIcon, sel.nextSibling);
 
           // Pip gauge for pocket/packet capacity (hidden by default)
+          // pocket → 3 pips 🔸 ; packet → 4 pips ▫️
           var countWrap = document.createElement("div");
           countWrap.className = "inv-pocket-count";
-          var PIPS = 3;
+          var MAX_PIPS = 4;
           var pipEls = [];
-          for (var p = 0; p < PIPS; p++) {
+          for (var p = 0; p < MAX_PIPS; p++) {
             var pip = document.createElement("button");
             pip.type = "button";
             pip.className = "inv-pip";
+            pip.style.display = "none"; // shown on type select
             countWrap.appendChild(pip);
             pipEls.push(pip);
           }
@@ -2872,15 +2872,21 @@
           (function (pips) {
             function getActive() {
               var n = 0;
-              pips.forEach(function (p) { if (p.classList.contains("active")) n++; });
+              pips.forEach(function (p) {
+                if (p.style.display !== "none" && p.classList.contains("active")) n++;
+              });
               return n;
             }
             function setCount(n) {
-              pips.forEach(function (p, i) { p.classList.toggle("active", i < n); });
+              pips.forEach(function (p, i) {
+                if (p.style.display !== "none") p.classList.toggle("active", i < n);
+              });
               updateQuickTotal();
+              updateSmallTotal();
             }
             pips.forEach(function (pip, idx) {
               pip.addEventListener("click", function () {
+                if (pip.style.display === "none") return;
                 setCount(getActive() === idx + 1 ? 0 : idx + 1);
               });
             });
@@ -2891,14 +2897,23 @@
             var type = this.value;
             var show = type === "pocket" || type === "packet";
             countWrap.style.display = show ? "flex" : "none";
-            var pipIcon = type === "pocket" ? "🔸" : "📦";
             if (show) {
-              pipEls.forEach(function (pip) { pip.textContent = pipIcon; });
+              var maxVisible = type === "pocket" ? 3 : 4;
+              var pipIcon    = type === "pocket" ? "🔸" : "▫️";
+              pipEls.forEach(function (pip, i) {
+                pip.textContent = pipIcon;
+                pip.style.display = i < maxVisible ? "" : "none";
+                if (i >= maxVisible) pip.classList.remove("active");
+              });
             } else {
-              pipEls.forEach(function (pip) { pip.classList.remove("active"); });
-              updateQuickTotal();
+              pipEls.forEach(function (pip) {
+                pip.classList.remove("active");
+                pip.style.display = "none";
+              });
             }
             updateSlotsUsed();
+            updateQuickTotal();
+            updateSmallTotal();
           });
         });
 
@@ -2922,30 +2937,53 @@
           inp.addEventListener("input", updateSlotsUsed);
         });
 
-        // Quick-slot capacity: sum of active pips across all pocket/packet rows
-        function updateQuickTotal() {
+        // Counts active pips only for rows matching a given slot type
+        function countActivePipsByType(type) {
           var total = 0;
-          document.querySelectorAll(".inv-slot-row .inv-pocket-count").forEach(function (wrap) {
-            if (wrap.style.display !== "none") {
-              wrap.querySelectorAll(".inv-pip.active").forEach(function () { total++; });
-            }
+          document.querySelectorAll(".inv-slot-row").forEach(function (row) {
+            var s = row.querySelector(".inv-type-select");
+            if (!s || s.value !== type) return;
+            row.querySelectorAll(".inv-pip.active").forEach(function () { total++; });
           });
-          var el = document.getElementById("quick-total");
-          if (el) el.textContent = total;
+          return total;
         }
 
-        // Quick-slot usage: count of filled Emplacements rapides rows
+        // 🔸 pocket capacity → "Emplacements rapides" right counter
+        function updateQuickTotal() {
+          var el = document.getElementById("quick-total");
+          if (el) el.textContent = countActivePipsByType("pocket");
+        }
+
+        // ▫️ packet capacity → "Petits emplacements" right counter
+        function updateSmallTotal() {
+          var el = document.getElementById("small-total");
+          if (el) el.textContent = countActivePipsByType("packet");
+        }
+
+        // Usage counters: filled rows in each section
         function updateQuickUsed() {
           var used = 0;
-          document.querySelectorAll(".inv-quick-input").forEach(function (inp) {
+          document.querySelectorAll(".inv-quick-section .inv-quick-input").forEach(function (inp) {
             if (inp.value.trim() !== "") used++;
           });
           var el = document.getElementById("quick-used");
           if (el) el.textContent = used;
         }
 
-        document.querySelectorAll(".inv-quick-input").forEach(function (inp) {
+        function updateSmallUsed() {
+          var used = 0;
+          document.querySelectorAll(".inv-small-section .inv-quick-input").forEach(function (inp) {
+            if (inp.value.trim() !== "") used++;
+          });
+          var el = document.getElementById("small-used");
+          if (el) el.textContent = used;
+        }
+
+        document.querySelectorAll(".inv-quick-section .inv-quick-input").forEach(function (inp) {
           inp.addEventListener("input", updateQuickUsed);
+        });
+        document.querySelectorAll(".inv-small-section .inv-quick-input").forEach(function (inp) {
+          inp.addEventListener("input", updateSmallUsed);
         });
         // Wrap numeric labels into a small span for styling (top-right)
         function wrapBoxLabels(selector) {
@@ -3003,6 +3041,8 @@
         updateSlotsUsed();
         updateQuickTotal();
         updateQuickUsed();
+        updateSmallTotal();
+        updateSmallUsed();
       });
     </script>
   </body>
