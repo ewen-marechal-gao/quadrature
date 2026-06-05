@@ -1281,6 +1281,7 @@
               row.querySelectorAll('.attribute-dice input[type="checkbox"]')
             );
             var fillCount = 5;
+            var prevValue = 0;
 
             function computeValue() {
               var bonus = 0;
@@ -1296,7 +1297,8 @@
               var value = computeValue();
               display.textContent = value;
               if (fillCount > value) fillCount = value;
-              if (fillCount < value) fillCount = value;
+              if (value > prevValue) fillCount = value;
+              prevValue = value;
               boxes.forEach(function (box, index) {
                 var active = index < value;
                 box.classList.toggle("active", active);
