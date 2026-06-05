@@ -1284,6 +1284,14 @@
         display: flex;
         align-items: center;
         gap: 3px;
+        position: relative;
+      }
+      .inv-quick-row::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 13mm;
+        right: 0;
         border-bottom: 1px solid var(--muted-light-border);
       }
       .inv-quick-icon {
