@@ -125,6 +125,17 @@
           overflow: hidden !important;
         }
 
+        /* Fatigue track: reset all fills and selection for paper use */
+        .fatigue-box.gauge-filled label,
+        .fatigue-row:last-child .fatigue-box.gauge-filled label,
+        .fatigue-row:last-child .fatigue-box.danger-threshold.gauge-filled label {
+          background: var(--white) !important;
+          color: inherit !important;
+        }
+        .fatigue-box input[type="radio"]:checked + label {
+          outline: none !important;
+        }
+
         /* 2. Disable the dark gradient on the central card */
         .portrait-card::after {
           background: none !important;
