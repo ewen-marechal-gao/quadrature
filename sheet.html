@@ -16,6 +16,7 @@
         --dice-color-background: #7097d1;
         --dice-skill-yellow: #ffae50;
         --fatigue-fill: #a8d4ef;
+        --exhausted-fill: #f5b87a;
         --border-color: #5d4e37;
         --header-bg-start: #f9f3e9;
         --header-bg-end: #f4e8d8;
@@ -880,6 +881,10 @@
       .fatigue-box.gauge-filled label {
         background: var(--fatigue-fill);
         color: var(--text-color);
+      }
+      /* Boxes 11-20: exhausted fill color */
+      .fatigue-row:last-child .fatigue-box.gauge-filled label {
+        background: var(--exhausted-fill);
       }
       /* Waterline marker: outline on the currently selected box */
       .fatigue-box input[type="radio"]:checked + label {
