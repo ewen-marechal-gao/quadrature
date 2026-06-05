@@ -118,11 +118,15 @@
           print-color-adjust: exact;
         }
 
-        /* Body locked to exactly 2 A4 landscape pages — prevents blank pages */
-        body {
+        /* Lock to exactly 2 A4 landscape pages — prevents trailing blank pages */
+        html, body {
           height: 420mm !important;
           max-height: 420mm !important;
           overflow: hidden !important;
+        }
+        /* Prevent trailing blank page after last sheet */
+        .character-sheet-page.page-2 {
+          break-after: avoid;
         }
 
         /* Fatigue track: reset all fills and selection for paper use */
