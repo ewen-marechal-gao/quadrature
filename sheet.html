@@ -1245,7 +1245,10 @@
         border-left: 1px solid var(--muted-light-border);
         padding-left: 4px;
       }
-      .inv-pocket-icon { font-size: 10pt; line-height: 1; }
+      .inv-pocket-icon {
+        font-size: 10pt;
+        line-height: 1;
+      }
       .inv-count-input {
         width: 18px;
         background: transparent;
@@ -1257,13 +1260,26 @@
         color: var(--text-color);
         padding: 0;
       }
-      .inv-count-input:focus { outline: none; }
+      .inv-count-input:focus {
+        outline: none;
+      }
       .inv-count-input::-webkit-inner-spin-button,
-      .inv-count-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+      .inv-count-input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+      }
 
       /* Quick-access (🔸) and small (▫) slot rows */
-      .inv-quick-section { display: flex; flex-direction: column; }
-      .inv-small-section  { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+      .inv-quick-section {
+        display: flex;
+        flex-direction: column;
+      }
+      .inv-small-section {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
       .inv-quick-row {
         display: flex;
         align-items: center;
@@ -1272,8 +1288,9 @@
       }
       .inv-quick-icon {
         flex-shrink: 0;
-        font-size: 10pt;
-        width: 14px;
+        font-size: 11pt;   /* match .inv-type-select font-size */
+        width: 1.6em;      /* match .inv-type-select width */
+        margin-left: 13mm; /* match .inv-zone-label width */
         text-align: center;
         line-height: 1;
       }
@@ -1288,13 +1305,22 @@
         padding: 2px 3px;
         box-sizing: border-box;
       }
-      .inv-quick-input:focus { outline: none; }
-      .inv-quick-input::placeholder { color: var(--placeholder-text); font-style: italic; }
+      .inv-quick-input:focus {
+        outline: none;
+      }
+      .inv-quick-input::placeholder {
+        color: var(--placeholder-text);
+        font-style: italic;
+      }
 
       @media print {
-        .inv-type-select { display: none; }
+        .inv-type-select {
+          display: none;
+        }
         .inv-quick-input:placeholder-shown,
-        .inv-item-input:placeholder-shown { background-color: var(--pencil-bg) !important; }
+        .inv-item-input:placeholder-shown {
+          background-color: var(--pencil-bg) !important;
+        }
       }
 
       /* Center card fills the column height */
@@ -2461,31 +2487,84 @@
           <!-- Emplacements rapides (🔸 combat pockets) -->
           <h3>Emplacements rapides</h3>
           <div class="inv-quick-section">
-            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">🔸</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">🔸</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">🔸</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">🔸</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">🔸</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">🔸</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
           </div>
 
           <!-- Petits emplacements (▫ storage packets) — fill remaining space -->
           <div class="inv-small-section">
             <h3>Petits emplacements</h3>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
-            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
+            <div class="inv-quick-row">
+              <span class="inv-quick-icon">▫</span
+              ><input class="inv-quick-input" type="text" placeholder="—" />
+            </div>
           </div>
-
         </div>
       </div>
 
@@ -2701,12 +2780,12 @@
 
         // Inject type selector + pocket-count input into each large slot row
         var slotTypeOptions = [
-          { value: "",       label: "—"  },
-          { value: "weapon", label: "⚔"  },
-          { value: "armor",  label: "🛡" },
-          { value: "small",  label: "·"  },
+          { value: "", label: "🔳" },
+          { value: "weapon", label: "⚔️" },
+          { value: "armor", label: "🛡️" },
+          { value: "small", label: "▫️" },
           { value: "pocket", label: "🔸" },
-          { value: "packet", label: "▫"  },
+          { value: "packet", label: "📦" },
         ];
         var pocketIcons = { pocket: "🔸", packet: "▫" };
 
@@ -2714,7 +2793,8 @@
           // Type selector
           var sel = document.createElement("select");
           sel.className = "inv-type-select";
-          sel.title = "Type : arme ⚔ · armure 🛡 · petit · · poche 🔸 · paquets ▫";
+          sel.title =
+            "Type : arme ⚔ · armure 🛡 · petit · · poche 🔸 · paquets ▫";
           slotTypeOptions.forEach(function (opt) {
             var o = document.createElement("option");
             o.value = opt.value;
@@ -2753,9 +2833,11 @@
 
         function updateSlotsUsed() {
           var count = 0;
-          document.querySelectorAll(".inv-slot-row .inv-type-select").forEach(function (sel) {
-            if (sel.value !== "" && sel.value !== "small") count++;
-          });
+          document
+            .querySelectorAll(".inv-slot-row .inv-type-select")
+            .forEach(function (sel) {
+              if (sel.value !== "" && sel.value !== "small") count++;
+            });
           var el = document.getElementById("slots-used");
           if (el) el.textContent = count;
         }
