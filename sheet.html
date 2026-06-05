@@ -1115,6 +1115,82 @@
       .page-2 .right-column { margin-left: 0; }
       .page-2 .center-column { z-index: 2; }
 
+      /* ---- Slot-based inventory ---- */
+      .inv-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 2px;
+      }
+      .inv-header h2 { margin: 0; }
+      .inv-charge {
+        font-size: 7.5pt;
+        color: var(--gray-dark);
+        white-space: nowrap;
+      }
+      .inv-charge-value {
+        font-weight: bold;
+        font-size: 9pt;
+        color: var(--text-color);
+      }
+      .inv-zone {
+        display: flex;
+        gap: 0;
+        align-items: flex-start;
+      }
+      .inv-zone-label {
+        width: 13mm;
+        flex-shrink: 0;
+        font-size: 6.5pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--gray-dark);
+        padding-top: 4px;
+        padding-right: 2px;
+      }
+      .inv-slots { flex: 1; min-width: 0; }
+      .inv-slot-row {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        border-bottom: 1px solid var(--muted-light-border);
+      }
+      .inv-item-input {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        font-family: inherit;
+        font-size: 9pt;
+        color: var(--text-color);
+        padding: 2px 3px;
+        box-sizing: border-box;
+      }
+      .inv-item-input:focus { outline: none; }
+      .inv-item-input::placeholder { color: var(--placeholder-text); font-style: italic; }
+      .inv-pockets {
+        display: flex;
+        gap: 1px;
+        flex-shrink: 0;
+        border-left: 1px solid var(--muted-light-border);
+        padding-left: 2px;
+      }
+      .inv-pocket {
+        width: 11mm;
+        background: transparent;
+        border: none;
+        font-family: inherit;
+        font-size: 7.5pt;
+        color: var(--gray-dark);
+        padding: 2px 1px;
+        box-sizing: border-box;
+        text-align: center;
+        min-width: 0;
+      }
+      .inv-pocket:focus { outline: none; }
+      .inv-pocket::placeholder { color: var(--muted-light-border); }
+
       /* Center card fills the column height */
       .p2-center-card {
         flex: 1;
@@ -1196,7 +1272,9 @@
 
       @media print {
         .p2-textarea,
-        .p2-input:placeholder-shown {
+        .p2-input:placeholder-shown,
+        .inv-item-input:placeholder-shown,
+        .inv-pocket:placeholder-shown {
           background-color: var(--pencil-bg) !important;
         }
       }
@@ -2156,43 +2234,93 @@
     <!-- ========== PAGE 2 — Inventory & Traits ========== -->
     <div class="character-sheet-page page-2">
 
-      <!-- Left column: Equipment -->
+      <!-- Left column: Inventory (slot system) -->
       <div class="left-column">
         <div class="card column-body">
-          <h2>Équipement</h2>
 
-          <h3>Armes</h3>
-          <div class="p2-col-headers">
-            <span class="w3">Arme</span>
-            <span class="w2">Dégâts / Effet</span>
-            <span class="w3">Notes</span>
-          </div>
-          <div class="p2-section">
-            <div class="p2-row"><input class="p2-input w3" type="text" placeholder="—" /><input class="p2-input w2" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w3" type="text" placeholder="—" /><input class="p2-input w2" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w3" type="text" placeholder="—" /><input class="p2-input w2" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w3" type="text" placeholder="—" /><input class="p2-input w2" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w3" type="text" placeholder="—" /><input class="p2-input w2" type="text" /><input class="p2-input w3" type="text" /></div>
+          <div class="inv-header">
+            <h2>Inventaire</h2>
+            <div class="inv-charge">Charge&nbsp;<span id="charge-max-value" class="inv-charge-value">3</span>&thinsp;/&thinsp;12</div>
           </div>
 
-          <h3>Inventaire</h3>
-          <div class="p2-col-headers">
-            <span class="w4">Objet</span>
-            <span class="w1">Qté</span>
-            <span class="w3">Notes</span>
+          <!-- Tête — 1 slot -->
+          <div class="inv-zone">
+            <div class="inv-zone-label">Tête</div>
+            <div class="inv-slots">
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+            </div>
           </div>
-          <div class="p2-section">
-            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+
+          <!-- Mains — 2 slots -->
+          <div class="inv-zone">
+            <div class="inv-zone-label">Mains</div>
+            <div class="inv-slots">
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+            </div>
           </div>
+
+          <!-- Torse — 4 slots, 2 sous-emplacements chacun -->
+          <div class="inv-zone">
+            <div class="inv-zone-label">Torse</div>
+            <div class="inv-slots">
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dos — 2 slots, 3 sous-emplacements chacun -->
+          <div class="inv-zone">
+            <div class="inv-zone-label">Dos</div>
+            <div class="inv-slots">
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Taille — 2 slots, 3 sous-emplacements chacun -->
+          <div class="inv-zone">
+            <div class="inv-zone-label">Taille</div>
+            <div class="inv-slots">
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Jambes — 1 slot -->
+          <div class="inv-zone">
+            <div class="inv-zone-label">Jambes</div>
+            <div class="inv-slots">
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -2303,6 +2431,29 @@
       var tenacityDisplay =
         findAttributeDisplayByLabel("TÉNACITÉ") || findAttributeDisplayByLabel("TENACITE");
       var disciplineStars = findSkillStarsByName("DISCIPLINE");
+
+      // Charge Maximale = 2 + Force (characteristic) + Robustesse (skill rank)
+      var forceDisplay = findAttributeDisplayByLabel("FORCE");
+      var robustnessStars = findSkillStarsByName("ROBUSTESSE");
+
+      function updateChargeMax() {
+        var force = forceDisplay ? parseInt(forceDisplay.textContent, 10) : 1;
+        if (isNaN(force)) force = 1;
+        var rob = 0;
+        if (robustnessStars) {
+          robustnessStars.forEach(function (s) { if (s.checked) rob++; });
+        }
+        var chargeMax = Math.min(12, 2 + force + rob);
+        var el = document.getElementById("charge-max-value");
+        if (el) el.textContent = chargeMax;
+      }
+
+      if (forceDisplay) forceDisplay.addEventListener("change", updateChargeMax);
+      if (robustnessStars) {
+        robustnessStars.forEach(function (s) {
+          s.addEventListener("change", updateChargeMax);
+        });
+      }
       // Wrap numeric labels into a small span for styling (top-right)
       function wrapBoxLabels(selector) {
         var nodes = document.querySelectorAll(selector + " label");
@@ -2355,6 +2506,7 @@
 
       // Initial sync
       updateStabilityBoxes();
+      updateChargeMax();
     });
   </script>
   </body>
