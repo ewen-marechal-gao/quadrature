@@ -2240,8 +2240,10 @@
 
           <div class="inv-header">
             <h2>Inventaire</h2>
-            <div class="inv-charge">Charge&nbsp;<span id="charge-max-value" class="inv-charge-value">3</span>&thinsp;/&thinsp;12</div>
+            <div class="inv-charge"><span id="slots-used" class="inv-charge-value">0</span>&thinsp;/&thinsp;<span id="charge-max-value" class="inv-charge-value">3</span></div>
           </div>
+
+          <h3>Grands emplacements</h3>
 
           <!-- Tête — 1 slot -->
           <div class="inv-zone">
@@ -2260,56 +2262,32 @@
             </div>
           </div>
 
-          <!-- Torse — 4 slots, 2 sous-emplacements chacun -->
+          <!-- Torse — 4 slots -->
           <div class="inv-zone">
             <div class="inv-zone-label">Torse</div>
             <div class="inv-slots">
-              <div class="inv-slot-row">
-                <input class="inv-item-input" type="text" placeholder="—" />
-                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
-              </div>
-              <div class="inv-slot-row">
-                <input class="inv-item-input" type="text" placeholder="—" />
-                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
-              </div>
-              <div class="inv-slot-row">
-                <input class="inv-item-input" type="text" placeholder="—" />
-                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
-              </div>
-              <div class="inv-slot-row">
-                <input class="inv-item-input" type="text" placeholder="—" />
-                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
-              </div>
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
             </div>
           </div>
 
-          <!-- Dos — 2 slots, 3 sous-emplacements chacun -->
+          <!-- Dos — 2 slots -->
           <div class="inv-zone">
             <div class="inv-zone-label">Dos</div>
             <div class="inv-slots">
-              <div class="inv-slot-row">
-                <input class="inv-item-input" type="text" placeholder="—" />
-                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
-              </div>
-              <div class="inv-slot-row">
-                <input class="inv-item-input" type="text" placeholder="—" />
-                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
-              </div>
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
             </div>
           </div>
 
-          <!-- Taille — 2 slots, 3 sous-emplacements chacun -->
+          <!-- Taille — 2 slots -->
           <div class="inv-zone">
             <div class="inv-zone-label">Taille</div>
             <div class="inv-slots">
-              <div class="inv-slot-row">
-                <input class="inv-item-input" type="text" placeholder="—" />
-                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
-              </div>
-              <div class="inv-slot-row">
-                <input class="inv-item-input" type="text" placeholder="—" />
-                <div class="inv-pockets"><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /><input class="inv-pocket" type="text" placeholder="·" /></div>
-              </div>
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
             </div>
           </div>
 
@@ -2320,6 +2298,8 @@
               <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
             </div>
           </div>
+
+          <h3>Emplacements rapides</h3>
 
         </div>
       </div>
@@ -2454,6 +2434,23 @@
           s.addEventListener("change", updateChargeMax);
         });
       }
+
+      // Count filled large slots
+      var largeSlotInputs = Array.prototype.slice.call(
+        document.querySelectorAll(".inv-item-input")
+      );
+
+      function updateSlotsUsed() {
+        var used = largeSlotInputs.filter(function (inp) {
+          return inp.value.trim() !== "";
+        }).length;
+        var el = document.getElementById("slots-used");
+        if (el) el.textContent = used;
+      }
+
+      largeSlotInputs.forEach(function (inp) {
+        inp.addEventListener("input", updateSlotsUsed);
+      });
       // Wrap numeric labels into a small span for styling (top-right)
       function wrapBoxLabels(selector) {
         var nodes = document.querySelectorAll(selector + " label");
@@ -2507,6 +2504,7 @@
       // Initial sync
       updateStabilityBoxes();
       updateChargeMax();
+      updateSlotsUsed();
     });
   </script>
   </body>
