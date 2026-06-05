@@ -1190,6 +1190,30 @@
       .inv-pocket:focus { outline: none; }
       .inv-pocket::placeholder { color: var(--muted-light-border); }
 
+      /* Slot type micro-selector */
+      .inv-type-select {
+        flex-shrink: 0;
+        width: 1.6em;
+        padding: 0;
+        font-size: 11pt;
+        line-height: 1;
+        text-align: center;
+        text-align-last: center;
+        background: transparent;
+        border: 1px solid var(--muted-light-border);
+        border-radius: 3px;
+        color: var(--text-color);
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+      }
+      .inv-type-select:focus {
+        outline: none;
+        border-color: var(--gold-comp);
+      }
+      @media print { .inv-type-select { display: none; } }
+
       /* Center card fills the column height */
       .p2-center-card {
         flex: 1;
@@ -2431,14 +2455,38 @@
         });
       }
 
-      // Count filled large slots
+      // Inject type selector into each large slot row
+      var slotTypeOptions = [
+        { value: "",        label: "—"  },
+        { value: "weapon",  label: "⚔"  },
+        { value: "armor",   label: "🛡" },
+        { value: "small",   label: "·"  },
+        { value: "pocket",  label: "🔸" },
+        { value: "packet",  label: "▫"  }
+      ];
+      document.querySelectorAll(".inv-slot-row").forEach(function (row) {
+        var sel = document.createElement("select");
+        sel.className = "inv-type-select";
+        sel.title = "Type : arme ⚔ · armure 🛡 · petit · · poche 🔸 · paquets ▫";
+        slotTypeOptions.forEach(function (opt) {
+          var o = document.createElement("option");
+          o.value = opt.value;
+          o.textContent = opt.label;
+          sel.appendChild(o);
+        });
+        row.insertBefore(sel, row.firstChild);
+      });
+
+      // Count filled large slots (type "small" / petit ne compte pas)
       var largeSlotInputs = Array.prototype.slice.call(
         document.querySelectorAll(".inv-item-input")
       );
 
       function updateSlotsUsed() {
         var used = largeSlotInputs.filter(function (inp) {
-          return inp.value.trim() !== "";
+          var row = inp.closest(".inv-slot-row");
+          var sel = row && row.querySelector(".inv-type-select");
+          return inp.value.trim() !== "" && (!sel || sel.value !== "small");
         }).length;
         var el = document.getElementById("slots-used");
         if (el) el.textContent = used;
@@ -2446,6 +2494,9 @@
 
       largeSlotInputs.forEach(function (inp) {
         inp.addEventListener("input", updateSlotsUsed);
+      });
+      document.querySelectorAll(".inv-type-select").forEach(function (sel) {
+        sel.addEventListener("change", updateSlotsUsed);
       });
       // Wrap numeric labels into a small span for styling (top-right)
       function wrapBoxLabels(selector) {
