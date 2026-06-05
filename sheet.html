@@ -118,9 +118,11 @@
           print-color-adjust: exact;
         }
 
-        /* Force page break before page 2 */
-        .character-sheet-page.page-2 {
-          break-before: page;
+        /* Body locked to exactly 2 A4 landscape pages — prevents blank pages */
+        body {
+          height: 420mm !important;
+          max-height: 420mm !important;
+          overflow: hidden !important;
         }
 
         /* Fatigue track: reset all fills and selection for paper use */
