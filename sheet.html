@@ -1327,7 +1327,7 @@
 
       @media print {
         /* Replace interactive select with static 🔳 */
-        .inv-type-select     { display: none; }
+        .inv-type-select { display: none; }
         .inv-slot-print-icon {
           display: inline-block;
           font-size: 11pt;
@@ -1337,32 +1337,33 @@
           flex-shrink: 0;
         }
 
-        /* Remove browser-native input frame */
-        .inv-item-input,
-        .inv-quick-input,
-        .inv-count-input {
-          -webkit-appearance: none;
-          appearance: none;
+        /* Override global rule: input[type="text"]:placeholder-shown (0,2,1)
+           Same specificity but declared later → this wins.
+           Removes the border + pencil-bg applied to ALL text inputs globally.
+           Row border-bottom already provides the writing line. */
+        input.inv-item-input,
+        input.inv-item-input:placeholder-shown,
+        input.inv-quick-input,
+        input.inv-quick-input:placeholder-shown,
+        input.inv-count-input,
+        input.inv-count-input:placeholder-shown {
+          -webkit-appearance: none !important;
+          appearance: none !important;
           border: none !important;
           outline: none !important;
           box-shadow: none !important;
           background: transparent !important;
+          background-color: transparent !important;
         }
 
         /* Replace dynamic counter with static formula */
-        .inv-charge       { display: none; }
+        .inv-charge { display: none; }
         .inv-charge-print {
           display: inline;
           font-size: 7pt;
           color: var(--gray-dark);
           font-weight: normal;
           font-style: italic;
-        }
-
-        /* Pencil background for empty fields */
-        .inv-quick-input:placeholder-shown,
-        .inv-item-input:placeholder-shown {
-          background-color: var(--pencil-bg) !important;
         }
       }
 
