@@ -1116,17 +1116,16 @@
       .page-2 .center-column { z-index: 2; }
 
       /* ---- Slot-based inventory ---- */
-      .inv-header {
+      .inv-section-header {
         display: flex;
         align-items: baseline;
         justify-content: space-between;
-        margin-bottom: 2px;
       }
-      .inv-header h2 { margin: 0; }
       .inv-charge {
         font-size: 7.5pt;
         color: var(--gray-dark);
         white-space: nowrap;
+        font-weight: normal;
       }
       .inv-charge-value {
         font-weight: bold;
@@ -2238,12 +2237,9 @@
       <div class="left-column">
         <div class="card column-body">
 
-          <div class="inv-header">
-            <h2>Inventaire</h2>
-            <div class="inv-charge"><span id="slots-used" class="inv-charge-value">0</span>&thinsp;/&thinsp;<span id="charge-max-value" class="inv-charge-value">3</span></div>
-          </div>
+          <h2>Inventaire</h2>
 
-          <h3>Grands emplacements</h3>
+          <h3 class="inv-section-header">Grands emplacements <span class="inv-charge"><span id="slots-used" class="inv-charge-value">0</span>&thinsp;/&thinsp;<span id="charge-max-value" class="inv-charge-value">3</span></span></h3>
 
           <!-- Tête — 1 slot -->
           <div class="inv-zone">
