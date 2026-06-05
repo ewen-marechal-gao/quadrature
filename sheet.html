@@ -16,7 +16,8 @@
         --dice-color-background: #7097d1;
         --dice-skill-yellow: #ffae50;
         --fatigue-fill: #a8d4ef;
-        --exhausted-fill: #f5b87a;
+        --exhausted-fill: #ef6c00;
+        --ko-fill: #c62828;
         --border-color: #5d4e37;
         --header-bg-start: #f9f3e9;
         --header-bg-end: #f4e8d8;
@@ -867,14 +868,14 @@
         border: 2px solid var(--gray-dark);
       }
       .fatigue-box.alert-threshold label {
-        border: 2px solid var(--warning-border);
-        background: var(--warning-bg);
-        color: var(--warning-border);
+        border: 2px solid var(--exhausted-fill);
+        background: color-mix(in srgb, var(--exhausted-fill) 12%, transparent);
+        color: var(--exhausted-fill);
       }
       .fatigue-box.danger-threshold label {
-        border: 2px solid var(--danger-border);
-        background: var(--danger-bg);
-        color: var(--danger-border);
+        border: 2px solid var(--ko-fill);
+        background: color-mix(in srgb, var(--ko-fill) 12%, transparent);
+        color: var(--ko-fill);
       }
 
       /* Current fatigue fill — gauge: boxes 1..N are filled in light blue */
