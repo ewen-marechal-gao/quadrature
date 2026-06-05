@@ -46,9 +46,9 @@
         --black: #000;
         --print-bg: #fff;
         --body-color: #202020;
-        --esprit-color: #202020;
+        --mind-color: #202020;
         --track-gradient-middle: #e6e6e6;
-        --etat-concentre-bg: #fffdf0;
+        --state-focused-bg: #fffdf0;
         --panel-light: #f9f9f9;
         --rule-bg: #fafafa;
         --rule-text: #222;
@@ -78,9 +78,9 @@
       }
 
       @media print {
-        /* 1. On force TOUS les arrière-plans en blanc pur pour économiser l'encre */
+        /* 1. Force ALL backgrounds to pure white to save ink */
         body,
-        .fiche-personnage-page {
+        .character-sheet-page {
           background: #ffffff !important;
           background-color: #ffffff !important;
           margin: 0 !important;
@@ -89,32 +89,32 @@
           print-color-adjust: exact;
         }
 
-        /* Empêche la page 2 vide : le body est fixé à la hauteur exacte d'une page A4 paysage */
+        /* Prevent blank page 2: body is fixed to exact A4 landscape height */
         body {
           height: 210mm !important;
           max-height: 210mm !important;
           overflow: hidden !important;
         }
 
-        /* 2. On désactive le dégradé sombre de la carte centrale */
+        /* 2. Disable the dark gradient on the central card */
         .portrait-card::after {
           background: none !important;
           display: none !important;
         }
 
-        /* 3. On masque les boutons d'interface */
+        /* 3. Hide interface buttons */
         .portrait-actions {
           display: none !important;
         }
 
-        /* 4. On repasse les labels de la colonne centrale en sombre pour le papier */
+        /* 4. Set central column labels to dark for print */
         .header-fields label,
         .bio-field-group label {
           color: var(--text-color) !important;
           text-shadow: none !important;
         }
 
-        /* 5. Gestion des inputs et de la biographie pour l'impression */
+        /* 5. Handle text inputs and biography for print */
         .header-fields input[type="text"],
         .bio-field-group textarea {
           color: var(--text-color) !important;
@@ -123,39 +123,39 @@
           box-shadow: none !important;
         }
 
-        /* 6. Disparition des placeholders à l'impression */
+        /* 6. Hide placeholders when printing */
         input::placeholder,
         textarea::placeholder {
           color: transparent !important;
         }
 
-        /* 7. Si le champ est VIDE, on applique le fond clair pour écrire au crayon */
+        /* 7. If field is EMPTY, apply light cream background for pencil writing */
         input[type="text"]:placeholder-shown,
         textarea:placeholder-shown {
-          background-color: #fdfaf4 !important; /* Couleur très claire/crème pour le crayon */
-          border: 1px solid var(--border-color) !important; /* Bordure pointillée style "champ à remplir" */
+          background-color: #fdfaf4 !important; /* Very light/cream color for pencil */
+          border: 1px solid var(--border-color) !important; /* Dashed border "fill-in field" style */
         }
       }
 
-      /* 2. Le conteneur global (La feuille) */
-      .fiche-personnage-page {
+      /* 2. Global container (The sheet) */
+      .character-sheet-page {
         width: 297mm;
         height: 210mm;
         box-sizing: border-box;
 
-        /* MARGE DE SÉCURITÉ : Les imprimantes ne peuvent pas imprimer "bord à bord".
-     Un padding de 10mm (1cm) assure que rien ne sera coupé par l'imprimante. */
+        /* SAFETY MARGIN: Printers cannot print edge to edge.
+     A 10mm padding ensures nothing gets cut by the printer. */
         padding: 5mm;
 
-        /* SÉCURITÉ ANTI-DÉBORDEMENT : Si du contenu dépasse, il est masqué.
-     Cela évite que le navigateur ne génère une page 2 blanche par erreur. */
+        /* OVERFLOW SAFETY: If content overflows, it is clipped.
+     This prevents the browser from generating a blank second page. */
         overflow: hidden;
 
-        /* Mise en page interne : vos 3 colonnes (Corps / Portrait / Esprit) */
+        /* Internal layout: 3 columns (Body / Portrait / Mind) */
         display: flex;
-        gap: 2mm; /* Espace entre les colonnes */
+        gap: 2mm; /* Gap between columns */
 
-        /* Optionnel : Joli rendu "feuille de papier" à l'écran pour le développement */
+        /* Optional: nice sheet-of-paper rendering on screen for development */
         background: var(--bg-color);
         background-color: var(--sheet-bg-color);
         margin: 20px auto;
@@ -170,25 +170,25 @@
         padding: 0px;
       }
 
-      .colonne-gauche {
+      .left-column {
         width: 105mm;
         display: flex;
         flex-direction: column;
-        margin-right: -12mm; /* Débordement de 12mm sur l'illustration centrale */
+        margin-right: -12mm; /* 12mm overlap onto the central illustration */
         position: relative;
         z-index: 2;
       }
 
-      .colonne-droite {
+      .right-column {
         width: 105mm;
         display: flex;
         flex-direction: column;
-        margin-left: -12mm; /* Débordement de 12mm sur l'illustration centrale */
+        margin-left: -12mm; /* 12mm overlap onto the central illustration */
         position: relative;
         z-index: 2;
       }
 
-      .colonne-centre {
+      .center-column {
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -210,7 +210,7 @@
         display: block;
         z-index: 1;
       }
-      /* L'astuce du dégradé interne pour adoucir le haut et le bas de l'image */
+      /* Inner gradient trick to soften the top and bottom of the image */
       .portrait-card::after {
         content: "";
         position: absolute;
@@ -218,7 +218,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        /* Dégradé équilibré haut/bas pour soutenir le texte et les boutons */
+        /* Balanced top/bottom gradient to support text and buttons */
         background: linear-gradient(
           to bottom,
           rgba(0, 0, 0, 0.85) 0%,
@@ -230,7 +230,7 @@
         pointer-events: none;
         z-index: 1;
       }
-      /* L'image s'adapte maintenant à 100% de la zone sans déformation */
+      /* Image fits 100% of the area without distortion */
       .portrait-card img {
         position: absolute;
         top: 0;
@@ -241,7 +241,7 @@
         object-position: center top;
         z-index: -2;
       }
-      /* Boutons d'actions transparents de type interface technique */
+      /* Transparent action buttons — technical interface style */
       .bottom-fields {
         position: absolute;
         bottom: 15px;
@@ -252,7 +252,7 @@
         z-index: 10;
         display: flex;
         flex-direction: column;
-        gap: 12px; /* Espace entre les boutons et la biographie */
+        gap: 12px; /* Gap between buttons and biography */
       }
 
       .portrait-actions {
@@ -262,7 +262,7 @@
         gap: 10px;
       }
 
-      /* Style de la zone Biographie */
+      /* Biography area style */
       .bio-field-group {
         display: flex;
         flex-direction: column;
@@ -293,9 +293,9 @@
         backdrop-filter: blur(4px);
         box-sizing: border-box;
         width: 100%;
-        max-width: 80mm; /* S'aligne harmonieusement avec la largeur de la carte */
-        resize: none; /* Empêche l'utilisateur de déformer la zone */
-        height: 30mm; /* Permet d'écrire sur 2 ou 3 lignes */
+        max-width: 80mm; /* Harmoniously aligns with the card width */
+        resize: none; /* Prevents the user from distorting the area */
+        height: 30mm; /* Allows writing 2 or 3 lines */
       }
 
       .bio-field-group textarea:focus {
@@ -550,7 +550,7 @@
         min-height: 0;
       }
 
-      /* --- Style des cases Stabilité --- */
+      /* --- Stability box style --- */
       .stability-container {
         display: flex;
         gap: 5px;
@@ -570,8 +570,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        aspect-ratio: 1 / 1; /* Aligne en carrés parfaits peu importe la largeur */
-        border: 2px solid var(--esprit-color);
+        aspect-ratio: 1 / 1; /* Perfect square regardless of width */
+        border: 2px solid var(--mind-color);
         border-radius: 4px;
         font-weight: bold;
         font-size: 14pt;
@@ -618,20 +618,20 @@
         pointer-events: none;
       }
 
-      /* Conteneur Vertical */
-      .piste-mentale-v {
+      /* Vertical container */
+      .mental-track {
         display: flex;
         flex-direction: column;
         position: relative;
       }
 
-      /* La ligne du "thermomètre" en tâche de fond derrière les boutons */
-      .piste-mentale-v::before {
+      /* The "thermometer" line in the background behind the buttons */
+      .mental-track::before {
         content: "";
         position: absolute;
         top: 20px;
         bottom: 20px;
-        left: 2.5mm; /* Aligné pile au centre des cases à cocher */
+        left: 2.5mm; /* Aligned to the center of the checkboxes */
         width: 4px;
         background: linear-gradient(
           to bottom,
@@ -643,7 +643,7 @@
         z-index: 1;
       }
 
-      /* Ligne d'état */
+      /* State row */
       .mental-v-row {
         display: flex;
         height: 7mm;
@@ -651,17 +651,17 @@
         margin: 2px 0;
         cursor: pointer;
         position: relative;
-        z-index: 2; /* Passe au-dessus de la ligne d'arrière-plan */
+        z-index: 2; /* Renders above the background line */
         border-radius: 4px;
         transition: background 0.2s;
       }
 
-      /* Masquer le vrai bouton radio */
+      /* Hide the real radio button */
       .mental-v-row input[type="radio"] {
         display: none;
       }
 
-      /* La case à cocher personnalisée (le curseur) */
+      /* Custom checkbox (the cursor) */
       .custom-check-v {
         width: 22px;
         height: 22px;
@@ -675,7 +675,7 @@
         justify-content: center;
       }
 
-      /* Style quand c'est sélectionné sur écran */
+      /* Style when selected on screen */
       .mental-v-row input[type="radio"]:checked + .custom-check-v {
         background: var(--black);
       }
@@ -686,11 +686,11 @@
         font-size: 10pt;
       }
 
-      /* Alignement et gestion des textes */
+      /* Text alignment */
       .mental-v-name {
         font-weight: bold;
         font-size: 8pt;
-        width: 20mm; /* Aligne le début des règles proprement */
+        width: 20mm; /* Aligns the start of rules cleanly */
         flex-shrink: 0;
       }
       .mental-v-rule {
@@ -700,54 +700,54 @@
         border-left: 1px solid var(--muted-light-border);
       }
 
-      /* Légères teintes de fond pour l'impression (optionnel mais guide l'oeil) */
-      .etat-enrage {
+      /* Subtle background tints for print (optional, guides the eye) */
+      .state-enraged {
         background-color: rgba(255, 230, 230, 0.5);
       }
-      .etat-furieux {
+      .state-furious {
         background-color: rgba(255, 240, 240, 0.5);
       }
-      .etat-agressif {
+      .state-aggressive {
         background-color: rgba(255, 248, 245, 0.5);
       }
-      .etat-concentre {
-        background-color: var(--etat-concentre-bg);
+      .state-focused {
+        background-color: var(--state-focused-bg);
       }
-      .etat-prudent {
+      .state-cautious {
         background-color: rgba(245, 248, 255, 0.5);
       }
-      .etat-panique {
+      .state-panicked {
         background-color: rgba(240, 244, 255, 0.5);
       }
-      .etat-terrifie {
+      .state-terrified {
         background-color: rgba(230, 240, 255, 0.5);
       }
 
-      /* En-têtes */
-      .sante-header,
+      /* Section headers */
+      .health-header,
       .fatigue-header,
       .stability-header {
         display: flex;
-        flex-direction: row; /* Aligne sur une seule ligne horizontale */
-        justify-content: space-between; /* Pousse le titre à gauche et le sous-texte à droite */
-        align-items: flex-end; /* Aligne proprement les bas de textes ensemble */
+        flex-direction: row; /* Single horizontal line */
+        justify-content: space-between; /* Title left, subtext right */
+        align-items: flex-end; /* Align text baselines */
         border-bottom: 2px solid #333;
         margin-bottom: 5px;
       }
-      .sante-title,
+      .health-title,
       .fatigue-title,
       .stability-title {
         font-weight: bold;
         font-size: 10pt;
       }
-      .sante-subtext,
+      .health-subtext,
       .fatigue-subtext,
       .stability-subtext {
         font-size: 8pt;
         color: var(--gray-dark);
       }
 
-      /* --- Style des cases Santé --- */
+      /* --- Health box style --- */
 
       .hearts-container {
         display: flex;
@@ -768,7 +768,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        aspect-ratio: 1 / 1; /* Aligne en carrés parfaits peu importe la largeur */
+        aspect-ratio: 1 / 1; /* Perfect square regardless of width */
         border: 2px solid var(--body-color);
         border-radius: 4px;
         font-weight: bold;
@@ -818,11 +818,11 @@
         pointer-events: none;
       }
 
-      /* --- Style de la Matrice de Fatigue (10x2) --- */
+      /* --- Fatigue grid style (10x2) --- */
       .fatigue-grid {
         display: flex;
         flex-direction: column;
-        gap: 4px; /* Espace minimal vertical entre les deux lignes */
+        gap: 4px; /* Minimal vertical gap between the two rows */
         background: var(--panel-light);
         padding: 6px;
         border: 1px solid var(--muted-border);
@@ -831,7 +831,7 @@
       }
       .fatigue-row {
         display: flex;
-        gap: 4px; /* Espace horizontal entre les cases */
+        gap: 4px; /* Horizontal gap between boxes */
         justify-content: space-between;
       }
       .fatigue-box {
@@ -847,7 +847,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        aspect-ratio: 1 / 1; /* Aligne en carrés parfaits peu importe la largeur */
+        aspect-ratio: 1 / 1; /* Perfect square regardless of width */
         border: 2px solid var(--gray-dark);
         border-radius: 4px;
         font-weight: bold;
@@ -860,7 +860,7 @@
           opacity 0.2s ease;
       }
 
-      /* Repères visuels pour le papier (Bordures et couleurs légères) */
+      /* Visual markers for print (light borders and colors) */
       .fatigue-box.active-start label {
         border: 2px dashed var(--active-border);
         background: var(--panel-bg);
@@ -876,14 +876,14 @@
         color: var(--danger-border);
       }
 
-      /* Remplissage de la fatigue actuelle (Écran) */
+      /* Current fatigue fill (screen) */
       .fatigue-box input[type="radio"]:checked + label {
         background: var(--active-border);
         color: var(--white);
         border-color: var(--active-border);
       }
 
-      /* --- Règles à la suite --- */
+      /* --- Rules below --- */
       .fatigue-rules-list {
         display: flex;
         flex-direction: column;
@@ -901,12 +901,12 @@
       .rule-orange {
         border-left-color: var(
           --warning-border
-        ); /* Rappel visuel pour la case 10 */
+        ); /* Visual reminder for box 10 */
       }
       .rule-red {
         border-left-color: var(
           --danger-border
-        ); /* Rappel visuel pour la case 20 */
+        ); /* Visual reminder for box 20 */
       }
 
       .special-target {
@@ -914,35 +914,35 @@
         font-weight: bold;
       }
 
-      .column-corps h2 {
+      .column-body h2 {
         color: var(--body-color);
         border-bottom-color: var(--body-color);
       }
-      .column-esprit h2 {
-        color: var(--esprit-color);
-        border-bottom-color: var(--esprit-color);
+      .column-mind h2 {
+        color: var(--mind-color);
+        border-bottom-color: var(--mind-color);
       }
-      .column-corps h3 {
+      .column-body h3 {
         color: var(--body-color);
       }
-      .column-esprit h3 {
-        color: var(--esprit-color);
+      .column-mind h3 {
+        color: var(--mind-color);
       }
 
-      .column-esprit .row-carac {
-        border-left-color: var(--esprit-color);
+      .column-mind .row-attribute {
+        border-left-color: var(--mind-color);
       }
-      .column-esprit .carac-header {
-        color: var(--esprit-color);
+      .column-mind .attribute-header {
+        color: var(--mind-color);
       }
-      .column-corps .row-carac {
+      .column-body .row-attribute {
         border-left-color: var(--body-color);
       }
-      .column-corps .carac-header {
+      .column-body .attribute-header {
         color: var(--body-color);
       }
 
-      .row-carac {
+      .row-attribute {
         background: var(--header-bg-start);
         height: 17mm;
         padding: 2px;
@@ -950,14 +950,14 @@
         border-left: 4px solid var(--gold-comp);
       }
 
-      .column-corps .row-carac {
+      .column-body .row-attribute {
         border-left-color: var(--dice-color-blue);
       }
-      .column-esprit .row-carac {
+      .column-mind .row-attribute {
         border-left-color: var(--dice-color-blue);
       }
 
-      .carac-header {
+      .attribute-header {
         display: flex;
         justify-content: flex-start;
         align-items: center;
@@ -968,7 +968,7 @@
         color: var(--card-heading);
       }
 
-      .carac-value-display {
+      .attribute-value {
         display: none;
       }
 
@@ -992,10 +992,10 @@
         align-items: center;
         gap: 4px;
       }
-      .column-corps .attribute-dice {
+      .column-body .attribute-dice {
         color: var(--dice-color-blue);
       }
-      .column-esprit .attribute-dice {
+      .column-mind .attribute-dice {
         color: var(--dice-color-blue);
       }
       .attribute-dice input[type="checkbox"] {
@@ -1072,7 +1072,7 @@
     </style>
   </head>
   <body>
-    <div class="fiche-personnage-page">
+    <div class="character-sheet-page">
       <script>
         document.addEventListener("DOMContentLoaded", function () {
           // Portrait input in card
@@ -1102,25 +1102,25 @@
           }
 
           setupPortraitUpload(input, preview, placeholder, portraitActions);
-          var vigInput = document.getElementById("vigueur-display");
-          var robustesseStars = document.querySelectorAll(
-            '#robustesse-stars input[type="checkbox"]',
+          var vigorDisplay = document.getElementById("vigor-display");
+          var robustnessStars = document.querySelectorAll(
+            '#robustness-stars input[type="checkbox"]',
           );
-          var heartBoxes = document.querySelectorAll(
-            ".sante-block .hearts-container .heart-box",
+          var healthBoxes = document.querySelectorAll(
+            ".health-block .hearts-container .heart-box",
           );
 
-          function updateSanteHearts() {
-            if (!vigInput || heartBoxes.length === 0) return;
-            var vig = parseInt(vigInput.textContent, 10);
+          function updateHealthBoxes() {
+            if (!vigorDisplay || healthBoxes.length === 0) return;
+            var vig = parseInt(vigorDisplay.textContent, 10);
             if (Number.isNaN(vig)) vig = 0;
             vig = Math.max(0, Math.min(5, vig));
             var robustesseCount = 0;
-            robustesseStars.forEach(function (star) {
+            robustnessStars.forEach(function (star) {
               if (star.checked) robustesseCount += 1;
             });
             var total = Math.min(10, vig + robustesseCount);
-            heartBoxes.forEach(function (box, index) {
+            healthBoxes.forEach(function (box, index) {
               var input = box.querySelector('input[type="checkbox"]');
               var active = index < total;
               box.classList.toggle("active", active);
@@ -1133,22 +1133,22 @@
             });
           }
 
-          if (vigInput) {
-            vigInput.addEventListener("change", updateSanteHearts);
+          if (vigorDisplay) {
+            vigorDisplay.addEventListener("change", updateHealthBoxes);
           }
-          robustesseStars.forEach(function (star) {
-            star.addEventListener("change", updateSanteHearts);
+          robustnessStars.forEach(function (star) {
+            star.addEventListener("change", updateHealthBoxes);
           });
-          updateSanteHearts();
+          updateHealthBoxes();
 
-          // Comportement des étoiles (sélection cumulative et bascule du dernier)
+          // Star checkbox behavior (cumulative selection, toggle last)
           var starGroups = document.querySelectorAll(".skill-dice");
           starGroups.forEach(function (group) {
             var inputs = Array.prototype.slice.call(
               group.querySelectorAll('input[type="checkbox"]'),
             );
 
-            // stocker l'état avant clic
+            // store state before click
             inputs.forEach(function (input) {
               input.addEventListener("pointerdown", function () {
                 input._wasChecked = input.checked;
@@ -1165,7 +1165,7 @@
                 var changed = [];
 
                 if (nowChecked) {
-                  // l'utilisateur a coché n -> s'assurer que 1..n sont cochées
+                  // user checked n -> ensure 1..n are checked
                   inputs.forEach(function (inp, k) {
                     var should = k <= idx;
                     if (inp.checked !== should) {
@@ -1174,9 +1174,9 @@
                     }
                   });
                 } else {
-                  // l'utilisateur a décoché n
+                  // user unchecked n
                   if (anyHigher) {
-                    // s'il y a des étoiles plus hautes cochées, cliquer sur n doit sélectionner 1..n et désélectionner >n
+                    // if higher stars are checked, clicking n selects 1..n and deselects >n
                     inputs.forEach(function (inp, k) {
                       var should = k <= idx;
                       if (inp.checked !== should) {
@@ -1185,7 +1185,7 @@
                       }
                     });
                   } else {
-                    // sinon, on désélectionne la dernière étoile (garder 1..n-1)
+                    // otherwise deselect the last star (keep 1..n-1)
                     inputs.forEach(function (inp, k) {
                       var should = k < idx;
                       if (inp.checked !== should) {
@@ -1196,7 +1196,7 @@
                   }
                 }
 
-                // déclencher 'change' pour les inputs modifiés
+                // dispatch 'change' for modified inputs
                 changed.forEach(function (inp) {
                   inp.dispatchEvent(new Event("change", { bubbles: true }));
                 });
@@ -1212,8 +1212,8 @@
             return n;
           }
 
-          document.querySelectorAll(".row-carac").forEach(function (row) {
-            var display = row.querySelector(".carac-value-display");
+          document.querySelectorAll(".row-attribute").forEach(function (row) {
+            var display = row.querySelector(".attribute-value");
             if (!display) return;
             var boxes = Array.prototype.slice.call(
               row.querySelectorAll('.attribute-dice input[type="checkbox"]')
@@ -1260,65 +1260,65 @@
         });
       </script>
 
-      <div class="colonne-gauche">
-        <div class="card column-corps">
+      <div class="left-column">
+        <div class="card column-body">
           <h2>Corps</h2>
           <h3>Condition Physique & États</h3>
           <div class="card-section">
-            <div class="sante-block">
-              <div class="sante-header">
-                <span class="sante-title">♥️ Résistance</span>
-                <span class="sante-subtext">(Vigueur + ✫ Robustesse)</span>
+            <div class="health-block">
+              <div class="health-header">
+                <span class="health-title">♥️ Résistance</span>
+                <span class="health-subtext">(Vigueur + ✫ Robustesse)</span>
               </div>
 
               <div class="hearts-container">
                 <div class="heart-box">
-                  <input type="checkbox" id="sante-1" /><label for="sante-1"
+                  <input type="checkbox" id="health-1" /><label for="health-1"
                     >1</label
                   >
                 </div>
                 <div class="heart-box">
-                  <input type="checkbox" id="sante-2" /><label for="sante-2"
+                  <input type="checkbox" id="health-2" /><label for="health-2"
                     >2</label
                   >
                 </div>
                 <div class="heart-box">
-                  <input type="checkbox" id="sante-3" /><label for="sante-3"
+                  <input type="checkbox" id="health-3" /><label for="health-3"
                     >3</label
                   >
                 </div>
                 <div class="heart-box">
-                  <input type="checkbox" id="sante-4" /><label for="sante-4"
+                  <input type="checkbox" id="health-4" /><label for="health-4"
                     >4</label
                   >
                 </div>
                 <div class="heart-box">
-                  <input type="checkbox" id="sante-5" /><label for="sante-5"
+                  <input type="checkbox" id="health-5" /><label for="health-5"
                     >5</label
                   >
                 </div>
                 <div class="heart-box">
-                  <input type="checkbox" id="sante-6" /><label for="sante-6"
+                  <input type="checkbox" id="health-6" /><label for="health-6"
                     >6</label
                   >
                 </div>
                 <div class="heart-box">
-                  <input type="checkbox" id="sante-7" /><label for="sante-7"
+                  <input type="checkbox" id="health-7" /><label for="health-7"
                     >7</label
                   >
                 </div>
                 <div class="heart-box">
-                  <input type="checkbox" id="sante-8" /><label for="sante-8"
+                  <input type="checkbox" id="health-8" /><label for="health-8"
                     >8</label
                   >
                 </div>
                 <div class="heart-box">
-                  <input type="checkbox" id="sante-9" /><label for="sante-9"
+                  <input type="checkbox" id="health-9" /><label for="health-9"
                     >9</label
                   >
                 </div>
                 <div class="heart-box">
-                  <input type="checkbox" id="sante-10" /><label for="sante-10"
+                  <input type="checkbox" id="health-10" /><label for="health-10"
                     >10</label
                   >
                 </div>
@@ -1477,9 +1477,9 @@
 
           <h3>Caractéristiques et Compétences</h3>
           <div class="features-group">
-            <div class="row-carac">
-              <div class="carac-header">
-                <span class="carac-value-display">1</span>
+            <div class="row-attribute">
+              <div class="attribute-header">
+                <span class="attribute-value">1</span>
                 <span>FORCE</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /> <input type="checkbox" />
@@ -1501,7 +1501,7 @@
                 </div>
                 <div class="skill-item">
                   <span>✫ Robustesse</span>
-                  <div class="skill-dice" id="robustesse-stars">
+                  <div class="skill-dice" id="robustness-stars">
                     <input type="checkbox" checked /><input
                       type="checkbox"
                     /><input type="checkbox" /><input type="checkbox" /><input
@@ -1512,9 +1512,9 @@
               </div>
             </div>
 
-            <div class="row-carac">
-              <div class="carac-header">
-                <span class="carac-value-display">1</span>
+            <div class="row-attribute">
+              <div class="attribute-header">
+                <span class="attribute-value">1</span>
                 <span>AGILITÉ</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /> <input type="checkbox" />
@@ -1548,9 +1548,9 @@
               </div>
             </div>
 
-            <div class="row-carac">
-              <div class="carac-header">
-                <span id="vigueur-display" class="carac-value-display">1</span>
+            <div class="row-attribute">
+              <div class="attribute-header">
+                <span id="vigor-display" class="attribute-value">1</span>
                 <span>VIGUEUR</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1578,9 +1578,9 @@
               </div>
             </div>
 
-            <div class="row-carac">
-              <div class="carac-header">
-                <span class="carac-value-display">1</span>
+            <div class="row-attribute">
+              <div class="attribute-header">
+                <span class="attribute-value">1</span>
                 <span>GRÂCE</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1608,9 +1608,9 @@
               </div>
             </div>
 
-            <div class="row-carac">
-              <div class="carac-header">
-                <span class="carac-value-display">1</span>
+            <div class="row-attribute">
+              <div class="attribute-header">
+                <span class="attribute-value">1</span>
                 <span>ACUITÉ</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1641,7 +1641,7 @@
         </div>
       </div>
 
-      <div class="colonne-centre">
+      <div class="center-column">
         <div class="portrait-card">
           <img id="portraitPreview" alt="Portrait" style="display: none" />
 
@@ -1682,8 +1682,8 @@
         </div>
       </div>
 
-      <div class="colonne-droite">
-        <div class="card column-esprit">
+      <div class="right-column">
+        <div class="card column-mind">
           <h2>Esprit</h2>
           <h3>Condition Mentale & Stabilité</h3>
           <div class="card-section">
@@ -1757,9 +1757,9 @@
               </div>
             </div>
 
-            <div class="piste-mentale-v">
-              <label class="mental-v-row etat-enrage">
-                <input type="radio" name="etat_mental_v" value="enrage" />
+            <div class="mental-track">
+              <label class="mental-v-row state-enraged">
+                <input type="radio" name="mental-state" value="enraged" />
                 <span class="custom-check-v"></span>
                 <span class="mental-v-name">Enragé</span>
                 <span class="mental-v-rule"
@@ -1767,8 +1767,8 @@
                 >
               </label>
 
-              <label class="mental-v-row etat-furieux">
-                <input type="radio" name="etat_mental_v" value="furieux" />
+              <label class="mental-v-row state-furious">
+                <input type="radio" name="mental-state" value="furious" />
                 <span class="custom-check-v"></span>
                 <span class="mental-v-name">Furieux</span>
                 <span class="mental-v-rule"
@@ -1776,8 +1776,8 @@
                 >
               </label>
 
-              <label class="mental-v-row etat-agressif">
-                <input type="radio" name="etat_mental_v" value="agressif" />
+              <label class="mental-v-row state-aggressive">
+                <input type="radio" name="mental-state" value="aggressive" />
                 <span class="custom-check-v"></span>
                 <span class="mental-v-name">Agressif</span>
                 <span class="mental-v-rule"
@@ -1785,11 +1785,11 @@
                 >
               </label>
 
-              <label class="mental-v-row etat-concentre">
+              <label class="mental-v-row state-focused">
                 <input
                   type="radio"
-                  name="etat_mental_v"
-                  value="concentre"
+                  name="mental-state"
+                  value="focused"
                   checked
                 />
                 <span class="custom-check-v"></span>
@@ -1799,8 +1799,8 @@
                 >
               </label>
 
-              <label class="mental-v-row etat-prudent">
-                <input type="radio" name="etat_mental_v" value="prudent" />
+              <label class="mental-v-row state-cautious">
+                <input type="radio" name="mental-state" value="cautious" />
                 <span class="custom-check-v"></span>
                 <span class="mental-v-name">Prudent</span>
                 <span class="mental-v-rule"
@@ -1808,8 +1808,8 @@
                 >
               </label>
 
-              <label class="mental-v-row etat-panique">
-                <input type="radio" name="etat_mental_v" value="panique" />
+              <label class="mental-v-row state-panicked">
+                <input type="radio" name="mental-state" value="panicked" />
                 <span class="custom-check-v"></span>
                 <span class="mental-v-name">Paniqué</span>
                 <span class="mental-v-rule"
@@ -1817,8 +1817,8 @@
                 >
               </label>
 
-              <label class="mental-v-row etat-terrifie">
-                <input type="radio" name="etat_mental_v" value="terrifie" />
+              <label class="mental-v-row state-terrified">
+                <input type="radio" name="mental-state" value="terrified" />
                 <span class="custom-check-v"></span>
                 <span class="mental-v-name">Terrifié</span>
                 <span class="mental-v-rule"
@@ -1831,9 +1831,9 @@
           <h3>Caractéristiques et Compétences</h3>
 
           <div class="features-group">
-            <div class="row-carac">
-              <div class="carac-header">
-                <span class="carac-value-display">1</span>
+            <div class="row-attribute">
+              <div class="attribute-header">
+                <span class="attribute-value">1</span>
                 <span>VOLONTÉ</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1866,9 +1866,9 @@
               </div>
             </div>
 
-            <div class="row-carac">
-              <div class="carac-header">
-                <span class="carac-value-display">1</span>
+            <div class="row-attribute">
+              <div class="attribute-header">
+                <span class="attribute-value">1</span>
                 <span>INTELLIGENCE</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1899,9 +1899,9 @@
               </div>
             </div>
 
-            <div class="row-carac">
-              <div class="carac-header">
-                <span class="carac-value-display">1</span>
+            <div class="row-attribute">
+              <div class="attribute-header">
+                <span class="attribute-value">1</span>
                 <span>TÉNACITÉ</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1929,9 +1929,9 @@
               </div>
             </div>
 
-            <div class="row-carac">
-              <div class="carac-header">
-                <span class="carac-value-display">1</span>
+            <div class="row-attribute">
+              <div class="attribute-header">
+                <span class="attribute-value">1</span>
                 <span>CHARISME</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -1959,9 +1959,9 @@
               </div>
             </div>
 
-            <div class="row-carac">
-              <div class="carac-header">
-                <span class="carac-value-display">1</span>
+            <div class="row-attribute">
+              <div class="attribute-header">
+                <span class="attribute-value">1</span>
                 <span>LUCIDITÉ</span>
                 <div class="attribute-dice">
                   <input type="checkbox" /><input type="checkbox" /><input
@@ -2008,15 +2008,15 @@
           .toUpperCase();
       }
 
-      function findCaracInputByLabel(label) {
-        var headers = document.querySelectorAll(".carac-header");
+      function findAttributeDisplayByLabel(label) {
+        var headers = document.querySelectorAll(".attribute-header");
         for (var i = 0; i < headers.length; i++) {
-          var span = headers[i].querySelector("span:not(.carac-value-display)");
+          var span = headers[i].querySelector("span:not(.attribute-value)");
           if (!span) continue;
           if (
             normalizeText(span.textContent).indexOf(normalizeText(label)) !== -1
           ) {
-            return headers[i].querySelector(".carac-value-display");
+            return headers[i].querySelector(".attribute-value");
           }
         }
         return null;
@@ -2040,8 +2040,8 @@
         return null;
       }
 
-      var tenaciteInput =
-        findCaracInputByLabel("TÉNACITÉ") || findCaracInputByLabel("TENACITE");
+      var tenacityDisplay =
+        findAttributeDisplayByLabel("TÉNACITÉ") || findAttributeDisplayByLabel("TENACITE");
       var disciplineStars = findSkillStarsByName("DISCIPLINE");
       // Wrap numeric labels into a small span for styling (top-right)
       function wrapBoxLabels(selector) {
@@ -2062,8 +2062,8 @@
       );
 
       function updateStabilityBoxes() {
-        if (!tenaciteInput || stabilityBoxes.length === 0) return;
-        var ten = parseInt(tenaciteInput.textContent, 10);
+        if (!tenacityDisplay || stabilityBoxes.length === 0) return;
+        var ten = parseInt(tenacityDisplay.textContent, 10);
         if (Number.isNaN(ten)) ten = 0;
         ten = Math.max(0, Math.min(5, ten));
         var disc = 0;
@@ -2083,8 +2083,8 @@
         });
       }
 
-      if (tenaciteInput) {
-        tenaciteInput.addEventListener("change", updateStabilityBoxes);
+      if (tenacityDisplay) {
+        tenacityDisplay.addEventListener("change", updateStabilityBoxes);
       }
       if (disciplineStars) {
         disciplineStars.forEach(function (s) {
