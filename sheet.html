@@ -1321,10 +1321,45 @@
         font-style: italic;
       }
 
+      /* Hidden outside print */
+      .inv-slot-print-icon { display: none; }
+      .inv-charge-print    { display: none; }
+
       @media print {
-        .inv-type-select {
-          display: none;
+        /* Replace interactive select with static 🔳 */
+        .inv-type-select     { display: none; }
+        .inv-slot-print-icon {
+          display: inline-block;
+          font-size: 11pt;
+          width: 1.6em;
+          text-align: center;
+          line-height: 1;
+          flex-shrink: 0;
         }
+
+        /* Remove browser-native input frame */
+        .inv-item-input,
+        .inv-quick-input,
+        .inv-count-input {
+          -webkit-appearance: none;
+          appearance: none;
+          border: none !important;
+          outline: none !important;
+          box-shadow: none !important;
+          background: transparent !important;
+        }
+
+        /* Replace dynamic counter with static formula */
+        .inv-charge       { display: none; }
+        .inv-charge-print {
+          display: inline;
+          font-size: 7pt;
+          color: var(--gray-dark);
+          font-weight: normal;
+          font-style: italic;
+        }
+
+        /* Pencil background for empty fields */
         .inv-quick-input:placeholder-shown,
         .inv-item-input:placeholder-shown {
           background-color: var(--pencil-bg) !important;
@@ -2411,7 +2446,7 @@
                 class="inv-charge-value"
                 >3</span
               ></span
-            >
+            ><span class="inv-charge-print">Limite : 2 + Force + Robustesse</span>
           </h3>
 
           <!-- Tête — 1 slot -->
@@ -2810,6 +2845,12 @@
             sel.appendChild(o);
           });
           row.insertBefore(sel, row.firstChild);
+
+          // Print-only 🔳 icon replacing the interactive select
+          var printIcon = document.createElement("span");
+          printIcon.className = "inv-slot-print-icon";
+          printIcon.textContent = "🔳";
+          row.insertBefore(printIcon, sel.nextSibling);
 
           // Pocket/packet count input (hidden by default)
           var countWrap = document.createElement("div");
