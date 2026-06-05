@@ -1295,10 +1295,12 @@
             function applyCircles() {
               var value = computeValue();
               display.textContent = value;
+              if (fillCount > value) fillCount = value;
               boxes.forEach(function (box, index) {
-                box.classList.add("active");
-                box.disabled = false;
-                box.classList.toggle("filled", index < fillCount);
+                var active = index < value;
+                box.classList.toggle("active", active);
+                box.disabled = !active;
+                box.classList.toggle("filled", active && index < fillCount);
               });
               display.dispatchEvent(new Event("change", { bubbles: true }));
             }
