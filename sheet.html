@@ -128,7 +128,9 @@
         /* Fatigue track: reset all fills and selection for paper use */
         .fatigue-box.gauge-filled label,
         .fatigue-row:last-child .fatigue-box.gauge-filled label,
-        .fatigue-row:last-child .fatigue-box.danger-threshold.gauge-filled label {
+        .fatigue-row:last-child
+          .fatigue-box.danger-threshold.gauge-filled
+          label {
           background: var(--white) !important;
           color: inherit !important;
         }
@@ -172,7 +174,9 @@
         /* 7. If field is EMPTY, apply light cream background for pencil writing */
         input[type="text"]:placeholder-shown,
         textarea:placeholder-shown {
-          background-color: var(--pencil-bg) !important; /* Very light/cream color for pencil */
+          background-color: var(
+            --pencil-bg
+          ) !important; /* Very light/cream color for pencil */
           border: 1px solid var(--border-color) !important; /* Dashed border "fill-in field" style */
         }
       }
@@ -1111,9 +1115,15 @@
          ============================================ */
 
       /* Remove portrait overlap for page 2 */
-      .page-2 .left-column  { margin-right: 0; }
-      .page-2 .right-column { margin-left: 0; }
-      .page-2 .center-column { z-index: 2; }
+      .page-2 .left-column {
+        margin-right: 0;
+      }
+      .page-2 .right-column {
+        margin-left: 0;
+      }
+      .page-2 .center-column {
+        z-index: 2;
+      }
 
       /* ---- Slot-based inventory ---- */
       .inv-section-header {
@@ -1148,7 +1158,10 @@
         padding-top: 4px;
         padding-right: 2px;
       }
-      .inv-slots { flex: 1; min-width: 0; }
+      .inv-slots {
+        flex: 1;
+        min-width: 0;
+      }
       .inv-slot-row {
         display: flex;
         align-items: center;
@@ -1166,8 +1179,13 @@
         padding: 2px 3px;
         box-sizing: border-box;
       }
-      .inv-item-input:focus { outline: none; }
-      .inv-item-input::placeholder { color: var(--placeholder-text); font-style: italic; }
+      .inv-item-input:focus {
+        outline: none;
+      }
+      .inv-item-input::placeholder {
+        color: var(--placeholder-text);
+        font-style: italic;
+      }
       .inv-pockets {
         display: flex;
         gap: 1px;
@@ -1187,8 +1205,12 @@
         text-align: center;
         min-width: 0;
       }
-      .inv-pocket:focus { outline: none; }
-      .inv-pocket::placeholder { color: var(--muted-light-border); }
+      .inv-pocket:focus {
+        outline: none;
+      }
+      .inv-pocket::placeholder {
+        color: var(--muted-light-border);
+      }
 
       /* Slot type micro-selector */
       .inv-type-select {
@@ -1201,7 +1223,8 @@
         text-align-last: center;
         background: transparent;
         border: 1px solid var(--muted-light-border);
-        border-radius: 3px;
+        border-bottom: none;
+        border-radius: 3px 3px 0 0;
         color: var(--text-color);
         cursor: pointer;
         appearance: none;
@@ -1212,7 +1235,67 @@
         outline: none;
         border-color: var(--gold-comp);
       }
-      @media print { .inv-type-select { display: none; } }
+
+      /* Count input shown when type is poche/paquets */
+      .inv-pocket-count {
+        display: none;
+        align-items: center;
+        gap: 2px;
+        flex-shrink: 0;
+        border-left: 1px solid var(--muted-light-border);
+        padding-left: 4px;
+      }
+      .inv-pocket-icon { font-size: 10pt; line-height: 1; }
+      .inv-count-input {
+        width: 18px;
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--muted-light-border);
+        font-family: inherit;
+        font-size: 8pt;
+        text-align: center;
+        color: var(--text-color);
+        padding: 0;
+      }
+      .inv-count-input:focus { outline: none; }
+      .inv-count-input::-webkit-inner-spin-button,
+      .inv-count-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+      /* Quick-access (🔸) and small (▫) slot rows */
+      .inv-quick-section { display: flex; flex-direction: column; }
+      .inv-small-section  { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+      .inv-quick-row {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        border-bottom: 1px solid var(--muted-light-border);
+      }
+      .inv-quick-icon {
+        flex-shrink: 0;
+        font-size: 10pt;
+        width: 14px;
+        text-align: center;
+        line-height: 1;
+      }
+      .inv-quick-input {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        font-family: inherit;
+        font-size: 9pt;
+        color: var(--text-color);
+        padding: 2px 3px;
+        box-sizing: border-box;
+      }
+      .inv-quick-input:focus { outline: none; }
+      .inv-quick-input::placeholder { color: var(--placeholder-text); font-style: italic; }
+
+      @media print {
+        .inv-type-select { display: none; }
+        .inv-quick-input:placeholder-shown,
+        .inv-item-input:placeholder-shown { background-color: var(--pencil-bg) !important; }
+      }
 
       /* Center card fills the column height */
       .p2-center-card {
@@ -1263,14 +1346,31 @@
         width: 100%;
         min-width: 0;
       }
-      .p2-input:focus { outline: none; }
-      .p2-input::placeholder { color: var(--placeholder-text); font-style: italic; }
+      .p2-input:focus {
+        outline: none;
+      }
+      .p2-input::placeholder {
+        color: var(--placeholder-text);
+        font-style: italic;
+      }
 
       /* Flex-width helpers */
-      .w1 { flex: 1; min-width: 0; }
-      .w2 { flex: 2; min-width: 0; }
-      .w3 { flex: 3; min-width: 0; }
-      .w4 { flex: 4; min-width: 0; }
+      .w1 {
+        flex: 1;
+        min-width: 0;
+      }
+      .w2 {
+        flex: 2;
+        min-width: 0;
+      }
+      .w3 {
+        flex: 3;
+        min-width: 0;
+      }
+      .w4 {
+        flex: 4;
+        min-width: 0;
+      }
 
       /* Growing textarea */
       .p2-textarea {
@@ -1291,7 +1391,10 @@
         border-color: var(--gold-comp);
         box-shadow: 0 0 6px var(--gold-focus-shadow);
       }
-      .p2-textarea::placeholder { color: var(--placeholder-text); font-style: italic; }
+      .p2-textarea::placeholder {
+        color: var(--placeholder-text);
+        font-style: italic;
+      }
 
       @media print {
         .p2-textarea,
@@ -1438,19 +1541,21 @@
 
           function getSkillRank(skillDiceDiv) {
             var n = 0;
-            skillDiceDiv.querySelectorAll('input[type="checkbox"]').forEach(function (c) {
-              if (c.checked) n++;
-            });
+            skillDiceDiv
+              .querySelectorAll('input[type="checkbox"]')
+              .forEach(function (c) {
+                if (c.checked) n++;
+              });
             return n;
           }
 
           // Fatigue gauge: selecting box N fills boxes 1..N in light blue
           (function () {
             var fatigueBoxes = Array.prototype.slice.call(
-              document.querySelectorAll(".fatigue-grid .fatigue-box")
+              document.querySelectorAll(".fatigue-grid .fatigue-box"),
             );
             var fatigueRadios = document.querySelectorAll(
-              '.fatigue-grid input[type="radio"]'
+              '.fatigue-grid input[type="radio"]',
             );
 
             function updateFatigueGauge() {
@@ -1474,7 +1579,7 @@
             var display = row.querySelector(".attribute-value");
             if (!display) return;
             var boxes = Array.prototype.slice.call(
-              row.querySelectorAll('.attribute-dice input[type="checkbox"]')
+              row.querySelectorAll('.attribute-dice input[type="checkbox"]'),
             );
             var fillCount = 5;
             var prevValue = 0;
@@ -1512,9 +1617,11 @@
               });
             });
 
-            row.querySelectorAll('.skill-dice input[type="checkbox"]').forEach(function (sc) {
-              sc.addEventListener("change", applyCircles);
-            });
+            row
+              .querySelectorAll('.skill-dice input[type="checkbox"]')
+              .forEach(function (sc) {
+                sc.addEventListener("change", applyCircles);
+              });
 
             applyCircles();
           });
@@ -2256,20 +2363,30 @@
 
     <!-- ========== PAGE 2 — Inventory & Traits ========== -->
     <div class="character-sheet-page page-2">
-
       <!-- Left column: Inventory (slot system) -->
       <div class="left-column">
         <div class="card column-body">
-
           <h2>Inventaire</h2>
 
-          <h3 class="inv-section-header">Grands emplacements <span class="inv-charge"><span id="slots-used" class="inv-charge-value">0</span>&thinsp;/&thinsp;<span id="charge-max-value" class="inv-charge-value">3</span></span></h3>
+          <h3 class="inv-section-header">
+            Grands emplacements
+            <span class="inv-charge"
+              ><span id="slots-used" class="inv-charge-value">0</span
+              >&thinsp;/&thinsp;<span
+                id="charge-max-value"
+                class="inv-charge-value"
+                >3</span
+              ></span
+            >
+          </h3>
 
           <!-- Tête — 1 slot -->
           <div class="inv-zone">
             <div class="inv-zone-label">Tête</div>
             <div class="inv-slots">
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
             </div>
           </div>
 
@@ -2277,8 +2394,12 @@
           <div class="inv-zone">
             <div class="inv-zone-label">Mains</div>
             <div class="inv-slots">
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
             </div>
           </div>
 
@@ -2286,10 +2407,18 @@
           <div class="inv-zone">
             <div class="inv-zone-label">Torse</div>
             <div class="inv-slots">
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
             </div>
           </div>
 
@@ -2297,8 +2426,12 @@
           <div class="inv-zone">
             <div class="inv-zone-label">Dos</div>
             <div class="inv-slots">
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
             </div>
           </div>
 
@@ -2306,8 +2439,12 @@
           <div class="inv-zone">
             <div class="inv-zone-label">Taille</div>
             <div class="inv-slots">
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
             </div>
           </div>
 
@@ -2315,11 +2452,39 @@
           <div class="inv-zone">
             <div class="inv-zone-label">Jambes</div>
             <div class="inv-slots">
-              <div class="inv-slot-row"><input class="inv-item-input" type="text" placeholder="—" /></div>
+              <div class="inv-slot-row">
+                <input class="inv-item-input" type="text" placeholder="—" />
+              </div>
             </div>
           </div>
 
+          <!-- Emplacements rapides (🔸 combat pockets) -->
           <h3>Emplacements rapides</h3>
+          <div class="inv-quick-section">
+            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">🔸</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+          </div>
+
+          <!-- Petits emplacements (▫ storage packets) — fill remaining space -->
+          <div class="inv-small-section">
+            <h3>Petits emplacements</h3>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+            <div class="inv-quick-row"><span class="inv-quick-icon">▫</span><input class="inv-quick-input" type="text" placeholder="—" /></div>
+          </div>
 
         </div>
       </div>
@@ -2328,13 +2493,25 @@
       <div class="center-column">
         <div class="card p2-center-card">
           <h2>Description</h2>
-          <textarea class="p2-textarea" style="flex: 1.2;" placeholder="Apparence physique, traits distinctifs…"></textarea>
+          <textarea
+            class="p2-textarea"
+            style="flex: 1.2"
+            placeholder="Apparence physique, traits distinctifs…"
+          ></textarea>
 
-          <h2 style="margin-top: 6px;">Historique</h2>
-          <textarea class="p2-textarea" style="flex: 2;" placeholder="Origines, passé, motivations…"></textarea>
+          <h2 style="margin-top: 6px">Historique</h2>
+          <textarea
+            class="p2-textarea"
+            style="flex: 2"
+            placeholder="Origines, passé, motivations…"
+          ></textarea>
 
-          <h2 style="margin-top: 6px;">Notes</h2>
-          <textarea class="p2-textarea" style="flex: 1;" placeholder="—"></textarea>
+          <h2 style="margin-top: 6px">Notes</h2>
+          <textarea
+            class="p2-textarea"
+            style="flex: 1"
+            placeholder="—"
+          ></textarea>
         </div>
       </div>
 
@@ -2349,12 +2526,42 @@
             <span class="w4">Description</span>
           </div>
           <div class="p2-section">
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
           </div>
 
           <h3>Aptitudes spéciales</h3>
@@ -2363,196 +2570,254 @@
             <span class="w4">Description</span>
           </div>
           <div class="p2-section">
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
-            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
+            <div class="p2-row">
+              <input class="p2-input w2" type="text" placeholder="—" /><input
+                class="p2-input w4"
+                type="text"
+              />
+            </div>
           </div>
 
           <h3>Langues & Cultures</h3>
           <div class="p2-section">
-            <div class="p2-row"><input class="p2-input" type="text" placeholder="—" /></div>
+            <div class="p2-row">
+              <input class="p2-input" type="text" placeholder="—" />
+            </div>
             <div class="p2-row"><input class="p2-input" type="text" /></div>
             <div class="p2-row"><input class="p2-input" type="text" /></div>
           </div>
         </div>
       </div>
-
     </div>
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      function normalizeText(s) {
-        if (!s) return "";
-        try {
-          s = s.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-        } catch (e) {
-          s = s.replace(/[\u0300-\u036f]/g, "");
-        }
-        return s
-          .replace(/[^A-Z0-9 ]/gi, "")
-          .trim()
-          .toUpperCase();
-      }
-
-      function findAttributeDisplayByLabel(label) {
-        var headers = document.querySelectorAll(".attribute-header");
-        for (var i = 0; i < headers.length; i++) {
-          var span = headers[i].querySelector("span:not(.attribute-value)");
-          if (!span) continue;
-          if (
-            normalizeText(span.textContent).indexOf(normalizeText(label)) !== -1
-          ) {
-            return headers[i].querySelector(".attribute-value");
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        function normalizeText(s) {
+          if (!s) return "";
+          try {
+            s = s.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+          } catch (e) {
+            s = s.replace(/[\u0300-\u036f]/g, "");
           }
+          return s
+            .replace(/[^A-Z0-9 ]/gi, "")
+            .trim()
+            .toUpperCase();
         }
-        return null;
-      }
 
-      function findSkillStarsByName(name) {
-        var items = document.querySelectorAll(".skill-item");
-        for (var i = 0; i < items.length; i++) {
-          var label = items[i].querySelector("span");
-          if (!label) continue;
-          if (
-            normalizeText(label.textContent).indexOf(normalizeText(name)) !== -1
-          ) {
-            var stars = items[i].querySelector(".skill-dice");
-            if (stars)
-              return Array.prototype.slice.call(
-                stars.querySelectorAll('input[type="checkbox"]'),
-              );
+        function findAttributeDisplayByLabel(label) {
+          var headers = document.querySelectorAll(".attribute-header");
+          for (var i = 0; i < headers.length; i++) {
+            var span = headers[i].querySelector("span:not(.attribute-value)");
+            if (!span) continue;
+            if (
+              normalizeText(span.textContent).indexOf(normalizeText(label)) !==
+              -1
+            ) {
+              return headers[i].querySelector(".attribute-value");
+            }
           }
+          return null;
         }
-        return null;
-      }
 
-      var tenacityDisplay =
-        findAttributeDisplayByLabel("TÉNACITÉ") || findAttributeDisplayByLabel("TENACITE");
-      var disciplineStars = findSkillStarsByName("DISCIPLINE");
+        function findSkillStarsByName(name) {
+          var items = document.querySelectorAll(".skill-item");
+          for (var i = 0; i < items.length; i++) {
+            var label = items[i].querySelector("span");
+            if (!label) continue;
+            if (
+              normalizeText(label.textContent).indexOf(normalizeText(name)) !==
+              -1
+            ) {
+              var stars = items[i].querySelector(".skill-dice");
+              if (stars)
+                return Array.prototype.slice.call(
+                  stars.querySelectorAll('input[type="checkbox"]'),
+                );
+            }
+          }
+          return null;
+        }
 
-      // Charge Maximale = 2 + Force (characteristic) + Robustesse (skill rank)
-      var forceDisplay = findAttributeDisplayByLabel("FORCE");
-      var robustnessStars = findSkillStarsByName("ROBUSTESSE");
+        var tenacityDisplay =
+          findAttributeDisplayByLabel("TÉNACITÉ") ||
+          findAttributeDisplayByLabel("TENACITE");
+        var disciplineStars = findSkillStarsByName("DISCIPLINE");
 
-      function updateChargeMax() {
-        var force = forceDisplay ? parseInt(forceDisplay.textContent, 10) : 1;
-        if (isNaN(force)) force = 1;
-        var rob = 0;
+        // Charge Maximale = 2 + Force (characteristic) + Robustesse (skill rank)
+        var forceDisplay = findAttributeDisplayByLabel("FORCE");
+        var robustnessStars = findSkillStarsByName("ROBUSTESSE");
+
+        function updateChargeMax() {
+          var force = forceDisplay ? parseInt(forceDisplay.textContent, 10) : 1;
+          if (isNaN(force)) force = 1;
+          var rob = 0;
+          if (robustnessStars) {
+            robustnessStars.forEach(function (s) {
+              if (s.checked) rob++;
+            });
+          }
+          var chargeMax = Math.min(12, 2 + force + rob);
+          var el = document.getElementById("charge-max-value");
+          if (el) el.textContent = chargeMax;
+        }
+
+        if (forceDisplay)
+          forceDisplay.addEventListener("change", updateChargeMax);
         if (robustnessStars) {
-          robustnessStars.forEach(function (s) { if (s.checked) rob++; });
-        }
-        var chargeMax = Math.min(12, 2 + force + rob);
-        var el = document.getElementById("charge-max-value");
-        if (el) el.textContent = chargeMax;
-      }
-
-      if (forceDisplay) forceDisplay.addEventListener("change", updateChargeMax);
-      if (robustnessStars) {
-        robustnessStars.forEach(function (s) {
-          s.addEventListener("change", updateChargeMax);
-        });
-      }
-
-      // Inject type selector into each large slot row
-      var slotTypeOptions = [
-        { value: "",        label: "—"  },
-        { value: "weapon",  label: "⚔"  },
-        { value: "armor",   label: "🛡" },
-        { value: "small",   label: "·"  },
-        { value: "pocket",  label: "🔸" },
-        { value: "packet",  label: "▫"  }
-      ];
-      document.querySelectorAll(".inv-slot-row").forEach(function (row) {
-        var sel = document.createElement("select");
-        sel.className = "inv-type-select";
-        sel.title = "Type : arme ⚔ · armure 🛡 · petit · · poche 🔸 · paquets ▫";
-        slotTypeOptions.forEach(function (opt) {
-          var o = document.createElement("option");
-          o.value = opt.value;
-          o.textContent = opt.label;
-          sel.appendChild(o);
-        });
-        row.insertBefore(sel, row.firstChild);
-      });
-
-      // Count filled large slots (type "small" / petit ne compte pas)
-      var largeSlotInputs = Array.prototype.slice.call(
-        document.querySelectorAll(".inv-item-input")
-      );
-
-      function updateSlotsUsed() {
-        var used = largeSlotInputs.filter(function (inp) {
-          var row = inp.closest(".inv-slot-row");
-          var sel = row && row.querySelector(".inv-type-select");
-          return inp.value.trim() !== "" && (!sel || sel.value !== "small");
-        }).length;
-        var el = document.getElementById("slots-used");
-        if (el) el.textContent = used;
-      }
-
-      largeSlotInputs.forEach(function (inp) {
-        inp.addEventListener("input", updateSlotsUsed);
-      });
-      document.querySelectorAll(".inv-type-select").forEach(function (sel) {
-        sel.addEventListener("change", updateSlotsUsed);
-      });
-      // Wrap numeric labels into a small span for styling (top-right)
-      function wrapBoxLabels(selector) {
-        var nodes = document.querySelectorAll(selector + " label");
-        nodes.forEach(function (label) {
-          if (label.querySelector(".box-num")) return;
-          var text = label.textContent || "";
-          var m = text.match(/\d+/);
-          var num = m ? m[0] : text.trim();
-          label.innerHTML = '<span class="box-num">' + num + "</span>";
-        });
-      }
-      wrapBoxLabels(".heart-box");
-      wrapBoxLabels(".stability-box");
-      wrapBoxLabels(".fatigue-box");
-
-      var stabilityBoxes = Array.prototype.slice.call(
-        document.querySelectorAll(".stability-container .stability-box"),
-      );
-
-      function updateStabilityBoxes() {
-        if (!tenacityDisplay || stabilityBoxes.length === 0) return;
-        var ten = parseInt(tenacityDisplay.textContent, 10);
-        if (Number.isNaN(ten)) ten = 0;
-        ten = Math.max(0, Math.min(5, ten));
-        var disc = 0;
-        if (disciplineStars)
-          disciplineStars.forEach(function (s) {
-            if (s.checked) disc++;
+          robustnessStars.forEach(function (s) {
+            s.addEventListener("change", updateChargeMax);
           });
-        var total = Math.min(stabilityBoxes.length, ten + disc);
-        stabilityBoxes.forEach(function (box, idx) {
-          var input = box.querySelector('input[type="checkbox"]');
-          var active = idx < total;
-          box.classList.toggle("active", active);
-          box.classList.toggle("inactive", !active);
-          if (!input) return;
-          input.disabled = !active;
-          if (!active) input.checked = false;
-        });
-      }
+        }
 
-      if (tenacityDisplay) {
-        tenacityDisplay.addEventListener("change", updateStabilityBoxes);
-      }
-      if (disciplineStars) {
-        disciplineStars.forEach(function (s) {
-          s.addEventListener("change", updateStabilityBoxes);
-        });
-      }
+        // Inject type selector + pocket-count input into each large slot row
+        var slotTypeOptions = [
+          { value: "",       label: "—"  },
+          { value: "weapon", label: "⚔"  },
+          { value: "armor",  label: "🛡" },
+          { value: "small",  label: "·"  },
+          { value: "pocket", label: "🔸" },
+          { value: "packet", label: "▫"  },
+        ];
+        var pocketIcons = { pocket: "🔸", packet: "▫" };
 
-      // Initial sync
-      updateStabilityBoxes();
-      updateChargeMax();
-      updateSlotsUsed();
-    });
-  </script>
+        document.querySelectorAll(".inv-slot-row").forEach(function (row) {
+          // Type selector
+          var sel = document.createElement("select");
+          sel.className = "inv-type-select";
+          sel.title = "Type : arme ⚔ · armure 🛡 · petit · · poche 🔸 · paquets ▫";
+          slotTypeOptions.forEach(function (opt) {
+            var o = document.createElement("option");
+            o.value = opt.value;
+            o.textContent = opt.label;
+            sel.appendChild(o);
+          });
+          row.insertBefore(sel, row.firstChild);
+
+          // Pocket/packet count input (hidden by default)
+          var countWrap = document.createElement("div");
+          countWrap.className = "inv-pocket-count";
+          var icon = document.createElement("span");
+          icon.className = "inv-pocket-icon";
+          var countInput = document.createElement("input");
+          countInput.type = "number";
+          countInput.min = "1";
+          countInput.max = "9";
+          countInput.className = "inv-count-input";
+          countWrap.appendChild(icon);
+          countWrap.appendChild(countInput);
+          row.appendChild(countWrap);
+
+          sel.addEventListener("change", function () {
+            var type = this.value;
+            var show = type === "pocket" || type === "packet";
+            countWrap.style.display = show ? "flex" : "none";
+            if (show) icon.textContent = pocketIcons[type];
+            updateSlotsUsed();
+          });
+        });
+
+        // Charge: count slots whose type is set (not "" or "small")
+        var largeSlotInputs = Array.prototype.slice.call(
+          document.querySelectorAll(".inv-item-input"),
+        );
+
+        function updateSlotsUsed() {
+          var count = 0;
+          document.querySelectorAll(".inv-slot-row .inv-type-select").forEach(function (sel) {
+            if (sel.value !== "" && sel.value !== "small") count++;
+          });
+          var el = document.getElementById("slots-used");
+          if (el) el.textContent = count;
+        }
+
+        largeSlotInputs.forEach(function (inp) {
+          inp.addEventListener("input", updateSlotsUsed);
+        });
+        // Wrap numeric labels into a small span for styling (top-right)
+        function wrapBoxLabels(selector) {
+          var nodes = document.querySelectorAll(selector + " label");
+          nodes.forEach(function (label) {
+            if (label.querySelector(".box-num")) return;
+            var text = label.textContent || "";
+            var m = text.match(/\d+/);
+            var num = m ? m[0] : text.trim();
+            label.innerHTML = '<span class="box-num">' + num + "</span>";
+          });
+        }
+        wrapBoxLabels(".heart-box");
+        wrapBoxLabels(".stability-box");
+        wrapBoxLabels(".fatigue-box");
+
+        var stabilityBoxes = Array.prototype.slice.call(
+          document.querySelectorAll(".stability-container .stability-box"),
+        );
+
+        function updateStabilityBoxes() {
+          if (!tenacityDisplay || stabilityBoxes.length === 0) return;
+          var ten = parseInt(tenacityDisplay.textContent, 10);
+          if (Number.isNaN(ten)) ten = 0;
+          ten = Math.max(0, Math.min(5, ten));
+          var disc = 0;
+          if (disciplineStars)
+            disciplineStars.forEach(function (s) {
+              if (s.checked) disc++;
+            });
+          var total = Math.min(stabilityBoxes.length, ten + disc);
+          stabilityBoxes.forEach(function (box, idx) {
+            var input = box.querySelector('input[type="checkbox"]');
+            var active = idx < total;
+            box.classList.toggle("active", active);
+            box.classList.toggle("inactive", !active);
+            if (!input) return;
+            input.disabled = !active;
+            if (!active) input.checked = false;
+          });
+        }
+
+        if (tenacityDisplay) {
+          tenacityDisplay.addEventListener("change", updateStabilityBoxes);
+        }
+        if (disciplineStars) {
+          disciplineStars.forEach(function (s) {
+            s.addEventListener("change", updateStabilityBoxes);
+          });
+        }
+
+        // Initial sync
+        updateStabilityBoxes();
+        updateChargeMax();
+        updateSlotsUsed();
+      });
+    </script>
   </body>
 </html>
