@@ -118,11 +118,9 @@
           print-color-adjust: exact;
         }
 
-        /* Prevent blank page 2: body is fixed to exact A4 landscape height */
-        body {
-          height: 210mm !important;
-          max-height: 210mm !important;
-          overflow: hidden !important;
+        /* Force page break before page 2 */
+        .character-sheet-page.page-2 {
+          break-before: page;
         }
 
         /* Fatigue track: reset all fills and selection for paper use */
@@ -1105,6 +1103,101 @@
         padding: 4px;
         text-align: center;
       }
+
+      /* ============================================
+         Page 2 — Inventory & Traits
+         ============================================ */
+
+      /* Remove portrait overlap for page 2 */
+      .page-2 .left-column  { margin-right: 0; }
+      .page-2 .right-column { margin-left: 0; }
+      .page-2 .center-column { z-index: 2; }
+
+      /* Center card fills the column height */
+      .p2-center-card {
+        flex: 1;
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      /* Section within a page-2 card */
+      .p2-section {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
+
+      /* Small italic column headers */
+      .p2-col-headers {
+        display: flex;
+        gap: 4px;
+        font-size: 7pt;
+        color: var(--gray-dark);
+        font-style: italic;
+        border-bottom: 1px solid var(--muted-light-border);
+        padding-bottom: 2px;
+        margin-bottom: 1px;
+      }
+
+      /* One data row */
+      .p2-row {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        border-bottom: 1px solid var(--muted-light-border);
+      }
+
+      /* Borderless input inside a row */
+      .p2-input {
+        background: transparent;
+        border: none;
+        font-family: inherit;
+        font-size: 9pt;
+        color: var(--text-color);
+        padding: 2px 3px;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+      }
+      .p2-input:focus { outline: none; }
+      .p2-input::placeholder { color: var(--placeholder-text); font-style: italic; }
+
+      /* Flex-width helpers */
+      .w1 { flex: 1; min-width: 0; }
+      .w2 { flex: 2; min-width: 0; }
+      .w3 { flex: 3; min-width: 0; }
+      .w4 { flex: 4; min-width: 0; }
+
+      /* Growing textarea */
+      .p2-textarea {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
+        background: var(--header-bg-start);
+        font-family: inherit;
+        font-size: 9pt;
+        padding: 4px 6px;
+        resize: none;
+        color: var(--text-color);
+        flex: 1;
+      }
+      .p2-textarea:focus {
+        outline: none;
+        border-color: var(--gold-comp);
+        box-shadow: 0 0 6px var(--gold-focus-shadow);
+      }
+      .p2-textarea::placeholder { color: var(--placeholder-text); font-style: italic; }
+
+      @media print {
+        .p2-textarea,
+        .p2-input:placeholder-shown {
+          background-color: var(--pencil-bg) !important;
+        }
+      }
     </style>
   </head>
   <body>
@@ -2056,6 +2149,107 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- ========== PAGE 2 — Inventory & Traits ========== -->
+    <div class="character-sheet-page page-2">
+
+      <!-- Left column: Equipment -->
+      <div class="left-column">
+        <div class="card column-body">
+          <h2>Équipement</h2>
+
+          <h3>Armes</h3>
+          <div class="p2-col-headers">
+            <span class="w3">Arme</span>
+            <span class="w2">Dégâts / Effet</span>
+            <span class="w3">Notes</span>
+          </div>
+          <div class="p2-section">
+            <div class="p2-row"><input class="p2-input w3" type="text" placeholder="—" /><input class="p2-input w2" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w3" type="text" placeholder="—" /><input class="p2-input w2" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w3" type="text" placeholder="—" /><input class="p2-input w2" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w3" type="text" placeholder="—" /><input class="p2-input w2" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w3" type="text" placeholder="—" /><input class="p2-input w2" type="text" /><input class="p2-input w3" type="text" /></div>
+          </div>
+
+          <h3>Inventaire</h3>
+          <div class="p2-col-headers">
+            <span class="w4">Objet</span>
+            <span class="w1">Qté</span>
+            <span class="w3">Notes</span>
+          </div>
+          <div class="p2-section">
+            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w4" type="text" placeholder="—" /><input class="p2-input w1" type="text" /><input class="p2-input w3" type="text" /></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center column: Description & Notes -->
+      <div class="center-column">
+        <div class="card p2-center-card">
+          <h2>Description</h2>
+          <textarea class="p2-textarea" style="flex: 1.2;" placeholder="Apparence physique, traits distinctifs…"></textarea>
+
+          <h2 style="margin-top: 6px;">Historique</h2>
+          <textarea class="p2-textarea" style="flex: 2;" placeholder="Origines, passé, motivations…"></textarea>
+
+          <h2 style="margin-top: 6px;">Notes</h2>
+          <textarea class="p2-textarea" style="flex: 1;" placeholder="—"></textarea>
+        </div>
+      </div>
+
+      <!-- Right column: Traits & Abilities -->
+      <div class="right-column">
+        <div class="card column-mind">
+          <h2>Traits & Aptitudes</h2>
+
+          <h3>Traits</h3>
+          <div class="p2-col-headers">
+            <span class="w2">Trait</span>
+            <span class="w4">Description</span>
+          </div>
+          <div class="p2-section">
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+          </div>
+
+          <h3>Aptitudes spéciales</h3>
+          <div class="p2-col-headers">
+            <span class="w2">Aptitude</span>
+            <span class="w4">Description</span>
+          </div>
+          <div class="p2-section">
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+            <div class="p2-row"><input class="p2-input w2" type="text" placeholder="—" /><input class="p2-input w4" type="text" /></div>
+          </div>
+
+          <h3>Langues & Cultures</h3>
+          <div class="p2-section">
+            <div class="p2-row"><input class="p2-input" type="text" placeholder="—" /></div>
+            <div class="p2-row"><input class="p2-input" type="text" /></div>
+            <div class="p2-row"><input class="p2-input" type="text" /></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </body>
   <script>
