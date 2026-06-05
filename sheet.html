@@ -15,6 +15,7 @@
         --dice-color-blue: #407bd5;
         --dice-color-background: #7097d1;
         --dice-skill-yellow: #ffae50;
+        --fatigue-fill: #a8d4ef;
         --border-color: #5d4e37;
         --header-bg-start: #f9f3e9;
         --header-bg-end: #f4e8d8;
@@ -876,11 +877,15 @@
         color: var(--danger-border);
       }
 
-      /* Current fatigue fill (screen) */
+      /* Current fatigue fill — gauge: boxes 1..N are filled in light blue */
+      .fatigue-box.gauge-filled label {
+        background: var(--fatigue-fill);
+        color: var(--text-color);
+      }
+      /* Waterline marker: outline on the currently selected box */
       .fatigue-box input[type="radio"]:checked + label {
-        background: var(--active-border);
-        color: var(--white);
-        border-color: var(--active-border);
+        outline: 2px solid var(--active-border);
+        outline-offset: -3px;
       }
 
       /* --- Rules below --- */
@@ -1211,6 +1216,32 @@
             });
             return n;
           }
+
+          // Fatigue gauge: selecting box N fills boxes 1..N in light blue
+          (function () {
+            var fatigueBoxes = Array.prototype.slice.call(
+              document.querySelectorAll(".fatigue-grid .fatigue-box")
+            );
+            var fatigueRadios = document.querySelectorAll(
+              '.fatigue-grid input[type="radio"]'
+            );
+
+            function updateFatigueGauge() {
+              var selectedIndex = -1;
+              fatigueRadios.forEach(function (radio, idx) {
+                if (radio.checked) selectedIndex = idx;
+              });
+              fatigueBoxes.forEach(function (box, idx) {
+                box.classList.toggle("gauge-filled", idx <= selectedIndex);
+              });
+            }
+
+            fatigueRadios.forEach(function (radio) {
+              radio.addEventListener("change", updateFatigueGauge);
+            });
+
+            updateFatigueGauge();
+          })();
 
           document.querySelectorAll(".row-attribute").forEach(function (row) {
             var display = row.querySelector(".attribute-value");
