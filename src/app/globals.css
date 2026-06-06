@@ -1,26 +1,323 @@
 @import "tailwindcss";
 
+/* ─── Design tokens ────────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --sidebar-width: 240px;
+  --sidebar-bg: #1a1a2e;
+  --sidebar-text: #c8c8d8;
+  --sidebar-text-muted: #7878a0;
+  --sidebar-active: #e8e0ff;
+  --sidebar-active-bg: #2d2d4e;
+  --sidebar-section-color: #5858a0;
+
+  --content-bg: #f8f7f4;
+  --content-text: #1a1a2e;
+  --content-muted: #6b6b8a;
+  --content-border: #ddd8d0;
+
+  --accent: #7c5cbf;
+  --accent-light: #e8e0ff;
+
+  --font-body: "Georgia", "Times New Roman", serif;
+  --font-ui: system-ui, -apple-system, sans-serif;
+  --font-mono: "Courier New", monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ─── Reset / base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  background: var(--sidebar-bg);
+  color: var(--content-text);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+/* ─── App shell ─────────────────────────────────────────────────────────────── */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ─── Sidebar ───────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid #2d2d4e;
+}
+
+.sidebar-header {
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid #2d2d4e;
+}
+
+.sidebar-logo {
+  font-family: var(--font-ui);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--sidebar-active);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sidebar-sections {
+  padding: 0.75rem 0 2rem;
+  flex: 1;
+}
+
+.nav-section {
+  margin-bottom: 0.25rem;
+}
+
+.nav-section-title {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sidebar-section-color);
+  padding: 1rem 1.25rem 0.35rem;
+}
+
+.nav-items {
+  list-style: none;
+}
+
+.nav-link {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  padding: 0.3rem 1.25rem;
+  border-left: 2px solid transparent;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.nav-link:hover {
+  color: var(--sidebar-active);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-link--active {
+  color: var(--sidebar-active);
+  background: var(--sidebar-active-bg);
+  border-left-color: var(--accent);
+}
+
+/* ─── Content area ──────────────────────────────────────────────────────────── */
+.content-area {
+  flex: 1;
+  background: var(--content-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Markdown content ──────────────────────────────────────────────────────── */
+.markdown-content {
+  flex: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2.5rem 3rem 4rem;
+  width: 100%;
+}
+
+/* Typography inside markdown */
+.markdown-body h1 {
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin: 2.5rem 0 1rem;
+  color: var(--content-text);
+  border-bottom: 2px solid var(--content-border);
+  padding-bottom: 0.5rem;
+}
+
+.markdown-body h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 2rem 0 0.75rem;
+  color: var(--content-text);
+}
+
+.markdown-body h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+  color: #2d2d4e;
+}
+
+.markdown-body h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.35rem;
+  color: var(--accent);
+}
+
+.markdown-body p {
+  margin-bottom: 0.9rem;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0.5rem 0 0.9rem 1.5rem;
+}
+
+.markdown-body li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-body strong { font-weight: 700; }
+
+.markdown-body em {
+  font-style: italic;
+  color: var(--content-muted);
+}
+
+.markdown-body a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-body a:hover { color: #5a3a9f; }
+
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: #e8e0ff;
+  color: #3a2a6e;
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+
+.markdown-body pre {
+  background: #1a1a2e;
+  color: #c8c8d8;
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.markdown-body pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--content-border);
+  margin: 2rem 0;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+  background: var(--accent-light);
+  color: #3a2a6e;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Tables */
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.9rem;
+}
+
+.markdown-body th {
+  background: #2d2d4e;
+  color: #e8e0ff;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.markdown-body td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--content-border);
+  vertical-align: top;
+}
+
+.markdown-body tr:nth-child(even) td {
+  background: rgba(124, 92, 191, 0.04);
+}
+
+/* ─── Page nav (prev/next) ──────────────────────────────────────────────────── */
+.page-nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.5rem 3rem 2.5rem;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+  gap: 1rem;
+}
+
+.page-nav-link {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--content-border);
+  border-radius: 6px;
+  min-width: 180px;
+  max-width: 48%;
+  transition: border-color 0.15s, background 0.15s;
+  background: white;
+}
+
+.page-nav-link:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.page-nav-link--next {
+  text-align: right;
+  margin-left: auto;
+}
+
+.page-nav-direction {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: var(--content-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.2rem;
+}
+
+.page-nav-title {
+  font-size: 0.88rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ─── Print ─────────────────────────────────────────────────────────────────── */
+@media print {
+  .sidebar, .page-nav { display: none; }
+  .content-area { background: white; }
+  .markdown-content { max-width: 100%; padding: 0; }
 }
