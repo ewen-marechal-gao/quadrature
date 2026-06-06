@@ -1,88 +1,94 @@
 # ♥️ Ressources
 
+> Voir aussi : [etats.md](etats.md) pour les états liés aux ressources · [combat.md](combat.md) pour la phase de nettoyage
+
+---
+
 ## Condition physique
 
-L'état physique d'un personnage est représenté par sa santé, et sa fatigue💧.
+L'état physique d'un personnage est représenté par sa **Santé** ♥️ et sa **Fatigue** 💧.
 
-### **Santé♥️**
+### Santé ♥️
 
-La survie d'un personnage ne repose pas sur une réserve de *Points de Vie* classique.
+La survie d'un personnage ne repose pas sur une réserve de Points de Vie classique.
 
-**La Résistance♥️** est égale à la **Vigueur** ✪ \+ la **Robustesse** ✪ du personnage.
+**La Résistance ♥️** = Vigueur ✪ + Robustesse ✪
 
-Les **blessures légères💢** peuvent s'accumuler. Lorsqu'elles dépassent la **Résistance**, toutes les blessures légères dépassant ce seuil sont supprimées et le personnage subit une **blessure grave**💔. En combat, cette conversion des blessures légères en blessures graves à lieu à la fin de chaque manche, il est donc possible de soigner des blessures légères via les actions des joueurs.
+Les **blessures légères 💢** peuvent s'accumuler. Lorsqu'elles dépassent la **Résistance**, toutes les blessures légères dépassant ce seuil sont supprimées et le personnage subit une **blessure grave 💔**. En combat, cette conversion a lieu à la **fin de chaque manche** — il est donc possible de soigner des blessures légères avant qu'elles ne s'aggravent.
 
-*Note : comme tous les marqueurs sont supprimés, un personnage avec une faible résistance ne court pas le risque de subir plusieurs blessures graves d'un coup. Cependant, il est plus difficile de soigner les blessures légères avant qu'elles ne s'aggravent.*
+Chaque **blessure grave 💔** entraîne la perte temporaire d'un point de **caractéristique physique** ✪.
 
-Chaque **blessure grave**💔 se traduit par la perte (temporaire) d'un point de **caractéristique physique** ✪.
+La **Protection 🛡️** (généralement conférée par l'armure) permet d'ignorer les premières **blessures graves 💔**.
 
-La **protection**🛡️(généralement conférée par l'armure) permet d'ignorer les premières **blessures graves**💔. Elle est essentielle pour empêcher les personnages d'être affaiblis au premier coup
+Lorsque le personnage n'a plus de caractéristique physique, il devient **Aux portes de la Mort** — la prochaine 💔 est alors fatale.
 
-Lorsque le personnage n'a plus de caractéristique physique, il devient **Aux portes de la Mort,** et la prochaine💔est alors fatale.
+**Récupération :** une fois par jour, un personnage peut tenter de récupérer un point de caractéristique physique avec un jet de **Récupération**, contre un DD = 5 + nombre de points manquants (max 20).
 
-Une fois par jour, un personnage peut essayer de récupérer un point de caractéristique physique en réussissant un jet de **Récupération**, contre un DD \= 5 \+ nombre de points manquant pour la caractéristique physique (avec un maximum de 20).
+*Note : les caractéristiques ne comptent que pour un quart du jet (le dé 🟦), la spirale de la mort est donc limitée.*
 
-*Note : les caractéristiques ne comptent que pour un quart du jet (le dé* 🟦*), la spirale de la mort est donc limitée.*
+---
 
-### **Fatigue💧**
+### Fatigue 💧
 
-La fatigue💧représente l'état de stress physique d'un personnage.
+La fatigue représente l'état de stress physique d'un personnage.
 
-* Débute à 1  
-* Maximum 20  
-* Ne peut jamais descendre sous 1
+- Débute à **1**
+- Maximum **20**
+- Ne peut jamais descendre sous **1**
 
-*Exemple :*
+Une créature avec Fatigue = 20 devient **Inconsciente** (voir [etats.md](etats.md)).
 
-*Lena dispose de 2*✪ *en vigueur, 1*✪ *en robustesse, et 8*✪ *dans ses caractéristiques physiques (Force, Agilité, Vigueur, Grâce, Acuité). Il faut donc lui infliger quatre blessures légères* **💢** pour entraîner blessure grave 💔,  et elle peut subir *huit blessures graves* 💔 *avant de succomber.*
+*Exemple : Lena dispose de 2✪ en Vigueur et 1✪ en Robustesse. Il lui faut donc 4 blessures légères 💢 pour subir une blessure grave 💔, et elle peut subir 8 blessures graves avant de succomber. Kévin, lui, n'a que 1✪ en Vigueur et 0✪ en Robustesse : 2 💢 suffisent à déclencher une 💔, et il ne peut subir que 5 💔 avant de succomber.*
 
-*Kévin, quand à lui, n'a que 1*✪ *en vigueur, 0*✪ *en robustesse, et 5*✪ *dans ses caractéristiques physiques. Il ne faut donc que deux blessures légères* **💢** pour entraîner blessure grave 💔, *et il ne peut donc subir que 5*💔 *avant de succomber.*
-
-*A l'inverse, Lena et Kévin comptabilisent la Fatigue de la même manière.*
+---
 
 ## Condition Mentale
 
-La Condition Mentale représente la lucidité, la détermination et la stabilité émotionnelle d'un personnage. Elle est représentée par une **Piste Mentale** de 7 états et une réserve de jetons de **Stabilité**.
+La Condition Mentale représente la lucidité, la détermination et la stabilité émotionnelle. Elle est représentée par une **Piste Mentale** de 7 états et une réserve de jetons de **Stabilité ◇**.
 
-**Trauma** : lorsqu'un personnage subit un traumatisme, il perd temporairement un point à une caractéristique mentale. Ces points sont récupérés à raison d'un point de caractéristique tous les 5 jours.
+**Trauma :** lorsqu'un personnage subit un traumatisme, il perd temporairement un point à une caractéristique mentale. Ces points se récupèrent à raison d'un point tous les 5 jours. Une fois par jour, un personnage peut tenter de récupérer un point mental avec un jet de **Résilience**, contre un DD = 8 + nombre de points manquants.
 
-Une fois par jour, un personnage peut essayer de récupérer un point de caractéristique mentale en réussissant un jet de **Résilience**, contre un DD \= 8 \+ nombre de points manquant pour la caractéristique mentale.
+### Stabilité ◇
 
-### **1\. La Stabilité ◇**
+**Stabilité ◇** = Ténacité ✪ + Discipline ✪
 
-La **Stabilité ◇** est **égale à** la **Ténacité** ✪ **\+ la Discipline** ✪ du personnage. Ces jetons servent de protection contre les chocs émotionnels et les assauts psychiques.
+Ces jetons servent de protection contre les chocs émotionnels et les assauts psychiques. À chaque fois qu'un effet devrait infliger une évolution de l'état mental (**🔻** ou **🔺**), le personnage peut choisir de perdre un jeton **◇** à la place.
 
-*Exemple :*
+*Exemple : Lena (Ténacité 1✪, Discipline 1✪) dispose de 2◇. Kévin (Ténacité 2✪, Discipline 2✪) dispose de 4◇.*
 
-*Lena dispose de 1 en Ténacité* ✪ *et en Discipline* ✪ *, elle dispose donc de 2 jetons Stabilité* **◇**  
-*Kévin a 2 en Ténacité* ✪ *et 2 en Discipline* ✪ *et donc 4 jetons Stabilité* **◇**
+---
 
-###  **2\. La Piste des États Mentaux**
+### Piste des États Mentaux
 
-La piste est symétrique. Le personnage commence par défaut à l'état **Concentré**. 
+La piste est symétrique. Le personnage commence par défaut à l'état **Concentré**.
 
-**Evolution :** l'état mental d'un personnage peut **augmenter🔺**vers la rage ou **diminuer**🔻vers la peur.
-
-**Stabilité :** chaque fois qu'un effet devrait infliger une évolution de l'état mental (**🔻**ou**🔺**), **le personnage peut choisir** de perdre un jeton de **Stabilité** **◇** à la place.
+**🔺** : augmenter d'un cran vers la Colère.  
+**🔻** : diminuer d'un cran vers la Peur.
 
 #### États colériques
 
-**Enragé   :** \+1 fatigue 💧 supplémentaire à chaque action  
-**Furieux  :** 🟥 aux jets sur les actions **défensives**  
-**Agressif :** \+1 relance sur les actions **offensives**
+| État | Effet |
+| :--- | :--- |
+| **Enragé** | +1 fatigue 💧 supplémentaire à chaque action |
+| **Furieux** | 🟥 aux jets sur les actions **défensives** |
+| **Agressif** | +1 relance sur les actions **offensives** |
 
 #### Centre de la piste
 
-**Concentré :** \+1 réaction⚡au début de chaque manche
+| État | Effet |
+| :--- | :--- |
+| **Concentré** | +1 réaction ⚡ au début de chaque manche |
 
 #### États craintifs
 
-**Prudent :**  \+1 relance sur les actions **défensives**  
-**Paniqué :** 🟥 aux jets sur les actions **offensives**  
-**Terrifié   :**  vous ne pouvez pas effectuer de réactions ⚡
+| État | Effet |
+| :--- | :--- |
+| **Prudent** | +1 relance sur les actions **défensives** |
+| **Paniqué** | 🟥 aux jets sur les actions **offensives** |
+| **Terrifié** | Impossible d'effectuer des réactions ⚡ |
 
 #### États extrêmes
 
-🔥**Enragé** : le personnage agit sans retenue. Une erreur supplémentaire provoque une ouverture brutale. Si un effet devait le déplacer d'un cran supplémentaire vers la Rage, le personnage subit immédiatement un **trauma**, et son état mental diminue **🔻**.
+**🔥 Enragé :** si un effet devrait déplacer le personnage d'un cran supplémentaire vers la Rage, il subit immédiatement un **trauma** et son état mental diminue **🔻**.
 
-**❄️Terrifié :** le personnage est au bord de la rupture. Une pression supplémentaire provoque un sursaut désordonné. Si un effet devait le déplacer d'un cran supplémentaire vers la Peur, le personnage subit immédiatement un **trauma**, et son état mental augmente**🔺**.
+**❄️ Terrifié :** si un effet devrait déplacer le personnage d'un cran supplémentaire vers la Peur, il subit immédiatement un **trauma** et son état mental augmente **🔺**.

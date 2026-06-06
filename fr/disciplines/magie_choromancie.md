@@ -1,22 +1,26 @@
-
 # ⛲ Choromancie
 
-Idées de mécaniques
+> Voir aussi : [magie_intro.md](magie_intro.md)
 
-Le Choromancien peut utiliser un nombre de PA **⚫** de son tour suivant égale à son score de Choromancie. Pour chaque point d'action ainsi utilisé, il gagne un marqueur **temporisation**⏳.
+> Cette discipline est en cours de développement. Le contenu ci-dessous est un carnet de conception.
 
-Au début de son tour, le Choromancien perd un PA **⚫**pour chacun de ses marqueurs **temporisation**⏳.
+## Concept
 
-⬆️Diminution la masse : augmente la vitesse de déplacement d'une créature, ou peut la faire léviter (2m par marqueur ?) en cas de chute, convenir un marqueur en **inertie**➡️ / dégât d'inertie ?
+Le Choromancien peut utiliser un nombre de **⚫** de son tour suivant égal à son score de Choromancie. Pour chaque point d'action ainsi utilisé, il gagne un marqueur **temporisation ⏳**.
 
-⬆️Augmentation de la masse : diminue la vitesse de déplacement, augmente la fatigue par action perte de points d'action.
+Au début de son tour, le Choromancien perd un **⚫** pour chacun de ses marqueurs **temporisation ⏳**.
 
-Le Choromancien peut placer des marqueurs **courbure**🌐 sur le champ de bataille. Ces cases n'existent fonctionnellement plus, toute créature ou objet entrant d'un côté ressort à l'extrémité opposée sans dépenser de point de mouvement. Les créatures ou objets sur les cases affectées sont déplacées sur une case libre par le Choromancien.
+## Axes envisagés
 
-Pouvoir de tiers 1 : placer une **courbure**🌐 sur une case adjacente et faire un "pas" de placement à travers la courbure. Permet de sortir de n'importe quelle autre courbure.
+- **Diminution de masse :** augmente la vitesse de déplacement d'une créature, ou peut la faire léviter (2 m par marqueur ?). En cas de chute, convertir un marqueur en **inertie ➡️** / dégât d'inertie ?
+- **Augmentation de masse :** diminue la vitesse de déplacement, augmente la fatigue par action, perte de points d'action.
 
-Pouvoir de tiers 3 : placer jusqu'à 8 marqueurs **courbure**🌐en ligne (permettant des déplacements rapides) ou en cercle (créant une sorte de bouclier).
+Le Choromancien peut placer des marqueurs **courbure 🌐** sur le champ de bataille. Ces cases n'existent fonctionnellement plus — toute créature ou objet entrant d'un côté ressort à l'extrémité opposée sans dépenser de point de mouvement. Les créatures ou objets sur les cases affectées sont déplacés sur une case libre par le Choromancien.
 
-Pouvoir de tiers 4, singularité : placer un marqueur singularité 🕳️ entouré de 8 marqueurs **courbure**🌐
+## Pouvoirs envisagés
 
-Interaction entre **courbure**🌐et **temporisation**⏳: suppression du marqueur et de la courbure ?
+- **Tiers 1 :** placer une **courbure 🌐** sur une case adjacente et faire un "pas" de placement à travers la courbure. Permet de sortir de n'importe quelle autre courbure.
+- **Tiers 3 :** placer jusqu'à 8 marqueurs **courbure 🌐** en ligne (permettant des déplacements rapides) ou en cercle (créant une sorte de bouclier).
+- **Tiers 4 — Singularité :** placer un marqueur **singularité 🕳️** entouré de 8 marqueurs **courbure 🌐**.
+
+**Interaction entre courbure 🌐 et temporisation ⏳ :** suppression du marqueur et de la courbure ?

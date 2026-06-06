@@ -1,4 +1,4 @@
-# 🌿 Ecologie
+# 🌿 Écologie
 
 ## L'anneau de vie : cycles végétaux dans le Terminateur
 

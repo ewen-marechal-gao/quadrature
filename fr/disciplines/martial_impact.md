@@ -1,34 +1,29 @@
-
 # 🔨 Impact
 
-## **Armes d'impact (masses, haches)**  Dégât aux protections, brutalité, attaques critiques
+*Masses, haches, marteaux de guerre — ce sont des armes qui ne cherchent pas la finesse. Là où l'escrimeur lit une ouverture, l'artiste de l'Impact brise ce qui la protège.*
 
-Cette discipline serait la contrepartie brute des Épées. Épées \= maîtrise  Percussion \= impact
+> Cette discipline est en cours de développement.
 
-Ce ne sont pas des armes de finesse. Ce sont des armes qui :
+## Concept
 
-* Brisent les défenses  
-* Punissent l'armure  
-* Infligent de la Fatigue lourde  
-* Créent de l'impact
+**Axes :** dégâts aux protections, brutalité, attaques critiques.
 
-Forces
+Cette discipline est la contrepartie brute de l'Escrime. Là où les épées symbolisent la maîtrise, la Percussion symbolise l'impact.
 
-* Très fortes contre protection  
-* Infligent beaucoup de Fatigue  
-* Fortes en attaque puissante  
-* Bonnes contre boucliers
+**Forces :**
+- Très fortes contre protection
+- Infligent beaucoup de Fatigue
+- Fortes en attaque puissante
+- Bonnes contre boucliers
 
-Spécificités mécaniques possibles
+**Spécificités mécaniques envisagées :**
+- Ignorer 1 point de Protection
+- Infliger Fatigue même en cas d'échec offensif
+- Bonus si la cible est déjà Essoufflée
+- Dégâts accrus en Charge
 
-* Ignorer 1 point de Protection  
-* Infliger Fatigue même en cas d'échec offensif  
-* Bonus si la cible est déjà Essoufflée  
-* Dégâts accrus en Charge
-
-Faiblesses
-
-* Moins précises  
-* Moins polyvalentes  
-* Défense souvent plus faible  
-* Coût de Fatigue plus élevé
+**Faiblesses :**
+- Moins précises
+- Moins polyvalentes
+- Défense souvent plus faible
+- Coût de Fatigue plus élevé

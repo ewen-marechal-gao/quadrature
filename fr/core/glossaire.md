@@ -1,85 +1,92 @@
 # 🔤 Glossaire
 
-## Grammaire symbolique
-
 Quadrature utilise un ensemble de symboles normalisés afin d'alléger l'écriture des règles et de faciliter la lecture en jeu.
-
-## 🎲 **Symboles liés aux dés**
-
-🟩 Avantage \-  Un avantage permet de lancer un dé supplémentaire et de conserver les meilleurs résultats selon les règles normales.
-
-**🟩** : ajouter un dé d'avantage au jet.
 
 ---
 
-### **🟥 Désavantage \-** Un désavantage réduit les chances de succès selon les règles normales.
+## 🎲 Dés et jets
+
+### 🟩 Avantage
+
+Un avantage permet de lancer un dé supplémentaire et de conserver les meilleurs résultats selon les règles normales.
+
+**🟩** : ajouter un dé d'avantage au jet.
+
+### 🟥 Désavantage
+
+Un désavantage réduit les chances de succès selon les règles normales.
 
 **🟥** : ajouter un dé de désavantage au jet.
 
 ---
 
-## 🎲 **Symboles liés aux ressources**
+## ❤️ Ressources
 
-**💔 Blessure \-**  Les blessures représentent des atteintes graves et réduisent directement la capacité de survie.
+### 💔 Blessure grave
 
-**💔** : **blessures graves**. Il s'agit de blessures profondes, fractures, ou organes endommagés. L'accumulation de blessures graves entraîne la mort des personnages et adversaires.
+Les blessures représentent des atteintes graves et réduisent directement la capacité de survie — blessures profondes, fractures, ou organes endommagés. L'accumulation de blessures graves entraîne la mort.
 
-**💢** : **blessures légères** : il s'agit de coupures superficielles et hématomes. Elles ne sont pas mortelles pour les personnages, mais leur accumulation peut provoquer des **blessures graves**.
+**💢 Blessure légère** : coupures superficielles et hématomes. Non mortelles, mais leur accumulation provoque des **blessures graves**.
 
 **❤️‍🩹** : soigner une blessure.
 
-🛡️ : **protection.** Prévient une blessure grave.
+**🛡️ Protection** : prévient une blessure grave.
 
----
+### 💧 Fatigue
 
-### **💧 Fatigue \-**  La fatigue représente l'usure physique ou mentale. Elle augmente la difficulté des tests d'Endurance et peut mener à l'état Essoufflé.
+La fatigue représente l'usure physique ou mentale. Elle augmente la difficulté des tests d'Endurance et peut mener à l'état Essoufflé.
 
 **💧** : infliger de la Fatigue.
 
 ---
 
-### **⚫ Actions et Réactions \-**  Les Points d'Action déterminent le nombre d'actions réalisables durant une manche.
+## ⚫ Actions et Réactions
 
-⚫ représente un Point d'Action (PA), utilisable durant n'importe quelle action de la manche.  
-🟢 représente un Point d'Action (PA), utilisable uniquement durant la **première** action de la manche.  
-🔴 représente un Point d'Action (PA), utilisable uniquement durant la **dernière** action de la manche.  
-⚡ : représente un Point de Réaction (PR), utilisable durant la manche lorsque le déclencheur est satisfait
+Les Points d'Action déterminent le nombre d'actions réalisables durant une manche.
+
+| Symbole | Signification |
+| :---: | :--- |
+| ⚫ | Point d'Action (PA), utilisable pour n'importe quelle action |
+| 🟢 | PA utilisable uniquement pour la **première** action de la manche |
+| 🔴 | PA utilisable uniquement pour la **dernière** action de la manche |
+| ⚡ | Point de Réaction (PR), utilisable lorsque le déclencheur est satisfait |
 
 ---
 
-## 🔥 **Symboles liés aux états**
+## 🔥 États
 
-**🔥** **Brûlures :** les vêtements ou le personnage est en feu.
+**🔥 Brûlures :** les vêtements ou le personnage est en feu.
 
-**🦠 Métabolisme :** l'organisme du personnage ou la créature est déstabilisé
+**🦠 Virulence :** l'organisme du personnage ou de la créature est déstabilisé.
 
-## **🧠 Etat Mental**
+---
+
+## 🧠 État Mental
 
 La position sur la piste mentale évolue selon les actions et les événements du combat.
 
-### **😠 Colère \-** Représente une montée en agressivité, impulsivité ou perte de contrôle.
+### 🔺 Colère
+
+Représente une montée en agressivité, impulsivité ou perte de contrôle.
 
 **🔺** : augmenter d'un cran vers la Colère.
 
----
+### 🔻 Peur
 
-### **😨Peur \-**  Représente un recul émotionnel, une hésitation ou une montée d'anxiété.
+Représente un recul émotionnel, une hésitation ou une montée d'anxiété.
 
 **🔻** : diminuer d'un cran vers la Peur.
 
+### ◇ Stabilité
+
+Représente un recentrage émotionnel et une récupération du contrôle.
+
+**◇** : gagner un jeton de Stabilité, ou se rapprocher d'un cran vers l'état **Concentré** si la stabilité est au maximum.
+
 ---
 
-### **◇ Stabilité \-** Représente un recentrage émotionnel et une récupération du contrôle.
-
-**◇** : Gagner un jeton de Stabilité, ou se rapprocher d'un cran vers l'état **Concentré** si la stabilité est au maximum.
-
----
-
-## **🔁 Cumul et interprétation**
+## 🔁 Cumul et interprétation
 
 Les symboles sont cumulatifs sauf indication contraire. Lorsqu'un effet mentionne plusieurs symboles, ils s'appliquent dans l'ordre logique de résolution.
 
-Exemple :
-
-La cible subit 💢 et 🔺 .  
- Elle subit une Blessure puis progresse d'un cran vers la Colère.
+*Exemple : la cible subit 💢 et 🔺 — elle subit une Blessure puis progresse d'un cran vers la Colère.*
