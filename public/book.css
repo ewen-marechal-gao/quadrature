@@ -1,0 +1,208 @@
+/* ═══════════════════════════════════════════════════════════════
+   Quadrature — Book layout
+   Ce fichier est chargé par Paged.js pour le rendu écran ET print.
+   Les règles @page définissent le format A4 paysage.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Page format ─────────────────────────────────────────────── */
+@page {
+  size: A4 landscape; /* 297mm × 210mm */
+  margin: 16mm 20mm 20mm;
+
+  @bottom-center {
+    content: counter(page);
+    font-family: system-ui, sans-serif;
+    font-size: 8pt;
+    color: #aaa;
+    letter-spacing: 0.05em;
+  }
+
+  @top-right {
+    content: string(section-title);
+    font-family: system-ui, sans-serif;
+    font-size: 7.5pt;
+    color: #bbb;
+    font-style: italic;
+  }
+}
+
+@page :first {
+  @top-right { content: none; }
+}
+
+/* ─── Typography ──────────────────────────────────────────────── */
+body {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 9.5pt;
+  line-height: 1.6;
+  color: #1a1a2e;
+}
+
+h1 {
+  font-size: 20pt;
+  font-weight: 700;
+  margin: 0 0 10pt;
+  color: #1a1a2e;
+  border-bottom: 1.5pt solid #ddd;
+  padding-bottom: 5pt;
+  column-span: all;
+  string-set: section-title content();
+  break-after: avoid;
+}
+
+h2 {
+  font-size: 13pt;
+  font-weight: 700;
+  margin: 14pt 0 5pt;
+  color: #1a1a2e;
+  column-span: all;
+  break-after: avoid;
+}
+
+h3 {
+  font-size: 10.5pt;
+  font-weight: 600;
+  margin: 10pt 0 3pt;
+  color: #2d2d4e;
+  break-after: avoid;
+}
+
+h4 {
+  font-size: 9.5pt;
+  font-weight: 600;
+  margin: 7pt 0 2pt;
+  color: #7c5cbf;
+  break-after: avoid;
+}
+
+p {
+  margin: 0 0 5pt;
+  orphans: 3;
+  widows: 3;
+}
+
+ul, ol {
+  margin: 2pt 0 5pt 14pt;
+}
+
+li {
+  margin-bottom: 1.5pt;
+}
+
+strong { font-weight: 700; }
+
+em {
+  font-style: italic;
+  color: #555;
+}
+
+hr {
+  border: none;
+  border-top: 0.5pt solid #ccc;
+  margin: 8pt 0;
+  break-before: avoid;
+}
+
+blockquote {
+  border-left: 2pt solid #7c5cbf;
+  padding: 3pt 8pt;
+  margin: 5pt 0;
+  background: #f5f0ff;
+  color: #3a2a6e;
+}
+
+code {
+  font-family: "Courier New", monospace;
+  font-size: 8pt;
+  background: #eee;
+  padding: 0 2pt;
+}
+
+pre {
+  font-family: "Courier New", monospace;
+  font-size: 7.5pt;
+  background: #1a1a2e;
+  color: #ccc;
+  padding: 6pt 8pt;
+  margin: 5pt 0;
+  break-inside: avoid;
+}
+
+/* ─── Tables ──────────────────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 5pt 0 8pt;
+  font-size: 8.5pt;
+  break-inside: avoid;
+}
+
+th {
+  background: #1a1a2e;
+  color: #e8e0ff;
+  font-family: system-ui, sans-serif;
+  font-size: 7pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3pt 5pt;
+  text-align: left;
+}
+
+td {
+  padding: 2.5pt 5pt;
+  border-bottom: 0.5pt solid #ddd;
+  vertical-align: top;
+}
+
+tr:nth-child(even) td {
+  background: rgba(124, 92, 191, 0.05);
+}
+
+/* ─── Two-column content layout ───────────────────────────────── */
+/* Paged.js crée .pagedjs_page_content > div pour le contenu.     */
+/* On applique le layout deux colonnes à ce conteneur.            */
+.pagedjs_page_content > div {
+  column-count: 2;
+  column-gap: 10mm;
+  column-fill: auto;
+  height: 100%;
+}
+
+/* Les éléments suivants s'étendent sur les deux colonnes */
+h1, h2 {
+  column-span: all;
+}
+
+/* ─── Cross-references ────────────────────────────────────────── */
+/* En print uniquement : les liens affichent leur numéro de page  */
+@media print {
+  a[href^="/rules/"]::after {
+    content: " (p.\00a0" target-counter(attr(href url), page) ")";
+    font-size: 0.82em;
+    color: #888;
+  }
+}
+
+/* ─── Paged.js screen rendering ───────────────────────────────── */
+/* Ces classes sont créées par Paged.js dans le navigateur.       */
+.pagedjs_pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 32px 24px 60px;
+  background: #555;
+  min-height: 100vh;
+}
+
+.pagedjs_page {
+  background: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* ─── Page breaks ─────────────────────────────────────────────── */
+h2, h3, h4 { break-after: avoid; }
+h1 { break-before: always; }
+h1:first-child { break-before: auto; }
+tr, li { break-inside: avoid; }

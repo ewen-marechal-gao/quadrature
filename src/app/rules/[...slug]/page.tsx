@@ -1,15 +1,14 @@
 import { notFound } from "next/navigation";
 import { getAllSlugs, getPageBySlug } from "@/lib/content";
-import { MarkdownContent } from "@/components/MarkdownContent";
-import { PageNav } from "@/components/PageNav";
+import { BookShell } from "@/components/BookShell";
+import { BookViewer } from "@/components/BookViewer";
 
 interface Props {
   params: Promise<{ slug: string[] }>;
 }
 
 export async function generateStaticParams() {
-  const slugs = getAllSlugs();
-  return slugs.map((slug) => ({ slug }));
+  return getAllSlugs().map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -24,12 +23,9 @@ export default async function RulePage({ params }: Props) {
   const page = await getPageBySlug(slug);
   if (!page) notFound();
 
-  const currentSlug = slug.join("/");
-
   return (
-    <>
-      <MarkdownContent html={page.htmlContent} />
-      <PageNav currentSlug={currentSlug} />
-    </>
+    <BookShell currentSlug={slug.join("/")}>
+      <BookViewer html={page.htmlContent} />
+    </BookShell>
   );
 }
