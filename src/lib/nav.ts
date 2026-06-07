@@ -1,5 +1,14 @@
-// Navigation structure — mirrors _index.md, drives the sidebar.
-// Titles and ordering are defined here; the actual content comes from the .md files.
+/**
+ * src/lib/nav.ts
+ *
+ * Structure de navigation du livre de règles.
+ * Source de vérité pour l'ordre des sections et leurs titres dans la sidebar.
+ *
+ * Mise à jour manuelle nécessaire si une section est ajoutée ou renommée :
+ *   1. Ajouter l'entrée dans NAV (section + item)
+ *   2. Ajouter le slug dans scripts/generate-pdf.mjs (SLUGS)
+ *   3. Créer le fichier Markdown correspondant dans rules/fr/
+ */
 
 export interface NavItem {
   slug: string;
@@ -82,9 +91,15 @@ export const NAV: NavSection[] = [
   },
 ];
 
-// Flat list used for prev/next navigation
+/** Liste plate de tous les items dans l'ordre du sommaire.
+ *  Utilisée pour la navigation précédent/suivant dans BookViewer. */
 export const NAV_FLAT: NavItem[] = NAV.flatMap((s) => s.items);
 
+/**
+ * Retourne la section (groupe) à laquelle appartient un slug donné.
+ * Exemple : "core/combat" → section "core" (Règles fondamentales).
+ * Retourne undefined si aucune section ne correspond.
+ */
 export function getSectionForSlug(slug: string): NavSection | undefined {
   return NAV.find((s) => slug.startsWith(s.id));
 }

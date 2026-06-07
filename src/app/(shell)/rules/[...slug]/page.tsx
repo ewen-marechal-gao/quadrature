@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getAllSlugs, getPageBySlug } from "@/lib/content";
-import { BookShell } from "@/components/BookShell";
-import { BookViewer } from "@/components/BookViewer";
+import { PageInitializer } from "@/components/PageInitializer";
 
 interface Props {
   params: Promise<{ slug: string[] }>;
@@ -24,8 +23,6 @@ export default async function RulePage({ params }: Props) {
   if (!page) notFound();
 
   return (
-    <BookShell currentSlug={slug.join("/")}>
-      <BookViewer html={page.htmlContent} />
-    </BookShell>
+    <PageInitializer slug={slug.join("/")} html={page.htmlContent} />
   );
 }

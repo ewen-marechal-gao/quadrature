@@ -1,218 +1,394 @@
 @import "tailwindcss";
+/* Modern Antiqua chargée dans layout.tsx via <link> (contrainte Tailwind v4) */
 
-/* ─── Tokens ────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Quadrature — Design System
+   Ambiance : révolution industrielle & magie — bois noirci, laiton, parchemin
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Tokens ─────────────────────────────────────────────────────────────── */
 :root {
-  --book-bg: #555;
-  --bar-bg: #1a1a2e;
-  --bar-text: #e8e0ff;
-  --bar-muted: #8888b0;
-  --bar-height: 48px;
-  --drawer-bg: #1a1a2e;
-  --drawer-width: 260px;
-  --accent: #7c5cbf;
-  --font-ui: system-ui, -apple-system, sans-serif;
+  --sidebar-width: 224px;
+  --bar-height:    50px;
+
+  /* ── Panneaux : bois sombre / métal oxydé ────────────────────── */
+  --panel-bg:       #100c07;          /* chêne noirci, très sombre */
+  --panel-bg-mid:   #18120a;          /* légèrement plus clair */
+  --panel-border:   rgba(196,154,69,0.20);  /* séparateur en laiton discret */
+
+  /* ── Laiton / bronze ─────────────────────────────────────────── */
+  --brass:          #c49a45;
+  --brass-bright:   #ddb85a;
+  --brass-muted:    #806230;
+  --brass-faint:    rgba(196,154,69,0.10);
+  --brass-glow:     rgba(196,154,69,0.18);
+
+  /* ── Fond livre & parchemin ──────────────────────────────────── */
+  --book-bg:        #1a1510;          /* fond sombre derrière les pages */
+  --parchment:      #f8f2e2;
+
+  /* ── Texte panneau ───────────────────────────────────────────── */
+  --panel-text:      rgba(222,208,178,0.85);
+  --panel-muted:     rgba(160,138,105,0.65);
+
+  /* ── Global ──────────────────────────────────────────────────── */
+  --accent:    var(--brass);
+  --font-ui:   "Modern Antiqua", Georgia, serif;
+  --font-mono: "Courier New", monospace;
+
 }
 
-/* ─── Reset ─────────────────────────────────────────────────────────────────── */
+/* ─── Reset & base ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-
+html, body { height: 100%; overflow: hidden; }
 body {
   font-family: var(--font-ui);
   background: var(--book-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Top bar ───────────────────────────────────────────────────────────────── */
-.top-bar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: var(--bar-height);
-  padding: 0 16px;
-  background: var(--bar-bg);
-  border-bottom: 1px solid #2d2d4e;
-  color: var(--bar-text);
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   App shell
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.top-bar-menu {
-  background: none;
-  border: none;
-  color: var(--bar-text);
-  font-size: 1.1rem;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  line-height: 1;
-}
-.top-bar-menu:hover { background: rgba(255,255,255,0.08); }
-
-.top-bar-logo {
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--bar-text);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.top-bar-sep {
-  color: var(--bar-muted);
-  font-size: 0.75rem;
-}
-
-.top-bar-title {
-  font-size: 0.85rem;
-  color: var(--bar-muted);
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.top-bar-nav {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-.top-bar-link {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  font-size: 0.78rem;
-  color: var(--bar-muted);
-  text-decoration: none;
-  border: 1px solid #2d2d4e;
-  border-radius: 4px;
-  white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s;
-}
-.top-bar-link:hover { color: var(--bar-text); border-color: var(--accent); }
-
-.top-bar-link-label {
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ─── Nav drawer ────────────────────────────────────────────────────────────── */
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  background: rgba(0,0,0,0.5);
-}
-
-.nav-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 201;
-  width: var(--drawer-width);
-  height: 100vh;
-  background: var(--drawer-bg);
-  border-right: 1px solid #2d2d4e;
+.book-app {
   display: flex;
   flex-direction: column;
-  transform: translateX(-100%);
-  transition: transform 0.22s ease;
-  overflow-y: auto;
+  height: 100vh;
+  overflow: hidden;
 }
-.nav-drawer--open { transform: translateX(0); }
 
-.drawer-header {
+/* ─── Top bar ────────────────────────────────────────────────────────────── */
+.top-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
+  gap: 12px;
   height: var(--bar-height);
-  border-bottom: 1px solid #2d2d4e;
+  padding: 0 16px;
   flex-shrink: 0;
+  z-index: 10;
+
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #1e1610 0%, #141008 55%, #100c06 100%);
+  border-bottom: 1px solid var(--panel-border);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.55);
 }
 
-.drawer-logo {
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #e8e0ff;
-  text-decoration: none;
-}
-
-.drawer-close {
+/* Bouton collapse de la sidebar */
+.top-bar-collapse {
   background: none;
   border: none;
-  color: #7878a0;
-  font-size: 0.9rem;
+  color: var(--panel-muted);
+  font-size: 1.15rem;
   cursor: pointer;
-  padding: 4px;
-}
-.drawer-close:hover { color: #e8e0ff; }
-
-.drawer-sections { padding: 8px 0 32px; }
-
-.drawer-section { margin-bottom: 2px; }
-
-.drawer-section-title {
-  display: block;
-  font-size: 0.62rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #5858a0;
-  padding: 10px 16px 4px;
-}
-
-.drawer-items { list-style: none; }
-
-.drawer-link {
-  display: block;
-  font-size: 0.8rem;
-  color: #c8c8d8;
-  text-decoration: none;
-  padding: 5px 16px;
-  border-left: 2px solid transparent;
-  transition: color 0.12s, background 0.12s;
-}
-.drawer-link:hover { color: #e8e0ff; background: rgba(255,255,255,0.04); }
-.drawer-link--active { color: #e8e0ff; background: #2d2d4e; border-left-color: var(--accent); }
-
-/* ─── Book main ─────────────────────────────────────────────────────────────── */
-.book-main {
-  min-height: calc(100vh - var(--bar-height));
-}
-
-/* ─── BookViewer shell ──────────────────────────────────────────────────────── */
-.book-outer {
-  position: relative;
-  min-height: calc(100vh - var(--bar-height));
-}
-
-.book-loading,
-.book-error {
-  position: absolute;
-  inset: 0;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.6);
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.top-bar-collapse:hover {
+  color: var(--brass-bright);
+  background: var(--brass-faint);
+}
+
+/* Logo "Quadrature" */
+.top-bar-logo {
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  text-decoration: none;
+  white-space: nowrap;
+  /* Léger relief gravé */
+  text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 -1px 0 rgba(255,220,120,0.08);
+  transition: color 0.15s;
+}
+.top-bar-logo:hover { color: var(--brass-bright); }
+
+/* Séparateur "—" et titre de section */
+.top-bar-sep {
+  color: var(--brass-muted);
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.top-bar-title {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--panel-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  letter-spacing: 0.04em;
+}
+
+/* Bouton télécharger PDF */
+.top-bar-download {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid rgba(196,154,69,0.35);
+  border-radius: 3px;
+  color: var(--brass-muted);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+.top-bar-download:hover {
+  background: var(--brass-glow);
+  border-color: var(--brass);
+  color: var(--brass-bright);
+}
+
+/* ─── Body ───────────────────────────────────────────────────────────────── */
+.book-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sidebar — panneau de bois noirci avec laiton
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.book-sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  overflow-y: auto;
+  flex-shrink: 0;
+  transition: width 0.22s ease, min-width 0.22s ease;
+
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #161008 0%, #100c06 40%, #130e07 100%);
+  border-right: 1px solid var(--panel-border);
+}
+
+/* Scrollbar personnalisée */
+.book-sidebar::-webkit-scrollbar { width: 4px; }
+.book-sidebar::-webkit-scrollbar-track { background: transparent; }
+.book-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(196,154,69,0.22);
+  border-radius: 2px;
+}
+.book-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(196,154,69,0.42);
+}
+
+.book-sidebar--collapsed {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sidebar-inner {
+  padding: 10px 0 36px;
+  min-width: var(--sidebar-width);
+}
+
+.sidebar-section { margin-bottom: 4px; }
+
+/* Titre de section : petites majuscules, laiton, ligne décorative */
+.sidebar-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 0.58rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--brass-muted);
+  padding: 12px 14px 5px;
+  white-space: nowrap;
+}
+/* Ligne décorative qui s'étend après le texte */
+.sidebar-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(196,154,69,0.35) 0%, transparent 100%);
+}
+
+.sidebar-items { list-style: none; }
+
+/* Liens de navigation */
+.sidebar-link {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--panel-text);
+  text-decoration: none;
+  padding: 4px 14px 4px 16px;
+  border-left: 2px solid transparent;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.sidebar-link:hover {
+  color: var(--brass-bright);
+  background: var(--brass-faint);
+}
+.sidebar-link--active {
+  color: var(--brass-bright);
+  background: linear-gradient(90deg, var(--brass-glow) 0%, transparent 88%);
+  border-left-color: var(--brass);
+}
+
+.sidebar-link-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-link-pages {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  color: var(--panel-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Zone du livre
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.book-area {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--book-bg);
+}
+
+.book-area > * { height: 100%; }
+
+.book-outer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Statuts (chargement / erreur) */
+.book-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  color: var(--panel-muted);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+.book-status--error { color: #c08060; }
+.book-status--error code {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  background: rgba(0,0,0,0.4);
+  color: #c09070;
+  padding: 6px 12px;
+  border-radius: 3px;
+  max-width: 480px;
+  word-break: break-all;
+}
+
+/* ─── Flèches de navigation ──────────────────────────────────────────────── */
+.book-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 66px;
+  cursor: pointer;
+  line-height: 1;
+
+  /* Panneau métal / bois avec bordure laiton */
+  background: rgba(14, 10, 5, 0.82);
+  border: 1px solid rgba(196,154,69,0.30);
+  border-radius: 4px;
+  color: rgba(196,154,69,0.55);
+  font-size: 1.8rem;
+
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+}
+
+.book-arrow--prev { left: 10px; }
+.book-arrow--next { right: 10px; }
+
+.book-arrow:hover:not(:disabled) {
+  background: rgba(196,154,69,0.18);
+  border-color: var(--brass);
+  color: var(--brass-bright);
+  transform: translateY(-50%) scale(1.04);
+}
+
+.book-arrow:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.97);
+}
+
+.book-arrow:disabled {
+  opacity: 0.12;
+  cursor: default;
   pointer-events: none;
 }
 
-.book-error { color: #f8a; }
+/* Pages Paged.js (rendu écran) — ombre chaude sur fond sombre */
+.pagedjs_page {
+  background: var(--parchment);
+  box-shadow:
+    0 8px 36px rgba(8, 4, 0, 0.65),
+    0 0 0 1px rgba(180, 140, 70, 0.12);
+  flex-shrink: 0;
+}
 
-/* .book-container receives Paged.js output — styles in public/book.css */
-.book-container { min-height: 100%; }
-
-/* ─── Print: hide chrome ────────────────────────────────────────────────────── */
+/* ─── Print ──────────────────────────────────────────────────────────────── */
 @media print {
-  .top-bar, .nav-drawer, .drawer-overlay { display: none !important; }
-  .book-main { min-height: auto; }
+  .top-bar, .book-sidebar, .book-arrow { display: none !important; }
+  .book-body  { display: block; }
+  .book-area  { overflow: visible; }
+  .book-outer { display: block; }
+  .book-center { display: block; }
 }

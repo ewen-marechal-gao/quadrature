@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "generate-pdf": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs && node scripts/generate-pdf.mjs"
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
@@ -23,6 +26,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "puppeteer": "^25.1.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

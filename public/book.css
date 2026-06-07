@@ -1,28 +1,44 @@
 /* ═══════════════════════════════════════════════════════════════
-   Quadrature — Book layout
-   Ce fichier est chargé par Paged.js pour le rendu écran ET print.
-   Les règles @page définissent le format A4 paysage.
+   Quadrature — Book layout (chargé par Paged.js)
+   Palette : encre sombre sur parchemin, titres Modern Antiqua
    ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Palette ──────────────────────────────────────────────────── */
+/* Police : "Modern Antiqua" (Google Fonts).
+   Chargée via <link> dans le viewer (globals.css) et via le
+   head HTML dans generate-pdf.mjs — pas via @import ici, car
+   Paged.js injecte ce CSS dans un <style> JS où @import est ignoré. */
+:root {
+  --ink:         #1a0f07;   /* encre principale */
+  --ink-mid:     #3d2c1e;   /* titres h2-h3 */
+  --ink-light:   #5a4535;   /* h4, muted */
+  --parchment:   #f8f2e2;   /* fond de page */
+  --parch-dark:  #ece2cc;   /* variante foncée (tableaux, blockquotes) */
+  --parch-rule:  #c8b898;   /* filets / séparateurs */
+  --brass-book:  #8a6828;   /* accentuation (h4, liens, blockquote) */
+  --brass-faint: rgba(138,104,40,0.12);
+}
 
 /* ─── Page format ─────────────────────────────────────────────── */
 @page {
-  size: A4 landscape; /* 297mm × 210mm */
-  margin: 16mm 20mm 20mm;
+  size: A4 landscape;
+  margin: 14mm 18mm 18mm;
 
   @bottom-center {
-    content: counter(page);
-    font-family: system-ui, sans-serif;
-    font-size: 8pt;
-    color: #aaa;
-    letter-spacing: 0.05em;
+    content: " ";
+    font-family: "Modern Antiqua", Georgia, serif;
+    font-size: 7.5pt;
+    color: #9a8870;
+    letter-spacing: 0.08em;
   }
 
   @top-right {
     content: string(section-title);
-    font-family: system-ui, sans-serif;
-    font-size: 7.5pt;
-    color: #bbb;
+    font-family: "Modern Antiqua", Georgia, serif;
+    font-size: 7pt;
+    color: #9a8870;
     font-style: italic;
+    letter-spacing: 0.04em;
   }
 }
 
@@ -34,44 +50,51 @@
 body {
   font-family: "Georgia", "Times New Roman", serif;
   font-size: 9.5pt;
-  line-height: 1.6;
-  color: #1a1a2e;
+  line-height: 1.65;
+  color: var(--ink);
 }
 
 h1 {
-  font-size: 20pt;
-  font-weight: 700;
+  font-family: "Modern Antiqua", Georgia, serif;
+  font-size: 22pt;
+  font-weight: 400;
   margin: 0 0 10pt;
-  color: #1a1a2e;
-  border-bottom: 1.5pt solid #ddd;
+  color: var(--ink);
+  border-bottom: 1pt solid var(--parch-rule);
   padding-bottom: 5pt;
-  column-span: all;
+  letter-spacing: 0.06em;
   string-set: section-title content();
   break-after: avoid;
 }
 
 h2 {
+  font-family: "Modern Antiqua", Georgia, serif;
   font-size: 13pt;
-  font-weight: 700;
+  font-weight: 400;
   margin: 14pt 0 5pt;
-  color: #1a1a2e;
-  column-span: all;
+  color: var(--ink-mid);
+  letter-spacing: 0.04em;
   break-after: avoid;
 }
 
 h3 {
+  font-family: "Modern Antiqua", Georgia, serif;
   font-size: 10.5pt;
-  font-weight: 600;
+  font-weight: 400;
   margin: 10pt 0 3pt;
-  color: #2d2d4e;
+  color: var(--ink-mid);
+  letter-spacing: 0.03em;
   break-after: avoid;
 }
 
 h4 {
+  font-family: "Modern Antiqua", Georgia, serif;
   font-size: 9.5pt;
-  font-weight: 600;
+  font-weight: 400;
   margin: 7pt 0 2pt;
-  color: #7c5cbf;
+  color: var(--brass-book);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   break-after: avoid;
 }
 
@@ -81,128 +104,219 @@ p {
   widows: 3;
 }
 
-ul, ol {
-  margin: 2pt 0 5pt 14pt;
-}
+ul, ol { margin: 2pt 0 5pt 14pt; }
 
-li {
-  margin-bottom: 1.5pt;
-}
-
+li { margin-bottom: 1.5pt; }
 strong { font-weight: 700; }
-
-em {
-  font-style: italic;
-  color: #555;
-}
+em { font-style: italic; color: var(--ink-mid); }
 
 hr {
   border: none;
-  border-top: 0.5pt solid #ccc;
+  border-top: 0.5pt solid var(--parch-rule);
   margin: 8pt 0;
-  break-before: avoid;
 }
 
 blockquote {
-  border-left: 2pt solid #7c5cbf;
+  border-left: 2pt solid var(--brass-book);
   padding: 3pt 8pt;
   margin: 5pt 0;
-  background: #f5f0ff;
-  color: #3a2a6e;
+  background: var(--parch-dark);
+  color: var(--ink-mid);
+  font-style: italic;
 }
 
 code {
   font-family: "Courier New", monospace;
   font-size: 8pt;
-  background: #eee;
+  background: var(--parch-dark);
+  color: var(--ink);
   padding: 0 2pt;
 }
 
 pre {
   font-family: "Courier New", monospace;
   font-size: 7.5pt;
-  background: #1a1a2e;
-  color: #ccc;
+  background: #2a200f;
+  color: #d4c4a0;
   padding: 6pt 8pt;
   margin: 5pt 0;
   break-inside: avoid;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border-left: 2pt solid var(--brass-book);
 }
 
 /* ─── Tables ──────────────────────────────────────────────────── */
 table {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   margin: 5pt 0 8pt;
   font-size: 8.5pt;
   break-inside: avoid;
+  table-layout: fixed;
 }
 
 th {
-  background: #1a1a2e;
-  color: #e8e0ff;
-  font-family: system-ui, sans-serif;
-  font-size: 7pt;
-  font-weight: 600;
+  background: #2a200f;
+  color: #d4c4a0;
+  font-family: "Modern Antiqua", Georgia, serif;
+  font-size: 6.8pt;
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
   padding: 3pt 5pt;
   text-align: left;
+  word-break: break-word;
 }
 
 td {
   padding: 2.5pt 5pt;
-  border-bottom: 0.5pt solid #ddd;
+  border-bottom: 0.5pt solid var(--parch-rule);
   vertical-align: top;
+  word-break: break-word;
+  color: var(--ink);
 }
 
 tr:nth-child(even) td {
-  background: rgba(124, 92, 191, 0.05);
+  background: var(--brass-faint);
 }
 
-/* ─── Two-column content layout ───────────────────────────────── */
-/* Paged.js crée .pagedjs_page_content > div pour le contenu.     */
-/* On applique le layout deux colonnes à ce conteneur.            */
-.pagedjs_page_content > div {
+/* ─── Two-column layout ───────────────────────────────────────── */
+/* Appliqué directement sur la zone de contenu Paged.js.          */
+/* NB : h1 et h2 doivent être column-span: all pour               */
+/* s'étendre sur toute la largeur.                                */
+.pagedjs_page_content {
   column-count: 2;
   column-gap: 10mm;
   column-fill: auto;
-  height: 100%;
+  overflow: hidden;
 }
 
-/* Les éléments suivants s'étendent sur les deux colonnes */
 h1, h2 {
   column-span: all;
 }
 
+/* Évite les débordements horizontaux */
+* {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
 /* ─── Cross-references ────────────────────────────────────────── */
-/* En print uniquement : les liens affichent leur numéro de page  */
-@media print {
-  a[href^="/rules/"]::after {
-    content: " (p.\00a0" target-counter(attr(href url), page) ")";
-    font-size: 0.82em;
-    color: #888;
-  }
+/* Scopé à .pagedjs_page : Paged.js injecte book.css dans <head>  */
+/* globalement. Sans ce scope, tous les liens /rules/... de l'app  */
+/* (sidebar, top-bar) recevraient le ::after "(p. 0)".             */
+.pagedjs_page a[href^="/rules/"]::after {
+  content: " (p.\00a0" target-counter(attr(href url), page) ")";
+  font-size: 0.82em;
+  color: var(--brass-book);
+  opacity: 0.75;
 }
 
 /* ─── Paged.js screen rendering ───────────────────────────────── */
-/* Ces classes sont créées par Paged.js dans le navigateur.       */
+/* Le JS (BookViewer) prend le contrôle du layout écran :         */
+/* pages en ligne, scale calculé, carousel. Ces règles            */
+/* définissent uniquement l'apparence des pages elles-mêmes.     */
 .pagedjs_pages {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 28px;
-  padding: 32px 24px 60px;
-  background: #555;
-  min-height: 100vh;
+  /* Layout contrôlé par BookViewer.tsx via style inline */
+  background: transparent !important;
+  padding: 0 !important;
+  gap: 0 !important;
 }
 
 .pagedjs_page {
-  background: white;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  /* Fond parchemin avec texture subtile (bruit fractal + variations de tons) */
+  background-color: var(--parchment);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.038'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 18% 22%, rgba(180,140,60,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 82% 78%, rgba(160,120,50,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 55% 45%, rgba(200,165,80,0.03) 0%, transparent 40%);
+  /* Ombre chaude sur fond sombre — effet livre sur un bureau en bois */
+  box-shadow:
+    0 8px 36px rgba(8, 4, 0, 0.65),
+    0 0 0 1px rgba(180, 140, 70, 0.10);
+  flex-shrink: 0;
 }
 
-/* ─── Page breaks ─────────────────────────────────────────────── */
-h2, h3, h4 { break-after: avoid; }
+/* ═══════════════════════════════════════════════════════════════
+   Contrôle de la mise en page PDF
+   ═══════════════════════════════════════════════════════════════
+
+   Chaque section Markdown est enveloppée dans un
+   <article class="section [classes-pdf]"> par generate-content-index.mjs.
+   Les classes sont issues du frontmatter YAML :
+
+     pdf:
+       columns: 1          # 1 colonne  | 2 (défaut)
+       break: false        # false = pas de saut forcé avant la section
+
+   Utilisation inline dans le Markdown :
+
+     <div class="pdf-break"></div>     → saut de page forcé
+     <div class="pdf-wide">…</div>    → élément sur toute la largeur
+     <div class="pdf-avoid">…</div>   → évite le découpage sur 2 pages
+
+   Pour cibler une section précise dans ce fichier :
+     .section--core-combat h2 { … }    (slug avec / → -)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Sauts de page entre sections ────────────────────────────── */
+/* Chaque <article class="section"> commence sur une nouvelle page. */
+article.section            { break-before: page; }
+
+/* Première section du document : pas de page blanche initiale.    */
+/* Idem pour la section seule dans le viewer (toujours :first-child */
+/* de son conteneur Paged.js).                                      */
+article.section:first-child { break-before: auto; }
+
+/* Section sans saut forcé (pdf.break: false dans le frontmatter). */
+article.section.pdf-no-break { break-before: auto; }
+
+/* ─── Sauts h1/h2 (intra-section) ────────────────────────────── */
+/* h1 de titre de section : ne pas doubler le saut de l'article.  */
+/* h1:first-child correspond à chaque titre de section car il est  */
+/* 1er enfant de son <article>.                                    */
 h1 { break-before: always; }
 h1:first-child { break-before: auto; }
+h2, h3, h4 { break-after: avoid; }
 tr, li { break-inside: avoid; }
+
+/* ─── Page nommée : une colonne ───────────────────────────────── */
+/* La propriété `page` indique à Paged.js le type de page à créer  */
+/* pour les éléments qui la portent.                               */
+article.pdf-single-col { page: singlecol; }
+
+/* Déclaration du @page nommé — hérite implicitement du @page global */
+/* (marges, running headers, pied de page identiques).             */
+@page singlecol { }
+
+/* Cibler les pages générées pour les sections single-col.         */
+/* Paged.js ajoute la classe pagedjs_{nom}_page sur les éléments   */
+/* .pagedjs_page correspondants.                                   */
+.pagedjs_singlecol_page .pagedjs_page_content {
+  column-count: 1 !important;
+  column-gap: 0   !important;
+}
+
+/* ─── Utilitaires inline ──────────────────────────────────────── */
+
+/* Saut de page forcé (usage : <div class="pdf-break"></div>) */
+.pdf-break { break-before: page; }
+
+/* Élément pleine largeur dans une section 2 colonnes.            */
+/* column-span: all interrompt le flux colonne, l'élément s'étend */
+/* sur toute la largeur du .pagedjs_page_content.                 */
+/* Usage : <div class="pdf-wide">…</div>                          */
+.pdf-wide,
+figure.pdf-wide,
+table.pdf-wide { column-span: all; }
+
+/* Bloc résistant au découpage (ne pas couper en bas de page).    */
+.pdf-avoid { break-inside: avoid; }

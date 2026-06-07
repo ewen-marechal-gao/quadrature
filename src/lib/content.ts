@@ -1,3 +1,16 @@
+/**
+ * src/lib/content.ts
+ *
+ * Couche d'accès aux fichiers Markdown du livre de règles.
+ * Utilisée uniquement côté serveur (Server Components, generateStaticParams).
+ *
+ * Pipeline :
+ *   Markdown (.md) → gray-matter (frontmatter) → remark-gfm + remark-html → HTML
+ *
+ * Les liens relatifs vers d'autres sections (.md) sont réécrits en routes
+ * /rules/... afin d'être navigables dans l'application.
+ */
+
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
@@ -17,6 +30,11 @@ export interface ContentPage {
 
 // ─── Slug enumeration ───────────────────────────────────────────────────────
 
+/**
+ * Retourne tous les slugs disponibles sous forme de tableaux de segments.
+ * Exemple : ["core", "combat"] pour rules/fr/core/combat.md
+ * Exclut _index.md (page d'accueil traitée séparément par getIndexPage).
+ */
 export function getAllSlugs(): string[][] {
   const files = collectMdFiles(CONTENT_DIR);
   return files
@@ -44,6 +62,10 @@ function collectMdFiles(dir: string): string[] {
 
 // ─── Page loading ────────────────────────────────────────────────────────────
 
+/**
+ * Charge et parse le fichier Markdown correspondant au slug donné.
+ * Retourne null si le fichier n'existe pas (→ notFound() dans la page route).
+ */
 export async function getPageBySlug(
   slug: string[]
 ): Promise<ContentPage | null> {
@@ -53,6 +75,7 @@ export async function getPageBySlug(
   return parseMarkdownFile(filePath, slug);
 }
 
+/** Charge la page d'accueil (_index.md). */
 export async function getIndexPage(): Promise<ContentPage> {
   const filePath = path.join(CONTENT_DIR, "_index.md");
   return parseMarkdownFile(filePath, []);
