@@ -16,7 +16,7 @@
  *                  BookShellLayout lit ces valeurs pour passer le bon HTML au viewer.
  *
  *   contentIndex — cache de tous les HTML de section, chargé depuis
- *                  /content-index.json par BookPreloader. Permet au preloader
+ *                  /content-index-{locale}.json par BookPreloader. Permet au preloader
  *                  de rendre toutes les sections sans requêtes individuelles.
  *
  * BookProvider doit envelopper le shell entier pour que tous ces composants
@@ -28,22 +28,33 @@ import {
   useContext,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
-import { NAV_FLAT } from "@/lib/nav";
 
 export interface BookContextValue {
-  // ── Pagination globale ──────────────────────────────────────────────────────
+  // ── Livre courant ───────────────────────────────────────────────────────────
+  /** Slugs ordonnés des sections du livre en cours. Alimenté par BookShell. */
+  bookSlugs: string[];
+  setBookSlugs: (slugs: string[]) => void;
+
+  // ── Pagination (relative au livre courant) ──────────────────────────────────
   pageCounts: Record<string, number>;
   setPageCount: (slug: string, count: number) => void;
+  /** Offset (en pages) d'un slug dans le livre courant. */
   getOffset: (slug: string) => number;
-  totalKnown: number;
-  isFullyLoaded: boolean;
 
   // ── Contenu courant (section affichée) ─────────────────────────────────────
   currentSlug: string;
   currentHtml: string;
   setCurrentContent: (slug: string, html: string) => void;
+
+  // ── Navigation client-side (sans changement d'URL) ─────────────────────────
+  /**
+   * Navigue vers une section en lisant son HTML dans contentIndex.
+   * Utilisé par la sidebar, les flèches et les liens de cross-référence.
+   */
+  navigateTo: (slug: string) => void;
 
   // ── Index de contenu (chargé par BookPreloader) ─────────────────────────────
   contentIndex: Record<string, string>;
@@ -53,10 +64,18 @@ export interface BookContextValue {
 const BookCtx = createContext<BookContextValue | null>(null);
 
 export function BookProvider({ children }: { children: ReactNode }) {
-  const [pageCounts, setPageCountsState] = useState<Record<string, number>>({});
-  const [currentSlug, setCurrentSlug]   = useState("");
-  const [currentHtml, setCurrentHtml]   = useState("");
+  const [bookSlugs, setBookSlugsState]    = useState<string[]>([]);
+  const [pageCounts, setPageCountsState]  = useState<Record<string, number>>({});
+  const [currentSlug, setCurrentSlug]     = useState("");
+  const [currentHtml, setCurrentHtml]     = useState("");
   const [contentIndex, setContentIndexState] = useState<Record<string, string>>({});
+
+  // Ref synchrone sur contentIndex — utilisé par navigateTo sans dépendance React.
+  const contentIndexRef = useRef<Record<string, string>>({});
+
+  const setBookSlugs = useCallback((slugs: string[]) => {
+    setBookSlugsState(slugs);
+  }, []);
 
   const setPageCount = useCallback((slug: string, count: number) => {
     setPageCountsState((prev) =>
@@ -67,13 +86,13 @@ export function BookProvider({ children }: { children: ReactNode }) {
   const getOffset = useCallback(
     (slug: string) => {
       let offset = 0;
-      for (const item of NAV_FLAT) {
-        if (item.slug === slug) break;
-        offset += pageCounts[item.slug] ?? 0;
+      for (const s of bookSlugs) {
+        if (s === slug) break;
+        offset += pageCounts[s] ?? 0;
       }
       return offset;
     },
-    [pageCounts]
+    [bookSlugs, pageCounts]
   );
 
   const setCurrentContent = useCallback((slug: string, html: string) => {
@@ -82,21 +101,29 @@ export function BookProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setContentIndex = useCallback((index: Record<string, string>) => {
+    contentIndexRef.current = index;
     setContentIndexState(index);
   }, []);
 
-  const totalKnown = NAV_FLAT.reduce(
-    (sum, item) => sum + (pageCounts[item.slug] ?? 0),
-    0
-  );
-
-  const isFullyLoaded = NAV_FLAT.every((item) => (pageCounts[item.slug] ?? 0) > 0);
+  /**
+   * Navigation client-side vers une section sans changement d'URL.
+   * Le HTML est lu depuis contentIndexRef (synchrone, pas de re-render).
+   */
+  const navigateTo = useCallback((slug: string) => {
+    const html = contentIndexRef.current[slug];
+    if (html) {
+      setCurrentSlug(slug);
+      setCurrentHtml(html);
+    }
+  }, []);
 
   return (
     <BookCtx.Provider
       value={{
-        pageCounts, setPageCount, getOffset, totalKnown, isFullyLoaded,
+        bookSlugs, setBookSlugs,
+        pageCounts, setPageCount, getOffset,
         currentSlug, currentHtml, setCurrentContent,
+        navigateTo,
         contentIndex, setContentIndex,
       }}
     >

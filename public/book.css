@@ -16,13 +16,25 @@
   --parch-dark:  #ece2cc;   /* variante foncée (tableaux, blockquotes) */
   --parch-rule:  #c8b898;   /* filets / séparateurs */
   --brass-book:  #8a6828;   /* accentuation (h4, liens, blockquote) */
-  --brass-faint: rgba(138,104,40,0.12);
+  /* Couleur plate — pas de transparence, lisible sur fond blanc (impression)
+     comme sur fond parchemin (écran). Équivalent de rgba(138,104,40,0.12)
+     appliqué sur fond blanc. */
+  --brass-faint: #ede5d6;
 }
 
 /* ─── Page format ─────────────────────────────────────────────── */
 @page {
-  size: A4 landscape;
-  margin: 14mm 18mm 18mm;
+  /* Visionneuse : page légèrement réduite (291mm au lieu de 297mm A4 réel).
+     Objectif : zone de contenu identique entre visionneuse et PDF imprimé.
+
+     PDF (generate-pdf.mjs) :
+       page 297mm, marges 22mm (reliure) / 16mm (ext.) → contenu 259mm
+     Visionneuse :
+       page 291mm, marges 16mm symétriques           → contenu 259mm
+
+     Même zone de contenu → même reflow → même pagination dans les deux cas. */
+  size: 291mm 210mm;
+  margin: 14mm 16mm 20mm;
 
   @bottom-center {
     content: " ";
@@ -48,9 +60,17 @@
 
 /* ─── Typography ──────────────────────────────────────────────── */
 body {
+  /* font-size uniquement : sert de base aux unités em dans le rendu Paged.js.
+     font-family, line-height et color sont sur .pagedjs_page_content pour
+     ne pas polluer l'interface de l'app quand book.css est injecté
+     globalement par Paged.js comme <link rel="stylesheet"> dans le <head>. */
+  font-size: 9pt;
+}
+
+/* Appliqué à tous les contenus de page rendus par Paged.js. */
+.pagedjs_page_content {
   font-family: "Georgia", "Times New Roman", serif;
-  font-size: 9.5pt;
-  line-height: 1.65;
+  line-height: 1.2;
   color: var(--ink);
 }
 
@@ -89,7 +109,7 @@ h3 {
 
 h4 {
   font-family: "Modern Antiqua", Georgia, serif;
-  font-size: 9.5pt;
+  font-size: 9pt;
   font-weight: 400;
   margin: 7pt 0 2pt;
   color: var(--brass-book);
@@ -100,15 +120,34 @@ h4 {
 
 p {
   margin: 0 0 5pt;
-  orphans: 3;
-  widows: 3;
+  orphans: 2;
+  widows: 2;
+  text-align: justify;
+  hyphens: auto;
 }
 
-ul, ol { margin: 2pt 0 5pt 14pt; }
+ul, ol { margin: 2pt 0 5pt 14pt; text-align: left; }
 
 li { margin-bottom: 1.5pt; }
 strong { font-weight: 700; }
 em { font-style: italic; color: var(--ink-mid); }
+
+/* Liens dans le contenu du livre — scopé aux pages Paged.js pour ne pas
+   déborder sur l'interface (top bar, sidebar) où book.css est injecté
+   globalement par Paged.js comme <link> dans le <head>. */
+.pagedjs_page a {
+  color: var(--brass-book);
+  text-decoration: none;
+}
+/* En impression (PDF), les liens ressemblent au texte courant :
+   pas de bleu, pas de soulignement. Les numéros de page (cross-ref-page)
+   assurent déjà la navigation. */
+@media print {
+  a, a:visited {
+    color: inherit;
+    text-decoration: none;
+  }
+}
 
 hr {
   border: none;
@@ -183,17 +222,38 @@ tr:nth-child(even) td {
 }
 
 /* ─── Two-column layout ───────────────────────────────────────── */
-/* Appliqué directement sur la zone de contenu Paged.js.          */
-/* NB : h1 et h2 doivent être column-span: all pour               */
-/* s'étendre sur toute la largeur.                                */
+/* Ciblé sur .pagedjs_page_content — la div interne où Paged.js  */
+/* pose ses styles inline de mise en page.                        */
+/*                                                                */
+/* Paged.js force via style inline :                              */
+/*   area.style.columnWidth = full_page_width + "px"             */
+/* ce qui donne column-count = 1 (1 colonne de pleine largeur).  */
+/* !important dans une feuille de style l'emporte sur un style   */
+/* inline normal — on écrase ici pour imposer 2 colonnes.        */
+/* column-fill:auto est déjà défini par Paged.js sur cet élément */
+/* et s'applique à nos colonnes sans qu'on ait à le répéter.     */
 .pagedjs_page_content {
-  column-count: 2;
-  column-gap: 10mm;
-  column-fill: auto;
   overflow: hidden;
+  column-count: 2    !important;
+  column-width: auto !important;
+  /* column-gap = 22mm dans la visionneuse ET dans le PDF imprimé.
+     Identique dans les deux cas → mêmes largeurs de colonnes → même reflow.
+
+     Contrainte Paged.js : this.gap = columnGap − leftMargin doit être ≥ 0.
+       Visionneuse  : leftMargin = 16mm → this.gap = 22−16 = +6mm ✓
+       PDF recto    : leftMargin = 22mm → this.gap = 22−22 =  0   ✓
+       PDF verso    : leftMargin = 16mm → this.gap = 22−16 = +6mm ✓
+
+     Colonnes résultantes : (259mm − 22mm) / 2 = 118,5mm chacune. */
+  column-gap: 22mm   !important;
 }
 
-h1, h2 {
+/* .pagedjs_area : pas de colonnes ici (élément enveloppant).    */
+.pagedjs_area {
+  /* pas de column-count — colonnes gérées par .pagedjs_page_content */
+}
+
+h1 {
   column-span: all;
 }
 
@@ -209,14 +269,15 @@ img {
 }
 
 /* ─── Cross-references ────────────────────────────────────────── */
-/* Scopé à .pagedjs_page : Paged.js injecte book.css dans <head>  */
-/* globalement. Sans ce scope, tous les liens /rules/... de l'app  */
-/* (sidebar, top-bar) recevraient le ::after "(p. 0)".             */
-.pagedjs_page a[href^="/rules/"]::after {
-  content: " (p.\00a0" target-counter(attr(href url), page) ")";
+/* Les numéros de page sont injectés en JS par applyPageRefs()     */
+/* (viewer) et par generate-pdf.mjs (PDF), sous forme de           */
+/* <span class="cross-ref-page"> — et non via CSS target-counter,  */
+/* qui exige des références #id dans un rendu Paged.js unifié.     */
+.cross-ref-page {
   font-size: 0.82em;
   color: var(--brass-book);
   opacity: 0.75;
+  white-space: nowrap;
 }
 
 /* ─── Paged.js screen rendering ───────────────────────────────── */
@@ -230,19 +291,28 @@ img {
   gap: 0 !important;
 }
 
-.pagedjs_page {
-  /* Fond parchemin avec texture subtile (bruit fractal + variations de tons) */
-  background-color: var(--parchment);
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.038'/%3E%3C/svg%3E"),
-    radial-gradient(ellipse at 18% 22%, rgba(180,140,60,0.06) 0%, transparent 55%),
-    radial-gradient(ellipse at 82% 78%, rgba(160,120,50,0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 55% 45%, rgba(200,165,80,0.03) 0%, transparent 40%);
-  /* Ombre chaude sur fond sombre — effet livre sur un bureau en bois */
-  box-shadow:
-    0 8px 36px rgba(8, 4, 0, 0.65),
-    0 0 0 1px rgba(180, 140, 70, 0.10);
-  flex-shrink: 0;
+/* ─── Effets écran uniquement ─────────────────────────────────── */
+/* Le fond parchemin, la texture et l'ombre sont des effets visuels
+   pour la visionneuse web. En impression (Puppeteer emulateMediaType
+   'print' + papier ivoire), la page doit être blanche / sans fond :
+   - moins coûteux à l'impression
+   - rendu fidèle sur papier blanc (tests, joueurs)
+   - pas de problème de conversion RGB→CMYK sur les dégradés subtils  */
+@media screen {
+  .pagedjs_page {
+    /* Fond parchemin avec texture subtile (bruit fractal + variations de tons) */
+    background-color: var(--parchment);
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.038'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at 18% 22%, rgba(180,140,60,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse at 82% 78%, rgba(160,120,50,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 55% 45%, rgba(200,165,80,0.03) 0%, transparent 40%);
+    /* Ombre chaude sur fond sombre — effet livre sur un bureau en bois */
+    box-shadow:
+      0 8px 36px rgba(8, 4, 0, 0.65),
+      0 0 0 1px rgba(180, 140, 70, 0.10);
+    flex-shrink: 0;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -280,11 +350,13 @@ article.section:first-child { break-before: auto; }
 article.section.pdf-no-break { break-before: auto; }
 
 /* ─── Sauts h1/h2 (intra-section) ────────────────────────────── */
-/* h1 de titre de section : ne pas doubler le saut de l'article.  */
-/* h1:first-child correspond à chaque titre de section car il est  */
-/* 1er enfant de son <article>.                                    */
-h1 { break-before: always; }
-h1:first-child { break-before: auto; }
+/* Les sauts de page entre sections sont gérés par                 */
+/* article.section { break-before: page } ci-dessus.              */
+/*                                                                */
+/* break-before: always sur h1 est intentionnellement supprimé :  */
+/* dans un contexte multi-colonnes, « always » crée une rupture   */
+/* de COLONNE (pas de page), ce qui force h1 en colonne 2 et      */
+/* laisse toute la colonne gauche vide.                            */
 h2, h3, h4 { break-after: avoid; }
 tr, li { break-inside: avoid; }
 
@@ -301,8 +373,9 @@ article.pdf-single-col { page: singlecol; }
 /* Paged.js ajoute la classe pagedjs_{nom}_page sur les éléments   */
 /* .pagedjs_page correspondants.                                   */
 .pagedjs_singlecol_page .pagedjs_page_content {
-  column-count: 1 !important;
-  column-gap: 0   !important;
+  column-count: 1    !important;
+  column-width: auto !important;
+  column-gap: 0      !important;
 }
 
 /* ─── Utilitaires inline ──────────────────────────────────────── */
@@ -320,3 +393,69 @@ table.pdf-wide { column-span: all; }
 
 /* Bloc résistant au découpage (ne pas couper en bas de page).    */
 .pdf-avoid { break-inside: avoid; }
+
+/* ─── Callouts ────────────────────────────────────────────────── */
+/* Syntaxe Obsidian :  > [!type] Titre optionnel                  */
+/*                     >                                           */
+/*                     > Contenu…                                  */
+/*                                                                  */
+/* Générés par rewriteCallouts() dans content.ts et               */
+/* generate-content-index.mjs. Trois types définis :              */
+/*   [!example]  boîte d'exemple mécanique                        */
+/*   [!note]     note de règle ou clarification                    */
+/*   [!lore]     texte de saveur / citation d'univers              */
+
+.callout {
+  break-inside: avoid;
+  margin: 6pt 0 8pt;
+}
+
+.callout p:last-child { margin-bottom: 0; }
+
+.callout-title {
+  font-family: "Modern Antiqua", Georgia, serif;
+  font-size: 7pt;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 3pt;
+}
+
+/* ── [!example] — exemple mécanique ─── */
+.callout-example {
+  background: var(--parch-dark);
+  border-left: 2.5pt solid var(--brass-book);
+  padding: 5pt 8pt;
+}
+.callout-example .callout-title {
+  color: var(--brass-book);
+}
+
+/* ── [!note] — note de règle ─────────── */
+.callout-note {
+  background: var(--brass-faint);
+  border-left: 2pt solid var(--ink-light);
+  padding: 5pt 8pt;
+}
+.callout-note .callout-title {
+  color: var(--ink-light);
+}
+.callout-note p {
+  font-size: 8.5pt;
+}
+
+/* ── [!lore] — texte de saveur ──────── */
+/* Pas de fond, filets horizontaux fins, texte centré italique.   */
+.callout-lore {
+  border-top: 0.5pt solid var(--parch-rule);
+  border-bottom: 0.5pt solid var(--parch-rule);
+  padding: 5pt 10pt;
+  margin: 8pt 4pt;
+  font-style: italic;
+  color: var(--ink-mid);
+  text-align: center;
+}
+.callout-lore p {
+  text-align: center;
+  margin-bottom: 2pt;
+}

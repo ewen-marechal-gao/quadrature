@@ -1,105 +1,109 @@
 /**
  * src/lib/nav.ts
  *
- * Structure de navigation du livre de règles.
- * Source de vérité pour l'ordre des sections et leurs titres dans la sidebar.
+ * Source de vérité pour la navigation et la structure des livres.
  *
- * Mise à jour manuelle nécessaire si une section est ajoutée ou renommée :
- *   1. Ajouter l'entrée dans NAV (section + item)
- *   2. Ajouter le slug dans scripts/generate-pdf.mjs (SLUGS)
- *   3. Créer le fichier Markdown correspondant dans rules/fr/
+ * Les données de contenu (sections + titres) vivent dans src/data/books.json.
+ * Ce fichier JSON est importable à la fois par TypeScript (Next.js active
+ * resolveJsonModule) et par les scripts Node.js (readFileSync).
+ *
+ * Pour ajouter une section :
+ *   1. Créer le fichier Markdown dans rules/fr/<section>.md
+ *   2. Ajouter l'entrée { slug, title } dans le bon livre de src/data/books.json
+ *
+ * Pour activer la locale anglaise :
+ *   1. Créer les fichiers Markdown dans rules/en/
+ *   2. Passer enabled:true pour 'en' dans LOCALES ci-dessous
+ *   3. node scripts/generate-content-index.mjs en
  */
 
-export interface NavItem {
-  slug: string;
-  title: string;
+import booksData from "@/data/books.json";
+
+// ─── Localisation ─────────────────────────────────────────────────────────────
+
+export type Locale = "fr" | "en";
+
+export interface LocaleDef {
+  id: Locale;
+  /** Label court affiché dans le sélecteur (ex : "FR", "EN"). */
+  label: string;
+  /** false = contenu non encore disponible → bouton désactivé dans le switcher. */
+  enabled: boolean;
 }
-
-export interface NavSection {
-  id: string;
-  title: string;
-  items: NavItem[];
-}
-
-export const NAV: NavSection[] = [
-  {
-    id: "core",
-    title: "Règles fondamentales",
-    items: [
-      { slug: "core/materiel", title: "Matériel" },
-      { slug: "core/glossaire", title: "Glossaire" },
-      { slug: "core/caracteristiques", title: "Caractéristiques" },
-      { slug: "core/jet", title: "Jets de dés" },
-      { slug: "core/ressources", title: "Ressources" },
-      { slug: "core/etats", title: "États" },
-      { slug: "core/furtivite", title: "Furtivité" },
-      { slug: "core/combat", title: "Combat" },
-      { slug: "core/personnages", title: "Personnages" },
-      { slug: "core/traits", title: "Traits" },
-      { slug: "core/equipement", title: "Équipement" },
-      { slug: "core/actions/universal_actions", title: "Actions universelles" },
-      { slug: "core/actions/attribute_actions", title: "Actions avancées" },
-      { slug: "core/actions/defense_reactions", title: "Réactions de défense" },
-    ],
-  },
-  {
-    id: "disciplines",
-    title: "Disciplines",
-    items: [
-      { slug: "disciplines/magie_intro", title: "Introduction à la magie" },
-      { slug: "disciplines/martial_escrime", title: "Escrime" },
-      { slug: "disciplines/martial_lames_courtes", title: "Lames courtes" },
-      { slug: "disciplines/martial_hast", title: "Armes d'hast" },
-      { slug: "disciplines/martial_archerie", title: "Archerie" },
-      { slug: "disciplines/martial_tir_tendu", title: "Tir tendu" },
-      { slug: "disciplines/martial_arts_martiaux", title: "Arts martiaux" },
-      { slug: "disciplines/martial_impact", title: "Impact" },
-      { slug: "disciplines/magie_biomancie", title: "Biomancie" },
-      { slug: "disciplines/magie_telepathie", title: "Télépathie" },
-      { slug: "disciplines/magie_electromancie", title: "Électromancie" },
-      { slug: "disciplines/magie_calomancie", title: "Calomancie" },
-      { slug: "disciplines/magie_echomancie", title: "Échomancie" },
-      { slug: "disciplines/magie_alchimie", title: "Alchimie" },
-      { slug: "disciplines/magie_choromancie", title: "Choromancie" },
-    ],
-  },
-  {
-    id: "adversaires",
-    title: "Adversaires",
-    items: [
-      { slug: "adversaires/regles_adversaires", title: "Règles adversaires" },
-      { slug: "adversaires/exemples_adversaires", title: "Exemples" },
-    ],
-  },
-  {
-    id: "univers",
-    title: "Univers",
-    items: [
-      { slug: "univers/lore", title: "Lore" },
-      { slug: "univers/ecologie", title: "Écologie" },
-      { slug: "univers/peuples", title: "Peuples" },
-    ],
-  },
-  {
-    id: "_wip",
-    title: "En cours (WIP)",
-    items: [
-      { slug: "_wip/traits_effets", title: "Traits & effets" },
-      { slug: "_wip/cartes", title: "Cartes d'action" },
-      { slug: "_wip/decouverte", title: "Découverte" },
-    ],
-  },
-];
-
-/** Liste plate de tous les items dans l'ordre du sommaire.
- *  Utilisée pour la navigation précédent/suivant dans BookViewer. */
-export const NAV_FLAT: NavItem[] = NAV.flatMap((s) => s.items);
 
 /**
- * Retourne la section (groupe) à laquelle appartient un slug donné.
- * Exemple : "core/combat" → section "core" (Règles fondamentales).
- * Retourne undefined si aucune section ne correspond.
+ * Liste des locales supportées par le site.
+ * C'est le seul endroit à modifier pour activer une nouvelle langue.
  */
-export function getSectionForSlug(slug: string): NavSection | undefined {
-  return NAV.find((s) => slug.startsWith(s.id));
+export const LOCALES: LocaleDef[] = [
+  { id: "fr", label: "FR", enabled: true  },
+  { id: "en", label: "EN", enabled: false },
+];
+
+export const DEFAULT_LOCALE: Locale = "fr";
+
+/** Valide qu'une chaîne est une locale connue ; retourne la locale par défaut sinon. */
+export function resolveLocale(value: string): Locale {
+  return LOCALES.find((l) => l.id === value)?.id ?? DEFAULT_LOCALE;
+}
+
+// ─── Localisation des chaînes ─────────────────────────────────────────────────
+
+/**
+ * Champ texte disponible dans toutes les locales supportées.
+ * Partial : les nouvelles locales peuvent n'avoir qu'une traduction partielle
+ * avant que tout le contenu soit prêt — on tombe alors sur le fallback 'fr'.
+ */
+export type LocalizedString = Partial<Record<Locale, string>>;
+
+/**
+ * Retourne la chaîne dans la locale demandée.
+ * Fallback : 'fr' si la locale cible n'est pas encore traduite.
+ */
+export function localize(field: LocalizedString, locale: string): string {
+  return field[locale as Locale] ?? field.fr ?? "";
+}
+
+// ─── Structure des livres ─────────────────────────────────────────────────────
+
+export interface BookSection {
+  slug: string;
+  /** Titre de la section dans chaque locale. */
+  title: LocalizedString;
+}
+
+export interface BookDef {
+  id: string;
+  title: LocalizedString;
+  subtitle: LocalizedString;
+  description: LocalizedString;
+  /** Sections ordonnées du livre, avec leur titre d'affichage. */
+  sections: BookSection[];
+}
+
+/** Livres — dérivés de src/data/books.json (source unique de vérité). */
+export const BOOKS: BookDef[] = booksData as BookDef[];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Retourne la définition d'un livre par son id, ou undefined si inconnu. */
+export function getBookById(id: string): BookDef | undefined {
+  return BOOKS.find((b) => b.id === id);
+}
+
+/** Retourne le livre auquel appartient un slug, ou undefined si orphelin. */
+export function getBookForSlug(slug: string): BookDef | undefined {
+  return BOOKS.find((b) => b.sections.some((s) => s.slug === slug));
+}
+
+/**
+ * Retourne le titre d'une section pour un slug donné.
+ * Utilise la locale spécifiée avec fallback sur 'fr'.
+ */
+export function getTitleForSlug(slug: string, locale = "fr"): string {
+  for (const book of BOOKS) {
+    const section = book.sections.find((s) => s.slug === slug);
+    if (section) return localize(section.title, locale);
+  }
+  return slug;
 }

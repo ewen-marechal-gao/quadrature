@@ -1,104 +1,117 @@
 "use client";
 
 /**
- * BookPreloader — précharge toutes les sections et corrige la numérotation globale.
+ * BookPreloader — précharge les sections du livre courant puis les autres livres
+ * silencieusement en arrière-plan.
+ *
+ * Pourquoi pas un Web Worker ?
+ *   Paged.js manipule directement le DOM (window, document, MutationObserver…).
+ *   Ces APIs n'existent pas dans un Worker. Le rendu doit rester sur le thread
+ *   principal. La "silenciosité" vient du fait que les rendus se font dans des
+ *   containers off-screen (opacity:0, position:fixed hors écran).
  *
  * Phases :
- * 1. Fetch /content-index.json → stocke contentIndex dans le contexte
- * 2. Passe 1 — rendu séquentiel de chaque section (sauf celles déjà en cache)
- *    avec applyGlobalPageNumbers(offset initial via countsRef)
- * 3. Passe 2 — re-rendu des sections skippées qui sont maintenant dans le vault
- * 4. Passe finale — patch universel : parcourt renderCache dans l'ordre NAV_FLAT,
- *    calcule les offsets cumulatifs depuis cached.total (indépendant du state React),
- *    et corrige les pieds de page de TOUTES les sections — y compris celles rendues
- *    tôt par BookViewer (avec offset=0). Le patch s'applique en live sur le DOM,
- *    qu'il soit dans le vault ou actuellement affiché dans le viewport.
+ * 1. Fetch /content-index-{locale}.json → stocke dans le contexte (contentIndex)
+ * 2. Passe A — rendu séquentiel des sections du livre courant (bookSlugs)
+ *    en sautant celles déjà en cache (rendues par BookViewer)
+ * 3. Passe B — re-rendu des sections skippées qui sont retournées au vault
+ * 4. Passe C — rendu des autres livres en arrière-plan (toutes les sections
+ *    qui ne sont pas dans bookSlugs)
+ * 5. Passe finale — patch universel des numéros de page et des références
+ *    croisées pour TOUTES les sections rendues.
  */
 
 import { useEffect, useRef } from "react";
 import { useBook } from "@/lib/context";
-import { NAV_FLAT } from "@/lib/nav";
-import { loadPagedScript, computeOffset, applyGlobalPageNumbers } from "@/lib/pagedjs";
+import { BOOKS } from "@/lib/nav";
+import { loadPagedScript, computeOffset, applyGlobalPageNumbers, applyPageRefs } from "@/lib/pagedjs";
 import { renderCache, getVault, type CachedRender } from "@/lib/pagedCache";
 
-export function BookPreloader() {
-  const { setPageCount, pageCounts, setContentIndex } = useBook();
+interface Props {
+  /** Slugs ordonnés du livre courant — chargés en priorité. */
+  slugs: string[];
+  /** Locale active — détermine quel content-index charger (ex : "fr", "en"). */
+  locale: string;
+}
 
-  const countsRef = useRef(pageCounts);
-  useEffect(() => { countsRef.current = pageCounts; }, [pageCounts]);
+export function BookPreloader({ slugs: bookSlugs, locale }: Props) {
+  const { setPageCount, setContentIndex, setBookSlugs } = useBook();
+
+  // Ref vers bookSlugs stable entre les renders
+  const bookSlugsRef = useRef(bookSlugs);
+  useEffect(() => { bookSlugsRef.current = bookSlugs; }, [bookSlugs]);
+
+  useEffect(() => {
+    // Synchroniser bookSlugs dans le contexte (pour getOffset, prev/next)
+    setBookSlugs(bookSlugs);
+  }, [bookSlugs, setBookSlugs]);
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      // Attendre que le navigateur soit idle (render initial terminé)
+      // Attendre que le navigateur soit idle
       await idlePromise();
       if (cancelled) return;
 
-      // Charger le content-index généré au build
+      // ── Chargement du content-index (par locale) ─────────────────────────
       let content: Record<string, string>;
       try {
-        const res = await fetch("/content-index.json");
+        const res = await fetch(`/content-index-${locale}.json`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         content = await res.json();
       } catch (e) {
-        console.warn("[BookPreloader] Impossible de charger content-index.json :", e);
+        console.warn(`[BookPreloader] Impossible de charger content-index-${locale}.json :`, e);
         return;
       }
 
-      // Rendre le contentIndex disponible pour la navigation cliente
       setContentIndex(content);
       if (cancelled) return;
 
       await loadPagedScript();
       if (cancelled) return;
 
-      // Passe 1 : rendre et mettre en cache chaque section séquentiellement.
-      // – Si la section est déjà en cache (rendue par BookViewer) : skip.
-      // – Sinon : rendre avec l'offset global correct calculé à partir de countsRef.
+      // ── Passe A : livre courant ───────────────────────────────────────────
       const skipped: string[] = [];
+      let offset = 0;
 
-      for (const item of NAV_FLAT) {
+      for (const slug of bookSlugsRef.current) {
         if (cancelled) return;
 
-        if (renderCache.has(item.slug)) {
-          // Déjà en cache (rendu par BookViewer avant le preloader).
-          // On mémorise les slugs skippés pour la passe 2.
-          skipped.push(item.slug);
+        if (renderCache.has(slug)) {
+          skipped.push(slug);
+          offset += renderCache.get(slug)!.total;
           continue;
         }
 
-        const html = content[item.slug];
+        const html = content[slug];
         if (!html) continue;
 
-        const offset = computeOffset(item.slug, countsRef.current);
-        const result = await renderAndCache(item.slug, html, offset);
+        const result = await renderAndCache(slug, html, offset);
         if (!cancelled && result !== null) {
-          setPageCount(item.slug, result.total);
+          setPageCount(slug, result.total);
+          offset += result.total;
         }
       }
 
       if (cancelled) return;
 
-      // Passe 2 : re-rendre les sections skippées qui sont maintenant dans le vault
-      // (l'utilisateur a navigué ailleurs). Cela leur donne un rendu propre.
+      // ── Passe B : re-rendu des sections skippées (maintenant dans le vault) ─
       for (const slug of skipped) {
         if (cancelled) return;
 
         const cached = renderCache.get(slug);
-        if (!cached) continue;
-        // Si encore affiché (pagesArea pas dans le vault), on ne peut pas remplacer.
-        if (cached.pagesArea.parentElement !== getVault()) continue;
+        if (!cached || cached.pagesArea.parentElement !== getVault()) continue;
 
         const html = content[slug];
         if (!html) continue;
 
-        // Retirer l'ancienne entrée du vault et du cache
         getVault().removeChild(cached.pagesArea);
         renderCache.delete(slug);
 
-        const offset = computeOffset(slug, countsRef.current);
-        const result = await renderAndCache(slug, html, offset);
+        // Recalculer l'offset de cette section dans le livre courant
+        const slugOffset = computeOffsetInList(slug, bookSlugsRef.current, renderCache);
+        const result = await renderAndCache(slug, html, slugOffset);
         if (!cancelled && result !== null) {
           setPageCount(slug, result.total);
         }
@@ -106,18 +119,41 @@ export function BookPreloader() {
 
       if (cancelled) return;
 
-      // ── Passe finale : correction universelle de la numérotation globale ────────
-      // Toutes les sections sont maintenant en cache (preloader ou BookViewer).
-      // On recalcule les offsets cumulatifs depuis cached.total (valeur certaine,
-      // sans dépendre du timing des mises à jour React state) et on patch les pieds
-      // de page de chaque section. Le patch est instantané (textContent uniquement).
-      {
-        let offset = 0;
-        for (const item of NAV_FLAT) {
-          const cached = renderCache.get(item.slug);
+      // ── Passe C : autres livres en arrière-plan ───────────────────────────
+      const currentSet = new Set(bookSlugsRef.current);
+      const otherSlugs = BOOKS
+        .flatMap((b) => b.sections.map((s) => s.slug))
+        .filter((s) => !currentSet.has(s) && !renderCache.has(s));
+
+      for (const slug of otherSlugs) {
+        if (cancelled) return;
+        const html = content[slug];
+        if (!html) continue;
+        // offset=0 : numérotation interne au livre de la section — corrigée dans
+        // la passe finale. Pas besoin de précision ici.
+        await renderAndCache(slug, html, 0);
+      }
+
+      if (cancelled) return;
+
+      // ── Passe finale : patch numéros de page + références croisées ────────
+      // Chaque livre est paginé indépendamment (page 1 de chaque livre = 1).
+      // On patch livre par livre pour que les cross-refs pointent vers les
+      // numéros relatifs au livre cible.
+      for (const book of BOOKS) {
+        const bookCounts: Record<string, number> = {};
+        for (const { slug } of book.sections) {
+          const c = renderCache.get(slug);
+          if (c) bookCounts[slug] = c.total;
+        }
+
+        let off = 0;
+        for (const { slug } of book.sections) {
+          const cached = renderCache.get(slug);
           if (cached && cached.total > 0) {
-            applyGlobalPageNumbers(cached.pagesArea, offset);
-            offset += cached.total;
+            applyGlobalPageNumbers(cached.pagesArea, off);
+            applyPageRefs(cached.pagesArea, bookCounts);
+            off += cached.total;
           }
         }
       }
@@ -143,8 +179,25 @@ function idlePromise(): Promise<void> {
 }
 
 /**
- * Rend le HTML via Paged.js dans un div off-screen, applique la numérotation
- * globale (applyGlobalPageNumbers), stocke le .pagedjs_pages dans le vault.
+ * Calcule l'offset d'un slug dans une liste ordonnée en cumulant les totaux
+ * des sections précédentes depuis renderCache.
+ */
+function computeOffsetInList(
+  slug: string,
+  slugList: string[],
+  cache: typeof renderCache,
+): number {
+  let offset = 0;
+  for (const s of slugList) {
+    if (s === slug) break;
+    offset += cache.get(s)?.total ?? 0;
+  }
+  return offset;
+}
+
+/**
+ * Rend le HTML via Paged.js dans un div off-screen, applique la numérotation,
+ * et stocke le résultat dans le vault + renderCache.
  * Retourne null en cas d'échec.
  */
 async function renderAndCache(
@@ -153,9 +206,6 @@ async function renderAndCache(
   offset: number,
 ): Promise<CachedRender | null> {
   const container = document.createElement("div");
-  // opacity:0 plutôt que visibility:hidden : l'opacité d'un parent ne peut pas
-  // être outrepassée par un enfant (contrairement à visibility), ce qui garantit
-  // l'invisibilité même si Paged.js set visibility:visible sur ses éléments internes.
   container.style.cssText =
     "position:fixed;left:-99999px;top:0;opacity:0;pointer-events:none";
   document.body.appendChild(container);
@@ -167,15 +217,7 @@ async function renderAndCache(
 
     const paged = new Paged.Previewer();
 
-    // ── Patch polisher.setup() pour éviter le clignotement ────────────────────
-    // Paged.js insère à chaque preview() une balise <style> avec les valeurs par
-    // défaut (8.5in × 11in Letter US) dans <head> — AVANT d'insérer les valeurs
-    // corrigées depuis book.css (A4 297mm × 210mm).
-    // Pendant ce laps de temps (~1 frame), toutes les .pagedjs_page visibles se
-    // redimensionnent vers 8.5in, ce qui décale le carousel et provoque un
-    // clignotement visible. Si des styles Paged.js sont déjà présents (rendu
-    // précédent), on saute l'insertion des baseStyles et on crée uniquement la
-    // feuille de style vide dont les handlers ont besoin.
+    // Éviter le clignotement causé par la ré-injection des baseStyles Paged.js
     const alreadySetUp = !!document.querySelector("style[data-pagedjs-inserted-styles]");
     if (alreadySetUp) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -197,7 +239,6 @@ async function renderAndCache(
       return { pagesArea: document.createElement("div"), total, pageWidth: 0, pageHeight: 0 };
     }
 
-    // Corriger la numérotation globale AVANT de déplacer dans le vault
     applyGlobalPageNumbers(container, offset);
 
     const entry: CachedRender = {
@@ -207,7 +248,6 @@ async function renderAndCache(
       pageHeight: firstPage.offsetHeight,
     };
 
-    // Déplacer pagesArea dans le vault (container devient vide)
     getVault().appendChild(pagesArea);
     renderCache.set(slug, entry);
 
@@ -216,6 +256,6 @@ async function renderAndCache(
     console.warn(`[BookPreloader] ${slug} :`, e);
     return null;
   } finally {
-    container.remove(); // vide (pagesArea déjà déplacé)
+    container.remove();
   }
 }

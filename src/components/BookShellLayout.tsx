@@ -1,71 +1,133 @@
 "use client";
 
 /**
- * BookShellLayout — shell applicatif permanent, monté une seule fois dans le RootLayout.
+ * BookShellLayout — shell applicatif permanent pour un livre donné.
  *
- * Ce composant ne se démonte JAMAIS entre les navigations Next.js.
- * BookViewerLoader est donc toujours monté, ce qui permet le double-buffer :
- * l'ancienne section reste visible pendant le rendu Paged.js de la nouvelle.
+ * Reçoit le bookId depuis le layout serveur. Affiche :
+ *   - La top bar (logo, titre de section, lien retour bibliothèque, PDF)
+ *   - La sidebar avec tous les livres (groupes repliables), les sections de
+ *     chaque livre, et les titres h2 de la section active
+ *   - La zone livre où BookViewer est toujours monté (double-buffer)
  *
- * Architecture de navigation :
- *   1. L'utilisateur clique un lien → Next.js charge la route /rules/[slug]
- *   2. page.tsx rend un <PageInitializer slug html /> (invisible, null return)
- *   3. PageInitializer appelle setCurrentContent() dans le BookContext
- *   4. BookShellLayout lit currentHtml/currentSlug depuis le contexte et
- *      passe le nouveau `html` à BookViewer
- *   5. BookViewer réutilise le rendu Paged.js depuis le cache vault (O(1))
- *      ou lance un nouveau rendu en staging avant un swap atomique
+ * La navigation entre sections se fait via navigateTo() (contexte) :
+ * pas de changement d'URL, pas de rechargement de page.
+ *
+ * Architecture :
+ *   layout.tsx (serveur) → BookShell (client, key={bookId}) → BookShellLayout
+ *   page.tsx   (serveur) → PageInitializer (client) → setCurrentContent → BookViewer
  */
 
-import { useState } from "react";
 import Link from "next/link";
-import { NAV, NAV_FLAT } from "@/lib/nav";
+import { useState, useMemo, useEffect } from "react";
+import { getBookById, getTitleForSlug, localize, BOOKS } from "@/lib/nav";
 import { useBook } from "@/lib/context";
 import { BookViewer } from "@/components/BookViewerLoader";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
 interface Props {
+  bookId: string;
+  /** Locale active (ex : "fr") — utilisée pour les liens retour et le switcher. */
+  locale: string;
   children: React.ReactNode;
 }
 
-export function BookShellLayout({ children }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
-  const { currentSlug, currentHtml, pageCounts, getOffset } = useBook();
+/**
+ * Extrait les textes bruts des titres <h2> présents dans le HTML d'une section.
+ * Utilisé pour afficher les sous-titres dans la sidebar.
+ */
+function extractH2s(html: string): string[] {
+  if (!html) return [];
+  const matches = Array.from(html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g));
+  return matches
+    .map(m => m[1].replace(/<[^>]+>/g, "").trim())
+    .filter(Boolean);
+}
 
-  const index   = NAV_FLAT.findIndex((item) => item.slug === currentSlug);
-  const current = index >= 0 ? NAV_FLAT[index] : null;
+export function BookShellLayout({ bookId, locale, children }: Props) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Livres déplié dans la sidebar — le livre courant est ouvert par défaut.
+  const [expandedBooks, setExpandedBooks] = useState<Set<string>>(
+    () => new Set([bookId])
+  );
+
+  const { currentSlug, currentHtml, pageCounts, getOffset, navigateTo } = useBook();
+
+  const book     = getBookById(bookId);
+  const sections = book?.sections ?? [];
+  const current  = currentSlug ? getTitleForSlug(currentSlug, locale) : null;
+
+  // h2 de la section courante, extraits du HTML (mis à jour à chaque navigation)
+  const currentH2s = useMemo(
+    () => extractH2s(currentHtml ?? ""),
+    [currentHtml]
+  );
+
+  // Quand on navigue vers une section d'un autre livre, on l'ouvre automatiquement.
+  useEffect(() => {
+    if (!currentSlug) return;
+    const ownerBook = BOOKS.find(b =>
+      b.sections.some(s => s.slug === currentSlug)
+    );
+    if (!ownerBook) return;
+    setExpandedBooks(prev => {
+      if (prev.has(ownerBook.id)) return prev;
+      const next = new Set(prev);
+      next.add(ownerBook.id);
+      return next;
+    });
+  }, [currentSlug]);
+
+  const toggleBook = (id: string) => {
+    setExpandedBooks(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <div className="book-app">
-      {/* ── PageInitializer (invisible) ───────────────────────── */}
+      {/* PageInitializer (invisible) — injecté par page.tsx */}
       {children}
 
       {/* ── Top bar ──────────────────────────────────────────── */}
       <header className="top-bar">
         <button
           className="top-bar-collapse"
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={() => setCollapsed(c => !c)}
           aria-label={collapsed ? "Ouvrir le sommaire" : "Réduire le sommaire"}
           title={collapsed ? "Ouvrir le sommaire" : "Réduire le sommaire"}
         >
           {collapsed ? "›" : "‹"}
         </button>
 
-        <Link href="/" className="top-bar-logo">
+        <Link href={`/${locale}/`} className="top-bar-logo">
           Quadrature
         </Link>
 
-        {current && (
+        {book && (
           <>
             <span className="top-bar-sep">—</span>
-            <span className="top-bar-title">{current.title}</span>
+            <span className="top-bar-book">{localize(book.title, locale)}</span>
           </>
         )}
+
+        {current && currentSlug !== sections[0]?.slug && (
+          <>
+            <span className="top-bar-sep">·</span>
+            <span className="top-bar-title">{current}</span>
+          </>
+        )}
+
+        <LocaleSwitcher locale={locale} bookId={bookId} />
 
         <a
           href="/quadrature.pdf"
           download="Quadrature.pdf"
           className="top-bar-download"
-          title="Télécharger le PDF"
+          title="Télécharger le PDF complet"
           aria-label="Télécharger le document en PDF"
         >
           ⬇ PDF
@@ -80,57 +142,112 @@ export function BookShellLayout({ children }: Props) {
           aria-label="Sommaire"
         >
           <div className="sidebar-inner">
-            {NAV.map((section) => (
-              <div key={section.id} className="sidebar-section">
-                <span className="sidebar-section-title">{section.title}</span>
-                <ul className="sidebar-items">
-                  {section.items.map((item) => {
-                    const href    = `/rules/${item.slug}`;
-                    const isActive = item.slug === currentSlug;
+            {/* Tous les livres */}
+            {BOOKS.map(bookDef => {
+              const isCurrentBook = bookDef.id === bookId;
+              const isExpanded    = expandedBooks.has(bookDef.id);
 
-                    const count  = pageCounts[item.slug] ?? 0;
-                    const offset = count > 0 ? getOffset(item.slug) : null;
-                    const pageLabel =
-                      offset !== null
-                        ? count === 1
-                          ? `p. ${offset + 1}`
-                          : `p. ${offset + 1}–${offset + count}`
-                        : null;
+              return (
+                <div key={bookDef.id} className="sidebar-book">
+                  {/* En-tête cliquable du livre */}
+                  <button
+                    className={`sidebar-book-header${
+                      isCurrentBook ? " sidebar-book-header--active" : ""
+                    }`}
+                    onClick={() => toggleBook(bookDef.id)}
+                    aria-expanded={isExpanded}
+                  >
+                    <span className="sidebar-book-header-title">
+                      {localize(bookDef.title, locale)}
+                    </span>
+                    <span className="sidebar-book-header-line" aria-hidden="true" />
+                    <span className="sidebar-book-header-chevron" aria-hidden="true">
+                      {isExpanded ? "▾" : "▸"}
+                    </span>
+                  </button>
 
-                    return (
-                      <li key={item.slug}>
-                        <Link
-                          href={href}
-                          className={`sidebar-link${isActive ? " sidebar-link--active" : ""}`}
-                        >
-                          <span className="sidebar-link-title">{item.title}</span>
-                          {pageLabel && (
-                            <span className="sidebar-link-pages">{pageLabel}</span>
-                          )}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
+                  {/* Sections du livre (visible si déplié) */}
+                  {isExpanded && (
+                    <ul className="sidebar-items">
+                      {bookDef.sections.map(({ slug, title }) => {
+                        const isActive = slug === currentSlug;
+                        const count    = pageCounts[slug] ?? 0;
+
+                        // Les numéros de page globaux ne sont disponibles que
+                        // pour le livre courant (bookSlugs en contexte = livre courant).
+                        const offset = count > 0 && isCurrentBook
+                          ? getOffset(slug)
+                          : null;
+                        const pageLabel =
+                          offset !== null
+                            ? count === 1
+                              ? `p. ${offset + 1}`
+                              : `p. ${offset + 1}–${offset + count}`
+                            : null;
+
+                        return (
+                          <li key={slug}>
+                            <button
+                              onClick={() => navigateTo(slug)}
+                              className={`sidebar-link${
+                                isActive ? " sidebar-link--active" : ""
+                              }`}
+                            >
+                              <span className="sidebar-link-title">
+                                {localize(title, locale)}
+                              </span>
+                              {pageLabel && (
+                                <span className="sidebar-link-pages">{pageLabel}</span>
+                              )}
+                            </button>
+
+                            {/* h2 sous-items — uniquement pour la section active */}
+                            {isActive && currentH2s.length > 0 && (
+                              <ul
+                                className="sidebar-h2-list"
+                                aria-label="Sous-sections"
+                              >
+                                {currentH2s.map((h2text, i) => (
+                                  <li key={i}>
+                                    <span className="sidebar-h2-item">{h2text}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </nav>
 
         {/* Book area — BookViewer ne se démonte jamais */}
         <main className="book-area">
           {currentHtml ? (
-            <BookViewer
-              html={currentHtml}
-              slug={currentSlug || undefined}
-            />
+            <BookViewer html={currentHtml} slug={currentSlug || undefined} />
           ) : (
             <div className="book-outer">
-              <button className="book-arrow book-arrow--prev" disabled aria-label="Page précédente">‹</button>
+              <button
+                className="book-arrow book-arrow--prev"
+                disabled
+                aria-label="Page précédente"
+              >
+                ‹
+              </button>
               <div className="book-center">
-                <div className="book-status">Sélectionnez une section…</div>
+                <div className="book-status">Composition en cours…</div>
               </div>
-              <button className="book-arrow book-arrow--next" disabled aria-label="Page suivante">›</button>
+              <button
+                className="book-arrow book-arrow--next"
+                disabled
+                aria-label="Page suivante"
+              >
+                ›
+              </button>
             </div>
           )}
         </main>

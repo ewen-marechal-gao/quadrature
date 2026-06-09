@@ -18,11 +18,9 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { useBook } from "@/lib/context";
 import { loadPagedScript, computeOffset, applyGlobalPageNumbers } from "@/lib/pagedjs";
 import { renderCache, getVault } from "@/lib/pagedCache";
-import { NAV_FLAT } from "@/lib/nav";
 
 /** Padding (px) autour de la page dans le viewer (espace pour l'ombre + respiration). */
 const V_PADDING  = 16;
@@ -41,7 +39,11 @@ function carouselCss(scale: number, page: number, pageW: number, total: number, 
 }
 
 function containerCss(pageW: number, pageH: number, scale: number) {
-  return `width:${Math.round(pageW * scale)}px;height:${Math.round(pageH * scale)}px;overflow:hidden;`;
+  // clip-path: inset(0 0 -80px 0) — clip strict gauche/droite (empêche la page
+  // suivante de saigner) mais autorise 80px en bas pour l'ombre de la page.
+  // overflow:hidden seul ne clippe pas les enfants sur un compositor layer séparé
+  // (will-change:transform dans carouselCss crée une couche GPU indépendante).
+  return `width:${Math.round(pageW * scale)}px;height:${Math.round(pageH * scale)}px;overflow:hidden;position:relative;clip-path:inset(0 0 -80px 0);`;
 }
 
 interface Props {
@@ -52,9 +54,9 @@ interface Props {
 export function BookViewer({ html, slug }: Props) {
   const outerRef = useRef<HTMLDivElement>(null);
   const pagedRef = useRef<HTMLDivElement>(null);
-  const router   = useRouter();
 
-  const { setPageCount, pageCounts } = useBook();
+
+  const { setPageCount, pageCounts, bookSlugs, navigateTo } = useBook();
 
   // Ref vers pageCounts — lu dans l'effet sans être dans ses dépendances
   // (évite de re-rendre à chaque comptage du preloader).
@@ -73,12 +75,12 @@ export function BookViewer({ html, slug }: Props) {
   const totalRef      = useRef(0);
   const hasRendered   = useRef(false);
 
-  // Sections adjacentes pour la navigation cross-section
-  const sectionIdx = slug ? NAV_FLAT.findIndex((i) => i.slug === slug) : -1;
-  const prevSlug   = sectionIdx > 0 ? NAV_FLAT[sectionIdx - 1].slug : null;
+  // Sections adjacentes dans le livre courant (bookSlugs depuis le contexte)
+  const sectionIdx = slug ? bookSlugs.indexOf(slug) : -1;
+  const prevSlug   = sectionIdx > 0 ? bookSlugs[sectionIdx - 1] : null;
   const nextSlug   =
-    sectionIdx >= 0 && sectionIdx < NAV_FLAT.length - 1
-      ? NAV_FLAT[sectionIdx + 1].slug
+    sectionIdx >= 0 && sectionIdx < bookSlugs.length - 1
+      ? bookSlugs[sectionIdx + 1]
       : null;
 
   // ── Navigation ─────────────────────────────────────────────────────────────
@@ -97,16 +99,16 @@ export function BookViewer({ html, slug }: Props) {
 
   const prev = useCallback(() => {
     const page = currentPageRef.current;
-    if (page === 0 && prevSlug) router.push(`/rules/${prevSlug}#end`);
+    if (page === 0 && prevSlug) navigateTo(prevSlug);
     else goToPage(page - 1);
-  }, [goToPage, prevSlug, router]);
+  }, [goToPage, prevSlug, navigateTo]);
 
   const next = useCallback(() => {
     const page  = currentPageRef.current;
     const total = totalRef.current;
-    if (page >= total - 1 && nextSlug) router.push(`/rules/${nextSlug}`);
+    if (page >= total - 1 && nextSlug) navigateTo(nextSlug);
     else goToPage(page + 1);
-  }, [goToPage, nextSlug, router]);
+  }, [goToPage, nextSlug, navigateTo]);
 
   // ── Clavier ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -118,6 +120,30 @@ export function BookViewer({ html, slug }: Props) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [status, next, prev]);
+
+  // ── Intercepteur de liens internes ──────────────────────────────────────────
+  // Les <a href="/rules/..."> sont des éléments HTML bruts insérés par Paged.js.
+  // On intercepte en phase capture (avant tout handler Paged.js éventuel) et on
+  // navigue via navigateTo() — navigation client-side pure, sans changement d'URL
+  // et sans risque de rechargement complet de la page.
+  useEffect(() => {
+    const container = pagedRef.current;
+    if (!container) return;
+
+    const handleLinkClick = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest('a[href^="/rules/"]');
+      if (!anchor) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const href = anchor.getAttribute("href")!;
+      // /rules/core/etats/ → core/etats
+      const slug = href.replace(/^\/rules\//, "").replace(/\/+$/, "");
+      navigateTo(slug);
+    };
+
+    container.addEventListener("click", handleLinkClick, true /* capture */);
+    return () => container.removeEventListener("click", handleLinkClick, true);
+  }, [navigateTo]);
 
   // ── ResizeObserver — recalcule le scale quand l'espace change ───────────────
   useEffect(() => {
@@ -139,7 +165,7 @@ export function BookViewer({ html, slug }: Props) {
 
       const availW = outer.offsetWidth  - V_PADDING * 2;
       const availH = outer.offsetHeight - V_PADDING * 2;
-      const scale  = Math.min(availW / pageW, availH / pageH, 1);
+      const scale  = Math.min(availW / pageW, availH / pageH);
       const page   = currentPageRef.current;
 
       area.style.transform = `scale(${scale}) translateX(${-page * pageW}px)`;
@@ -171,8 +197,9 @@ export function BookViewer({ html, slug }: Props) {
     const outer   = outerRef.current;
     if (!visible || !outer) return;
 
-    const startFromEnd = window.location.hash === "#end";
-    if (startFromEnd) history.replaceState(null, "", window.location.pathname);
+    // La navigation est désormais client-side (pas de changement d'URL).
+    // startFromEnd n'est plus utilisé — la section cible démarre toujours page 1.
+    const startFromEnd = false;
 
     let cancelled   = false;
     let stagingEl: HTMLElement | null = null;
@@ -186,7 +213,7 @@ export function BookViewer({ html, slug }: Props) {
     if (cached) {
       const { pagesArea, total, pageWidth: pageW, pageHeight: pageH } = cached;
 
-      const scale     = Math.min(availW / pageW, availH / pageH, 1);
+      const scale     = Math.min(availW / pageW, availH / pageH);
       const startPage = startFromEnd ? Math.max(0, total - 1) : 0;
 
       pagesArea.style.cssText = carouselCss(scale, startPage, pageW, total, pageH);
@@ -268,7 +295,7 @@ export function BookViewer({ html, slug }: Props) {
 
         const pageW = firstPage.offsetWidth;
         const pageH = firstPage.offsetHeight;
-        const scale     = Math.min(availW / pageW, availH / pageH, 1);
+        const scale     = Math.min(availW / pageW, availH / pageH);
         const startPage = startFromEnd ? Math.max(0, total - 1) : 0;
 
         pagesArea.style.cssText  = carouselCss(scale, startPage, pageW, total, pageH);

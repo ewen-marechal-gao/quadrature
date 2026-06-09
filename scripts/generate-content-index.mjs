@@ -7,8 +7,8 @@
  * Reproduce la même pipeline que src/lib/content.ts.
  */
 
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join, relative, dirname } from "node:path";
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from "node:fs";
+import { join, relative, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
 import { remark } from "remark";
@@ -16,8 +16,16 @@ import remarkGfm from "remark-gfm";
 import remarkHtml from "remark-html";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const RULES_DIR = join(__dirname, "..", "..", "rules", "fr");
-const OUTPUT    = join(__dirname, "..", "public", "content-index.json");
+
+// Locale passée en argument CLI : node generate-content-index.mjs [locale]
+// Par défaut : "fr". Exemple EN : node generate-content-index.mjs en
+const locale    = process.argv[2] ?? "fr";
+const RULES_DIR = join(__dirname, "..", "..", "rules", locale);
+const OUTPUT    = join(__dirname, "..", "public", `content-index-${locale}.json`);
+
+// Dossier images du contenu (rules/{locale}/images/) → copié vers public/images/
+const IMAGES_SRC = join(RULES_DIR, "images");
+const IMAGES_DST = join(__dirname, "..", "public", "images");
 
 // ─── Utilitaires ─────────────────────────────────────────────────────────────
 
@@ -37,16 +45,116 @@ function collectMdFiles(dir, base = dir) {
   return results;
 }
 
-/** Réécrit les liens .md → /rules/ (même logique que content.ts). */
-function rewriteLinks(content) {
+/**
+ * Réécrit les chemins d'images relatifs en chemins web absolus.
+ *
+ * Les images stockées dans rules/{locale}/images/ sont accessibles via
+ * des chemins relatifs dans le Markdown (ex: ../images/foo.png).
+ * Ce chemin résolu dans rules/{locale}/images/ → /images/foo.png sur le web.
+ *
+ * Exemples :
+ *   univers/peuples.md  + ../images/foo.png → /images/foo.png
+ *   core/combat.md      + ../images/foo.png → /images/foo.png
+ *
+ * @param {string} content  Contenu Markdown brut
+ * @param {string} slug     Slug du fichier courant, ex: "univers/peuples"
+ */
+function rewriteImages(content, slug) {
+  const fileDir = slug.split("/").slice(0, -1);
+
+  return content.replace(
+    /!\[([^\]]*)\]\(([^)]+)\)/g,
+    (match, alt, src) => {
+      // Laisser les URLs absolues et chemins web absolus intacts
+      if (/^https?:\/\//.test(src) || src.startsWith("/")) return match;
+
+      // Résoudre le chemin relatif depuis le répertoire du fichier source
+      const parts = src.split("/");
+      const resolved = [...fileDir];
+      for (const part of parts) {
+        if (part === "..") { if (resolved.length > 0) resolved.pop(); }
+        else if (part !== ".") resolved.push(part);
+      }
+
+      // Si le chemin résolu est dans images/, convertir en chemin web /images/
+      if (resolved[0] === "images") {
+        const webPath = "/images/" + resolved.slice(1).join("/");
+        return `![${alt}](${webPath})`;
+      }
+
+      return match;
+    }
+  );
+}
+
+/**
+ * Transforme les callouts Obsidian en divs avec classes CSS.
+ *
+ * Syntaxe source : > [!type] Titre optionnel  (identique à Obsidian)
+ * Types reconnus : example → "Exemple", note → "Note", lore → (sans label)
+ * Tout type inconnu reçoit son nom brut comme label.
+ *
+ * @param {string} html  HTML généré par remark-html
+ */
+function rewriteCallouts(html) {
+  const labels = { example: "Exemple", note: "Note", lore: null };
+
+  return html.replace(
+    /<blockquote>([\s\S]*?)<\/blockquote>/g,
+    (match, inner) => {
+      const trimmed = inner.trim();
+
+      const m = trimmed.match(
+        /^<p>\[!(\w[\w-]*)\]([ \t]*)([^\n<]*)(?:\n([\s\S]*?))?<\/p>([\s\S]*)$/
+      );
+      if (!m) return match;
+
+      const type     = m[1];
+      const titleRaw = m[3].trim();
+      const samePara = (m[4] ?? "").trim();
+      const rest     = (m[5] ?? "").trim();
+
+      const defaultLabel = Object.prototype.hasOwnProperty.call(labels, type)
+        ? labels[type]
+        : type;
+      const displayTitle = titleRaw || defaultLabel;
+
+      let out = `<div class="callout callout-${type}">`;
+      if (displayTitle) out += `<div class="callout-title">${displayTitle}</div>`;
+      if (samePara)     out += `<p>${samePara}</p>`;
+      if (rest)         out += rest;
+      out += `</div>`;
+      return out;
+    }
+  );
+}
+
+/**
+ * Réécrit les liens .md → /rules/ avec résolution de chemin relative
+ * au fichier source (même logique que content.ts).
+ *
+ * @param {string} content  Contenu Markdown brut
+ * @param {string} slug     Slug du fichier courant, ex: "core/ressources"
+ */
+function rewriteLinks(content, slug) {
+  // Répertoire du fichier courant : "core/ressources" → ["core"]
+  const fileDir = slug.split("/").slice(0, -1);
+
   return content.replace(
     /\[([^\]]+)\]\(([^)]+\.md)(#[^)]*)?\)/g,
     (_, text, href, hash = "") => {
-      const cleaned = href
-        .replace(/^\.\.\//, "")
-        .replace(/^\.\//, "")
-        .replace(/\.md$/, "");
-      return `[${text}](/rules/${cleaned}${hash})`;
+      if (/^https?:\/\//.test(href)) return `[${text}](${href}${hash})`;
+
+      const parts = href.replace(/\.md$/, "").split("/");
+      const resolved = [...fileDir];
+      for (const part of parts) {
+        if (part === "..") { if (resolved.length > 0) resolved.pop(); }
+        else if (part !== ".") resolved.push(part);
+      }
+
+      // Trailing slash requis : next.config.ts utilise trailingSlash:true.
+      const path = `/rules/${resolved.join("/")}`;
+      return `[${text}](${path}/${hash})`;
     }
   );
 }
@@ -63,7 +171,7 @@ for (const { path, slug } of files) {
   const file = await remark()
     .use(remarkGfm)
     .use(remarkHtml, { sanitize: false })
-    .process(rewriteLinks(content));
+    .process(rewriteLinks(rewriteImages(content, slug), slug));
 
   // ── Wrapper de section avec classes CSS issues du frontmatter ──────────────
   //
@@ -88,10 +196,26 @@ for (const { path, slug } of files) {
   if (cols === 1)  classes.push("pdf-single-col");
   if (!doBreak)    classes.push("pdf-no-break");
 
-  index[slug] = `<article class="${classes.join(" ")}">\n${String(file)}</article>`;
+  index[slug] = `<article class="${classes.join(" ")}">\n${rewriteCallouts(String(file))}</article>`;
 }
 
 writeFileSync(OUTPUT, JSON.stringify(index));
 console.log(
-  `✓ content-index.json — ${Object.keys(index).length} sections générées`
+  `✓ content-index-${locale}.json — ${Object.keys(index).length} sections générées`
 );
+
+// ── Copie des images rules/{locale}/images/ → public/images/ ─────────────────
+if (existsSync(IMAGES_SRC)) {
+  mkdirSync(IMAGES_DST, { recursive: true });
+  let copied = 0;
+  for (const entry of readdirSync(IMAGES_SRC, { withFileTypes: true })) {
+    if (entry.isFile()) {
+      copyFileSync(
+        join(IMAGES_SRC, entry.name),
+        join(IMAGES_DST, entry.name)
+      );
+      copied++;
+    }
+  }
+  if (copied > 0) console.log(`✓ images — ${copied} fichier(s) copié(s) vers public/images/`);
+}

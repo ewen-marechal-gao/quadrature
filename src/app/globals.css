@@ -40,13 +40,16 @@
 
 /* ─── Reset & base ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; }
+html { height: 100%; }
 body {
+  height: 100%;
   font-family: var(--font-ui);
   background: var(--book-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+/* overflow:hidden uniquement dans le shell livre, pas sur la landing */
+.book-app { overflow: hidden; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    App shell
@@ -98,8 +101,9 @@ body {
   background: var(--brass-faint);
 }
 
-/* Logo "Quadrature" */
-.top-bar-logo {
+/* Logo "Quadrature" — spécificité (0,2,0) pour résister aux resets
+   Tailwind v4 et aux règles globales injectées par Paged.js via <link>. */
+.top-bar .top-bar-logo {
   font-family: var(--font-ui);
   font-size: 1rem;
   font-weight: 400;
@@ -112,7 +116,7 @@ body {
   text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 -1px 0 rgba(255,220,120,0.08);
   transition: color 0.15s;
 }
-.top-bar-logo:hover { color: var(--brass-bright); }
+.top-bar .top-bar-logo:hover { color: var(--brass-bright); }
 
 /* Séparateur "—" et titre de section */
 .top-bar-sep {
@@ -133,9 +137,62 @@ body {
   letter-spacing: 0.04em;
 }
 
+/* ─── Sélecteur de langue ─────────────────────────────────────────────────── */
+
+.locale-switcher {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-left: auto;   /* Pousse le groupe [locale + PDF] vers la droite */
+}
+
+.locale-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  user-select: none;
+}
+
+/* Locale active */
+.locale-btn--active {
+  color: #1a1008;
+  background: var(--brass);
+  border-color: var(--brass);
+}
+
+/* Locale disponible mais non active */
+.locale-btn:not(.locale-btn--active):not(.locale-btn--disabled) {
+  color: var(--panel-muted);
+  border-color: rgba(196,154,69,0.30);
+}
+.locale-btn:not(.locale-btn--active):not(.locale-btn--disabled):hover {
+  color: var(--brass-bright);
+  border-color: var(--brass);
+  background: var(--brass-faint);
+}
+
+/* Locale désactivée (contenu non disponible) */
+.locale-btn--disabled {
+  color: rgba(160,138,105,0.30);
+  border-color: rgba(160,138,105,0.15);
+  cursor: not-allowed;
+}
+
+/* ─── Bouton télécharger PDF ──────────────────────────────────────────────── */
+
 /* Bouton télécharger PDF */
 .top-bar-download {
-  margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -384,6 +441,120 @@ body {
   flex-shrink: 0;
 }
 
+/* Titre de livre dans la top bar */
+.top-bar-book {
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  color: var(--brass);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* Lien retour bibliothèque dans la sidebar */
+.sidebar-back {
+  padding: 10px 14px 6px;
+}
+.sidebar-back-link {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--panel-muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+.sidebar-back-link:hover { color: var(--brass-bright); }
+
+/* Sidebar — liens bouton (navigation sans URL) */
+.sidebar-link {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* ─── Sidebar : groupes de livres ────────────────────────────────────────── */
+
+.sidebar-book { margin-bottom: 2px; }
+
+/* En-tête de livre — même style que sidebar-section-title mais bouton */
+.sidebar-book-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 14px 4px;
+  font-family: var(--font-ui);
+  font-size: 0.58rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.20em;
+  color: var(--brass-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s;
+}
+.sidebar-book-header:hover {
+  color: var(--brass-bright);
+}
+/* Livre courant : laiton plus vif */
+.sidebar-book-header--active {
+  color: var(--brass);
+}
+
+.sidebar-book-header-title {
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+/* Ligne décorative extensible entre le titre et la flèche */
+.sidebar-book-header-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(196,154,69,0.28) 0%, transparent 100%);
+  margin: 0 4px;
+}
+
+.sidebar-book-header-chevron {
+  font-size: 0.55rem;
+  opacity: 0.65;
+  flex-shrink: 0;
+  transition: transform 0.18s;
+}
+
+/* ─── h2 sous-items de la section active ─────────────────────────────────── */
+
+.sidebar-h2-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 2px;
+}
+
+.sidebar-h2-item {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 2px 14px 2px 26px;
+  font-family: var(--font-ui);
+  font-size: 0.74rem;
+  color: var(--panel-muted);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-h2-item::before {
+  content: '–';
+  flex-shrink: 0;
+  opacity: 0.45;
+}
+
 /* ─── Print ──────────────────────────────────────────────────────────────── */
 @media print {
   .top-bar, .book-sidebar, .book-arrow { display: none !important; }
@@ -391,4 +562,234 @@ body {
   .book-area  { overflow: visible; }
   .book-outer { display: block; }
   .book-center { display: block; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Landing page
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.landing {
+  position: relative;
+  width: 100vw;
+  min-height: 100vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Fond carte ─────────────────────────────────────────────────────────── */
+
+.landing-map {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Dérive lente et imperceptible de la carte */
+@keyframes mapDrift {
+  0%   { transform: scale(1.10) translate(0%,    0%); }
+  25%  { transform: scale(1.10) translate(-2.5%, -1.5%); }
+  50%  { transform: scale(1.10) translate(-1%,   -3%); }
+  75%  { transform: scale(1.10) translate(-3%,   -1%); }
+  100% { transform: scale(1.10) translate(0%,    0%); }
+}
+
+.landing-map-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: mapDrift 90s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+/* Vignette sombre par-dessus la carte */
+.landing-map-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(8,4,0,0.52) 0%, rgba(8,4,0,0.78) 100%),
+    linear-gradient(180deg, rgba(8,4,0,0.50) 0%, rgba(16,10,6,0.70) 100%);
+}
+
+/* ─── Contenu ────────────────────────────────────────────────────────────── */
+
+.landing-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 24px 60px;
+  min-height: 100vh;
+}
+
+/* ─── En-tête ────────────────────────────────────────────────────────────── */
+
+.landing-header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.landing-title {
+  font-family: var(--font-ui);
+  font-size: clamp(2.8rem, 7vw, 5.5rem);
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  text-shadow:
+    0 2px 24px rgba(196,154,69,0.35),
+    0 1px 0 rgba(0,0,0,0.8);
+  margin-bottom: 12px;
+}
+
+.landing-subtitle {
+  font-family: var(--font-ui);
+  font-size: clamp(0.8rem, 2vw, 1rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--panel-muted);
+}
+
+/* ─── Grille de livres ───────────────────────────────────────────────────── */
+
+.landing-books {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 1100px;
+}
+
+.landing-book-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 24px 22px;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+
+  /* Panneau bois sombre avec texture grain */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E"),
+    linear-gradient(145deg, #1c1408 0%, #110d06 60%, #0e0b05 100%);
+  border: 1px solid rgba(196,154,69,0.22);
+  border-radius: 3px;
+
+  transition: border-color 0.2s, background 0.2s, transform 0.18s, box-shadow 0.2s;
+}
+
+/* Trait laiton gauche — révèle au survol */
+.landing-book-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--brass);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.22s ease;
+}
+
+.landing-book-card:hover::before { transform: scaleY(1); }
+.landing-book-card:hover {
+  border-color: rgba(196,154,69,0.55);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E"),
+    linear-gradient(145deg, #241a0a 0%, #191009 60%, #110d07 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(196,154,69,0.18);
+}
+
+.landing-book-title {
+  font-family: var(--font-ui);
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--brass-bright);
+}
+
+.landing-book-subtitle {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brass-muted);
+  margin-bottom: 4px;
+}
+
+.landing-book-desc {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--panel-muted);
+  line-height: 1.55;
+  flex: 1;
+}
+
+.landing-book-arrow {
+  align-self: flex-end;
+  font-size: 1rem;
+  color: var(--brass-muted);
+  transition: color 0.15s, transform 0.15s;
+  margin-top: 8px;
+}
+.landing-book-card:hover .landing-book-arrow {
+  color: var(--brass);
+  transform: translateX(3px);
+}
+
+/* Carte de livre désactivée (locale non disponible) */
+.landing-book-card--disabled {
+  opacity: 0.38;
+  cursor: default;
+  pointer-events: none;
+}
+.landing-book-card--disabled::before { display: none; }
+
+/* ─── Sélecteur de langue sur la landing ─────────────────────────────────── */
+
+/* Coin supérieur droit, par-dessus la carte */
+.landing-locale {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 20;
+}
+
+/* Sur la landing, les boutons ont un fond semi-transparent pour lisibilité */
+.landing .locale-btn:not(.locale-btn--active):not(.locale-btn--disabled) {
+  background: rgba(26,16,8,0.55);
+  border-color: rgba(196,154,69,0.40);
+  color: var(--panel-text);
+  backdrop-filter: blur(4px);
+}
+.landing .locale-btn:not(.locale-btn--active):not(.locale-btn--disabled):hover {
+  color: var(--brass-bright);
+  border-color: var(--brass);
+  background: rgba(26,16,8,0.75);
+}
+.landing .locale-btn--active {
+  background: var(--brass);
+  color: #1a1008;
+}
+
+/* Bannière "traduction en cours" */
+.landing-locale-notice {
+  width: 100%;
+  max-width: 1100px;
+  margin-bottom: 24px;
+  padding: 12px 20px;
+  background: rgba(26,16,8,0.70);
+  border: 1px solid rgba(196,154,69,0.25);
+  border-radius: 3px;
+  backdrop-filter: blur(6px);
+
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  color: var(--panel-muted);
+  text-align: center;
 }
