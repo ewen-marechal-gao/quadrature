@@ -200,10 +200,10 @@ async function parseMarkdownFile(
 // resolves to /rules/core/etats (not /rules/etats).
 //
 // Examples (from core/ressources.md, fileDir = ["core"]):
-//   [text](etats.md)         → [text](/rules/core/etats)
-//   [text](./etats.md)       → [text](/rules/core/etats)
-//   [text](../core/etats.md) → [text](/rules/core/etats)
-//   [text](combat.md#sec)    → [text](/rules/core/combat#sec)
+//   [text](etats.md)         → [text](/rules/core/etats/)
+//   [text](./etats.md)       → [text](/rules/core/etats/)
+//   [text](../core/etats.md) → [text](/rules/core/etats/)
+//   [text](combat.md#sec)    → [text](/rules/core/combat/#sec)
 
 function rewriteLinks(content: string, slug: string[]): string {
   // Directory of the current file: ["core", "ressources"] → ["core"]

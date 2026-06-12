@@ -24,7 +24,7 @@
 import { useEffect, useRef } from "react";
 import { useBook } from "@/lib/context";
 import { BOOKS } from "@/lib/nav";
-import { loadPagedScript, computeOffset, applyGlobalPageNumbers, applyPageRefs } from "@/lib/pagedjs";
+import { loadPagedScript, computeOffset, applyGlobalPageNumbers, applyPageRefs, getPagedPreviewer } from "@/lib/pagedjs";
 import { renderCache, getVault, type CachedRender } from "@/lib/pagedCache";
 
 interface Props {
@@ -211,17 +211,15 @@ async function renderAndCache(
   document.body.appendChild(container);
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Paged = (window as any).Paged;
-    if (!Paged?.Previewer) return null;
+    const PreviewerClass = getPagedPreviewer();
+    if (!PreviewerClass) return null;
 
-    const paged = new Paged.Previewer();
+    const paged = new PreviewerClass();
 
     // Éviter le clignotement causé par la ré-injection des baseStyles Paged.js
     const alreadySetUp = !!document.querySelector("style[data-pagedjs-inserted-styles]");
     if (alreadySetUp) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      paged.polisher.setup = function(this: any) {
+      paged.polisher.setup = function(this: { styleEl: HTMLStyleElement; styleSheet: CSSStyleSheet | null }) {
         this.styleEl = document.createElement("style");
         document.head.appendChild(this.styleEl);
         this.styleSheet = this.styleEl.sheet;

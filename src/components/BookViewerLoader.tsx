@@ -8,32 +8,13 @@
  * Note Next.js 16 : l'option ssr:false doit être dans un Client Component.
  */
 import dynamic from "next/dynamic";
+import { BookViewerSkeleton } from "@/components/BookViewerSkeleton";
 
 const BookViewerDynamic = dynamic(
   () => import("./BookViewer").then((m) => ({ default: m.BookViewer })),
   {
     ssr: false,
-    loading: () => (
-      <div className="book-outer">
-        <button
-          className="book-arrow book-arrow--prev"
-          disabled
-          aria-label="Page précédente"
-        >
-          ‹
-        </button>
-        <div className="book-center">
-          <div className="book-status">Composition en cours…</div>
-        </div>
-        <button
-          className="book-arrow book-arrow--next"
-          disabled
-          aria-label="Page suivante"
-        >
-          ›
-        </button>
-      </div>
-    ),
+    loading: () => <BookViewerSkeleton />,
   }
 );
 

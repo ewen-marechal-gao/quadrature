@@ -22,6 +22,11 @@
   --brass-muted:    #806230;
   --brass-faint:    rgba(196,154,69,0.10);
   --brass-glow:     rgba(196,154,69,0.18);
+  --brass-border:   rgba(196,154,69,0.22);  /* bordures, scrollbar */
+  --brass-subtle:   rgba(196,154,69,0.30);  /* états secondaires */
+  --brass-mid:      rgba(196,154,69,0.35);  /* lignes décoratives */
+  --brass-focus:    rgba(196,154,69,0.40);  /* survol boutons landing */
+  --brass-strong:   rgba(196,154,69,0.55);  /* survol carte actif */
 
   /* ── Fond livre & parchemin ──────────────────────────────────── */
   --book-bg:        #1a1510;          /* fond sombre derrière les pages */
@@ -30,6 +35,12 @@
   /* ── Texte panneau ───────────────────────────────────────────── */
   --panel-text:      rgba(222,208,178,0.85);
   --panel-muted:     rgba(160,138,105,0.65);
+
+  /* ── Textures SVG ───────────────────────────────────────────── */
+  /* Grain fractalNoise seed=5 — panneaux (top-bar, sidebar) */
+  --noise-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E");
+  /* Grain fractalNoise seed=7 — cartes landing */
+  --noise-card:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E");
 
   /* ── Global ──────────────────────────────────────────────────── */
   --accent:    var(--brass);
@@ -73,7 +84,7 @@ body {
   z-index: 10;
 
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E"),
+    var(--noise-panel),
     linear-gradient(180deg, #1e1610 0%, #141008 55%, #100c06 100%);
   border-bottom: 1px solid var(--panel-border);
   box-shadow: 0 2px 16px rgba(0,0,0,0.55);
@@ -174,7 +185,7 @@ body {
 /* Locale disponible mais non active */
 .locale-btn:not(.locale-btn--active):not(.locale-btn--disabled) {
   color: var(--panel-muted);
-  border-color: rgba(196,154,69,0.30);
+  border-color: var(--brass-subtle);
 }
 .locale-btn:not(.locale-btn--active):not(.locale-btn--disabled):hover {
   color: var(--brass-bright);
@@ -190,14 +201,12 @@ body {
 }
 
 /* ─── Bouton télécharger PDF ──────────────────────────────────────────────── */
-
-/* Bouton télécharger PDF */
 .top-bar-download {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   background: transparent;
-  border: 1px solid rgba(196,154,69,0.35);
+  border: 1px solid var(--brass-mid);
   border-radius: 3px;
   color: var(--brass-muted);
   font-family: var(--font-ui);
@@ -236,7 +245,7 @@ body {
   transition: width 0.22s ease, min-width 0.22s ease;
 
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E"),
+    var(--noise-panel),
     linear-gradient(180deg, #161008 0%, #100c06 40%, #130e07 100%);
   border-right: 1px solid var(--panel-border);
 }
@@ -245,7 +254,7 @@ body {
 .book-sidebar::-webkit-scrollbar { width: 4px; }
 .book-sidebar::-webkit-scrollbar-track { background: transparent; }
 .book-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(196,154,69,0.22);
+  background: var(--brass-border);
   border-radius: 2px;
 }
 .book-sidebar::-webkit-scrollbar-thumb:hover {
@@ -284,22 +293,27 @@ body {
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, rgba(196,154,69,0.35) 0%, transparent 100%);
+  background: linear-gradient(90deg, var(--brass-mid) 0%, transparent 100%);
 }
 
 .sidebar-items { list-style: none; }
 
-/* Liens de navigation */
+/* Liens de navigation — bouton sans style naviguant via le contexte */
 .sidebar-link {
   display: flex;
   align-items: baseline;
   gap: 5px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;                           /* reset bouton */
+  border-left: 2px solid transparent;    /* trait gauche pour état actif */
+  cursor: pointer;
   font-family: var(--font-ui);
   font-size: 0.82rem;
   color: var(--panel-text);
   text-decoration: none;
   padding: 4px 14px 4px 16px;
-  border-left: 2px solid transparent;
   transition: color 0.12s, background 0.12s, border-color 0.12s;
 }
 .sidebar-link:hover {
@@ -402,9 +416,9 @@ body {
 
   /* Panneau métal / bois avec bordure laiton */
   background: rgba(14, 10, 5, 0.82);
-  border: 1px solid rgba(196,154,69,0.30);
+  border: 1px solid var(--brass-subtle);
   border-radius: 4px;
-  color: rgba(196,154,69,0.55);
+  color: var(--brass-strong);
   font-size: 1.8rem;
 
   backdrop-filter: blur(4px);
@@ -464,15 +478,6 @@ body {
   transition: color 0.15s;
 }
 .sidebar-back-link:hover { color: var(--brass-bright); }
-
-/* Sidebar — liens bouton (navigation sans URL) */
-.sidebar-link {
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
 
 /* ─── Sidebar : groupes de livres ────────────────────────────────────────── */
 
@@ -640,7 +645,7 @@ body {
   text-transform: uppercase;
   color: var(--brass);
   text-shadow:
-    0 2px 24px rgba(196,154,69,0.35),
+    0 2px 24px var(--brass-mid),
     0 1px 0 rgba(0,0,0,0.8);
   margin-bottom: 12px;
 }
@@ -674,9 +679,9 @@ body {
 
   /* Panneau bois sombre avec texture grain */
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E"),
+    var(--noise-card),
     linear-gradient(145deg, #1c1408 0%, #110d06 60%, #0e0b05 100%);
-  border: 1px solid rgba(196,154,69,0.22);
+  border: 1px solid var(--brass-border);
   border-radius: 3px;
 
   transition: border-color 0.2s, background 0.2s, transform 0.18s, box-shadow 0.2s;
@@ -696,9 +701,9 @@ body {
 
 .landing-book-card:hover::before { transform: scaleY(1); }
 .landing-book-card:hover {
-  border-color: rgba(196,154,69,0.55);
+  border-color: var(--brass-strong);
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E"),
+    var(--noise-card),
     linear-gradient(145deg, #241a0a 0%, #191009 60%, #110d07 100%);
   transform: translateY(-2px);
   box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(196,154,69,0.18);
@@ -762,7 +767,7 @@ body {
 /* Sur la landing, les boutons ont un fond semi-transparent pour lisibilité */
 .landing .locale-btn:not(.locale-btn--active):not(.locale-btn--disabled) {
   background: rgba(26,16,8,0.55);
-  border-color: rgba(196,154,69,0.40);
+  border-color: var(--brass-focus);
   color: var(--panel-text);
   backdrop-filter: blur(4px);
 }
@@ -792,4 +797,451 @@ body {
   letter-spacing: 0.05em;
   color: var(--panel-muted);
   text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Visionneuse livre — règles hors du périmètre Paged.js
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Saut de colonne forcé dans les pages 2 colonnes du livre.
+   Vit ici (et non dans book.css) car le Polisher de Paged.js retire
+   les propriétés break-* des feuilles qu'il traite — voir book.css
+   §Utilitaires inline pour le contexte complet. */
+.pdf-col-break { break-before: column; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Rubrique Cartes — galerie, sélection et impression
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Code couleur des cartes (universal_actions.md §Code couleur) */
+  --card-mouvement:    #2e7f8f;  /* cyan */
+  --card-offensive:    #a03a2a;  /* rouge */
+  --card-defensive:    #2e5f8f;  /* bleu */
+  --card-guerison:     #3e7f44;  /* vert */
+  --card-amelioration: #6f4f8f;  /* violet */
+  --card-reaction:     #c8a23a;  /* liseré jaune des réactions */
+  --card-paper:        #f8f2e2;  /* parchemin */
+  --card-ink:          #2a2218;
+}
+
+/* ─── Shell de la rubrique ───────────────────────────────────────────────── */
+
+.cards-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--book-bg);
+}
+
+.cards-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  height: var(--bar-height);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  background:
+    var(--noise-panel),
+    linear-gradient(180deg, #1e1610 0%, #141008 55%, #100c06 100%);
+  border-bottom: 1px solid var(--panel-border);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.55);
+}
+
+.cards-back {
+  color: var(--panel-muted);
+  text-decoration: none;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+.cards-back:hover { color: var(--brass-bright); background: var(--brass-faint); }
+
+.cards-title {
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+  white-space: nowrap;
+}
+
+.cards-search {
+  flex: 1;
+  max-width: 420px;
+  padding: 6px 12px;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--panel-text);
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--brass-border);
+  border-radius: 3px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.cards-search:focus { border-color: var(--brass-strong); }
+.cards-search::placeholder { color: var(--panel-muted); }
+
+.cards-print-summary {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  color: var(--panel-text);
+  white-space: nowrap;
+}
+.cards-hint { color: var(--panel-muted); }
+
+.cards-btn {
+  padding: 5px 14px;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: #1a1008;
+  background: var(--brass);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cards-btn:hover { background: var(--brass-bright); }
+.cards-btn-clear {
+  background: none;
+  border: 1px solid var(--brass-border);
+  color: var(--panel-muted);
+}
+.cards-btn-clear:hover { background: var(--brass-faint); color: var(--panel-text); }
+
+/* Toggle "Mode éco" — fond des cartes blanc pour économiser l'encre */
+.cards-eco-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: var(--panel-muted);
+  user-select: none;
+}
+.cards-eco-toggle:hover { color: var(--panel-text); }
+.cards-eco-toggle input { accent-color: var(--brass); cursor: pointer; }
+
+/* Mode éco actif : parchemin → blanc, à l'écran comme sur les planches */
+.cards-app[data-eco] .action-card,
+.cards-print[data-eco] .action-card {
+  background: #ffffff;
+}
+
+/* ─── Filtres ────────────────────────────────────────────────────────────── */
+
+.cards-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.cards-chip {
+  padding: 4px 12px;
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  color: var(--panel-muted);
+  background: none;
+  border: 1px solid var(--brass-border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.cards-chip:hover { color: var(--panel-text); border-color: var(--brass-subtle); }
+.cards-chip--on {
+  color: #1a1008;
+  background: var(--brass);
+  border-color: var(--brass);
+}
+
+.cards-filter-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--panel-border);
+  margin: 0 4px;
+}
+
+/* ─── Galerie ────────────────────────────────────────────────────────────── */
+
+.cards-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
+  gap: 18px;
+  padding: 8px 16px 48px;
+  align-items: start;
+}
+
+.cards-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 0;
+  font-family: var(--font-ui);
+  color: var(--panel-muted);
+}
+
+.cards-cell { display: flex; flex-direction: column; gap: 8px; }
+
+.cards-cell-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.cards-qty-btn {
+  width: 26px;
+  height: 26px;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--panel-text);
+  background: none;
+  border: 1px solid var(--brass-border);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cards-qty-btn:hover:not(:disabled) { background: var(--brass-faint); border-color: var(--brass-subtle); }
+.cards-qty-btn:disabled { opacity: 0.3; cursor: default; }
+
+.cards-qty {
+  min-width: 22px;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--panel-muted);
+}
+.cards-qty--on { color: var(--brass-bright); }
+
+/* ─── La carte d'action ──────────────────────────────────────────────────── */
+
+.action-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  aspect-ratio: 63.5 / 88.9;          /* format carte à jouer */
+  overflow: hidden;
+  background: var(--card-paper);
+  color: var(--card-ink);
+  /* Angles droits : les cartes sont destinées à la découpe aux ciseaux */
+  border-radius: 0;
+  border: 1px solid rgba(0,0,0,0.35);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.45);
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  line-height: 1.32;
+}
+
+/* Liseré jaune des réactions */
+.action-card[data-type="reaction"] {
+  box-shadow: 0 0 0 2.5px var(--card-reaction), 0 2px 10px rgba(0,0,0,0.45);
+}
+
+/* Bandeau d'en-tête coloré selon la catégorie */
+.ac-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px 5px 4.4em;          /* dégage la pastille d'initiative */
+  min-height: 2.6em;
+  color: #f8f2e2;
+  flex-shrink: 0;
+}
+.action-card[data-categorie="mouvement"]    .ac-header { background: var(--card-mouvement); }
+.action-card[data-categorie="offensive"]    .ac-header { background: var(--card-offensive); }
+.action-card[data-categorie="defensive"]    .ac-header { background: var(--card-defensive); }
+.action-card[data-categorie="guerison"]     .ac-header { background: var(--card-guerison); }
+.action-card[data-categorie="amelioration"] .ac-header { background: var(--card-amelioration); }
+
+/* Pastille d'initiative — cercle bordé laiton, fond de la teinte de l'en-tête,
+   ancrée dans le coin supérieur gauche et débordant sur la ligne de prérequis */
+.ac-initiative {
+  position: absolute;
+  top: 0.18em;
+  left: 0.18em;
+  z-index: 1;
+  width: 2.6em;
+  height: 2.6em;
+  font-size: 1.45em;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  /* bordure en em : épaisseur proportionnelle, à l'écran comme à l'impression */
+  border: 0.2em solid var(--brass);
+  color: #f8f2e2;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+}
+.action-card[data-categorie="mouvement"]    .ac-initiative { background: var(--card-mouvement); }
+.action-card[data-categorie="offensive"]    .ac-initiative { background: var(--card-offensive); }
+.action-card[data-categorie="defensive"]    .ac-initiative { background: var(--card-defensive); }
+.action-card[data-categorie="guerison"]     .ac-initiative { background: var(--card-guerison); }
+.action-card[data-categorie="amelioration"] .ac-initiative { background: var(--card-amelioration); }
+
+.ac-name {
+  flex: 1;
+  font-size: 1.28em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ac-cost { flex-shrink: 0; letter-spacing: 0.05em; }
+
+.ac-prereq {
+  padding: 2px 7px 2px 4.5em;          /* la pastille déborde sur cette ligne */
+  font-size: 0.92em;
+  font-style: italic;
+  background: rgba(0,0,0,0.08);
+  border-bottom: 1px solid rgba(0,0,0,0.10);
+  flex-shrink: 0;
+}
+
+/* Sans ligne de prérequis, le débordement de la pastille empiète sur le corps :
+   on dégage la première ligne. */
+.action-card:not(:has(.ac-prereq)) .ac-body > :first-child {
+  padding-left: 3.7em;
+  min-height: 1.6em;
+}
+
+.ac-body {
+  flex: 1;
+  padding: 5px 7px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5px;
+  overflow: hidden;
+}
+
+/* Bloc bas de carte : texte d'ambiance + notes, affiché si la place le permet */
+.ac-bottom {
+  margin-top: auto;
+  padding-top: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ac-desc {
+  font-style: italic;
+  text-align: center;
+  color: rgba(42,34,24,0.72);
+}
+
+.ac-field { display: flex; gap: 4px; }
+.ac-field-icon { flex-shrink: 0; }
+
+/* Séparateur de sections — trait sur ½ largeur avec losange central ◇ */
+.ac-sep {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  width: 50%;
+  margin: 2px auto;
+  flex-shrink: 0;
+}
+.ac-sep::before,
+.ac-sep::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(42,34,24,0.35);
+}
+.ac-sep-diamond {
+  width: 0.42em;
+  height: 0.42em;
+  flex-shrink: 0;
+  border: 1px solid rgba(42,34,24,0.5);
+  transform: rotate(45deg);
+}
+
+.ac-upgrade {
+  background: rgba(196,154,69,0.16);
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+
+.ac-table {
+  border-top: 1px solid rgba(0,0,0,0.15);
+  padding-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5px;
+}
+.ac-table-title { font-style: italic; color: rgba(42,34,24,0.75); }
+.ac-table-row { display: flex; gap: 5px; }
+.ac-table-cost {
+  flex-shrink: 0;
+  width: 1.4em;
+  text-align: center;
+  font-weight: 700;
+  background: rgba(0,0,0,0.08);
+  border-radius: 2px;
+}
+
+.ac-notes {
+  font-size: 0.9em;
+  font-style: italic;
+  color: rgba(42,34,24,0.65);
+}
+
+/* ─── Planches d'impression ──────────────────────────────────────────────── */
+
+/* À l'écran : invisibles. Le DOM existe pour que window.print() les rende. */
+.cards-print { display: none; }
+
+@media print {
+  @page { size: A4 landscape; margin: 8mm; }
+
+  /* Seules les planches sont imprimées */
+  .cards-app { display: none !important; }
+
+  .cards-print { display: block; }
+
+  .print-page {
+    width: 281mm;                       /* 297 − 2×8 de marges */
+    height: 194mm;                      /* 210 − 2×8 */
+    display: grid;
+    grid-template-columns: repeat(4, 63.5mm);
+    grid-template-rows: repeat(2, 88.9mm);
+    gap: 4mm;
+    justify-content: center;
+    align-content: center;
+    page-break-after: always;
+    break-after: page;
+  }
+  .print-page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* Cartes aux dimensions physiques exactes, angles droits (découpe ciseaux),
+     bord léger servant de trait de coupe */
+  .print-page .action-card {
+    width: 63.5mm;
+    height: 88.9mm;
+    aspect-ratio: auto;
+    font-size: 5.6pt;
+    border-radius: 0;
+    border: 0.3pt solid #999;
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .print-page .action-card[data-type="reaction"] {
+    border: 0.8mm solid var(--card-reaction);
+  }
 }

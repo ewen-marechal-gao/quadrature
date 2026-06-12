@@ -13,6 +13,7 @@
  * remonter l'arbre entier quand le livre change.
  */
 
+import { type Locale } from "@/lib/nav";
 import { BookProvider } from "@/lib/context";
 import { BookPreloader } from "@/components/BookPreloader";
 import { BookShellLayout } from "@/components/BookShellLayout";
@@ -21,7 +22,7 @@ interface Props {
   bookId: string;
   slugs: string[];
   /** Locale active (ex : "fr", "en") — transmise au preloader et au layout. */
-  locale: string;
+  locale: Locale;
   children: React.ReactNode;
 }
 

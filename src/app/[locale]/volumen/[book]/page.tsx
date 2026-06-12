@@ -1,16 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { LOCALES, BOOKS, getBookById, resolveLocale, localize } from "@/lib/nav";
+import { getBookById, resolveLocale, localize } from "@/lib/nav";
 import { getPageBySlug } from "@/lib/content";
 import { PageInitializer } from "@/components/PageInitializer";
-
-export function generateStaticParams() {
-  return LOCALES
-    .filter((l) => l.enabled)
-    .flatMap((l) =>
-      BOOKS.map((b) => ({ locale: l.id, book: b.id }))
-    );
-}
 
 export async function generateMetadata({
   params,

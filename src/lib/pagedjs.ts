@@ -9,6 +9,40 @@
 
 import { BOOKS, getBookForSlug } from "./nav";
 
+// ─── window.Paged — types ────────────────────────────────────────────────────
+
+interface PagedPolisherCtx {
+  styleEl: HTMLStyleElement;
+  styleSheet: CSSStyleSheet | null;
+}
+
+/** Interface minimale pour une instance window.Paged.Previewer. */
+export interface PagedPreviewer {
+  preview(
+    html: string,
+    stylesheets: string[],
+    container: HTMLElement,
+  ): Promise<{ total: number }>;
+  polisher: {
+    setup: (this: PagedPolisherCtx) => CSSStyleSheet | null;
+  };
+}
+
+declare global {
+  interface Window {
+    Paged?: { Previewer: new () => PagedPreviewer };
+  }
+}
+
+/**
+ * Retourne le constructeur `window.Paged.Previewer` après chargement du script.
+ * À appeler uniquement après `await loadPagedScript()`.
+ * Retourne null si Paged.js n'est pas encore disponible.
+ */
+export function getPagedPreviewer(): (new () => PagedPreviewer) | null {
+  return window.Paged?.Previewer ?? null;
+}
+
 const PAGED_SCRIPT_SRC = "/pagedjs/paged.js";
 
 let state: "idle" | "loading" | "ready" = "idle";

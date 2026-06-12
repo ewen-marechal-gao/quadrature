@@ -19,7 +19,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useBook } from "@/lib/context";
-import { loadPagedScript, computeOffset, applyGlobalPageNumbers } from "@/lib/pagedjs";
+import { loadPagedScript, computeOffset, applyGlobalPageNumbers, getPagedPreviewer } from "@/lib/pagedjs";
 import { renderCache, getVault } from "@/lib/pagedCache";
 
 /** Padding (px) autour de la page dans le viewer (espace pour l'ombre + respiration). */
@@ -54,7 +54,6 @@ interface Props {
 export function BookViewer({ html, slug }: Props) {
   const outerRef = useRef<HTMLDivElement>(null);
   const pagedRef = useRef<HTMLDivElement>(null);
-
 
   const { setPageCount, pageCounts, bookSlugs, navigateTo } = useBook();
 
@@ -197,10 +196,6 @@ export function BookViewer({ html, slug }: Props) {
     const outer   = outerRef.current;
     if (!visible || !outer) return;
 
-    // La navigation est désormais client-side (pas de changement d'URL).
-    // startFromEnd n'est plus utilisé — la section cible démarre toujours page 1.
-    const startFromEnd = false;
-
     let cancelled   = false;
     let stagingEl: HTMLElement | null = null;
 
@@ -214,7 +209,7 @@ export function BookViewer({ html, slug }: Props) {
       const { pagesArea, total, pageWidth: pageW, pageHeight: pageH } = cached;
 
       const scale     = Math.min(availW / pageW, availH / pageH);
-      const startPage = startFromEnd ? Math.max(0, total - 1) : 0;
+      const startPage = 0;
 
       pagesArea.style.cssText = carouselCss(scale, startPage, pageW, total, pageH);
 
@@ -265,11 +260,10 @@ export function BookViewer({ html, slug }: Props) {
         await loadPagedScript();
         if (cancelled) return;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const Paged = (window as any).Paged;
-        if (!Paged?.Previewer) throw new Error("window.Paged.Previewer introuvable");
+        const PreviewerClass = getPagedPreviewer();
+        if (!PreviewerClass) throw new Error("window.Paged.Previewer introuvable");
 
-        const paged = new Paged.Previewer();
+        const paged = new PreviewerClass();
         const flow  = await paged.preview(html, ["/book.css"], staging);
         if (cancelled) return;
 
@@ -296,7 +290,7 @@ export function BookViewer({ html, slug }: Props) {
         const pageW = firstPage.offsetWidth;
         const pageH = firstPage.offsetHeight;
         const scale     = Math.min(availW / pageW, availH / pageH);
-        const startPage = startFromEnd ? Math.max(0, total - 1) : 0;
+        const startPage = 0;
 
         pagesArea.style.cssText  = carouselCss(scale, startPage, pageW, total, pageH);
         staging.style.cssText    = containerCss(pageW, pageH, scale);

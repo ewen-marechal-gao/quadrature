@@ -11,11 +11,11 @@
  */
 
 import Link from "next/link";
-import { BOOKS, LOCALES, localize } from "@/lib/nav";
+import { type Locale, BOOKS, LOCALES, localize } from "@/lib/nav";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
 interface Props {
-  locale: string;
+  locale: Locale;
 }
 
 export function LandingPage({ locale }: Props) {
@@ -46,13 +46,24 @@ export function LandingPage({ locale }: Props) {
         {!localeEnabled && (
           <div className="landing-locale-notice">
             <span>
-              🌐 La traduction anglaise est en cours de préparation.
+              La traduction anglaise est en cours de préparation.
               Revenez bientôt !
             </span>
           </div>
         )}
 
         <nav className="landing-books" aria-label="Bibliothèque">
+          {localeEnabled && (
+            <Link href={`/${locale}/cartes/`} className="landing-book-card">
+              <span className="landing-book-title">Cartes d'action</span>
+              <span className="landing-book-subtitle">Outil de table</span>
+              <span className="landing-book-desc">
+                Recherchez les cartes d'action, composez votre sélection et
+                imprimez-la sur des planches A4 (8 cartes par page).
+              </span>
+              <span className="landing-book-arrow">→</span>
+            </Link>
+          )}
           {BOOKS.map((book) =>
             localeEnabled ? (
               <Link

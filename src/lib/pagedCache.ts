@@ -7,6 +7,20 @@
  *
  * Cycle de vie d'un pagesArea :
  *   staging (render initial) → visible (affiché) → vault (section quittée) → visible (revisitée)
+ *
+ * ── Comportement singleton ───────────────────────────────────────────────────
+ * `renderCache` et `_vault` sont des variables module-level — des singletons
+ * persistants sur toute la durée de vie de l'application côté client.
+ *
+ * Ils ne sont PAS vidés lors d'un changement de livre, et c'est voulu :
+ *   - BookShell reçoit `key={bookId}` qui force React à démonter/remonter
+ *     BookProvider, BookPreloader et BookShellLayout. Toutes les données de
+ *     contexte (pageCounts, bookSlugs…) sont réinitialisées.
+ *   - Le cache DOM, lui, reste intact entre les livres pour que BookPreloader
+ *     puisse réutiliser les rendus déjà faits lors d'une navigation retour.
+ *   - Le vault (#__paged-vault) reste attaché au <body> : il contient des
+ *     éléments DOM vivants qui ne doivent pas être perdus entre deux montages
+ *     de BookShell.
  */
 
 export interface CachedRender {

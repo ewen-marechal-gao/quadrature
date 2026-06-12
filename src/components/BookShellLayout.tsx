@@ -19,15 +19,16 @@
 
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
-import { getBookById, getTitleForSlug, localize, BOOKS } from "@/lib/nav";
+import { type Locale, getBookById, getTitleForSlug, localize, BOOKS, getBookForSlug } from "@/lib/nav";
 import { useBook } from "@/lib/context";
 import { BookViewer } from "@/components/BookViewerLoader";
+import { BookViewerSkeleton } from "@/components/BookViewerSkeleton";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
 interface Props {
   bookId: string;
   /** Locale active (ex : "fr") — utilisée pour les liens retour et le switcher. */
-  locale: string;
+  locale: Locale;
   children: React.ReactNode;
 }
 
@@ -66,9 +67,7 @@ export function BookShellLayout({ bookId, locale, children }: Props) {
   // Quand on navigue vers une section d'un autre livre, on l'ouvre automatiquement.
   useEffect(() => {
     if (!currentSlug) return;
-    const ownerBook = BOOKS.find(b =>
-      b.sections.some(s => s.slug === currentSlug)
-    );
+    const ownerBook = getBookForSlug(currentSlug);
     if (!ownerBook) return;
     setExpandedBooks(prev => {
       if (prev.has(ownerBook.id)) return prev;
@@ -207,8 +206,8 @@ export function BookShellLayout({ bookId, locale, children }: Props) {
                                 className="sidebar-h2-list"
                                 aria-label="Sous-sections"
                               >
-                                {currentH2s.map((h2text, i) => (
-                                  <li key={i}>
+                                {currentH2s.map((h2text) => (
+                                  <li key={h2text}>
                                     <span className="sidebar-h2-item">{h2text}</span>
                                   </li>
                                 ))}
@@ -230,25 +229,7 @@ export function BookShellLayout({ bookId, locale, children }: Props) {
           {currentHtml ? (
             <BookViewer html={currentHtml} slug={currentSlug || undefined} />
           ) : (
-            <div className="book-outer">
-              <button
-                className="book-arrow book-arrow--prev"
-                disabled
-                aria-label="Page précédente"
-              >
-                ‹
-              </button>
-              <div className="book-center">
-                <div className="book-status">Composition en cours…</div>
-              </div>
-              <button
-                className="book-arrow book-arrow--next"
-                disabled
-                aria-label="Page suivante"
-              >
-                ›
-              </button>
-            </div>
+            <BookViewerSkeleton />
           )}
         </main>
       </div>

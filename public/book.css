@@ -383,6 +383,17 @@ article.pdf-single-col { page: singlecol; }
 /* Saut de page forcé (usage : <div class="pdf-break"></div>) */
 .pdf-break { break-before: page; }
 
+/* Saut de colonne forcé (usage : <div class="pdf-col-break"></div>).
+   Dans une page 2 colonnes, pousse le contenu suivant en colonne
+   droite — permet les mises en page « X à gauche, Y à droite »
+   (ex : caracteristiques.md, caractéristique Corps / Esprit).
+
+   ⚠️ La règle effective vit dans globals.css (.pdf-col-break) : le
+   Polisher de Paged.js retire toute propriété break-* des feuilles
+   qu'il traite (book.css) et pose data-break-before="column", un
+   attribut qu'il n'implémente pas — nos colonnes étant un hack CSS
+   navigateur, seul un break-before hors du périmètre Paged.js opère. */
+
 /* Élément pleine largeur dans une section 2 colonnes.            */
 /* column-span: all interrompt le flux colonne, l'élément s'étend */
 /* sur toute la largeur du .pagedjs_page_content.                 */

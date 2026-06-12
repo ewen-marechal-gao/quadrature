@@ -14,10 +14,10 @@
  */
 
 import Link from "next/link";
-import { LOCALES } from "@/lib/nav";
+import { type Locale, LOCALES } from "@/lib/nav";
 
 interface Props {
-  locale: string;
+  locale: Locale;
   bookId?: string;
 }
 
