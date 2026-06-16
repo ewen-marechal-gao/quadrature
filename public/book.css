@@ -18,8 +18,12 @@
   --brass-book:  #8a6828;   /* accentuation (h4, liens, blockquote) */
   /* Couleur plate — pas de transparence, lisible sur fond blanc (impression)
      comme sur fond parchemin (écran). Équivalent de rgba(138,104,40,0.12)
-     appliqué sur fond blanc. */
-  --brass-faint: #ede5d6;
+     appliqué sur fond blanc.
+     ⚠️ Nommé --parch-faint (et non --brass-faint) : book.css est injecté
+     GLOBALEMENT par Paged.js, donc ce :root fuit dans l'app. globals.css
+     définit déjà --brass-faint = rgba(196,154,69,0.10) pour ses hovers ;
+     réutiliser ce nom l'écraserait par #ede5d6 pendant la lecture. */
+  --parch-faint: #ede5d6;
 }
 
 /* ─── Page format ─────────────────────────────────────────────── */
@@ -218,7 +222,7 @@ td {
 }
 
 tr:nth-child(even) td {
-  background: var(--brass-faint);
+  background: var(--parch-faint);
 }
 
 /* ─── Two-column layout ───────────────────────────────────────── */
@@ -500,7 +504,7 @@ table.pdf-wide { column-span: all; }
 
 /* ── [!note] — note de règle ─────────── */
 .callout-note {
-  background: var(--brass-faint);
+  background: var(--parch-faint);
   border-left: 2pt solid var(--ink-light);
   padding: 5pt 8pt;
 }
