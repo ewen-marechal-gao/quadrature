@@ -10,19 +10,19 @@
     "sections": [
       { "slug": "core/materiel",                      "title": { "fr": "Matériel",             "en": "Materials" } },
       { "slug": "core/glossaire",                     "title": { "fr": "Glossaire",             "en": "Glossary" } },
-      { "slug": "core/caracteristiques",              "title": { "fr": "Caractéristiques",      "en": "Attributes" } },
-      { "slug": "core/jet",                           "title": { "fr": "Jets de dés",           "en": "Dice Rolls" } },
-      { "slug": "core/ressources",                    "title": { "fr": "Ressources",            "en": "Resources" } },
-      { "slug": "core/etats",                         "title": { "fr": "États",                 "en": "Conditions" } },
-      { "slug": "core/furtivite",                     "title": { "fr": "Furtivité",             "en": "Stealth" } },
-      { "slug": "core/combat",                        "title": { "fr": "Combat",                "en": "Combat" } },
       { "slug": "core/personnages",                   "title": { "fr": "Personnages",           "en": "Characters" } },
-      { "slug": "core/traits",                        "title": { "fr": "Traits",                "en": "Traits" } },
+      { "slug": "core/jouer",                         "title": { "fr": "Jouer",                 "en": "Playing" } },
+      { "slug": "core/ressources",                    "title": { "fr": "Ressources",            "en": "Resources" } },
       { "slug": "core/equipement",                    "title": { "fr": "Équipement",            "en": "Equipment" } },
       { "slug": "core/voyager",                       "title": { "fr": "Voyager",               "en": "Travel" } },
+      { "slug": "core/epreuves",                      "title": { "fr": "Épreuves",              "en": "Challenges" } },
+      { "slug": "core/etats",                         "title": { "fr": "États",                 "en": "Conditions" } },
       { "slug": "core/actions/universal_actions",     "title": { "fr": "Actions universelles",  "en": "Universal Actions" } },
       { "slug": "core/actions/attribute_actions",     "title": { "fr": "Actions avancées",      "en": "Advanced Actions" } },
-      { "slug": "core/actions/defense_reactions",     "title": { "fr": "Réactions de défense",  "en": "Defense Reactions" } }
+      { "slug": "core/actions/defense_reactions",     "title": { "fr": "Réactions de défense",  "en": "Defense Reactions" } },
+      { "slug": "core/furtivite",                     "title": { "fr": "Furtivité",             "en": "Stealth" } },
+      { "slug": "core/combat",                        "title": { "fr": "Combat",                "en": "Combat" } },
+      { "slug": "core/traits",                        "title": { "fr": "Traits",                "en": "Traits" } }
     ]
   },
   {

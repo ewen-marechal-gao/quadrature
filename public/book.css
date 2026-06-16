@@ -236,16 +236,16 @@ tr:nth-child(even) td {
   overflow: hidden;
   column-count: 2    !important;
   column-width: auto !important;
-  /* column-gap = 22mm dans la visionneuse ET dans le PDF imprimé.
-     Identique dans les deux cas → mêmes largeurs de colonnes → même reflow.
+  /* column-gap identique visionneuse / PDF → mêmes largeurs de colonnes,
+     même reflow.
 
-     Contrainte Paged.js : this.gap = columnGap − leftMargin doit être ≥ 0.
-       Visionneuse  : leftMargin = 16mm → this.gap = 22−16 = +6mm ✓
-       PDF recto    : leftMargin = 22mm → this.gap = 22−22 =  0   ✓
-       PDF verso    : leftMargin = 16mm → this.gap = 22−16 = +6mm ✓
+     L'ancienne contrainte « columnGap ≥ leftMargin » (détection du
+     débordement de Paged.js : end = bounds.right + columnGap − leftMargin)
+     est levée par le patch appliqué dans scripts/copy-pagedjs.mjs
+     (this.gap = columnGap − 5px) : la gouttière est désormais libre.
 
-     Colonnes résultantes : (259mm − 22mm) / 2 = 118,5mm chacune. */
-  column-gap: 22mm   !important;
+     Colonnes résultantes : (259mm − 12mm) / 2 = 123,5mm chacune. */
+  column-gap: 12mm   !important;
 }
 
 /* .pagedjs_area : pas de colonnes ici (élément enveloppant).    */
@@ -257,8 +257,12 @@ h1 {
   column-span: all;
 }
 
-/* Évite les débordements horizontaux */
-* {
+/* Évite les débordements horizontaux — scopé au CONTENU des pages.
+   ⚠️ Ne pas généraliser à * : Paged.js injecte cette feuille comme style
+   global de l'application ; un `* { max-width:100% }` écraserait la largeur
+   inline du carrousel (.pagedjs_pages, width = pageW × total) et celle des
+   .pagedjs_page, faisant se chevaucher les pages dans la visionneuse. */
+.pagedjs_page_content * {
   max-width: 100%;
   box-sizing: border-box;
 }
@@ -385,14 +389,66 @@ article.pdf-single-col { page: singlecol; }
 
 /* Saut de colonne forcé (usage : <div class="pdf-col-break"></div>).
    Dans une page 2 colonnes, pousse le contenu suivant en colonne
-   droite — permet les mises en page « X à gauche, Y à droite »
-   (ex : caracteristiques.md, caractéristique Corps / Esprit).
+   droite — permet les mises en page « X à gauche, Y à droite ».
 
    ⚠️ La règle effective vit dans globals.css (.pdf-col-break) : le
    Polisher de Paged.js retire toute propriété break-* des feuilles
    qu'il traite (book.css) et pose data-break-before="column", un
    attribut qu'il n'implémente pas — nos colonnes étant un hack CSS
-   navigateur, seul un break-before hors du périmètre Paged.js opère. */
+   navigateur, seul un break-before hors du périmètre Paged.js opère.
+
+   ℹ️ Les segments contenant un pdf-col-break sont automatiquement
+   convertis en grilles duo (voir §Pages duo ci-dessous) par le
+   pipeline de contenu — le marqueur n'atteint plus le navigateur
+   que dans les contextes non transformés. */
+
+/* ─── Pages duo : deux colonnes à rangées alignées ─────────────── */
+/* Générées par rewriteDuoGrids() (generate-content-index.mjs et    */
+/* content.ts) à partir des marqueurs pdf-break / pdf-col-break.    */
+/*                                                                   */
+/* Chaque page duo est une grille 2 colonnes : les blocs des deux   */
+/* colonnes (h2+intro, h3+contenu, callout) sont appariés par index */
+/* → les titres de même niveau s'alignent VERTICALEMENT, ce que le  */
+/* multicolonne ne sait pas faire. align-content: space-between     */
+/* répartit les rangées sur la hauteur de page (aération) et ancre  */
+/* le dernier bloc (callout d'exemple) en bas de page.              */
+/*                                                                   */
+/* Ajustement individuel d'une page : cibler .duo--{id}, où {id}    */
+/* est dérivé du premier h2 (ex : « ✪ Force » → .duo--force) :      */
+/*   .duo--force { min-height: 200mm; }        page moins haute     */
+/*   .duo--grace { align-content: start; }     rangées compactes    */
+/*                                                                   */
+/* La grille vit sur une page nommée « duo » (column-count: 1) pour */
+/* échapper au multicolonne global, et porte pdf-break (saut de     */
+/* page géré par Paged.js — deux pages duo consécutives partagent   */
+/* le même nom et ne se sépareraient pas sans lui).                 */
+
+.duo-grid {
+  page: duo;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  /* Gouttière plus resserrée que le multicolonne (22mm) : la grille
+     n'est pas soumise à la contrainte Paged.js columnGap ≥ leftMargin. */
+  column-gap: 12mm;
+  row-gap: 8pt;
+  align-content: space-between;
+  /* Hauteur de la zone de contenu d'une page duo : ~175,9mm mesurés
+     (format paysage). Marge de sécurité de 4mm — au-delà, Paged.js
+     fragmente la grille et crée une page de continuation vide. */
+  min-height: 172mm;
+}
+
+@page duo { }
+
+.pagedjs_duo_page .pagedjs_page_content {
+  column-count: 1    !important;
+  column-width: auto !important;
+  column-gap: 0      !important;
+}
+
+.duo-cell { min-width: 0; }
+.duo-cell > h2:first-child,
+.duo-cell > h3:first-child { margin-top: 0; }
 
 /* Élément pleine largeur dans une section 2 colonnes.            */
 /* column-span: all interrompt le flux colonne, l'élément s'étend */

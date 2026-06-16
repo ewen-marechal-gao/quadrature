@@ -31,6 +31,15 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import type { TocEntry } from "./pagedjs";
+
+/** Demande de navigation vers une page précise d'une section. */
+export interface PageRequest {
+  slug: string;
+  page: number;
+  /** Discriminant pour re-déclencher la même demande deux fois de suite. */
+  nonce: number;
+}
 
 export interface BookContextValue {
   // ── Livre courant ───────────────────────────────────────────────────────────
@@ -59,6 +68,16 @@ export interface BookContextValue {
   // ── Index de contenu (chargé par BookPreloader) ─────────────────────────────
   contentIndex: Record<string, string>;
   setContentIndex: (index: Record<string, string>) => void;
+
+  // ── Sommaires de section (h2 → page locale) ─────────────────────────────────
+  /** slug → entrées h2 extraites du rendu Paged.js (alimenté par BookViewer). */
+  tocs: Record<string, TocEntry[]>;
+  setToc: (slug: string, toc: TocEntry[]) => void;
+
+  // ── Navigation vers une page précise de la section courante ────────────────
+  pageRequest: PageRequest | null;
+  /** Demande à BookViewer d'afficher la page locale `page` de `slug`. */
+  requestPage: (slug: string, page: number) => void;
 }
 
 const BookCtx = createContext<BookContextValue | null>(null);
@@ -69,6 +88,8 @@ export function BookProvider({ children }: { children: ReactNode }) {
   const [currentSlug, setCurrentSlug]     = useState("");
   const [currentHtml, setCurrentHtml]     = useState("");
   const [contentIndex, setContentIndexState] = useState<Record<string, string>>({});
+  const [tocs, setTocsState]                 = useState<Record<string, TocEntry[]>>({});
+  const [pageRequest, setPageRequest]        = useState<PageRequest | null>(null);
 
   // Ref synchrone sur contentIndex — utilisé par navigateTo sans dépendance React.
   const contentIndexRef = useRef<Record<string, string>>({});
@@ -105,6 +126,24 @@ export function BookProvider({ children }: { children: ReactNode }) {
     setContentIndexState(index);
   }, []);
 
+  const setToc = useCallback((slug: string, toc: TocEntry[]) => {
+    setTocsState((prev) => {
+      const existing = prev[slug];
+      if (
+        existing &&
+        existing.length === toc.length &&
+        existing.every((e, i) => e.text === toc[i].text && e.page === toc[i].page)
+      ) {
+        return prev;
+      }
+      return { ...prev, [slug]: toc };
+    });
+  }, []);
+
+  const requestPage = useCallback((slug: string, page: number) => {
+    setPageRequest({ slug, page, nonce: Date.now() });
+  }, []);
+
   /**
    * Navigation client-side vers une section sans changement d'URL.
    * Le HTML est lu depuis contentIndexRef (synchrone, pas de re-render).
@@ -125,6 +164,8 @@ export function BookProvider({ children }: { children: ReactNode }) {
         currentSlug, currentHtml, setCurrentContent,
         navigateTo,
         contentIndex, setContentIndex,
+        tocs, setToc,
+        pageRequest, requestPage,
       }}
     >
       {children}

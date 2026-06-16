@@ -141,6 +141,70 @@ function rewriteCallouts(html: string): string {
 }
 
 /**
+ * Transforme les segments « deux colonnes alignées » en grilles duo.
+ * Logique identique à rewriteDuoGrids() de generate-content-index.mjs —
+ * voir ce fichier pour la documentation complète de la convention
+ * (pdf-break / pdf-col-break → duo-grid / duo-cell, CSS dans book.css).
+ */
+function rewriteDuoGrids(html: string): string {
+  const PAGE_BREAK = '<div class="pdf-break"></div>';
+  const COL_BREAK  = /<div class="pdf-col-break"><\/div>/;
+
+  const parts = html.split(PAGE_BREAK);
+  let out = "";
+
+  for (let i = 0; i < parts.length; i++) {
+    const seg = parts[i];
+    if (!COL_BREAK.test(seg)) {
+      out += (i > 0 ? PAGE_BREAK : "") + seg;
+      continue;
+    }
+
+    const [left, right] = seg.split(COL_BREAK);
+    const leftBlocks  = splitDuoBlocks(left);
+    const rightBlocks = splitDuoBlocks(right);
+
+    const m  = seg.match(/<h2[^>]*>([\s\S]*?)<\/h2>/);
+    const id = m
+      ? m[1].replace(/<[^>]+>/g, "").trim().toLowerCase()
+          .normalize("NFD").replace(/[̀-ͯ]/g, "")
+          .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+      : "page";
+
+    const n = Math.max(leftBlocks.length, rightBlocks.length);
+    let cells = "";
+    for (let r = 0; r < n; r++) {
+      cells += `<div class="duo-cell">${leftBlocks[r] ?? ""}</div>`;
+      cells += `<div class="duo-cell">${rightBlocks[r] ?? ""}</div>`;
+    }
+
+    out += `<div class="duo-grid pdf-break duo--${id}">${cells}</div>`;
+  }
+
+  return out;
+}
+
+/** Découpe une colonne en blocs alignables (h2 / h3 / callout). */
+function splitDuoBlocks(html: string): string[] {
+  const re = /<h2[^>]*>|<h3[^>]*>|<div class="callout /g;
+  const idxs: number[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) idxs.push(m.index);
+
+  const trimmed = html.trim();
+  if (idxs.length === 0) return trimmed ? [trimmed] : [];
+
+  const blocks: string[] = [];
+  for (let i = 0; i < idxs.length; i++) {
+    const end = i + 1 < idxs.length ? idxs[i + 1] : html.length;
+    blocks.push(html.slice(idxs[i], end).trim());
+  }
+  const pre = html.slice(0, idxs[0]).trim();
+  if (pre) blocks[0] = pre + blocks[0];
+  return blocks;
+}
+
+/**
  * Réécrit les chemins d'images relatifs en chemins web absolus.
  *
  * Les images dans rules/{locale}/images/ sont référencées par des chemins
@@ -187,7 +251,7 @@ async function parseMarkdownFile(
   return {
     slug,
     title: (data.title as string) || extractTitle(content),
-    htmlContent: rewriteCallouts(processed.toString()),
+    htmlContent: rewriteDuoGrids(rewriteCallouts(processed.toString())),
     section: slug[0] ?? "index",
     rawPath: filePath,
   };

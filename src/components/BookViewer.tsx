@@ -19,7 +19,10 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useBook } from "@/lib/context";
-import { loadPagedScript, computeOffset, applyGlobalPageNumbers, getPagedPreviewer } from "@/lib/pagedjs";
+import {
+  loadPagedScript, computeOffset, applyGlobalPageNumbers, getPagedPreviewer,
+  fixColumnBreaks, extractToc,
+} from "@/lib/pagedjs";
 import { renderCache, getVault } from "@/lib/pagedCache";
 
 /** Padding (px) autour de la page dans le viewer (espace pour l'ombre + respiration). */
@@ -55,7 +58,7 @@ export function BookViewer({ html, slug }: Props) {
   const outerRef = useRef<HTMLDivElement>(null);
   const pagedRef = useRef<HTMLDivElement>(null);
 
-  const { setPageCount, pageCounts, bookSlugs, navigateTo } = useBook();
+  const { setPageCount, pageCounts, bookSlugs, navigateTo, setToc, pageRequest } = useBook();
 
   // Ref vers pageCounts — lu dans l'effet sans être dans ses dépendances
   // (évite de re-rendre à chaque comptage du preloader).
@@ -108,6 +111,13 @@ export function BookViewer({ html, slug }: Props) {
     if (page >= total - 1 && nextSlug) navigateTo(nextSlug);
     else goToPage(page + 1);
   }, [goToPage, nextSlug, navigateTo]);
+
+  // ── Requête de page (sous-entrées h2 de la sidebar) ─────────────────────────
+  useEffect(() => {
+    if (!pageRequest || status !== "ready") return;
+    if (pageRequest.slug !== slug) return;
+    goToPage(pageRequest.page);
+  }, [pageRequest, status, slug, goToPage]);
 
   // ── Clavier ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -227,7 +237,10 @@ export function BookViewer({ html, slug }: Props) {
       scaleRef.current      = scale;
       totalRef.current      = total;
 
-      if (slug) setPageCount(slug, total);
+      if (slug) {
+        setPageCount(slug, total);
+        setToc(slug, extractToc(pagesArea));
+      }
       setTotalPages(total);
       setCurrentPage(startPage);
       setStatus("ready");
@@ -283,6 +296,10 @@ export function BookViewer({ html, slug }: Props) {
           return;
         }
 
+        // Appliquer les sauts de colonne (fallback Firefox) pendant que le
+        // staging est dans le DOM — la mesure exige une mise en page calculée.
+        fixColumnBreaks(staging);
+
         // Corriger la numérotation globale AVANT d'afficher
         const offset = slug ? computeOffset(slug, pageCountsRef.current) : 0;
         applyGlobalPageNumbers(staging, offset);
@@ -310,6 +327,7 @@ export function BookViewer({ html, slug }: Props) {
         if (slug) {
           renderCache.set(slug, { pagesArea: newPagesArea, total, pageWidth: pageW, pageHeight: pageH });
           setPageCount(slug, total);
+          setToc(slug, extractToc(newPagesArea));
         }
 
         pagesAreaRef.current  = newPagesArea;

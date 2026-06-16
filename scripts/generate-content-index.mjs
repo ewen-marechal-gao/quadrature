@@ -159,6 +159,91 @@ function rewriteLinks(content, slug) {
   );
 }
 
+/**
+ * Transforme les segments « deux colonnes alignées » en grilles duo.
+ *
+ * Convention d'écriture (Markdown) :
+ *   <div class="pdf-break"></div>   sépare les pages
+ *   <div class="pdf-col-break"></div>   sépare colonne gauche / droite
+ *
+ * Tout segment de page contenant un pdf-col-break est converti en
+ * <div class="duo-grid pdf-break duo--{id}"> avec des paires de cellules
+ * <div class="duo-cell"> : les blocs (h2+intro, h3+contenu, callout) des
+ * deux colonnes sont appariés par index → les titres de même niveau
+ * s'alignent verticalement (grille CSS, voir book.css §Pages duo).
+ *
+ * L'{id} est dérivé du premier h2 du segment (ex : "✪ Force" → duo--force),
+ * ce qui permet d'ajuster chaque page individuellement dans book.css.
+ *
+ * @param {string} html  HTML d'une section (après rewriteCallouts)
+ */
+function rewriteDuoGrids(html) {
+  const PAGE_BREAK = '<div class="pdf-break"></div>';
+  const COL_BREAK  = /<div class="pdf-col-break"><\/div>/;
+
+  const parts = html.split(PAGE_BREAK);
+  let out = "";
+
+  for (let i = 0; i < parts.length; i++) {
+    const seg = parts[i];
+    if (!COL_BREAK.test(seg)) {
+      // Segment ordinaire : conserver son saut de page d'origine
+      out += (i > 0 ? PAGE_BREAK : "") + seg;
+      continue;
+    }
+
+    const [left, right] = seg.split(COL_BREAK);
+    const leftBlocks  = splitDuoBlocks(left);
+    const rightBlocks = splitDuoBlocks(right);
+
+    // Identifiant de page depuis le premier h2 (pour ajustements ciblés)
+    const m  = seg.match(/<h2[^>]*>([\s\S]*?)<\/h2>/);
+    const id = m
+      ? m[1].replace(/<[^>]+>/g, "").trim().toLowerCase()
+          .normalize("NFD").replace(/[̀-ͯ]/g, "")
+          .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+      : "page";
+
+    const n = Math.max(leftBlocks.length, rightBlocks.length);
+    let cells = "";
+    for (let r = 0; r < n; r++) {
+      cells += `<div class="duo-cell">${leftBlocks[r] ?? ""}</div>`;
+      cells += `<div class="duo-cell">${rightBlocks[r] ?? ""}</div>`;
+    }
+
+    // pdf-break : le saut de page est porté par la grille elle-même
+    out += `<div class="duo-grid pdf-break duo--${id}">${cells}</div>`;
+  }
+
+  return out;
+}
+
+/**
+ * Découpe une colonne en blocs alignables : chaque bloc démarre sur un
+ * <h2>, un <h3> ou un callout. Un éventuel préambule est fusionné au
+ * premier bloc.
+ *
+ * @param {string} html  HTML d'une demi-page
+ */
+function splitDuoBlocks(html) {
+  const re = /<h2[^>]*>|<h3[^>]*>|<div class="callout /g;
+  const idxs = [];
+  let m;
+  while ((m = re.exec(html)) !== null) idxs.push(m.index);
+
+  const trimmed = html.trim();
+  if (idxs.length === 0) return trimmed ? [trimmed] : [];
+
+  const blocks = [];
+  for (let i = 0; i < idxs.length; i++) {
+    const end = i + 1 < idxs.length ? idxs[i + 1] : html.length;
+    blocks.push(html.slice(idxs[i], end).trim());
+  }
+  const pre = html.slice(0, idxs[0]).trim();
+  if (pre) blocks[0] = pre + blocks[0];
+  return blocks;
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 const files = collectMdFiles(RULES_DIR);
@@ -196,7 +281,7 @@ for (const { path, slug } of files) {
   if (cols === 1)  classes.push("pdf-single-col");
   if (!doBreak)    classes.push("pdf-no-break");
 
-  index[slug] = `<article class="${classes.join(" ")}">\n${rewriteCallouts(String(file))}</article>`;
+  index[slug] = `<article class="${classes.join(" ")}">\n${rewriteDuoGrids(rewriteCallouts(String(file)))}</article>`;
 }
 
 writeFileSync(OUTPUT, JSON.stringify(index));

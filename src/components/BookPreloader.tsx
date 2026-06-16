@@ -24,7 +24,7 @@
 import { useEffect, useRef } from "react";
 import { useBook } from "@/lib/context";
 import { BOOKS } from "@/lib/nav";
-import { loadPagedScript, computeOffset, applyGlobalPageNumbers, applyPageRefs, getPagedPreviewer } from "@/lib/pagedjs";
+import { loadPagedScript, computeOffset, applyGlobalPageNumbers, applyPageRefs, getPagedPreviewer, fixColumnBreaks } from "@/lib/pagedjs";
 import { renderCache, getVault, type CachedRender } from "@/lib/pagedCache";
 
 interface Props {
@@ -236,6 +236,10 @@ async function renderAndCache(
     if (!pagesArea || !firstPage || total === 0) {
       return { pagesArea: document.createElement("div"), total, pageWidth: 0, pageHeight: 0 };
     }
+
+    // Sauts de colonne (fallback Firefox) — mesure valide tant que le
+    // container off-screen est encore dans le DOM.
+    fixColumnBreaks(container);
 
     applyGlobalPageNumbers(container, offset);
 

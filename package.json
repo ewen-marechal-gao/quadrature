@@ -8,6 +8,7 @@
     "prebuild": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs fr",
     "build": "next build",
     "start": "next start",
+    "refresh-content": "node scripts/generate-content-index.mjs fr",
     "generate-pdf": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs fr && node scripts/generate-pdf.mjs"
   },
   "dependencies": {

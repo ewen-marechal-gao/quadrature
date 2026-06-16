@@ -18,7 +18,7 @@
  */
 
 import Link from "next/link";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { type Locale, getBookById, getTitleForSlug, localize, BOOKS, getBookForSlug } from "@/lib/nav";
 import { useBook } from "@/lib/context";
 import { BookViewer } from "@/components/BookViewerLoader";
@@ -32,18 +32,6 @@ interface Props {
   children: React.ReactNode;
 }
 
-/**
- * Extrait les textes bruts des titres <h2> présents dans le HTML d'une section.
- * Utilisé pour afficher les sous-titres dans la sidebar.
- */
-function extractH2s(html: string): string[] {
-  if (!html) return [];
-  const matches = Array.from(html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g));
-  return matches
-    .map(m => m[1].replace(/<[^>]+>/g, "").trim())
-    .filter(Boolean);
-}
-
 export function BookShellLayout({ bookId, locale, children }: Props) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -52,17 +40,15 @@ export function BookShellLayout({ bookId, locale, children }: Props) {
     () => new Set([bookId])
   );
 
-  const { currentSlug, currentHtml, pageCounts, getOffset, navigateTo } = useBook();
+  const { currentSlug, currentHtml, pageCounts, getOffset, navigateTo, tocs, requestPage } = useBook();
 
   const book     = getBookById(bookId);
   const sections = book?.sections ?? [];
   const current  = currentSlug ? getTitleForSlug(currentSlug, locale) : null;
 
-  // h2 de la section courante, extraits du HTML (mis à jour à chaque navigation)
-  const currentH2s = useMemo(
-    () => extractH2s(currentHtml ?? ""),
-    [currentHtml]
-  );
+  // Sommaire (h2 → page locale) de la section courante, extrait du rendu
+  // Paged.js par BookViewer — disponible dès que la section est composée.
+  const currentToc = tocs[currentSlug] ?? [];
 
   // Quand on navigue vers une section d'un autre livre, on l'ouvre automatiquement.
   useEffect(() => {
@@ -201,14 +187,26 @@ export function BookShellLayout({ bookId, locale, children }: Props) {
                             </button>
 
                             {/* h2 sous-items — uniquement pour la section active */}
-                            {isActive && currentH2s.length > 0 && (
+                            {isActive && currentToc.length > 0 && (
                               <ul
                                 className="sidebar-h2-list"
                                 aria-label="Sous-sections"
                               >
-                                {currentH2s.map((h2text) => (
-                                  <li key={h2text}>
-                                    <span className="sidebar-h2-item">{h2text}</span>
+                                {currentToc.map((entry, i) => (
+                                  <li key={`${entry.text}-${i}`}>
+                                    <button
+                                      className="sidebar-h2-item"
+                                      onClick={() => requestPage(slug, entry.page)}
+                                    >
+                                      <span className="sidebar-link-title">
+                                        {entry.text}
+                                      </span>
+                                      {offset !== null && (
+                                        <span className="sidebar-link-pages">
+                                          p. {offset + entry.page + 1}
+                                        </span>
+                                      )}
+                                    </button>
                                   </li>
                                 ))}
                               </ul>

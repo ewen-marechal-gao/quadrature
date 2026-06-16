@@ -545,6 +545,11 @@ body {
   display: flex;
   align-items: baseline;
   gap: 5px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;                     /* reset bouton */
+  cursor: pointer;
   padding: 2px 14px 2px 26px;
   font-family: var(--font-ui);
   font-size: 0.74rem;
@@ -553,6 +558,11 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.15s, background 0.15s;
+}
+.sidebar-h2-item:hover {
+  color: var(--brass-bright);
+  background: var(--brass-faint);
 }
 .sidebar-h2-item::before {
   content: '–';

@@ -67,6 +67,67 @@ export function loadPagedScript(): Promise<void> {
   return promise;
 }
 
+// ─── Sauts de colonne (fallback Firefox) ──────────────────────────────────────
+
+/**
+ * Applique les sauts de colonne `.pdf-col-break` dans les navigateurs qui
+ * n'implémentent pas `break-before: column` en multicolonne (Firefox).
+ *
+ * Principe : si le marqueur est resté en colonne GAUCHE après le rendu
+ * (le navigateur a ignoré le saut), on lui donne une hauteur qui remplit
+ * le reste de la colonne — le contenu suivant bascule naturellement en
+ * colonne droite. Dans Chrome, le saut natif a déjà déplacé le marqueur
+ * en colonne droite : la passe est alors sans effet.
+ *
+ * À appeler après chaque rendu Paged.js, pendant que le conteneur est
+ * dans le DOM (la mesure exige une mise en page calculée).
+ */
+export function fixColumnBreaks(container: Element): void {
+  const breaks = container.querySelectorAll<HTMLElement>(".pdf-col-break");
+  breaks.forEach((brk) => {
+    brk.style.height = "";
+    const content = brk.closest(".pagedjs_page_content") as HTMLElement | null;
+    if (!content) return;
+    const c = content.getBoundingClientRect();
+    const b = brk.getBoundingClientRect();
+    if (c.width === 0 || c.height === 0) return;
+    // Marqueur déjà en colonne droite → le saut natif a fonctionné.
+    if (b.left - c.left > c.width / 4) return;
+    // Les rects sont en pixels écran ; si un ancêtre porte un transform:scale
+    // (carrousel du viewer), on reconvertit en pixels CSS via le facteur
+    // d'échelle vertical observé sur le conteneur de colonnes.
+    const scaleY = c.height / content.offsetHeight || 1;
+    const fill = (c.bottom - b.top) / scaleY;
+    if (fill > 0) brk.style.height = `${Math.floor(fill)}px`;
+  });
+}
+
+// ─── Sommaire de section (h2 → page) ──────────────────────────────────────────
+
+export interface TocEntry {
+  /** Texte brut du titre h2. */
+  text: string;
+  /** Index de page (0-based) dans la section rendue. */
+  page: number;
+}
+
+/**
+ * Extrait les titres h2 d'un rendu Paged.js avec leur index de page local.
+ * Alimente les sous-entrées navigables de la sidebar.
+ */
+export function extractToc(container: Element): TocEntry[] {
+  const pages = [...container.querySelectorAll(".pagedjs_page")];
+  const entries: TocEntry[] = [];
+  container.querySelectorAll("h2").forEach((h2) => {
+    const text = h2.textContent?.trim() ?? "";
+    if (!text) return;
+    const pageEl = h2.closest(".pagedjs_page");
+    const page = pageEl ? pages.indexOf(pageEl) : -1;
+    if (page >= 0) entries.push({ text, page });
+  });
+  return entries;
+}
+
 // ─── Numérotation globale ─────────────────────────────────────────────────────
 
 /**
