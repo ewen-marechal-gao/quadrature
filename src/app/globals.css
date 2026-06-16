@@ -1060,6 +1060,14 @@ body {
   box-shadow: 0 0 0 2.5px var(--card-reaction), 0 2px 10px rgba(0,0,0,0.45);
 }
 
+/* Couleur de catégorie posée une seule fois sur la carte, puis consommée
+   par l'en-tête ET la pastille d'initiative via var(--cat). */
+.action-card[data-categorie="mouvement"]    { --cat: var(--card-mouvement); }
+.action-card[data-categorie="offensive"]    { --cat: var(--card-offensive); }
+.action-card[data-categorie="defensive"]    { --cat: var(--card-defensive); }
+.action-card[data-categorie="guerison"]     { --cat: var(--card-guerison); }
+.action-card[data-categorie="amelioration"] { --cat: var(--card-amelioration); }
+
 /* Bandeau d'en-tête coloré selon la catégorie */
 .ac-header {
   display: flex;
@@ -1067,14 +1075,10 @@ body {
   gap: 5px;
   padding: 5px 7px 5px 4.4em;          /* dégage la pastille d'initiative */
   min-height: 2.6em;
+  background: var(--cat);
   color: #f8f2e2;
   flex-shrink: 0;
 }
-.action-card[data-categorie="mouvement"]    .ac-header { background: var(--card-mouvement); }
-.action-card[data-categorie="offensive"]    .ac-header { background: var(--card-offensive); }
-.action-card[data-categorie="defensive"]    .ac-header { background: var(--card-defensive); }
-.action-card[data-categorie="guerison"]     .ac-header { background: var(--card-guerison); }
-.action-card[data-categorie="amelioration"] .ac-header { background: var(--card-amelioration); }
 
 /* Pastille d'initiative — cercle bordé laiton, fond de la teinte de l'en-tête,
    ancrée dans le coin supérieur gauche et débordant sur la ligne de prérequis */
@@ -1093,14 +1097,10 @@ body {
   border-radius: 50%;
   /* bordure en em : épaisseur proportionnelle, à l'écran comme à l'impression */
   border: 0.2em solid var(--brass);
+  background: var(--cat);
   color: #f8f2e2;
   box-shadow: 0 1px 3px rgba(0,0,0,0.35);
 }
-.action-card[data-categorie="mouvement"]    .ac-initiative { background: var(--card-mouvement); }
-.action-card[data-categorie="offensive"]    .ac-initiative { background: var(--card-offensive); }
-.action-card[data-categorie="defensive"]    .ac-initiative { background: var(--card-defensive); }
-.action-card[data-categorie="guerison"]     .ac-initiative { background: var(--card-guerison); }
-.action-card[data-categorie="amelioration"] .ac-initiative { background: var(--card-amelioration); }
 
 .ac-name {
   flex: 1;
