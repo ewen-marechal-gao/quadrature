@@ -27,6 +27,7 @@
   --brass-mid:      rgba(196,154,69,0.35);  /* lignes décoratives */
   --brass-focus:    rgba(196,154,69,0.40);  /* survol boutons landing */
   --brass-strong:   rgba(196,154,69,0.55);  /* survol carte actif */
+  --on-brass:       #1a1008;                /* texte/encre sombre sur fond laiton */
 
   /* ── Fond livre & parchemin ──────────────────────────────────── */
   --book-bg:        #1a1510;          /* fond sombre derrière les pages */
@@ -178,7 +179,7 @@ body {
 
 /* Locale active */
 .locale-btn--active {
-  color: #1a1008;
+  color: var(--on-brass);
   background: var(--brass);
   border-color: var(--brass);
 }
@@ -427,7 +428,7 @@ body {
 .book-arrow--next { right: 10px; }
 
 .book-arrow:hover:not(:disabled) {
-  background: rgba(196,154,69,0.18);
+  background: var(--brass-glow);
   border-color: var(--brass);
   color: var(--brass-bright);
   transform: translateY(-50%) scale(1.04);
@@ -707,7 +708,7 @@ body {
     var(--noise-card),
     linear-gradient(145deg, #241a0a 0%, #191009 60%, #110d07 100%);
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(196,154,69,0.18);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px var(--brass-glow);
 }
 
 .landing-book-title {
@@ -776,7 +777,7 @@ body {
 }
 .landing .locale-btn--active {
   background: var(--brass);
-  color: #1a1008;
+  color: var(--on-brass);
 }
 
 /* Bannière "traduction en cours" */
@@ -818,7 +819,7 @@ body {
   --card-guerison:     #3e7f44;  /* vert */
   --card-amelioration: #6f4f8f;  /* violet */
   --card-reaction:     #c8a23a;  /* liseré jaune des réactions */
-  --card-paper:        #f8f2e2;  /* parchemin */
+  --card-paper:        var(--parchment);  /* alias sémantique « fond de carte » */
   --card-ink:          #2a2218;
 }
 
@@ -898,7 +899,7 @@ body {
   padding: 5px 14px;
   font-size: 0.8rem;
   letter-spacing: 0.04em;
-  color: #1a1008;
+  color: var(--on-brass);
   background: var(--brass);
   border: none;
   border-radius: 3px;
@@ -954,7 +955,7 @@ body {
 }
 .cards-chip:hover { color: var(--panel-text); border-color: var(--brass-subtle); }
 .cards-chip--on {
-  color: #1a1008;
+  color: var(--on-brass);
   background: var(--brass);
   border-color: var(--brass);
 }
@@ -1055,7 +1056,7 @@ body {
   padding: 5px 7px 5px 4.4em;          /* dégage la pastille d'initiative */
   min-height: 2.6em;
   background: var(--cat);
-  color: #f8f2e2;
+  color: var(--parchment);
   flex-shrink: 0;
 }
 
@@ -1077,7 +1078,7 @@ body {
   /* bordure en em : épaisseur proportionnelle, à l'écran comme à l'impression */
   border: 0.2em solid var(--brass);
   background: var(--cat);
-  color: #f8f2e2;
+  color: var(--parchment);
   box-shadow: 0 1px 3px rgba(0,0,0,0.35);
 }
 
