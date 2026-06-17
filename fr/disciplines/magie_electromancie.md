@@ -152,7 +152,7 @@ L'électromancien manipule des **charges** Positives (**⊕**) et Négatives (**
 **Coût :** 🟢⚫🔴🟢⚫🔴 *(2 tours)*  
 **Jet :** Volonté **🟦** et Électromancie 🟨.  
 🟩 avantage pour chaque marqueur **Cumulonimbus 🌩️** sur le champ de bataille.  
-**⛞ X Isolation :** le coût de Ionisation électrique diminue de X **⚫** par **🟦** sacrifié.  
+**⛞🟦 X Isolation :** le coût de Ionisation électrique diminue de X **⚫** par **🟦** sacrifié.  
 **Contre :** DD = 7  
 **Mental :** lanceur **Concentré**  
 **Portée :** rayon de 10 cases (15 m) centré sur le lanceur.
@@ -208,7 +208,7 @@ L'électromancien manipule des **charges** Positives (**⊕**) et Négatives (**
 **Mental :** lanceur **Concentré**  
 **Portée :** 10 cases (15 m) pour la première cible, puis 5 cases entre chaque rebond.
 
-Écartez un 5 🟨 : l'Arc peut effectuer un rebond supplémentaire vers une cible non chargée (elle compte comme un pôle neutre, l'arc s'y arrête ou repart vers une charge opposée au dernier pôle valide).
+**⛞🟨 :** l'Arc peut effectuer un rebond supplémentaire vers une cible non chargée (elle compte comme un pôle neutre, l'arc s'y arrête ou repart vers une charge opposée au dernier pôle valide).
 
 ▶️ **Effets :** le lanceur choisit un itinéraire passant par des **pôles** (créatures ou objets) possédant alternativement des **charges ⊕** et **⊖**. Ces charges sont dissipées.
 
@@ -232,7 +232,7 @@ L'électromancien manipule des **charges** Positives (**⊕**) et Négatives (**
 **Mental :** lanceur **Prudent**, **Concentré** ou **Agressif**  
 **Portée :** 10 cases (15 m).
 
-Écartez un 🟨 : considérez que la cible dispose d'une **charge** supplémentaire pour déterminer les effets.
+**⛞🟨 :** considérez que la cible dispose d'une **charge** supplémentaire pour déterminer les effets.
 
 ✅ **Succès :** toutes les charges de la cible sont dissipées. Elle subit les effets cumulatifs suivants :
 
@@ -259,7 +259,7 @@ L'électromancien manipule des **charges** Positives (**⊕**) et Négatives (**
 **Mental :** lanceur **Prudent** ou **Concentré**  
 **Portée :** 10 cases (15 m).
 
-Écartez un 🟨 : la **charge** de la cible n'est pas dissipée par la Stimulation nerveuse.
+**⛞🟨 :** la **charge** de la cible n'est pas dissipée par la Stimulation nerveuse.
 
 ▶️ **Effets :** dissipez une **charge** de la cible. Elle gagne un **⚫** supplémentaire lors de son prochain tour.
 

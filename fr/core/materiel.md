@@ -1,4 +1,4 @@
-# 🧰 Matériel
+# Matériel
 
 ## Les Dés
 
@@ -24,7 +24,7 @@ Quadrature repose sur un système de résolution utilisant des **dés à 6 faces
 Actions sur les dés :
 
 - Ajouter un dé à la réserve +🎲
-- Sacrifier un dé de la réserve (avant le lancement) : **⛞**
+- Sacrifier un dé de la réserve (avant le lancement) : **⛞🟦** (caractéristique) / **⛞🟨** (compétence)
 - Relancer un dé : ⟳🎲
 - Renforcer un dé : ⬆🎲
 

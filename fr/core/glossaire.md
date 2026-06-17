@@ -1,4 +1,4 @@
-# 🔤 Glossaire
+# Glossaire
 
 Quadrature utilise un ensemble de symboles normalisés afin d'alléger l'écriture des règles et de faciliter la lecture en jeu.
 
@@ -82,6 +82,51 @@ Représente un recul émotionnel, une hésitation ou une montée d'anxiété.
 Représente un recentrage émotionnel et une récupération du contrôle.
 
 **◇** : gagner un jeton de Stabilité, ou se rapprocher d'un cran vers l'état **Concentré** si la stabilité est au maximum.
+
+---
+
+## ⚔️ Combat — Positionnement
+
+### ➡️ Inertie
+
+L'Inertie mesure l'élan d'un personnage en déplacement. Elle conditionne certaines actions offensives (Charge, Bousculade).
+
+| Niveau | Généré par |
+| :---: | :--- |
+| ➡️ 1 | Posture |
+| ➡️ 2 | Marche |
+| ➡️ 3 | Course |
+
+**➡️ 0** : l'élan est annulé (par certaines actions ou effets).
+
+### ≬ Engagement Serré
+
+Un personnage est en **Engagement Serré** lorsqu'il se trouve sur une case directement adjacente à un adversaire. Les cases en diagonale ne permettent **pas** cet état.
+
+La discipline des **Lames courtes** exploite spécifiquement cet état pour déclencher des effets liés à la proximité extrême.
+
+> ⚙️ **Note :** le symbole **✜** apparaît dans `martial_lames_courtes.md` pour désigner le même état — à unifier avec ≬.
+
+---
+
+## ✨ Symboles de Disciplines Magiques
+
+### ⊕ / ⊖ Charges (Électromancie)
+
+L'Électromancien accumule et manipule des **charges** Positives (**⊕**) et Négatives (**⊖**) sur lui-même, ses alliés, ses adversaires et l'environnement.
+
+- **Neutralisation :** un même objet ou une même créature ne peut pas porter les deux types simultanément. L'ajout d'une charge opposée entraîne leur dissipation mutuelle.
+- **Focalisation :** un Électromancien ne peut accumuler sur lui-même des charges **⊖** au-delà de son niveau de compétence (sauf trait Condensateur).
+- **Décharge :** toute charge **⊖** en excès se dissipe en infligeant une **brûlure 🔥**.
+
+### 🌐 Courbure / ⏳ Temporisation (Choromancie)
+
+Symboles réservés à la discipline **Choromancie** *(en cours de développement)*.
+
+- **🌐 Courbure :** marqueur de case créant un portail local — toute créature entrant par un côté ressort du côté opposé sans dépenser de mouvement.
+- **⏳ Temporisation :** marqueur représentant des **⚫** empruntés au tour suivant. Au début de son tour, le Choromancien perd un **⚫** par marqueur ⏳ en jeu.
+
+> ⚙️ **Contenu provisoire** — la Choromancie n'est pas encore jouable.
 
 ---
 

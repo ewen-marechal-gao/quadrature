@@ -79,7 +79,7 @@
 **Prérequis :** Tir tendu 1, Intelligence 2  
 **Bonus de compétence :** Tir tendu (max 3)
 
-**Effet :** **Écartez** 🟦 sur votre **Tir Précis** afin d'ignorer la protection de la cible.
+**Effet :** **⛞🟦** sur votre **Tir ciblé** afin d'ignorer la protection de la cible.
 
 **⚙️ Munitions :** Fiables ou Barbelées
 
@@ -118,7 +118,7 @@
 **Prérequis :** Intelligence 3, Tir tendu 2  
 **Bonus de compétence :** Tir tendu (max 3)
 
-Ajoute le modificateur suivant à votre **Tir Précis** (ou *Tir Embusqué*) :
+Ajoute le modificateur suivant à votre **Tir ciblé** (ou *Tir embusqué*) :
 
 **⛞ Cibler :** si l'attaque est un succès, ajoutez l'un des effets suivants :
 

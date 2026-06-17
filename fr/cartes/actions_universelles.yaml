@@ -1,0 +1,182 @@
+# Cartes — Actions universelles (sans prérequis)
+# Source : core/actions/universal_actions.md
+# Schéma : voir README.md
+
+cartes:
+  # ── Actions offensives ──────────────────────────────────────────────────────
+
+  - id: attaque-armee
+    nom: Attaque armée
+    type: action
+    famille: melee
+    categorie: offensive
+    initiative: 5
+    cout: "⚫⚫"
+    condition: "tenir une arme ou un objet lourd en main"
+    jet: "Puissance 🟨🟨 + Force 🟦"
+    contre: "Garde (toutes)"
+    defaut: "augmentez votre **fatigue 💧**"
+    critique: "la cible subit **🔻**"
+    succes: "la cible subit 3 **blessures 💢**"
+    echec: "la cible subit 1 **blessure 💢**"
+    source: core/actions/universal_actions.md
+
+  - id: attaque-mains-nues
+    nom: Attaque à mains nues
+    type: action
+    famille: melee
+    categorie: offensive
+    initiative: 3
+    cout: "⚫"
+    jet: "Puissance 🟨🟨 + Force 🟦"
+    contre: "Garde (esquive, parade, dérobade)"
+    ameliorations:
+      - nom: Poings de fer
+        effet: "en cas de succès, votre attaque à mains nues inflige une blessure 💢 supplémentaire"
+    defaut: "augmentez votre **fatigue 💧**"
+    critique: "la cible est **sonnée 🫨**"
+    succes: "infligez 3 **fatigue 💧** à la cible"
+    echec: "la cible subit 💧"
+    source: core/actions/universal_actions.md
+
+  - id: saisir
+    nom: Saisir
+    type: action
+    famille: melee
+    categorie: offensive
+    initiative: 3
+    cout: "⚫"
+    jet: "Robustesse 🟨🟨 + Force 🟦"
+    contre: "Garde (esquive, parade, dérobade)"
+    ameliorations:
+      - nom: Agripper
+        effet: "peut être utilisée en **Réaction ⚡** lorsqu'une créature adjacente initie une action de **Marche**, de **Course** ou se **Relève**. Coût : ⚡💧 au lieu de ⚫"
+    defaut: "augmentez votre **fatigue 💧**"
+    critique: "la cible est **immobilisée 🔗**"
+    succes: "la cible est **entravée 🕸️**"
+    echec: "la cible subit 💧"
+    source: core/actions/universal_actions.md
+
+  - id: jeter
+    nom: Jeter
+    type: action
+    famille: distance
+    categorie: offensive
+    initiative: 4
+    cout: "⚫"
+    condition: "tenir un objet en main"
+    jet: "Observation 🟨🟨 + Acuité 🟦"
+    contre: "Garde (toutes)"
+    critique: "la cible est **sonnée 🫨**"
+    succes: "effet selon l'objet lancé — petit emplacement : 1 **blessure 💢** ; grand emplacement : 2 **blessures 💢**"
+    echec: "la cible subit 1 **fatigue 💧**"
+    notes: "les emplacements sont expliqués dans Équipement"
+    source: core/actions/universal_actions.md
+
+  - id: intimidation
+    nom: Intimidation
+    type: action
+    famille: sociale
+    categorie: offensive
+    initiative: 5
+    cout: "⚫⚫"
+    jet: "Autorité 🟨🟨 + Volonté 🟦"
+    contre: "Conviction"
+    critique: "vous bénéficiez de 🟩 sur votre prochaine **Intimidation** contre la même cible"
+    succes: "la prochaine attaque ou déplacement de la cible dans votre direction coûte un **⚫** supplémentaire"
+    echec: "la cible ressent une pointe d'hésitation. Elle subit **🔻**"
+    source: core/actions/universal_actions.md
+
+  # ── Déplacement ─────────────────────────────────────────────────────────────
+
+  - id: posture
+    nom: Posture
+    type: action
+    famille: mouvement
+    categorie: mouvement
+    initiative: 3
+    cout: "⚫"
+    condition: "ne pas être **immobilisé**"
+    effet: "**Inertie 1 ➡️**, déplacement d'une case, puis choisissez votre posture : 🧍 **Debout**, 🧎 **À genoux** ou 🙏 **À terre** (effets décrits dans États)"
+    source: core/actions/universal_actions.md
+
+  - id: marche
+    nom: Marche
+    type: action
+    famille: mouvement
+    categorie: mouvement
+    initiative: 4
+    cout: "⚫"
+    condition: "ne pas être **à terre** ou **immobilisé**"
+    effet: "**Inertie 2 ➡️**, déplacement de 3 cases"
+    source: core/actions/universal_actions.md
+
+  - id: course
+    nom: Course
+    type: action
+    famille: mouvement
+    categorie: mouvement
+    initiative: 4
+    cout: "⚫💧"
+    condition: "ne pas être **à genoux**, **à terre**, **entravé**, **immobilisé**, ni **essoufflé**"
+    jet: "Mobilité 🟨🟨 + Agilité 🟦 (+🟥 si terrain encombré)"
+    contre: "7 + Inertie ➡️"
+    sacrifices:
+      - des: "🟦"
+        nom: Sprint
+        effet: "augmenter le déplacement de 3 cases supplémentaires"
+    defaut: "le personnage est **essoufflé 😮‍💨**"
+    critique: "vous bénéficiez de 🟩 sur votre prochaine **Charge** ou **Bousculade**"
+    effet: "**Inertie 3 ➡️**"
+    succes: "déplacement jusqu'à 6 cases"
+    echec: "déplacement jusqu'à 5 cases"
+    source: core/actions/universal_actions.md
+
+  - id: bousculade
+    nom: Bousculade
+    type: action
+    famille: mouvement
+    categorie: offensive
+    initiative: 5
+    cout: "⚫"
+    condition: "disposer d'un niveau d'**Inertie ➡️ 3** (ou plus)"
+    jet: "Mobilité 🟨🟨 + Agilité 🟦, avec 🟩"
+    contre: "Garde (esquive, dérobade)"
+    defaut: "augmentez votre **fatigue 💧**"
+    critique: "la cible est **sonnée 🫨**"
+    effet: "**Inertie ➡️ 0**"
+    succes: "la cible est **à terre 🙏**"
+    echec: "la cible est **à genoux 🧎**"
+    source: core/actions/universal_actions.md
+
+  # ── Utilitaires ─────────────────────────────────────────────────────────────
+
+  - id: reprendre-conscience
+    nom: Reprendre Conscience
+    type: action
+    famille: utilitaire
+    categorie: guerison
+    initiative: 1
+    cout: "🟢"
+    condition: "être **sonné 🫨** ou **inconscient 😵‍💫**"
+    jet: "Récupération 🟨🟨 + Vigueur 🟦"
+    contre: "DD = niveau de **fatigue 💧**"
+    defaut: "l'action requiert un **⚫** supplémentaire"
+    critique: "gagnez un jeton **Stabilité ◇**"
+    succes: "le personnage perd l'état **sonné** ou **inconscient**"
+    echec: "le personnage réduit sa **fatigue 💧** d'un point plus sa valeur de **Récupération**"
+    source: core/actions/universal_actions.md
+
+  - id: eteindre-les-flammes
+    nom: Éteindre les flammes
+    type: action
+    famille: utilitaire
+    categorie: guerison
+    initiative: 1
+    cout: "🟢⚫"
+    jet: "Prestance 🟨🟨 + Grâce 🟦"
+    contre: "DD = nombre de marqueurs **brûlure 🔥**"
+    critique: "gagnez un jeton **Stabilité ◇**"
+    succes: "supprimez toutes vos **brûlures 🔥**"
+    echec: "supprimez **5 brûlures 🔥**"
+    source: core/actions/universal_actions.md

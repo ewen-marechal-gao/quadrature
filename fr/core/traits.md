@@ -1,6 +1,6 @@
-# ⚒️ Traits
+# Traits
 
-> Voir aussi : [caracteristiques.md](caracteristiques.md) · [actions/attribute_actions.md](actions/attribute_actions.md)
+> Voir aussi : [personnages.md](personnages.md) · [actions/attribute_actions.md](actions/attribute_actions.md)
 
 Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5). Deux types :
 - **⚒️** Traits actifs qui modifient une action spécifique (indiqués sur la carte d'action correspondante).
@@ -40,6 +40,8 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 
 **⚒️ Charge terrifiante :** en cas de succès, l'action **Charge** inflige également **🔻** à sa cible et à toutes les créatures adjacentes à celle-ci.
 
+**⚒️ Esquive plongeante :** si vous êtes **debout 🧍** ou **à genoux 🧎**, vous pouvez ignorer le coût en Réaction ⚡ de votre **Esquive**. Vous vous retrouvez **À terre 🙏**.
+
 ---
 
 ## Vigueur
@@ -47,6 +49,8 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 ### Endurance
 
 **⚒️ Accalmie :** en cas de succès, déplacez (**🔺 ou 🔻**) vers **Concentré**.
+
+**⚒️ Second souffle :** une fois par combat, lorsque vous échouez à un **test d'Endurance**, vous pouvez le considérer comme réussi.
 
 ---
 
@@ -68,7 +72,9 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 
 ### Mascarade
 
-*(Traits à définir)*
+**⚒️ Pas de velours :** l'option **Course furtive ⛞** de votre **Furtivité 🥷** ne coûte plus de **fatigue 💧**.
+
+**♾️ Frappe de l'ombre :** lorsque vous quittez l'état **Dissimulé 😶‍🌫️** par une action offensive, celle-ci inflige une **blessure 💢** supplémentaire en cas de succès.
 
 ---
 
@@ -76,13 +82,15 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 
 ### Observation
 
-**Tir ajusté :** lorsque vous effectuez une **Attaque à distance précise**, vous pouvez relancer un 🟦.
+**⚒️ Tir ajusté :** lorsque vous effectuez un **Tir ciblé**, vous pouvez relancer un 🟦.
 
 ---
 
 ### Vigilance
 
-*(Traits à définir)*
+**⚒️ Sentinelle :** l'action **Protection** peut être jouée avec une action **🔴** à la place de **🟢** ; gagnez alors **deux Réactions ⚡** au lieu d'une.
+
+**♾️ Toujours en éveil :** vous ne subissez jamais le **Désavantage 🟥** de défense pour avoir été pris pour cible par une créature **Dissimulée 😶‍🌫️**.
 
 ---
 
@@ -103,6 +111,8 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 ### Logique
 
 **⚒️ Incantation :** l'action **Focalisation** peut être jouée avec une action 🔴 à la place de 🟢. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence.
+
+**♾️ Vision tactique :** une fois par combat, vous pouvez **renforcer ⬆** un dé d'aléa (🟩 ou 🟥).
 
 ---
 
@@ -134,51 +144,28 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 
 ### Éloquence
 
-*(Traits à définir)*
+**⚒️ Tribun :** en cas de **succès** de votre **Inspiration**, un second allié à portée auditive gagne **1 point d'inspiration**.
+
+**♾️ Beau parleur :** après une conversation posée avec un interlocuteur, vous bénéficiez de **🟩** sur vos jets d'**Éloquence** pour obtenir de lui une faveur ou une information.
 
 ### Manipulation
 
-*(Traits à définir)*
+**⚒️ Sous la peau :** l'effet ▶️ **🔺** de votre **Provocation** s'applique **deux fois**.
+
+**♾️ Langue de vipère :** vous bénéficiez de **🟩** sur vos jets de **Manipulation** pour bluffer ou mentir.
 
 ---
 
 ## Lucidité
 
+### Clairvoyance
+
+**⚒️ Coup d'avance :** en cas de **succès** de votre **Prédiction**, l'action que vous jouez en remplacement bénéficie de **🟩** sur son jet.
+
+**♾️ Lire à livre ouvert :** vous pouvez dépenser un **Stabilité ◇** pour deviner exactement ce qu'un interlocuteur attend de vous afin de vous accorder sa confiance.
+
 ### Intuition
 
-*(Traits à définir)*
+**⚒️ Tir d'instinct — Mode réactif :** l'action **Tir rapide** peut être utilisée en **Réaction ⚡💧** lorsqu'une créature à portée effectue une action de **Marche**, de **Course** ou de **Posture**.
 
----
-
-## Traits divers
-
-### Défensifs
-
-#### Esquive plongeante
-
-*Le personnage plonge au sol pour éviter la lame s'abattant vers sa gorge.*
-
-**Prérequis :** Évasion 2  
-**Circonstances :** le personnage rate un jet d'esquive. Le personnage ne doit pas être à terre.  
-**Coût :** 1 Fatigue 💧  
-**Effet :** L'attaque manque et n'inflige pas de blessures 💔. Le personnage se trouve "À terre".
-
----
-
-#### Second souffle
-
-*Dans l'instant où tout semble céder, vous trouvez encore une réserve insoupçonnée d'énergie.*
-
-**Prérequis :** Endurance 2  
-**Circonstances :** vous échouez à un jet d'endurance.  
-**Coût :** 1/combat  
-**Effet :** l'échec est ignoré. Vous êtes considéré comme ayant réussi le jet d'endurance.
-
-#### Vision tactique
-
-*Vous ne laissez pas de place au hasard.*
-
-**Prérequis :** Intelligence 2  
-**Circonstances :** en combat  
-**Coût :** 1/combat  
-**Effet :** vous pouvez **renforcer** un dé d'aléa 🟩 ou 🟥.
+**♾️ Pressentiment :** vous bénéficiez de **🟩** sur vos jets d'**Intuition** pour pressentir un piège ou une embuscade, et vous agissez normalement dès la première manche d'un combat même si vous êtes pris par surprise.

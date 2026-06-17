@@ -60,7 +60,7 @@ Lorsqu'un personnage est ciblé par une attaque, il tente de se défendre en uti
 *Faute de pouvoir esquiver ou parer à temps, vous contractez vos muscles et préparez votre esprit à absorber le choc.*
 
 ⚡ **Déclencheur :** être la cible d'une action **contre 🆚** votre **Garde**  
-🎲 **Jet :** Récupération 🟨🟨 + Vigueur 🟦
+🎲 **Jet :** Robustesse 🟨🟨 + Force 🟦
 
 ⚠️ **Défaut :** augmentez votre Fatigue 💧 de 1 point.  
 ✴️ **Critique :** vous gagnez une Réduction (1) applicable sur toutes les blessures légères 💢 subies jusqu'à la fin de la manche.
@@ -94,6 +94,8 @@ Lorsqu'un personnage est ciblé par une attaque, il tente de se défendre en uti
 🔒 **Condition :** ne pas être **entravé 🕸️** ou **immobilisé 🔗**  
 🎲 **Jet :** Mobilité 🟨🟨 + Agilité 🟦
 
+**⚒️ Esquive plongeante :** si vous êtes **debout 🧍** ou **à genoux 🧎**, vous pouvez ignorer le coût ⚡ de cette Esquive. Vous vous retrouvez **À terre 🙏**.
+
 ⚠️ **Défaut :** augmentez votre Fatigue 💧 de 1 point.  
 ✴️ **Critique :** votre score de Garde ne diminue que d'un point à chaque échec de vos adversaires.
 
@@ -124,7 +126,7 @@ Lorsqu'un personnage est ciblé par une attaque, il tente de se défendre en uti
 **Coût :** ⚡  
 ⚡ **Déclencheur :** être la cible d'une action **contre 🆚** votre **Garde** (Blocage)  
 🔒 **Condition :** avoir un bouclier adapté, ou improvisé (avec -🟥)  
-🎲 **Jet :** Robustesse 🟨🟨 + Force 🟦
+🎲 **Jet :** Endurance 🟨🟨 + Vigueur 🟦
 
 ⚠️ **Défaut :** augmentez votre Fatigue 💧 de 1 point.  
 ✴️ **Critique :** le bouclier absorbe le choc. Vous gagnez 1 point de Protection temporaire 🛡️.

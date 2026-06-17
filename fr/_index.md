@@ -11,15 +11,16 @@
 | :--- | :--- |
 | [core/materiel.md](core/materiel.md) | Types de dés (⬜🟩🟥🟦🟨🟫🟪), jetons (♥️💔💢💧◇🔥), conversion D6 classique |
 | [core/glossaire.md](core/glossaire.md) | Grammaire symbolique : dés, ressources, actions/réactions, états mentaux, règles de cumulation |
-| [core/caracteristiques.md](core/caracteristiques.md) | 10 caractéristiques (Corps/Esprit), 20 compétences associées, axes Force/Volonté … Acuité/Lucidité |
-| [core/jet.md](core/jet.md) | Mécanique centrale : 5 étapes du jet, résultat 0–20, table de DD (6=trivial → 18=quasi légendaire) |
+| [core/personnages.md](core/personnages.md) | Personnages : 10 caractéristiques (Corps/Esprit), 20 compétences, création (peuple, origine, formation), progression |
+| [core/jouer.md](core/jouer.md) | Jouer : 5 étapes du jet (0–20), table de DD, exemple hors combat, modes de jeu (Narration, Exploration, Épreuves, Combat) |
 | [core/ressources.md](core/ressources.md) | Résistance, Fatigue, Piste Mentale (7 états), Stabilité |
-| [core/etats.md](core/etats.md) | États de statut : 🩸Hémorragie, 🔥Combustion, 🦠Virulence, Engagé, Immobilisé, À terre… |
+| [core/equipement.md](core/equipement.md) | Inventaire, Emplacements🔳, armures, armes (familles), table dommages/protection |
+| [core/voyager.md](core/voyager.md) | Voyage : segments, rôles (chasse, orientation, logistique), charges, repos/camps/havres, épuisement 😩 |
+| [core/epreuves.md](core/epreuves.md) | Épreuves : horloge 4/6/8 segments + 2/3/4 points de pression extérieurs, bascule sur pression complète, verrouillage sur défaut, relances communes (⚙️ en rodage) |
+| [core/etats.md](core/etats.md) | États de statut : 🩸Hémorragie, 🔥Combustion, 🦠Virulence, 😩Épuisé, Engagé, Immobilisé, À terre… |
 | [core/furtivite.md](core/furtivite.md) | Occulté🌑, Repéré/Dissimulé, formule DD détection, actions Dissimulation & Furtivité |
 | [core/combat.md](core/combat.md) | Séquence de combat : entretien → actions (initiative) → nettoyage |
-| [core/personnages.md](core/personnages.md) | Création (peuple, origine, formation), progression (compétences + disciplines), tables d'origines |
 | [core/traits.md](core/traits.md) | Tous les traits par compétence (⚒️ modificateurs d'action, ♾️ passifs permanents) |
-| [core/equipement.md](core/equipement.md) | Inventaire, Emplacements🔳, armures, armes (familles), table dommages/protection |
 
 ### Actions (`core/actions/`)
 
@@ -75,7 +76,11 @@
 | :--- | :--- |
 | [univers/lore.md](univers/lore.md) | Planète Aeonir (quasi-verrouillage), mesure du temps, Anneau du Terminateur (Levant/Couchant/Pôles), Chromométrie, Climat |
 | [univers/ecologie.md](univers/ecologie.md) | Cycle végétal de l'Arbre-Anneau : Couchant (pétrification) → Levant (renaissance), Pôles |
-| [univers/peuples.md](univers/peuples.md) | Peuple des Cimes, des Vents, des Pluies, des Neiges — morphologie, culture, bonus |
+| [univers/peuples.md](univers/peuples.md) | Vue d'ensemble des quatre peuples, tableau des traits phénotypiques, règles sang-mêlé et opportunités de spécialisation |
+| [univers/peuple_cimes.md](univers/peuple_cimes.md) | Peuple des Cimes (Levant) — morphologie détaillée, épines ferriques, traits phénotypiques, culture |
+| [univers/peuple_vents.md](univers/peuple_vents.md) | Peuple des Vents (Couchant) — cornes directionnelles, pieds digitigrades, traits phénotypiques, culture |
+| [univers/peuple_pluies.md](univers/peuple_pluies.md) | Peuple des Pluies (Pôle Nord) — peau céruléenne, membrane nictitante, traits phénotypiques, culture |
+| [univers/peuple_neiges.md](univers/peuple_neiges.md) | Peuple des Neiges (Pôle Sud) — bioluminescence contrôlée, massif, traits phénotypiques, culture |
 
 ---
 
@@ -84,5 +89,13 @@
 | Fichier | Contenu |
 | :--- | :--- |
 | [_wip/traits_effets.md](_wip/traits_effets.md) | Liste d'effets de traits non assignés (brouillon) |
-| [_wip/cartes.md](_wip/cartes.md) | Gabarits de cartes d'action (format physique) : génériques, biomancie, électromancie |
 | [_wip/decouverte.md](_wip/decouverte.md) | Séance de découverte : structure, personnages prêts-à-jouer, scénario introductif |
+
+## 🎴 Données structurées (`cartes/`)
+
+| Fichier | Contenu |
+| :--- | :--- |
+| [cartes/README.md](cartes/README.md) | Schéma YAML des cartes d'action (simulateur, site, impression) |
+| `cartes/actions_universelles.yaml` | Cartes des actions sans prérequis |
+| `cartes/actions_avancees.yaml` | Cartes des actions à prérequis de compétence |
+| `cartes/reactions_defense.yaml` | Cartes des réactions et gardes |

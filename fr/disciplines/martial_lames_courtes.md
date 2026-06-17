@@ -143,7 +143,7 @@ Un personnage est en **Engagement Serré** lorsqu'il se trouve sur une case dire
 **Prérequis :** Intelligence 3, Lames courtes 3  
 **Bonus de compétence :** Lames courtes (max 4)
 
-**Effets :** en **Engagement Serré**, lors d'une Frappe Vive, vous pouvez **écarter un 5 🟨** de votre résultat. Si vous le faites, vous ignorez la **Protection** (Armure) de la cible pour cette attaque.
+**Effets :** en **Engagement Serré**, vos **Frappes Vives** gagnent **⛞🟨 :** ignorez la **Protection** (Armure) de la cible pour cette attaque.
 
 ---
 
@@ -170,7 +170,7 @@ Un personnage est en **Engagement Serré** lorsqu'il se trouve sur une case dire
 **Contre :** Esquive, Blocage, Parade.  
 **Condition :** la cible doit être en **Engagement Serré** et posséder au moins 3 **blessures 💢**.
 
-**Expertise (⛞🎲) :** si vous **Écartez un 5 🟨**, la cible ne peut pas utiliser sa Protection (Armure) pour réduire ou transformer les blessures graves 💔 résultant de cette conversion.
+**⛞🟨 Expertise :** la cible ne peut pas utiliser sa Protection (Armure) pour réduire ou transformer les blessures graves 💔 résultant de cette conversion.
 
 ✅ **Succès :** retirez toutes les **blessures 💢** de la cible. La cible subit immédiatement **1 blessure grave 💔** pour chaque lot de **3 marqueurs 💢** ainsi retirés (arrondi à l'inférieur).  
 ❌ **Échec :** la cible subit 2 **blessures 💢** supplémentaires (elle résiste au choc, mais les plaies s'aggravent).

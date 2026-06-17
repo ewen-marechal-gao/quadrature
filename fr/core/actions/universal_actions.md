@@ -99,7 +99,7 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 
 **Coût :** ⚫  
 🔒 **Condition :** tenir un objet en main  
-🎲 **Jet :** Acuité 🟨🟨 + Observation 🟦  
+🎲 **Jet :** Observation 🟨🟨 + Acuité 🟦  
 🆚 **Contre :** Garde (toutes)
 
 ✴️ **Critique :** la cible est **sonnée 🫨**  
@@ -117,7 +117,7 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 
 **Coût :** ⚫⚫  
 🎲 **Jet :** Autorité 🟨🟨 + Volonté 🟦  
-🆚 **Contre :** Résilience
+🆚 **Contre :** Conviction
 
 ✴️ **Critique :** vous bénéficiez de 🟩 sur votre prochaine **intimidation** contre la même cible.  
 ✅ **Succès :** la prochaine attaque ou déplacement de la cible dans votre direction coûte un **⚫** supplémentaire.  
@@ -138,11 +138,7 @@ Les actions de déplacement consomment des **⚫** et génèrent parfois de la *
 **Coût :** ⚫  
 🔒 **Condition :** ne pas être **immobilisé**
 
-▶️ **Inertie 1 ➡️**, déplacement d'une case, puis choisissez :
-
-- 🧍 **Debout** : aucun effet particulier
-- 🧎 **À genoux** : subit 🟥 à tous ses jets d'esquive
-- 🙏 **À terre** : subit 🟥 à tous ses jets de Garde
+▶️ **Inertie 1 ➡️**, déplacement d'une case, puis choisissez votre posture : 🧍 **Debout**, 🧎 **À genoux** ou 🙏 **À terre** — effets décrits dans [etats.md](../etats.md).
 
 ---
 
@@ -160,7 +156,7 @@ Les actions de déplacement consomment des **⚫** et génèrent parfois de la *
 **Coût :** ⚫💧  
 🔒 **Condition :** ne pas être **à genoux**, **à terre**, **entravé**, **immobilisé**, ni **essoufflé**  
 🎲 **Jet :** Mobilité 🟨🟨 + Agilité 🟦 (+🟥 si terrain encombré)  
-⛞ **Sprint :** augmenter le déplacement de 3 cases supplémentaires  
+⛞🟦 **Sprint :** augmenter le déplacement de 3 cases supplémentaires  
 🆚 **Contre :** 7 + Inertie ➡️
 
 ⚠️ **Défaut :** le personnage est **essoufflé 😮‍💨**  

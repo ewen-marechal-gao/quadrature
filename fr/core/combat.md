@@ -1,4 +1,4 @@
-# ⚔️ Le Combat
+# Le Combat
 
 > Voir aussi : [actions/universal_actions.md](actions/universal_actions.md) · [actions/defense_reactions.md](actions/defense_reactions.md) · [etats.md](etats.md)
 
@@ -29,7 +29,6 @@ Durant cette phase :
 ⚠️ **Défaut :** vous subissez l'état **Essoufflé 😮‍💨**  
 ✴️ **Critique :** met immédiatement fin à l'état **Essoufflé 😮‍💨**
 
-▶️ **Effet :** met immédiatement fin à l'état **Essoufflé 😮‍💨**  
 ✅ **Succès :** ↘️ votre **Fatigue 💧** d'un point plus votre valeur d'**Endurance**  
 ❌ **Échec :** ↘️ votre **Fatigue 💧** d'un point
 
@@ -55,4 +54,4 @@ La phase d'action se poursuit tant qu'au moins un joueur ou adversaire dispose d
 - Si le nombre de 💢 est **strictement supérieur** à la Résistance → le personnage subit **1 Blessure grave 💔** et tous les marqueurs 💢 sont supprimés. Cette blessure peut être prévenue par la Protection, sauf en cas d'**Hémorragie 🩸**.
 - Ensuite, retirer un nombre de marqueurs **blessure légère 💢** égal à la valeur de **Récupération** (minimum 1).
 
-*Exemple : Lena (Vigueur 2, Récupération 1) termine la manche avec 4 marqueurs 💢. Comme 4 > 3 (2+1), elle subit 1 💔. Tous les marqueurs sont supprimés, puis elle retire 1 💢 supplémentaire par Récupération : elle commence la manche suivante avec 3 💢.*
+*Exemple : Lena (Vigueur 1, Robustesse 0 — Résistance 1 ; Récupération 0) termine la manche avec 2 marqueurs 💢. Comme 2 > 1, elle subit 1 💔 et tous les marqueurs sont supprimés. La manche suivante, elle ne reçoit qu'une blessure légère : 1 > 1 est faux, pas de conversion — et elle retire 1 💢 en fin de manche (le minimum, malgré sa Récupération 0) : elle repart indemne.*

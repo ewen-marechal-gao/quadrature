@@ -1,0 +1,396 @@
+# Cartes — Actions avancées (avec prérequis de compétence)
+# Source : core/actions/attribute_actions.md
+# Schéma : voir README.md
+
+cartes:
+  # ── Actions offensives (mêlée) ──────────────────────────────────────────────
+
+  - id: frappe-brutale
+    nom: Frappe brutale
+    type: action
+    famille: melee
+    categorie: offensive
+    initiative: 6
+    cout: "⚫⚫💧💧"
+    prerequis: "Puissance 1"
+    jet: "Puissance 🟨🟨 + Force 🟦"
+    contre: "Garde"
+    ameliorations:
+      - nom: Momentum
+        effet: "réduit d'un point le coût en **fatigue 💧**"
+    critique: "la cible est **Sonnée 🫨**"
+    succes: "la cible subit une **blessure grave 💔**"
+    echec: "la cible subit 2 **blessures 💢**"
+    source: core/actions/attribute_actions.md
+
+  - id: lutte
+    nom: Lutte
+    type: action
+    famille: melee
+    categorie: offensive
+    initiative: 5
+    cout: "⚫🔴"
+    prerequis: "Robustesse 1"
+    condition: "la cible doit être **entravée 🕸️**"
+    jet: "Robustesse 🟨🟨 + Force 🟦"
+    contre: "Garde"
+    ameliorations:
+      - nom: Clé articulaire
+        effet: "en cas de succès, l'action **Lutte** ne met plus fin à votre tour"
+    defaut: "augmentez votre **fatigue 💧**"
+    critique: "la cible est **à terre**"
+    succes: "la cible est **immobilisée 🔗**"
+    echec: "la cible est **entravée 🕸️**"
+    source: core/actions/attribute_actions.md
+
+  - id: frappe-vive
+    nom: Frappe vive
+    type: action
+    famille: melee
+    categorie: offensive
+    initiative: 3
+    cout: "⚫💧"
+    prerequis: "Précision 1"
+    jet: "Précision 🟨🟨 + Agilité 🟦"
+    contre: "Garde"
+    ameliorations:
+      - nom: Frappe opportuniste
+        effet: "peut être utilisée en **Réaction ⚡💧** lorsqu'une créature à portée effectue une action de **Marche**, de **Course** ou de **Posture**"
+    defaut: "augmentez votre **fatigue 💧**"
+    critique: "la cible subit **hémorragie (1) 🩸**"
+    succes: "la cible subit 2 **blessures 💢**"
+    echec: "la cible subit 1 **blessure 💢**"
+    source: core/actions/attribute_actions.md
+
+  - id: charge
+    nom: Charge
+    type: action
+    famille: melee
+    categorie: offensive
+    initiative: 3
+    cout: "⚫💧"
+    prerequis: "Mobilité 1"
+    condition: "disposer d'un niveau d'**Inertie ➡️ 3** (ou plus)"
+    jet: "Mobilité 🟨🟨 + Agilité 🟦, avec 🟩"
+    contre: "Garde"
+    ameliorations:
+      - nom: Charge terrifiante
+        effet: "en cas de succès, inflige également **🔻** à la cible et à toutes les créatures adjacentes"
+    defaut: "augmentez votre **fatigue 💧**"
+    critique: "la cible ne peut pas **se dérober**"
+    effet: "**Inertie ➡️ 0**"
+    succes: "la cible subit une **blessure grave 💔**"
+    echec: "la cible subit 2 **blessures 💢**"
+    source: core/actions/attribute_actions.md
+
+  # ── Actions offensives (distance) ───────────────────────────────────────────
+
+  - id: tir-rapide
+    nom: Tir rapide
+    type: action
+    famille: distance
+    categorie: offensive
+    initiative: 3
+    cout: "⚫💧"
+    prerequis: "Intuition 1"
+    jet: "Intuition 🟨🟨 + Lucidité 🟦, avantage contre Parade 🟩"
+    contre: "Garde"
+    ameliorations:
+      - nom: Tir d'instinct — Mode réactif
+        effet: "peut être utilisée en **Réaction ⚡💧** lorsqu'une créature à portée effectue une action de **Marche**, de **Course** ou de **Posture**"
+    defaut: "augmentez votre **fatigue 💧**"
+    critique: "la cible subit 1 **blessure 💢** supplémentaire"
+    succes: "la cible subit 2 **blessures 💢**"
+    echec: "la cible subit 1 **blessure 💢**"
+    source: core/actions/attribute_actions.md
+
+  - id: tir-cible
+    nom: Tir ciblé
+    type: action
+    famille: distance
+    categorie: offensive
+    initiative: 7
+    cout: "⚫⚫💧"
+    prerequis: "Observation 1"
+    jet: "Observation 🟨🟨 + Acuité 🟦, avantage contre Parade 🟩"
+    contre: "Garde"
+    ameliorations:
+      - nom: Tir ajusté
+        effet: "vous pouvez relancer un 🟦"
+    defaut: "augmentez votre **fatigue 💧**"
+    critique: "la cible subit l'état **Hémorragie 🩸**"
+    succes: "la cible subit une **blessure grave 💔**"
+    echec: "la cible subit 2 **blessures 💢**"
+    source: core/actions/attribute_actions.md
+
+  # ── Tempo et économie d'actions ─────────────────────────────────────────────
+
+  - id: preparation
+    nom: Préparation
+    type: action
+    famille: tempo
+    categorie: amelioration
+    initiative: 1
+    cout: "🟢"
+    prerequis: "Réactivité 1"
+    mental: "ne pas être **enragé** ou **terrifié**"
+    ameliorations:
+      - nom: Anticipation
+        effet: "peut être jouée avec une action 🔴. En cas de succès, vous conservez un nombre de **Réactions ⚡** égal à votre Réactivité pour la manche suivante"
+    effet: "gagnez trois **Réactions ⚡**"
+    source: core/actions/attribute_actions.md
+
+  - id: feinte
+    nom: Feinte
+    type: action
+    famille: tempo
+    categorie: amelioration
+    initiative: 1
+    cout: "🟢"
+    prerequis: "Prestance 1"
+    mental: "ne pas être **enragé** ou **terrifié**"
+    ameliorations:
+      - nom: Surprise
+        effet: "l'action choisie bénéficie de 🟩 sur son jet si applicable"
+    effet: "choisissez entre **Attaque armée**, **Attaque à mains nues**, **Saisir**, **Jeter**, **Marche** ou **Course** et jouez-la immédiatement en payant son coût, avec une initiative augmentée de 1️⃣"
+    source: core/actions/attribute_actions.md
+
+  - id: protection
+    nom: Protection
+    type: action
+    famille: tempo
+    categorie: amelioration
+    initiative: 1
+    cout: "🟢"
+    prerequis: "Vigilance 1"
+    mental: "ne pas être **enragé** ou **terrifié**"
+    ameliorations:
+      - nom: Sentinelle
+        effet: "peut être jouée avec une action **🔴** à la place de **🟢** ; gagnez alors **deux Réactions ⚡** au lieu d'une"
+    effet: "gagnez une **Réaction ⚡**. Vous bénéficiez de 🟩 sur votre prochain jet de Garde, et votre score de Garde ne diminue pas à chaque échec de vos adversaires"
+    source: core/actions/attribute_actions.md
+
+  - id: prediction
+    nom: Prédiction
+    type: reaction
+    famille: tempo
+    categorie: amelioration
+    initiative: 0
+    cout: "⚡"
+    description: "Vous lisez les appuis, le regard, la respiration — et devinez le geste avant qu'il naisse."
+    prerequis: "Clairvoyance 1"
+    declencheur: "pendant la phase d'actions, juste avant la révélation des cartes"
+    jet: "Clairvoyance 🟨🟨 + Lucidité 🟦"
+    contre: "DD = 7 + nombre de cartes consultées (maximum : votre **Clairvoyance**)"
+    ameliorations:
+      - nom: Coup d'avance
+        effet: "en cas de succès, l'action que vous jouez en remplacement bénéficie de **🟩** sur son jet"
+    defaut: "vous perdez un jeton de **Stabilité ◇**"
+    critique: "consultez une carte supplémentaire"
+    succes: "regardez, sans les révéler, les cartes posées par les adversaires ou joueurs choisis. Vous pouvez ensuite **remplacer votre carte d'action** par une autre, en payant son coût"
+    echec: "regardez la carte d'une seule créature. Votre action ne peut pas être changée"
+    source: core/actions/attribute_actions.md
+
+  # ── État mental ─────────────────────────────────────────────────────────────
+
+  - id: preservation
+    nom: Préservation
+    type: action
+    famille: mental
+    categorie: amelioration
+    initiative: 1
+    cout: "🟢"
+    description: "Vous bridez vos émotions et ralentissez votre rythme cardiaque pour privilégier votre survie."
+    prerequis: "Discipline 1"
+    mental: "être **concentré** ou dans un **état colérique**"
+    jet: "Discipline 🟨🟨 + Volonté 🟦"
+    contre: "DD = 8 + votre degré d'état mental"
+    ameliorations:
+      - nom: Précaution
+        effet: "peut être jouée avec une action 🔴. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet de Garde"
+    defaut: "vous perdez un point d'action **⚫**"
+    critique: "vous pouvez **🔻** (jamais en dessous de **Prudent**)"
+    succes: "**🔻** (jamais en dessous de **Prudent**) et gagnez un **Stabilité ◇**"
+    echec: "gagnez un **Stabilité ◇**"
+    source: core/actions/attribute_actions.md
+
+  - id: focalisation
+    nom: Focalisation
+    type: action
+    famille: mental
+    categorie: amelioration
+    initiative: 1
+    cout: "🟢"
+    description: "Vous faites abstraction de vos émotions pour retrouver votre clarté d'esprit."
+    prerequis: "Logique 1"
+    jet: "Logique 🟨🟨 + Intelligence 🟦"
+    contre: "DD = 8 + votre degré d'état mental"
+    ameliorations:
+      - nom: Incantation
+        effet: "peut être jouée avec une action 🔴. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence"
+    defaut: "vous perdez un point d'action **⚫**"
+    critique: "déplacement supplémentaire (**🔺 ou 🔻**) vers **Concentré**"
+    succes: "déplacez (**🔺 ou 🔻**) vers **Concentré** et gagnez un **Stabilité ◇**"
+    echec: "gagnez un **Stabilité ◇**"
+    source: core/actions/attribute_actions.md
+
+  - id: resolution
+    nom: Résolution
+    type: action
+    famille: mental
+    categorie: amelioration
+    initiative: 1
+    cout: "🟢"
+    description: "Vous transformez votre peur en détermination ou votre colère en une force motrice implacable."
+    prerequis: "Conviction 1"
+    mental: "être **concentré** ou dans un **état craintif**"
+    jet: "Conviction 🟨🟨 + Ténacité 🟦"
+    contre: "DD = 8 + votre degré d'état mental"
+    ameliorations:
+      - nom: Militant
+        effet: "peut être jouée avec une action 🔴. En cas de succès, vous bénéficiez de +1 relance 🟦 sur votre prochaine action"
+    defaut: "vous perdez un point d'action **⚫**"
+    critique: "déplacement **🔺** supplémentaire (jamais au-dessus d'**Agressif**)"
+    succes: "**🔺** (jamais au-dessus d'**Agressif**) et gagnez un **Stabilité ◇**"
+    echec: "gagnez un **Stabilité ◇**"
+    source: core/actions/attribute_actions.md
+
+  - id: meditation
+    nom: Méditation
+    type: action
+    famille: mental
+    categorie: amelioration
+    initiative: 1
+    cout: "🟢"
+    description: "Vous videz votre esprit de toute agitation pour ancrer votre équilibre."
+    prerequis: "Résilience 1"
+    mental: "être **concentré**"
+    jet: "Résilience 🟨🟨 + Ténacité 🟦"
+    contre: "DD = 8 + votre degré d'état mental"
+    ameliorations:
+      - nom: Tranquillité
+        effet: "en cas de succès, diminuez également votre **fatigue 💧** de deux points"
+    defaut: "vous perdez un point d'action **⚫**"
+    critique: "vous bénéficiez de 🟩 sur votre prochaine **Réaction ⚡**"
+    succes: "gagnez un **Stabilité ◇** par point en **Résilience**"
+    echec: "gagnez un **Stabilité ◇**"
+    source: core/actions/attribute_actions.md
+
+  # ── État physique ───────────────────────────────────────────────────────────
+
+  - id: respiration
+    nom: Respiration
+    type: action
+    famille: physique
+    categorie: guerison
+    initiative: 1
+    cout: "🟢"
+    prerequis: "Endurance 1"
+    jet: "Endurance 🟨🟨 + Vigueur 🟦"
+    contre: "DD = niveau de Fatigue"
+    ameliorations:
+      - nom: Accalmie
+        effet: "en cas de succès, déplacez (**🔺 ou 🔻**) vers **Concentré**"
+    defaut: "vous perdez un point d'action **⚫**"
+    critique: "↘️ votre **fatigue 💧** d'un point supplémentaire"
+    effet: "met fin à l'état **essoufflé 😮‍💨**"
+    succes: "↘️ votre **fatigue 💧** d'un point plus votre valeur d'**Endurance**"
+    echec: "↘️ votre **fatigue 💧** d'un point"
+    source: core/actions/attribute_actions.md
+
+  - id: stabiliser
+    nom: Stabiliser
+    type: action
+    famille: physique
+    categorie: guerison
+    initiative: 1
+    cout: "🟢"
+    description: "Vous exercez une pression ferme sur la plaie ou improvisez un bandage pour stopper l'hémorragie."
+    prerequis: "Récupération 1"
+    jet: "Récupération 🟨🟨 + Vigueur 🟦"
+    contre: "DD = 8 + nombre de 💔"
+    ameliorations:
+      - nom: Coagulation rapide — Mode réactif
+        effet: "peut être jouée en **Réaction ⚡** (coût : ⚡◇) immédiatement après avoir reçu une **blessure grave 💔**. Avant la résolution, ajoutez immédiatement 3💢 supplémentaires et annulez la **blessure grave 💔**"
+    defaut: "vous perdez un point d'action **⚫**"
+    critique: "gagnez un **Stabilité ◇**"
+    effet: "met fin à l'état **hémorragie 🩸**"
+    succes: "guérissez 1 + votre **Récupération blessures 💢**"
+    echec: "guérissez une **blessure 💢**"
+    source: core/actions/attribute_actions.md
+
+  # ── Actions sociales ────────────────────────────────────────────────────────
+
+  - id: provocation
+    nom: Provocation
+    type: action
+    famille: sociale
+    categorie: offensive
+    initiative: 7
+    cout: "⚫⚫"
+    prerequis: "Manipulation 1"
+    jet: "Manipulation 🟨🟨 + Charisme 🟦"
+    contre: "Discipline"
+    ameliorations:
+      - nom: Sous la peau
+        effet: "l'effet ▶️ **🔺** de votre **Provocation** s'applique **deux fois**"
+    defaut: "vous perdez un jeton de **Stabilité ◇**"
+    effet: "la cible subit **🔺**"
+    critique: "vous bénéficiez de 🟩 sur votre prochaine **Provocation** contre la même cible"
+    succes: "la cible doit utiliser sa prochaine action pour se déplacer vers vous ou vous attaquer"
+    echec: "la cible ressent une pointe d'hésitation. Elle subit **🔻**"
+    source: core/actions/attribute_actions.md
+
+  - id: inspiration
+    nom: Inspiration
+    type: action
+    famille: sociale
+    categorie: amelioration
+    initiative: 5
+    cout: "⚫⚫"
+    prerequis: "Éloquence 1"
+    cible: "portée auditive (la cible doit pouvoir vous entendre)"
+    jet: "Éloquence 🟨🟨 + Charisme 🟦"
+    contre: "DD 10 + degré d'état mental de la cible"
+    ameliorations:
+      - nom: Tribun
+        effet: "en cas de succès, un second allié à portée auditive gagne **1 point d'inspiration**"
+    effet: "si la cible est un allié proche, vous bénéficiez de 🟩 à votre jet"
+    defaut: "−1 point d'inspiration"
+    critique: "+1 point d'inspiration"
+    succes: "la cible gagne un nombre de **points d'inspiration** égal à votre **Éloquence**"
+    echec: "la cible gagne **1 point d'inspiration**"
+    table:
+      titre: "La cible dépense immédiatement ses points d'inspiration (minimum 0), librement répartis"
+      lignes:
+        - cout: 1
+          effet: "↘️ sa **fatigue 💧** d'un point"
+        - cout: 1
+          effet: "déplacement (**🔺 ou 🔻**) vers **Concentré**"
+        - cout: 2
+          effet: "gagner un jeton **Stabilité ◇**"
+        - cout: 2
+          effet: "soigner une **blessure légère 💢**"
+        - cout: 3
+          effet: "gagner un point de **bonus de protection +🛡️**"
+    source: core/actions/attribute_actions.md
+
+  - id: injonction
+    nom: Injonction
+    type: action
+    famille: sociale
+    categorie: offensive
+    initiative: 5
+    cout: "⚫⚫"
+    prerequis: "Autorité 1"
+    cible: "portée auditive (la cible doit pouvoir vous entendre)"
+    jet: "Autorité 🟨🟨 + Volonté 🟦 (+🟥 si la cible vous est hostile)"
+    contre: "Logique"
+    ameliorations:
+      - nom: Emprise
+        effet: "en cas de succès, la prochaine **Injonction** contre la même cible ne subit pas le désavantage 🟥"
+    defaut: "vous perdez un jeton de **Stabilité ◇**"
+    effet: "vous formulez un ordre simple (lâche ton arme, recule, agenouille-toi…)"
+    succes: "choisissez la prochaine action de la cible"
+    echec: "la cible est déstabilisée et subit **↘️◇**"
+    source: core/actions/attribute_actions.md

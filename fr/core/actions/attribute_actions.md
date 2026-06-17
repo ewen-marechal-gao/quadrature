@@ -2,7 +2,7 @@
 
 > Voir aussi : [universal_actions.md](universal_actions.md) · [defense_reactions.md](defense_reactions.md)
 
-Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la compétence correspondante. Voir [caracteristiques.md](../caracteristiques.md) pour la liste des compétences et actions associées.
+Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la compétence correspondante. Voir [personnages.md](../personnages.md) pour la liste des compétences et actions associées.
 
 ---
 
@@ -85,6 +85,8 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 🎲 **Jet :** Intuition 🟨🟨 + Lucidité 🟦, avantage contre Parade 🟩  
 🆚 **Contre :** Garde
 
+**⚒️ Tir d'instinct — Mode réactif :** l'action **Tir rapide** peut être utilisée en **Réaction ⚡💧** lorsqu'une créature à portée effectue une action de **Marche**, de **Course** ou de **Posture**.
+
 ✴️ **Critique :** la cible subit 1 **blessure 💢** supplémentaire  
 ✅ **Succès :** la cible subit 2 **blessures 💢**  
 ❌ **Échec :** la cible subit 1 **blessure 💢**
@@ -97,6 +99,8 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 **Coût :** ⚫⚫💧  
 🎲 **Jet :** Observation 🟨🟨 + Acuité 🟦, avantage contre Parade 🟩  
 🆚 **Contre :** Garde
+
+**⚒️ Tir ajusté :** vous pouvez relancer un 🟦.
 
 ✴️ **Critique :** la cible subit l'état **Hémorragie 🩸**  
 ✅ **Succès :** la cible subit une **blessure grave 💔**  
@@ -136,7 +140,29 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 **Coût :** 🟢  
 🧠 **Mental :** ne pas être **enragé** ou **terrifié**
 
+**⚒️ Sentinelle :** peut être jouée avec une action **🔴** à la place de **🟢** ; gagnez alors **deux Réactions ⚡** au lieu d'une.
+
 ▶️ **Effet :** gagnez une **Réaction ⚡**. Vous bénéficiez de 🟩 sur votre prochain jet de Garde, et votre score de Garde ne diminue pas à chaque échec de vos adversaires.
+
+---
+
+### 0️⃣ Prédiction
+
+*Vous lisez les appuis, le regard, la respiration — et devinez le geste avant qu'il naisse.*
+
+**Prérequis :** Clairvoyance 1  
+**Coût :** ⚡  
+⚡ **Déclencheur :** pendant la phase d'actions, juste avant la révélation des cartes  
+🎲 **Jet :** Clairvoyance 🟨🟨 + Lucidité 🟦  
+🆚 **Contre :** DD = 7 + nombre de cartes consultées (maximum : votre **Clairvoyance**)
+
+**⚒️ Coup d'avance :** en cas de succès, l'action que vous jouez en remplacement bénéficie de **🟩** sur son jet.
+
+⚠️ **Défaut :** vous perdez un jeton de **Stabilité ◇**  
+✴️ **Critique :** consultez une carte supplémentaire
+
+✅ **Succès :** regardez, sans les révéler, les cartes posées par les adversaires ou joueurs choisis. Vous pouvez ensuite **remplacer votre carte d'action** par une autre, en payant son coût.  
+❌ **Échec :** regardez la carte d'une seule créature. Votre action ne peut pas être changée.
 
 ---
 
@@ -268,6 +294,8 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 🎲 **Jet :** Manipulation 🟨🟨 + Charisme 🟦  
 🆚 **Contre :** Discipline
 
+**⚒️ Sous la peau :** l'effet ▶️ **🔺** de votre **Provocation** s'applique **deux fois**.
+
 ▶️ **Effet :** la cible subit **🔺**  
 ✴️ **Critique :** vous bénéficiez de 🟩 sur votre prochaine **Provocation** contre la même cible.  
 ✅ **Succès :** la cible doit utiliser sa prochaine action pour se déplacer vers vous ou vous attaquer.  
@@ -280,12 +308,28 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 **Prérequis :** Éloquence 1  
 **Coût :** ⚫⚫  
 🎲 **Jet :** Éloquence 🟨🟨 + Charisme 🟦  
-🆚 **Contre :** DD 10 + niveau d'état mental de la cible  
+🆚 **Contre :** DD 10 + degré d'état mental de la cible  
 🎯 **Portée :** auditive (la cible doit pouvoir vous entendre)
 
-▶️ Si la cible est un allié proche, vous bénéficiez de 🟩 à votre jet.  
-✅ **Succès :** la **fatigue 💧** de la cible diminue. Elle gagne également **◇** par point en Éloquence.  
-❌ **Échec :** la **fatigue 💧** de la cible diminue.
+**⚒️ Tribun :** en cas de succès, un second allié à portée auditive gagne **1 point d'inspiration**.
+
+▶️ Si la cible est un allié proche, vous bénéficiez de 🟩 à votre jet.
+
+⚠️ **Défaut :** −1 point d'inspiration  
+✴️ **Critique :** +1 point d'inspiration
+
+✅ **Succès :** la cible gagne un nombre de **points d'inspiration** égal à votre **Éloquence**.  
+❌ **Échec :** la cible gagne **1 point d'inspiration**.
+
+La cible dépense immédiatement ses points d'inspiration (minimum 0), librement répartis :
+
+| Coût | Effet |
+| :---: | :--- |
+| 1 | ↘️ sa **fatigue 💧** d'un point |
+| 1 | déplacement (**🔺 ou 🔻**) vers **Concentré** |
+| 2 | gagner un jeton **Stabilité ◇** |
+| 2 | soigner une **blessure légère 💢** |
+| 3 | gagner un point de **bonus de protection +🛡️** |
 
 ---
 
@@ -294,7 +338,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 **Prérequis :** Autorité 1  
 **Coût :** ⚫⚫  
 🎲 **Jet :** Autorité 🟨🟨 + Volonté 🟦 (+🟥 si la cible vous est hostile)  
-🆚 **Contre :** Conviction  
+🆚 **Contre :** Logique  
 🎯 **Portée :** auditive (la cible doit pouvoir vous entendre)
 
 **⚒️ Emprise :** en cas de succès, la prochaine **Injonction** contre la même cible ne subit pas le désavantage 🟥.

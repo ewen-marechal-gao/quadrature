@@ -1,4 +1,4 @@
-# 👜 Équipement
+# Équipement
 
 Dans Quadrature, ce que vous portez définit comment vous combattez et comment vous survivez. L'inventaire n'utilise pas de calcul de poids complexe (kilos ou livres), mais un système **d'Emplacements et de Poches (🔳/▫️/🔸)** qui reflète l'encombrement réel de votre matériel sur votre corps. Vous ne pouvez transporter que ce que votre anatomie et vos conteneurs vous permettent de supporter.
 
@@ -57,21 +57,21 @@ Le **Torse** dispose de 4 emplacements 🔳. Ces emplacements sont généralemen
 
 ### 5. Exemple d'Équipement en jeu
 
-**Profil : Lena, la Milicienne**
+**Profil : Lena, la duelliste**
 
-- **Caractéristiques :** Force 2, Robustesse 1.
-- **Charge Maximale :** 5 Emplacements (2 + 2 + 1).
+- **Caractéristiques :** Force 1, Robustesse 0.
+- **Charge Maximale :** 3 Emplacements (2 + 1 + 0).
 
 Son Inventaire :
 
-- **Mains (2/2) :** Hallebarde (*Arme à deux mains = 2* 🔳).
-- **Torse (2/4) :** Cotte de mailles (*Protection moyenne = 2* 🔳).
-- **Taille (1/2) :** Ceinture à potions (*Conteneur = 1* 🔳). Ouvre 3 Poches :
-  - Poches 1 : Potion de soin.
-  - Poches 2 : Dague de lancer.
-  - Poches 3 : Vide.
+- **Mains (1/2) :** Cimeterre (*arme à une main = 1* 🔳).
+- **Dos (1/2) :** Arc long en bandoulière (*1* 🔳).
+- **Taille (1/2) :** Carquois (*conteneur = 1* 🔳). Fournit 🔸🔸🔸 (munitions) :
+  - Poche 1 : Flèches (Stock 2).
+  - Poche 2 : Flèches (suite du stock).
+  - Poche 3 : Vide.
 
-**Total :** Lena utilise **5 Emplacements**. Elle est exactement à sa charge maximale et ne subit aucune pénalité (0 Surcharge). Cependant, son Dos est vide (0/2). Si le groupe trouve un coffre rempli de lingots de fer et qu'elle décide de s'en charger dans un sac à dos improvisé (+1G), elle passera à 6 emplacements et subira un malus de **-1 🟦** sur tous ses jets physiques pour le chemin du retour.
+**Total :** Lena utilise **3 Emplacements**. Elle est exactement à sa charge maximale et ne subit aucune pénalité (0 Surcharge) — mais elle ne porte **aucune armure** : sa défense, c'est sa Parade. Si elle enfile un vêtement technique (+1 🔳) ou se charge du butin du groupe dans un sac improvisé, elle passera à 4 emplacements et subira un malus de **-1 🟦** sur tous ses jets physiques jusqu'à s'en délester.
 
 ## Les Consommables
 
@@ -83,11 +83,25 @@ Un consommable (munitions, rations, huile de lanterne, torches) possède une val
 
 À chaque fois que vous utilisez cet objet de manière significative — par exemple, à la fin d'un combat pour des flèches, après une journée de voyage pour les rations, ou après l'exploration d'une zone pour une torche —, vous devez effectuer un **Jet d'Usage** :
 
-1. Lancez **1 seul dé d'aléa ⬜** (votre D6 numéroté de 0 à 5).
-2. Comparez le résultat au niveau de Stock actuel de l'objet.
-3. **Si le résultat est supérieur ou égal au stock actuel**, la ressource se dégrade : le stock diminue de 1.
-4. Si le résultat est strictement inférieur, le stock reste inchangé.
-5. Lorsque le Stock atteint **0**, l'objet est définitivement épuisé.
+1. Lancez **1d6 (0–5) par point de Stock actuel**, avec un **maximum de 3d6** avant modificateurs. Certains effets — comme les rôles d'expédition en [voyage](voyager.md) — peuvent ajouter ou retirer des dés au-delà de cette limite.
+2. **Si au moins un dé montre un Défaut (0)** : une charge est définitivement consommée — le Stock diminue de 1.
+3. **Si aucun dé ne montre de 0** : la ressource a été utilisée avec efficience (ou rationnée) — le Stock reste inchangé.
+4. Lorsque le Stock atteint **0**, l'objet est définitivement épuisé.
+
+Plus le stock est haut, plus on lance de dés — et plus le risque d'entamer une charge est grand : l'abondance gaspille, la rareté rationne.
+
+**Espérance d'utilisations** (nombre moyen de Jets d'Usage avant épuisement complet) :
+
+| Stock initial | Risque de perte par jet | Utilisations espérées |
+| :---: | :---: | :---: |
+| 1 | 17 % | ≈ 6 |
+| 2 | 31 % | ≈ 9 |
+| 3 | 42 % | ≈ 12 |
+| 4 | 42 % | ≈ 14 |
+| 5 | 42 % | ≈ 16 |
+
+> [!note]
+> Au-delà de Stock 3, le risque par jet ne monte plus (plafond de 3d6) : chaque point supplémentaire n'ajoute qu'environ 2,4 utilisations, tout en occupant un emplacement de plus. La première charge est de loin la plus rentable.
 
 ### 2. L'Impact sur l'Inventaire
 
@@ -160,6 +174,8 @@ Pour matérialiser la place que prennent vos provisions, le niveau de stock est 
 
 ## Armes
 
+> Les familles d'armes précisent les attaques que l'arme autorise : une arme permettant les attaques **vives** donne accès à la **Frappe vive**, une arme permettant les attaques **puissantes** donne accès à la **Frappe brutale**. Toute arme tenue en main permet l'**Attaque armée**.
+
 ### Famille d'armes : lames courtes
 
 ✔️ Armes légères et rapides  
@@ -181,17 +197,17 @@ Pour matérialiser la place que prennent vos provisions, le niveau de stock est 
 ✔️ Attaques en mêlée vives ou puissantes, sur une créature adjacente  
 ✔️ Maîtrise : bénéficie d'effets conditionnés à un niveau de réussite sur un jet 🟨
 
-| Nom | Identité | 🤲 | Mécanique |
-| :---- | :---- | :---- | :---- |
-| Rapière | Riposte | 1 | +1 relance sur riposte |
-| Estoc | Anti-armure | 1 | **⛞** : Ignore la **Protection 🛡️** |
-| Sabre | Critique | 1 | **⛞** : inflige **🔻** si succès |
-| Cimeterre | Pression | 1 | **⛞** : inflige 💧 si succès |
-| Épée courte | Défensive | 1 | +1 **Relance** 🟨 sur **Parade ⚡** |
-| Épée longue | Fiable | 1 | +1 **Relance** 🟨 sur **Attaque armée** |
-| Épée bâtarde | Polyvalente | 1/2 | Utilisée à 2 mains : +1 **Relance** 🟨 sur les attaques puissantes |
-| Épée à deux mains | Brise-garde | 2 | 🟥 au jet de parade adverse sur les attaques puissantes |
-| Claymore | Brutale | 2 | **⛞** sur une attaque puissante : +💔 si succès |
+| Nom               | Identité    | 🤲  | Mécanique                                                          |
+| :---------------- | :---------- | :-- | :----------------------------------------------------------------- |
+| Rapière           | Riposte     | 1   | +1 relance sur riposte                                             |
+| Estoc             | Anti-armure | 1   | **⛞** : Ignore la **Protection 🛡️**                               |
+| Sabre             | Critique    | 1   | **⛞** : inflige **🔻** si succès                                   |
+| Cimeterre         | Pression    | 1   | **⛞** : inflige 💧 si succès                                       |
+| Épée courte       | Défensive   | 1   | +1 **Relance** 🟨 sur **Parade ⚡**                                 |
+| Épée longue       | Fiable      | 1   | +1 **Relance** 🟨 sur **Attaque armée**                            |
+| Épée bâtarde      | Polyvalente | 1/2 | Utilisée à 2 mains : +1 **Relance** 🟨 sur les attaques puissantes |
+| Épée à deux mains | Brise-garde | 2   | 🟥 au jet de parade adverse sur les attaques puissantes            |
+| Claymore          | Brutale     | 2   | **⛞** sur une attaque puissante : +💔 si succès                    |
 
 ## Famille d'armes : armes d'impact
 
@@ -199,17 +215,17 @@ Pour matérialiser la place que prennent vos provisions, le niveau de stock est 
 ✔️ Attaques en mêlée vives ou puissantes, sur une créature adjacente  
 ✔️ Brutalité : sacrifier un 🟦 active de puissants effets
 
-| Nom | Identité | 🤲 | Mécanique |
-| :---- | :---- | :---- | :---- |
-| Masse | Déstabilisation | 1 | **⛞** sur une attaque puissante : adversaire à terre si succès |
-| Marteau de guerre | Anti-armure | 1 | **⛞** sur une attaque puissante : Ignore les effets de protection |
-| Fléau | Brise-garde | 1 | **⛞** sur une attaque puissante : Impossible de parer l'attaque |
-| Hache | Brutale | 1 | **⛞** sur une attaque puissante : +💔 si succès |
-| Grande hache | Balayage | 2 | **⛞** sur une attaque puissante : cible deux adversaires |
+| Nom               | Identité        | 🤲  | Mécanique                                                         |
+| :---------------- | :-------------- | :-- | :---------------------------------------------------------------- |
+| Masse             | Déstabilisation | 1   | **⛞** sur une attaque puissante : adversaire à terre si succès    |
+| Marteau de guerre | Anti-armure     | 1   | **⛞** sur une attaque puissante : Ignore les effets de protection |
+| Fléau             | Brise-garde     | 1   | **⛞** sur une attaque puissante : Impossible de parer l'attaque   |
+| Hache             | Brutale         | 1   | **⛞** sur une attaque puissante : +💔 si succès                   |
+| Grande hache      | Balayage        | 2   | **⛞** sur une attaque puissante : cible deux adversaires          |
 
 ### Famille d'armes : Arcs
 
-✔️ Attaques à distances rapides ou précises  
+✔️ Attaques à distance rapides ou ciblées  
 ✔️ Les arcs attaquent jusqu'à leur Portée sans pénalité  
 ✔️ Les arcs peuvent attaquer jusqu'à deux fois leur portée avec un désavantage 🟥  
 ❌ Pas de parade avec un arc  
@@ -218,13 +234,13 @@ Pour matérialiser la place que prennent vos provisions, le niveau de stock est 
 | Nom | Identité | 🎯 | Mécanique |
 | :---- | :---- | :---- | :---- |
 | Arc court | Mobilité | 50 m | Peut effectuer un **Tir rapide** si engagé, avec 🟥 |
-| Arc de chasse | Précision | 75 m | Les **Tirs précis** bénéficient de 🟩 si la cible n'est pas engagée. |
+| Arc de chasse | Précision | 75 m | Les **Tirs ciblés** bénéficient de 🟩 si la cible n'est pas engagée. |
 | Arc composite | Puissance | 75 m | **⛞** sur une attaque puissante : +1 blessure 💔 si succès |
 | Arc long | Portée | 100 m | Peut tirer jusqu'à trois fois sa portée, avec un désavantage 🟥 |
 
 ### Famille d'armes : Arbalètes et Armes à feu
 
-✔️ Attaques à distances rapides ou précises  
+✔️ Attaques à distance rapides ou ciblées  
 ✔️ Les arbalètes et armes à feu peuvent tirer jusqu'à leur Portée, pas au-delà  
 ✔️ Les arbalètes et armes à feu sont Chargées au début du combat  
 ❌ Une action de rechargement ⚙️ est obligatoire entre deux attaques  
@@ -236,8 +252,8 @@ Pour matérialiser la place que prennent vos provisions, le niveau de stock est 
 | Pistolet à silex | Décharge | 15 m | 12 | **⛞** : Repousse la cible d'une case si succès |
 | Arbalète de poing | Compacité | 20 m | 10 | Peut être utilisée à une main. Peut effectuer un **Tir rapide** avec +🟥 si engagé |
 | Arbalète à répétition | Cadence | 40 m | 8 | Peut tirer deux fois avant d'être rechargée |
-| Arbalète classique | Fiabilité | 60 m | 10 | Les **Tirs précis** bénéficient de +🟩 |
-| Arquebuse | Perforation | 80 m | 12 | Ignore 1 niveau de protection lors d'un **Tir précis** |
+| Arbalète classique | Fiabilité | 60 m | 10 | Les **Tirs ciblés** bénéficient de +🟩 |
+| Arquebuse | Perforation | 80 m | 12 | Ignore 1 niveau de protection lors d'un **Tir ciblé** |
 
 ### Famille d'armes : Allonge
 
@@ -259,29 +275,31 @@ Pour matérialiser la place que prennent vos provisions, le niveau de stock est 
 
 ## Protections Avancées (optionnel)
 
+> Les coûts sont exprimés en **journées de travail (j)** — salaire quotidien d'un ouvrier non qualifié, avant conversion en monnaie sonnante.
+
 ### Armures légères
 
 | Nom | Matériau | Description | Coût |
 | :---- | :---- | :---- | :---- |
-| Gambison léger | Tissu | Veste matelassée simple, absorbe les coups | 3j |
-| Cuire souple | Cuir | — | 4j |
-| Haubert court | Maille | — | 8j |
-| Cuirasse | Plaque | — | 10j |
+| Gambison léger | Tissu | Veste matelassée simple, absorbe les coups | 3 j |
+| Cuir souple | Cuir | — | 4 j |
+| Haubert court | Maille | — | 8 j |
+| Cuirasse | Plaque | — | 10 j |
 
 ### Armures moyennes
 
 | Nom | Matériau | Description | Coût |
 | :---- | :---- | :---- | :---- |
-| Brigandine | Cuir | — | 12j |
-| Haubert long | Maille | — | 15j |
-| Demi-harnois | Plaque | — | 22j |
+| Brigandine | Cuir | — | 12 j |
+| Haubert long | Maille | — | 15 j |
+| Demi-harnois | Plaque | — | 22 j |
 
 ### Armures lourdes
 
 | Nom | Matériau | Description | Coût |
 | :---- | :---- | :---- | :---- |
-| Haubert renforcé | Maille | Maille renforcée par des écailles ou lamelles métalliques | 25j |
-| Harnois complet | Plaque | Armure intégrale articulée | 45j |
+| Haubert renforcé | Maille | Maille renforcée par des écailles ou lamelles métalliques | 25 j |
+| Harnois complet | Plaque | Armure intégrale articulée | 45 j |
 
 ### Type de dégât et Armure
 

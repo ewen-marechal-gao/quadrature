@@ -1,4 +1,4 @@
-# 😵‍💫 États
+# États
 
 > Voir aussi : [ressources.md](ressources.md) pour Fatigue et Condition Mentale · [combat.md](combat.md) pour l'application en manche
 
@@ -33,6 +33,18 @@ Au début de la manche, si un personnage possède un marqueur **brûlure 🔥**,
 La déstabilisation du métabolisme est un effet cumulable, suivi par des marqueurs **métabolisme 🦠**.
 
 Au début de la manche, un personnage ayant au moins un jeton **métabolisme 🦠** voit sa **Fatigue 💧** augmenter d'un point. Puis, un jeton **métabolisme 🦠** est supprimé.
+
+---
+
+### 😩 Épuisé
+
+*La fatigue s'est installée trop profondément pour qu'une nuit suffise à l'effacer.*
+
+L'épuisement est un état cumulable, suivi par des marqueurs **épuisement 😩**, principalement infligé par les voyages éprouvants (voir [voyager.md](voyager.md)).
+
+**Effet — plancher de fatigue :** la **Fatigue 💧** d'un personnage ne peut jamais descendre en dessous de son nombre de marqueurs **😩** — ni par le repos, ni par les actions de récupération. Au début de chaque combat, sa fatigue démarre donc au moins à ce niveau.
+
+**Suppression :** ni les actions, ni un simple bivouac ne retirent ces marqueurs. Seule une nuit passée dans un **Havre** (lieu de repos sûr et confortable) en retire **un** — voir [voyager.md](voyager.md), §Repos, Camps et Havres.
 
 ---
 

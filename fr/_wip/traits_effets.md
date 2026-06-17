@@ -7,7 +7,7 @@ Liste d'effets pour des traits (travail en cours)
 **Effet :** votre action **Blocage** bénéficie de +1 Renforcement **⬆** 🟦  
 **Effet :** vous bénéficiez de +🟩 contre toute tentative de renversement ou de déplacement.  
 **Effet :** votre action **Résolution** gagne +1 Renforcement **⬆** 🟦  
-**Effet :** modifie le coût des **Frappes puissantes** : **⚫** 💧💧  
+**Effet :** modifie le coût des **Frappes brutales** : **⚫** 💧💧  
 **Effet :** votre action **Attaque à mains nues** gagne +1 Renforcement **⬆** 🟦  
 **Effet :** votre action **Intimidation** gagne +1 Renforcement **⬆** 🟦  
 **Effet :** vos jets de Précision et Mobilité bénéficient de +1 Relance **⟳** 🟦  

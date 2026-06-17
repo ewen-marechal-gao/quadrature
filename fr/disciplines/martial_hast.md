@@ -15,7 +15,7 @@
 **Prérequis :** Force 2 ou Intelligence 2  
 **Bonus de compétence :** Hast (max 1)
 
-**Effets :** une fois par tour, lorsqu'un adversaire entre dans votre portée, vous pouvez effectuer une **attaque vive** contre lui en utilisant votre Réactivité. Si cette attaque touche, la cible subit +1 Fatigue 💧 supplémentaire.
+**Effets :** une fois par tour, lorsqu'un adversaire entre dans votre portée, vous pouvez effectuer une **Frappe vive** contre lui en utilisant votre Réactivité. Si cette attaque touche, la cible subit +1 Fatigue 💧 supplémentaire.
 
 ---
 
@@ -65,11 +65,11 @@ Si un ennemi devient adjacent, ces bonus cessent immédiatement.
 **Prérequis :** Hast 1, Force 2  
 **Bonus de compétence :** Hast (max 3)
 
-**Effets :** lorsque vous réussissez une attaque en mêlée avec une arme d'Hast, vous pouvez choisir d'écarter un ou plusieurs 5 🟦.
+**Effets :** lorsque vous effectuez une attaque en mêlée avec une arme d'Hast, vous pouvez sacrifier **⛞🟦** un ou plusieurs dés.
 
-✅ **Succès :** la cible est repoussée d'une case par dé écarté. Si elle ne peut pas être repoussée, elle diminue d'un point sur la piste d'État Mental.
+✅ **Succès :** la cible est repoussée d'une case par dé sacrifié. Si elle ne peut pas être repoussée, elle diminue d'un point sur la piste d'État Mental.
 
-❌ **Échec :** inflige 1 💧 par dé écarté.
+❌ **Échec :** inflige 1 💧 par dé sacrifié.
 
 ---
 

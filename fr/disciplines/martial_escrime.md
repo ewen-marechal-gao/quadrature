@@ -29,7 +29,7 @@ Les escrimeurs se spécialisent dans la maîtrise d'une poignée d'armes et de s
 
 **[Lames larges] Mur de lame :** vous pouvez utiliser votre discipline en **Escrime** 🟨🟨 à la place de votre **Vigilance** lorsque vous jouez une **Parade ⚡**.
 
-**[Lames lourdes] Blocage à l'épée :** votre arme de prédilection compte comme un bouclier (non improvisé) et peut être utilisée pour bloquer. Vous pouvez utiliser votre discipline en **Escrime** 🟨🟨 à la place de votre **Robustesse** lorsque vous jouez une **Blocage ⚡**.
+**[Lames lourdes] Blocage à l'épée :** votre arme de prédilection compte comme un bouclier (non improvisé) et peut être utilisée pour bloquer. Vous pouvez utiliser votre discipline en **Escrime** 🟨🟨 à la place de votre **Endurance** lorsque vous jouez une **Blocage ⚡**.
 
 #### 3️⃣ Riposte
 
@@ -61,7 +61,7 @@ Les escrimeurs se spécialisent dans la maîtrise d'une poignée d'armes et de s
 
 **[Lames larges] :** utilisez la discipline **Escrime 🟨🟨** à la place de **Mobilité** pour l'action **Charge**.
 
-**[Lames lourdes] :** utilisez la discipline **Escrime 🟨🟨** à la place de **Puissance** pour l'action **Frappe puissante**.
+**[Lames lourdes] :** utilisez la discipline **Escrime 🟨🟨** à la place de **Puissance** pour l'action **Frappe brutale**.
 
 #### 2️⃣ Focus
 
@@ -121,7 +121,7 @@ Les escrimeurs se spécialisent dans la maîtrise d'une poignée d'armes et de s
 
 **[Fine lame] Doublet :** vous pouvez combiner deux **frappes vives** en une seule attaque, combinant tous les effets en cas de ✅ **Succès** ou ❌ **Échec**, et avec un coût global réduit de **⚫**.
 
-**[Belliciste] Déluge de lames :** après une **frappe puissante** ou une **frappe vive**, une **frappe vive** avec votre seconde arme bénéficie de +1 relance 🟨.
+**[Belliciste] Déluge de lames :** après une **frappe brutale** ou une **frappe vive**, une **frappe vive** avec votre seconde arme bénéficie de +1 relance 🟨.
 
 ---
 
@@ -138,7 +138,7 @@ Les escrimeurs se spécialisent dans la maîtrise d'une poignée d'armes et de s
 
 **♾️ Effet :** vous effectuez le jet à la place de votre allié, en utilisant votre jet de défense.
 
-**[Lames légères] Fente défensive :** vous pouvez déclencher un **Pas** pour vous positionner à côté d'un allié.
+**[Lames légères] Fente défensive :** vous pouvez déclencher une **Posture** pour vous positionner à côté d'un allié.
 
 **[Lames larges] Présence rassurante :** en cas de succès, votre allié gagne +1 **Stabilité ◇**.
 
@@ -189,14 +189,14 @@ Les escrimeurs se spécialisent dans la maîtrise d'une poignée d'armes et de s
 **Bonus de compétence :** Escrime (max 4)
 
 **Coût :** ⚫⚫💧  
-**Condition :** le personnage doit avoir effectué une action **Pas** avant l'attaque.  
+**Condition :** le personnage doit avoir effectué une action **Posture** avant l'attaque.  
 **Jet :** Escrime 🟨🟨 + Grâce 🟦  
 **Contre :** Esquive, Parade, Blocage  
 **Portée :** permet de toucher un adversaire situé jusqu'à 1 case de distance après le déplacement
 
 ▶️ **Effet :** l'attaque bénéficie d'un avantage 🟩. Vous bénéficiez de l'effet supplémentaire correspondant à votre style :
 
-**[Duelliste] Retrait Tactique :** vous pouvez dépenser **1 ⚡** pour **Pas** vers l'arrière, et votre prochaine **Parade** contre cette cible bénéficie de **+🟩**.
+**[Duelliste] Retrait Tactique :** vous pouvez dépenser **1 ⚡** pour effectuer une **Posture** vers l'arrière, et votre prochaine **Parade** contre cette cible bénéficie de **+🟩**.
 
 ✴️ **Critique :** gagnez **1 ⚡**  
 ✅ **Succès :** la cible subit 4 **blessures 💢**

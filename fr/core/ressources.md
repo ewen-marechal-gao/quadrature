@@ -1,4 +1,4 @@
-# ♥️ Ressources
+# Ressources
 
 > Voir aussi : [etats.md](etats.md) pour les états liés aux ressources · [combat.md](combat.md) pour la phase de nettoyage
 
@@ -12,7 +12,7 @@ L'état physique d'un personnage est représenté par sa **Santé** ♥️ et sa
 
 La survie d'un personnage ne repose pas sur une réserve de Points de Vie classique.
 
-**La Résistance ♥️** = Vigueur ✪ + Robustesse ✪
+**La Résistance ♥️** = Vigueur ✪ + Robustesse ✫
 
 Les **blessures légères 💢** peuvent s'accumuler. Lorsqu'elles dépassent la **Résistance**, toutes les blessures légères dépassant ce seuil sont supprimées et le personnage subit une **blessure grave 💔**. En combat, cette conversion a lieu à la **fin de chaque manche** — il est donc possible de soigner des blessures légères avant qu'elles ne s'aggravent.
 
@@ -38,7 +38,7 @@ La fatigue représente l'état de stress physique d'un personnage.
 
 Une créature avec Fatigue = 20 devient **Inconsciente** (voir [etats.md](etats.md)).
 
-*Exemple : Lena dispose de 2✪ en Vigueur et 1✪ en Robustesse. Il lui faut donc 4 blessures légères 💢 pour subir une blessure grave 💔, et elle peut subir 8 blessures graves avant de succomber. Kévin, lui, n'a que 1✪ en Vigueur et 0✪ en Robustesse : 2 💢 suffisent à déclencher une 💔, et il ne peut subir que 5 💔 avant de succomber.*
+*Exemple : fraîchement créés, Lena comme Kévin n'ont que 1✪ en Vigueur et 0✫ en Robustesse — Résistance 1 : deux blessures légères 💢 suffisent à déclencher une blessure grave 💔. La différence se joue sur la durée : les caractéristiques corporelles de Lena totalisent 7 points (son Agilité 3 en tête), celles de Kévin 5 — il atteindra les portes de la Mort deux blessures graves avant elle.*
 
 ---
 
@@ -50,11 +50,11 @@ La Condition Mentale représente la lucidité, la détermination et la stabilit�
 
 ### Stabilité ◇
 
-**Stabilité ◇** = Ténacité ✪ + Discipline ✪
+**Stabilité ◇** = Ténacité ✪ + Discipline ✫
 
 Ces jetons servent de protection contre les chocs émotionnels et les assauts psychiques. À chaque fois qu'un effet devrait infliger une évolution de l'état mental (**🔻** ou **🔺**), le personnage peut choisir de perdre un jeton **◇** à la place.
 
-*Exemple : Lena (Ténacité 1✪, Discipline 1✪) dispose de 2◇. Kévin (Ténacité 2✪, Discipline 2✪) dispose de 4◇.*
+*Exemple : à la création, Lena et Kévin (Ténacité 1✪, Discipline 0✫) ne disposent que d'1◇ chacun — les esprits neufs sont friables. Un vétéran à Ténacité 2✪ et Discipline 2✫ disposerait de 4◇.*
 
 ---
 

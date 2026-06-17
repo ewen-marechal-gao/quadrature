@@ -1,4 +1,4 @@
-# 🥷 Furtivité
+# Furtivité
 
 > Voir aussi : [etats.md](etats.md) · [actions/universal_actions.md](actions/universal_actions.md)
 
@@ -22,7 +22,7 @@ L'adversaire ignore votre présence. Les cibles surprises subissent un **Désava
 
 Vous devenez **Repéré 🤨** immédiatement si :
 1. Vous effectuez une action offensive ou sociale.
-2. Vous effectuez un déplacement autre qu'un **Pas 👣** ou une **Furtivité 🥷**.
+2. Vous effectuez un déplacement autre qu'une **Posture** ou une **Furtivité 🥷**.
 
 ---
 
@@ -65,6 +65,8 @@ Modificateurs :
 🆚 **Contre Adversaires :** DD de détection
 
 ➡️ **Inertie 2 :** le personnage se déplace en marchant de **trois** cases.
+
+**⚒️ Pas de velours :** l'option **Course furtive ⛞** de votre **Furtivité 🥷** ne coûte plus de **fatigue 💧**.
 
 ✴️ **Critique :** vous bénéficiez de 🟩 sur votre prochaine **Dissimulation**  
 ✅ **Succès :** vous restez **Dissimulé 😶‍🌫️**  
