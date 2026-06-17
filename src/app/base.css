@@ -1,9 +1,8 @@
-/* ─── Reset & base ───────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-/* Les contrôles de formulaire n'héritent pas de la police par défaut : on les
-   aligne sur le var(--font-ui) du body — évite de répéter font-family sur
-   chaque bouton / champ de l'interface. */
-button, input, select, textarea { font-family: inherit; }
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+/* Le reset est assuré par le Preflight de Tailwind (via @import "tailwindcss") :
+   il applique déjà box-sizing:border-box + margin/padding:0 sur tous les éléments
+   et font:inherit sur les contrôles de formulaire — inutile de le redoubler ici.
+   On ne garde que les bases spécifiques à l'app (hauteurs, police, fond). */
 html { height: 100%; }
 body {
   height: 100%;
