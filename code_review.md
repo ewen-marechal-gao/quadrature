@@ -1,6 +1,8 @@
 # Code Review — web/src
 
-Revue qualité (juin 2026). Aucune modification appliquée.
+Revue qualité (juin 2026). Les points **CSS** ont été traités (série de commits
+`refactor(css)` / `fix(css)` — voir l'historique git) et retirés de cette revue.
+Les points **TS/React** ci-dessous restent ouverts.
 
 ---
 
@@ -62,46 +64,7 @@ Remplacer par l'appel à la fonction existante.
 
 ---
 
-## 3. CSS — `globals.css`
-
-### SVG de bruit répété 4 fois
-
-La data-URI de texture grain (SVG feTurbulence) est copiée-collée dans :
-- `.top-bar` (l. 76)
-- `.book-sidebar` (l. 239)
-- `.landing-book-card` (l. 677)
-- `.landing-book-card:hover` (l. 701)
-
-Avec Tailwind v4, extraire en variable CSS dans `:root` :
-
-```css
---noise-texture: url("data:image/svg+xml,...");
-```
-
-### `.sidebar-link` défini en deux blocs séparés
-
-Styles de mise en page aux lignes 293–304, puis overrides bouton aux lignes 469–475,
-séparés par ~165 lignes sans relation. Regrouper les deux blocs.
-
-### Couleurs brass codées en dur
-
-Les tokens `--brass-*` existent mais plusieurs règles utilisent encore les valeurs brutes
-avec des alphas non couverts : `rgba(196,154,69,0.30)`, `0.35`, `0.55`, `0.22`, `0.40`.
-Ajouter les tokens manquants ou normaliser vers les tokens existants.
-
-### Commentaire double sur `.top-bar-download` (l. 192–194)
-
-```css
-/* ─── Bouton télécharger PDF ──────────────────────────────────────────────── */
-/* Bouton télécharger PDF */
-.top-bar-download {
-```
-
-Le commentaire inline est redondant avec le titre de section. Supprimer la ligne 194.
-
----
-
-## 4. Typage
+## 3. Typage
 
 ### `locale` typé `string` au lieu de `Locale`
 
@@ -115,7 +78,7 @@ est déjà résolue.
 
 ---
 
-## 5. Documentation
+## 4. Documentation
 
 ### `content.ts:rewriteLinks` — exemple incorrect
 
@@ -134,7 +97,7 @@ l'en-tête du fichier, notamment pourquoi le cache n'est pas vidé lors du chang
 
 ---
 
-## 6. Anti-patterns mineurs
+## 5. Anti-patterns mineurs
 
 | Fichier | Ligne | Observation |
 |---|---|---|
@@ -153,9 +116,5 @@ l'en-tête du fichier, notamment pourquoi le cache n'est pas vidé lors du chang
 | Haute | `(window as any).Paged` dupliqué | `BookViewer.tsx`, `BookPreloader.tsx` |
 | Moyenne | UI skeleton dupliquée | `BookViewerLoader.tsx`, `BookShellLayout.tsx` |
 | Moyenne | `getBookForSlug` non utilisée | `BookShellLayout.tsx` |
-| Moyenne | SVG noise répété 4× | `globals.css` |
 | Moyenne | `locale: string` au lieu de `Locale` | composants + `nav.ts` |
-| Basse | `.sidebar-link` en deux blocs éloignés | `globals.css` |
-| Basse | Couleurs brass sans tokens | `globals.css` |
 | Basse | Exemple JSDoc trailing slash incorrect | `content.ts` |
-| Basse | Double commentaire `.top-bar-download` | `globals.css` |
