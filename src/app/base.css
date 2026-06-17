@@ -1,0 +1,14 @@
+/* ─── Reset & base ───────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Les contrôles de formulaire n'héritent pas de la police par défaut : on les
+   aligne sur le var(--font-ui) du body — évite de répéter font-family sur
+   chaque bouton / champ de l'interface. */
+button, input, select, textarea { font-family: inherit; }
+html { height: 100%; }
+body {
+  height: 100%;
+  font-family: var(--font-ui);
+  background: var(--book-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

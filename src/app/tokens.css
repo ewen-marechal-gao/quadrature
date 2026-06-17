@@ -1,0 +1,49 @@
+/* ════ Tokens — variables CSS du design system Quadrature ════ */
+:root {
+  --sidebar-width: 224px;
+  --bar-height:    50px;
+
+  /* ── Panneaux : bois sombre / métal oxydé ────────────────────── */
+  --panel-border:   rgba(196,154,69,0.20);  /* séparateur en laiton discret */
+
+  /* ── Laiton / bronze ─────────────────────────────────────────── */
+  --brass:          #c49a45;
+  --brass-bright:   #ddb85a;
+  --brass-muted:    #806230;
+  --brass-faint:    rgba(196,154,69,0.10);
+  --brass-glow:     rgba(196,154,69,0.18);
+  --brass-border:   rgba(196,154,69,0.22);  /* bordures, scrollbar */
+  --brass-subtle:   rgba(196,154,69,0.30);  /* états secondaires */
+  --brass-mid:      rgba(196,154,69,0.35);  /* lignes décoratives */
+  --brass-focus:    rgba(196,154,69,0.40);  /* survol boutons landing */
+  --brass-strong:   rgba(196,154,69,0.55);  /* survol carte actif */
+  --on-brass:       #1a1008;                /* texte/encre sombre sur fond laiton */
+
+  /* ── Fond livre & parchemin ──────────────────────────────────── */
+  --book-bg:        #1a1510;          /* fond sombre derrière les pages */
+  --parchment:      #f8f2e2;
+
+  /* ── Texte panneau ───────────────────────────────────────────── */
+  --panel-text:      rgba(222,208,178,0.85);
+  --panel-muted:     rgba(160,138,105,0.65);
+
+  /* ── Textures SVG ───────────────────────────────────────────── */
+  /* Grain fractalNoise seed=5 — panneaux (top-bar, sidebar) */
+  --noise-panel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E");
+  /* Grain fractalNoise seed=7 — cartes landing */
+  --noise-card:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E");
+
+  /* ── Global ──────────────────────────────────────────────────── */
+  --font-ui:   "Modern Antiqua", Georgia, serif;
+  --font-mono: "Courier New", monospace;
+
+  /* Code couleur des cartes (universal_actions.md §Code couleur) */
+  --card-mouvement:    #2e7f8f;  /* cyan */
+  --card-offensive:    #a03a2a;  /* rouge */
+  --card-defensive:    #2e5f8f;  /* bleu */
+  --card-guerison:     #3e7f44;  /* vert */
+  --card-amelioration: #6f4f8f;  /* violet */
+  --card-reaction:     #c8a23a;  /* liseré jaune des réactions */
+  --card-paper:        var(--parchment);  /* alias sémantique « fond de carte » */
+  --card-ink:          #2a2218;
+}
