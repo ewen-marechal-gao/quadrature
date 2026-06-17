@@ -41,5 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 # generated at build time
-/public/content-index.json
+/public/content-index*.json
 /public/pagedjs/
+/public/quadrature.pdf
