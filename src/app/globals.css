@@ -51,6 +51,10 @@
 
 /* ─── Reset & base ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Les contrôles de formulaire n'héritent pas de la police par défaut : on les
+   aligne sur le var(--font-ui) du body — évite de répéter font-family sur
+   chaque bouton / champ de l'interface. */
+button, input, select, textarea { font-family: inherit; }
 html { height: 100%; }
 body {
   height: 100%;
@@ -115,7 +119,6 @@ body {
 /* Logo "Quadrature" — spécificité (0,2,0) pour résister aux resets
    Tailwind v4 et aux règles globales injectées par Paged.js via <link>. */
 .top-bar .top-bar-logo {
-  font-family: var(--font-ui);
   font-size: 1rem;
   font-weight: 400;
   letter-spacing: 0.18em;
@@ -137,7 +140,6 @@ body {
 }
 
 .top-bar-title {
-  font-family: var(--font-ui);
   font-size: 0.82rem;
   color: var(--panel-muted);
   overflow: hidden;
@@ -163,7 +165,6 @@ body {
   align-items: center;
   justify-content: center;
   padding: 2px 8px;
-  font-family: var(--font-ui);
   font-size: 0.7rem;
   font-weight: 400;
   letter-spacing: 0.1em;
@@ -209,7 +210,6 @@ body {
   border: 1px solid var(--brass-mid);
   border-radius: 3px;
   color: var(--brass-muted);
-  font-family: var(--font-ui);
   font-size: 0.78rem;
   letter-spacing: 0.06em;
   padding: 4px 10px;
@@ -279,7 +279,6 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-ui);
   font-size: 0.58rem;
   font-weight: 400;
   text-transform: uppercase;
@@ -309,7 +308,6 @@ body {
   border: none;                           /* reset bouton */
   border-left: 2px solid transparent;    /* trait gauche pour état actif */
   cursor: pointer;
-  font-family: var(--font-ui);
   font-size: 0.82rem;
   color: var(--panel-text);
   text-decoration: none;
@@ -382,7 +380,6 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-ui);
   font-size: 0.88rem;
   color: var(--panel-muted);
   text-align: center;
@@ -457,7 +454,6 @@ body {
 
 /* Titre de livre dans la top bar */
 .top-bar-book {
-  font-family: var(--font-ui);
   font-size: 0.84rem;
   color: var(--brass);
   letter-spacing: 0.05em;
@@ -469,7 +465,6 @@ body {
   padding: 10px 14px 6px;
 }
 .sidebar-back-link {
-  font-family: var(--font-ui);
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   color: var(--panel-muted);
@@ -490,7 +485,6 @@ body {
   gap: 6px;
   width: 100%;
   padding: 10px 14px 4px;
-  font-family: var(--font-ui);
   font-size: 0.58rem;
   font-weight: 400;
   text-transform: uppercase;
@@ -551,7 +545,6 @@ body {
   border: none;                     /* reset bouton */
   cursor: pointer;
   padding: 2px 14px 2px 26px;
-  font-family: var(--font-ui);
   font-size: 0.74rem;
   color: var(--panel-muted);
   letter-spacing: 0.02em;
@@ -648,7 +641,6 @@ body {
 }
 
 .landing-title {
-  font-family: var(--font-ui);
   font-size: clamp(2.8rem, 7vw, 5.5rem);
   font-weight: 400;
   letter-spacing: 0.22em;
@@ -661,7 +653,6 @@ body {
 }
 
 .landing-subtitle {
-  font-family: var(--font-ui);
   font-size: clamp(0.8rem, 2vw, 1rem);
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -720,7 +711,6 @@ body {
 }
 
 .landing-book-title {
-  font-family: var(--font-ui);
   font-size: 1.1rem;
   font-weight: 400;
   letter-spacing: 0.06em;
@@ -728,7 +718,6 @@ body {
 }
 
 .landing-book-subtitle {
-  font-family: var(--font-ui);
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -737,7 +726,6 @@ body {
 }
 
 .landing-book-desc {
-  font-family: var(--font-ui);
   font-size: 0.82rem;
   color: var(--panel-muted);
   line-height: 1.55;
@@ -802,7 +790,6 @@ body {
   border-radius: 3px;
   backdrop-filter: blur(6px);
 
-  font-family: var(--font-ui);
   font-size: 0.85rem;
   letter-spacing: 0.05em;
   color: var(--panel-muted);
@@ -874,7 +861,6 @@ body {
 .cards-back:hover { color: var(--brass-bright); background: var(--brass-faint); }
 
 .cards-title {
-  font-family: var(--font-ui);
   font-size: 1rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -886,7 +872,6 @@ body {
   flex: 1;
   max-width: 420px;
   padding: 6px 12px;
-  font-family: var(--font-ui);
   font-size: 0.85rem;
   color: var(--panel-text);
   background: rgba(0,0,0,0.35);
@@ -903,7 +888,6 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: var(--font-ui);
   font-size: 0.8rem;
   color: var(--panel-text);
   white-space: nowrap;
@@ -912,7 +896,6 @@ body {
 
 .cards-btn {
   padding: 5px 14px;
-  font-family: var(--font-ui);
   font-size: 0.8rem;
   letter-spacing: 0.04em;
   color: #1a1008;
@@ -960,7 +943,6 @@ body {
 
 .cards-chip {
   padding: 4px 12px;
-  font-family: var(--font-ui);
   font-size: 0.76rem;
   letter-spacing: 0.05em;
   color: var(--panel-muted);
@@ -998,7 +980,6 @@ body {
   grid-column: 1 / -1;
   text-align: center;
   padding: 48px 0;
-  font-family: var(--font-ui);
   color: var(--panel-muted);
 }
 
@@ -1029,7 +1010,6 @@ body {
 .cards-qty {
   min-width: 22px;
   text-align: center;
-  font-family: var(--font-ui);
   font-size: 0.85rem;
   color: var(--panel-muted);
 }
@@ -1050,7 +1030,6 @@ body {
   border-radius: 0;
   border: 1px solid rgba(0,0,0,0.35);
   box-shadow: 0 2px 10px rgba(0,0,0,0.45);
-  font-family: var(--font-ui);
   font-size: 0.62rem;
   line-height: 1.32;
 }
