@@ -12,8 +12,6 @@
   --bar-height:    50px;
 
   /* ── Panneaux : bois sombre / métal oxydé ────────────────────── */
-  --panel-bg:       #100c07;          /* chêne noirci, très sombre */
-  --panel-bg-mid:   #18120a;          /* légèrement plus clair */
   --panel-border:   rgba(196,154,69,0.20);  /* séparateur en laiton discret */
 
   /* ── Laiton / bronze ─────────────────────────────────────────── */
@@ -44,7 +42,6 @@
   --noise-card:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.75' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E");
 
   /* ── Global ──────────────────────────────────────────────────── */
-  --accent:    var(--brass);
   --font-ui:   "Modern Antiqua", Georgia, serif;
   --font-mono: "Courier New", monospace;
 
@@ -64,13 +61,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-/* overflow:hidden uniquement dans le shell livre, pas sur la landing */
-.book-app { overflow: hidden; }
-
 /* ═══════════════════════════════════════════════════════════════════════════
    App shell
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* overflow:hidden uniquement dans le shell livre, pas sur la landing. */
 .book-app {
   display: flex;
   flex-direction: column;
@@ -304,16 +299,24 @@ body {
 .sidebar-items { list-style: none; }
 
 /* Liens de navigation — bouton sans style naviguant via le contexte */
+/* Reset commun aux boutons de navigation de la sidebar (ce sont des <button>
+   stylés en liens). Placé avant .sidebar-link pour que son border-left
+   l'emporte sur le border:none. */
+.sidebar-link,
+.sidebar-book-header,
+.sidebar-h2-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
 .sidebar-link {
   display: flex;
   align-items: baseline;
   gap: 5px;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;                           /* reset bouton */
   border-left: 2px solid transparent;    /* trait gauche pour état actif */
-  cursor: pointer;
   font-size: 0.82rem;
   color: var(--panel-text);
   text-decoration: none;
@@ -489,17 +492,12 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 100%;
   padding: 10px 14px 4px;
   font-size: 0.58rem;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.20em;
   color: var(--brass-muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
   transition: color 0.15s;
 }
 .sidebar-book-header:hover {
@@ -545,11 +543,6 @@ body {
   display: flex;
   align-items: baseline;
   gap: 5px;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;                     /* reset bouton */
-  cursor: pointer;
   padding: 2px 14px 2px 26px;
   font-size: 0.74rem;
   color: var(--panel-muted);
