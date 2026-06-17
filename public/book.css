@@ -24,6 +24,14 @@
      définit déjà --brass-faint = rgba(196,154,69,0.10) pour ses hovers ;
      réutiliser ce nom l'écraserait par #ede5d6 pendant la lecture. */
   --parch-faint: #ede5d6;
+
+  /* Panneau encre sombre — en-têtes de tableaux (th) et blocs <pre>. */
+  --ink-panel-bg:   #2a200f;
+  --ink-panel-text: #d4c4a0;
+
+  /* Police des titres. book.css peut être traité hors de globals.css (PDF),
+     d'où son propre token — même valeur que --font-ui côté app. */
+  --font-head: "Modern Antiqua", Georgia, serif;
 }
 
 /* ─── Page format ─────────────────────────────────────────────── */
@@ -79,7 +87,7 @@ body {
 }
 
 h1 {
-  font-family: "Modern Antiqua", Georgia, serif;
+  font-family: var(--font-head);
   font-size: 22pt;
   font-weight: 400;
   margin: 0 0 10pt;
@@ -92,7 +100,7 @@ h1 {
 }
 
 h2 {
-  font-family: "Modern Antiqua", Georgia, serif;
+  font-family: var(--font-head);
   font-size: 13pt;
   font-weight: 400;
   margin: 14pt 0 5pt;
@@ -102,7 +110,7 @@ h2 {
 }
 
 h3 {
-  font-family: "Modern Antiqua", Georgia, serif;
+  font-family: var(--font-head);
   font-size: 10.5pt;
   font-weight: 400;
   margin: 10pt 0 3pt;
@@ -112,7 +120,7 @@ h3 {
 }
 
 h4 {
-  font-family: "Modern Antiqua", Georgia, serif;
+  font-family: var(--font-head);
   font-size: 9pt;
   font-weight: 400;
   margin: 7pt 0 2pt;
@@ -179,8 +187,8 @@ code {
 pre {
   font-family: "Courier New", monospace;
   font-size: 7.5pt;
-  background: #2a200f;
-  color: #d4c4a0;
+  background: var(--ink-panel-bg);
+  color: var(--ink-panel-text);
   padding: 6pt 8pt;
   margin: 5pt 0;
   break-inside: avoid;
@@ -201,9 +209,9 @@ table {
 }
 
 th {
-  background: #2a200f;
-  color: #d4c4a0;
-  font-family: "Modern Antiqua", Georgia, serif;
+  background: var(--ink-panel-bg);
+  color: var(--ink-panel-text);
+  font-family: var(--font-head);
   font-size: 6.8pt;
   font-weight: 400;
   text-transform: uppercase;
@@ -365,7 +373,8 @@ article.section.pdf-no-break { break-before: auto; }
 /* dans un contexte multi-colonnes, « always » crée une rupture   */
 /* de COLONNE (pas de page), ce qui force h1 en colonne 2 et      */
 /* laisse toute la colonne gauche vide.                            */
-h2, h3, h4 { break-after: avoid; }
+/* break-after: avoid est déjà posé sur chaque titre (h1–h4, §Typography) ;
+   ne reste ici que le break-inside des lignes de tableau et items de liste. */
 tr, li { break-inside: avoid; }
 
 /* ─── Page nommée : une colonne ───────────────────────────────── */
@@ -380,7 +389,10 @@ article.pdf-single-col { page: singlecol; }
 /* Cibler les pages générées pour les sections single-col.         */
 /* Paged.js ajoute la classe pagedjs_{nom}_page sur les éléments   */
 /* .pagedjs_page correspondants.                                   */
-.pagedjs_singlecol_page .pagedjs_page_content {
+/* Mutualisé avec les pages duo : toutes deux forcent une colonne unique
+   pour échapper au multicolonne global. */
+.pagedjs_singlecol_page .pagedjs_page_content,
+.pagedjs_duo_page .pagedjs_page_content {
   column-count: 1    !important;
   column-width: auto !important;
   column-gap: 0      !important;
@@ -444,11 +456,8 @@ article.pdf-single-col { page: singlecol; }
 
 @page duo { }
 
-.pagedjs_duo_page .pagedjs_page_content {
-  column-count: 1    !important;
-  column-width: auto !important;
-  column-gap: 0      !important;
-}
+/* .pagedjs_duo_page .pagedjs_page_content : column-count:1 mutualisé avec
+   .pagedjs_singlecol_page (voir §Page nommée : une colonne). */
 
 .duo-cell { min-width: 0; }
 .duo-cell > h2:first-child,
@@ -484,7 +493,7 @@ table.pdf-wide { column-span: all; }
 .callout p:last-child { margin-bottom: 0; }
 
 .callout-title {
-  font-family: "Modern Antiqua", Georgia, serif;
+  font-family: var(--font-head);
   font-size: 7pt;
   font-weight: 400;
   text-transform: uppercase;
