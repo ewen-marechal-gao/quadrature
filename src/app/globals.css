@@ -79,10 +79,13 @@ body {
 }
 
 /* ─── Top bar ────────────────────────────────────────────────────────────── */
-.top-bar {
+/* Socle commun des barres de panneau — top-bar du livre et barre des cartes.
+   Mêmes dégradé, texture, bordure, ombre et gabarit ; elles ne diffèrent que
+   par le gap et le positionnement (voir les règles individuelles). */
+.top-bar,
+.cards-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
   height: var(--bar-height);
   padding: 0 16px;
   flex-shrink: 0;
@@ -94,6 +97,8 @@ body {
   border-bottom: 1px solid var(--panel-border);
   box-shadow: 0 2px 16px rgba(0,0,0,0.55);
 }
+
+.top-bar { gap: 12px; }
 
 /* Bouton collapse de la sidebar */
 .top-bar-collapse {
@@ -832,22 +837,11 @@ body {
   background: var(--book-bg);
 }
 
+/* Barre des cartes — socle commun défini avec .top-bar ; ici seuls les écarts. */
 .cards-bar {
-  display: flex;
-  align-items: center;
   gap: 14px;
-  padding: 0 16px;
-  height: var(--bar-height);
-  flex-shrink: 0;
   position: sticky;
   top: 0;
-  z-index: 10;
-
-  background:
-    var(--noise-panel),
-    linear-gradient(180deg, #1e1610 0%, #141008 55%, #100c06 100%);
-  border-bottom: 1px solid var(--panel-border);
-  box-shadow: 0 2px 16px rgba(0,0,0,0.55);
 }
 
 .cards-back {
