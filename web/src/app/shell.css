@@ -1,0 +1,520 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   App shell
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* overflow:hidden uniquement dans le shell livre, pas sur la landing. */
+.book-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ─── Top bar ────────────────────────────────────────────────────────────── */
+/* Socle commun des barres de panneau — top-bar du livre et barre des cartes.
+   Mêmes dégradé, texture, bordure, ombre et gabarit ; elles ne diffèrent que
+   par le gap et le positionnement (voir les règles individuelles). */
+.top-bar,
+.cards-bar {
+  display: flex;
+  align-items: center;
+  height: var(--bar-height);
+  padding: 0 16px;
+  flex-shrink: 0;
+  z-index: 10;
+
+  background:
+    var(--noise-panel),
+    linear-gradient(180deg, #1e1610 0%, #141008 55%, #100c06 100%);
+  border-bottom: 1px solid var(--panel-border);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.55);
+}
+
+.top-bar { gap: 12px; }
+
+/* Bouton collapse de la sidebar */
+.top-bar-collapse {
+  background: none;
+  border: none;
+  color: var(--panel-muted);
+  font-size: 1.15rem;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.top-bar-collapse:hover {
+  color: var(--brass-bright);
+  background: var(--brass-faint);
+}
+
+/* Logo "Quadrature" — spécificité (0,2,0) pour résister aux resets
+   Tailwind v4 et aux règles globales injectées par Paged.js via <link>. */
+.top-bar .top-bar-logo {
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  text-decoration: none;
+  white-space: nowrap;
+  /* Léger relief gravé */
+  text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 -1px 0 rgba(255,220,120,0.08);
+  transition: color 0.15s;
+}
+.top-bar .top-bar-logo:hover { color: var(--brass-bright); }
+
+/* Séparateur "—" et titre de section */
+.top-bar-sep {
+  color: var(--brass-muted);
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.top-bar-title {
+  font-size: 0.82rem;
+  color: var(--panel-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Sélecteur de langue ─────────────────────────────────────────────────── */
+
+.locale-switcher {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-left: auto;   /* Pousse le groupe [locale + PDF] vers la droite */
+}
+
+.locale-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  user-select: none;
+}
+
+/* Locale active */
+.locale-btn--active {
+  color: var(--on-brass);
+  background: var(--brass);
+  border-color: var(--brass);
+}
+
+/* Locale disponible mais non active */
+.locale-btn:not(.locale-btn--active):not(.locale-btn--disabled) {
+  color: var(--panel-muted);
+  border-color: var(--brass-subtle);
+}
+.locale-btn:not(.locale-btn--active):not(.locale-btn--disabled):hover {
+  color: var(--brass-bright);
+  border-color: var(--brass);
+  background: var(--brass-faint);
+}
+
+/* Locale désactivée (contenu non disponible) */
+.locale-btn--disabled {
+  color: rgba(160,138,105,0.30);
+  border-color: rgba(160,138,105,0.15);
+  cursor: not-allowed;
+}
+
+/* ─── Bouton télécharger PDF ──────────────────────────────────────────────── */
+.top-bar-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--brass-mid);
+  border-radius: 3px;
+  color: var(--brass-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+.top-bar-download:hover {
+  background: var(--brass-glow);
+  border-color: var(--brass);
+  color: var(--brass-bright);
+}
+
+/* ─── Body ───────────────────────────────────────────────────────────────── */
+.book-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sidebar — panneau de bois noirci avec laiton
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.book-sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  overflow-y: auto;
+  flex-shrink: 0;
+  transition: width 0.22s ease, min-width 0.22s ease;
+
+  background:
+    var(--noise-panel),
+    linear-gradient(180deg, #161008 0%, #100c06 40%, #130e07 100%);
+  border-right: 1px solid var(--panel-border);
+}
+
+/* Scrollbar personnalisée */
+.book-sidebar::-webkit-scrollbar { width: 4px; }
+.book-sidebar::-webkit-scrollbar-track { background: transparent; }
+.book-sidebar::-webkit-scrollbar-thumb {
+  background: var(--brass-border);
+  border-radius: 2px;
+}
+.book-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(196,154,69,0.42);
+}
+
+.book-sidebar--collapsed {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sidebar-inner {
+  padding: 10px 0 36px;
+  min-width: var(--sidebar-width);
+}
+
+.sidebar-section { margin-bottom: 4px; }
+
+/* Titre de section : petites majuscules, laiton, ligne décorative */
+.sidebar-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.58rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--brass-muted);
+  padding: 12px 14px 5px;
+  white-space: nowrap;
+}
+/* Ligne décorative qui s'étend après le texte */
+.sidebar-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--brass-mid) 0%, transparent 100%);
+}
+
+.sidebar-items { list-style: none; }
+
+/* Liens de navigation — bouton sans style naviguant via le contexte */
+/* Reset commun aux boutons de navigation de la sidebar (ce sont des <button>
+   stylés en liens). Placé avant .sidebar-link pour que son border-left
+   l'emporte sur le border:none. */
+.sidebar-link,
+.sidebar-book-header,
+.sidebar-h2-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  border-left: 2px solid transparent;    /* trait gauche pour état actif */
+  font-size: 0.82rem;
+  color: var(--panel-text);
+  text-decoration: none;
+  padding: 4px 14px 4px 16px;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.sidebar-link:hover {
+  color: var(--brass-bright);
+  background: var(--brass-faint);
+}
+.sidebar-link--active {
+  color: var(--brass-bright);
+  background: linear-gradient(90deg, var(--brass-glow) 0%, transparent 88%);
+  border-left-color: var(--brass);
+}
+
+.sidebar-link-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-link-pages {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  color: var(--panel-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Zone du livre
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.book-area {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--book-bg);
+}
+
+.book-area > * { height: 100%; }
+
+.book-outer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Statuts (chargement / erreur) */
+.book-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--panel-muted);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+.book-status--error { color: #c08060; }
+.book-status--error code {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  background: rgba(0,0,0,0.4);
+  color: #c09070;
+  padding: 6px 12px;
+  border-radius: 3px;
+  max-width: 480px;
+  word-break: break-all;
+}
+
+/* ─── Flèches de navigation ──────────────────────────────────────────────── */
+.book-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 66px;
+  cursor: pointer;
+  line-height: 1;
+
+  /* Panneau métal / bois avec bordure laiton */
+  background: rgba(14, 10, 5, 0.82);
+  border: 1px solid var(--brass-subtle);
+  border-radius: 4px;
+  color: var(--brass-strong);
+  font-size: 1.8rem;
+
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+}
+
+.book-arrow--prev { left: 10px; }
+.book-arrow--next { right: 10px; }
+
+.book-arrow:hover:not(:disabled) {
+  background: var(--brass-glow);
+  border-color: var(--brass);
+  color: var(--brass-bright);
+  transform: translateY(-50%) scale(1.04);
+}
+
+.book-arrow:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.97);
+}
+
+.book-arrow:disabled {
+  opacity: 0.12;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Pages Paged.js (rendu écran) — ombre chaude sur fond sombre */
+.pagedjs_page {
+  background: var(--parchment);
+  box-shadow:
+    0 8px 36px rgba(8, 4, 0, 0.65),
+    0 0 0 1px rgba(180, 140, 70, 0.12);
+  flex-shrink: 0;
+}
+
+/* Titre de livre dans la top bar */
+.top-bar-book {
+  font-size: 0.84rem;
+  color: var(--brass);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* Lien retour bibliothèque dans la sidebar */
+.sidebar-back {
+  padding: 10px 14px 6px;
+}
+.sidebar-back-link {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--panel-muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+.sidebar-back-link:hover { color: var(--brass-bright); }
+
+/* ─── Sidebar : groupes de livres ────────────────────────────────────────── */
+
+.sidebar-book { margin-bottom: 2px; }
+
+/* En-tête de livre — même style que sidebar-section-title mais bouton */
+.sidebar-book-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px 4px;
+  font-size: 0.58rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.20em;
+  color: var(--brass-muted);
+  transition: color 0.15s;
+}
+.sidebar-book-header:hover {
+  color: var(--brass-bright);
+}
+/* Livre courant : laiton plus vif */
+.sidebar-book-header--active {
+  color: var(--brass);
+}
+
+.sidebar-book-header-title {
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+/* Ligne décorative extensible entre le titre et la flèche */
+.sidebar-book-header-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(196,154,69,0.28) 0%, transparent 100%);
+  margin: 0 4px;
+}
+
+.sidebar-book-header-chevron {
+  font-size: 0.55rem;
+  opacity: 0.65;
+  flex-shrink: 0;
+  transition: transform 0.18s;
+}
+
+/* ─── h2 sous-items de la section active ─────────────────────────────────── */
+
+.sidebar-h2-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 2px;
+}
+
+.sidebar-h2-item {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 2px 14px 2px 26px;
+  font-size: 0.74rem;
+  color: var(--panel-muted);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s, background 0.15s;
+}
+.sidebar-h2-item:hover {
+  color: var(--brass-bright);
+  background: var(--brass-faint);
+}
+.sidebar-h2-item::before {
+  content: '–';
+  flex-shrink: 0;
+  opacity: 0.45;
+}
+
+/* ─── Print ──────────────────────────────────────────────────────────────── */
+@media print {
+  .top-bar, .book-sidebar, .book-arrow { display: none !important; }
+  .book-body  { display: block; }
+  .book-area  { overflow: visible; }
+  .book-outer { display: block; }
+  .book-center { display: block; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Visionneuse livre — règles hors du périmètre Paged.js
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Saut de colonne forcé dans les pages 2 colonnes du livre.
+   Vit ici (et non dans book.css) car le Polisher de Paged.js retire
+   les propriétés break-* des feuilles qu'il traite — voir book.css
+   §Utilitaires inline pour le contexte complet. */
+.pdf-col-break { break-before: column; }

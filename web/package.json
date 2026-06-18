@@ -1,0 +1,37 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "predev": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs fr",
+    "dev": "next dev",
+    "prebuild": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs fr",
+    "build": "next build",
+    "start": "next start",
+    "refresh-content": "node scripts/generate-content-index.mjs fr",
+    "generate-pdf": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs fr && node scripts/generate-pdf.mjs"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.2.0",
+    "next": "16.2.7",
+    "next-mdx-remote": "^6.0.0",
+    "pagedjs": "^0.4.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-html": "^16.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "pdf-lib": "^1.17.1",
+    "puppeteer": "^25.1.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

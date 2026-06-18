@@ -1,0 +1,42 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./base.css";
+@import "./shell.css";
+@import "./landing.css";
+@import "./cards.css";
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Quadrature — Design System (feuille d'entrée)
+   Ambiance : révolution industrielle & magie — bois noirci, laiton, parchemin.
+
+   Modern Antiqua chargée dans layout.tsx via <link> (contrainte Tailwind v4).
+   L'ordre des @import ci-dessus = ordre de cascade :
+     tokens → base (reset) → shell → landing → cartes.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Pont vers Tailwind — expose la palette maison (définie dans tokens.css) en
+   utilitaires : bg-brass, text-on-brass, border-parchment, text-card-offensive,
+   font-antiqua, etc. `inline` = les utilitaires référencent directement les
+   tokens existants → source unique dans tokens.css, aucune valeur dupliquée.
+   ════════════════════════════════════════════════════════════════════════════ */
+@theme inline {
+  --color-brass:             var(--brass);
+  --color-brass-bright:      var(--brass-bright);
+  --color-brass-muted:       var(--brass-muted);
+  --color-on-brass:          var(--on-brass);
+  --color-parchment:         var(--parchment);
+  --color-book-bg:           var(--book-bg);
+  --color-panel-text:        var(--panel-text);
+  --color-panel-muted:       var(--panel-muted);
+  --color-card-mouvement:    var(--card-mouvement);
+  --color-card-offensive:    var(--card-offensive);
+  --color-card-defensive:    var(--card-defensive);
+  --color-card-guerison:     var(--card-guerison);
+  --color-card-amelioration: var(--card-amelioration);
+  --color-card-reaction:     var(--card-reaction);
+  --color-card-ink:          var(--card-ink);
+
+  /* Police d'affichage → utilitaire font-antiqua */
+  --font-antiqua:            var(--font-ui);
+}

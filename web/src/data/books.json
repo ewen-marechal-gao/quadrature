@@ -1,0 +1,98 @@
+[
+  {
+    "id": "core",
+    "title":       { "fr": "Règles de base",            "en": "Core Rulebook" },
+    "subtitle":    { "fr": "Règles fondamentales",       "en": "Fundamental Rules" },
+    "description": {
+      "fr": "Caractéristiques, jets de dés, combat, personnages, traits et équipement.",
+      "en": "Attributes, dice rolls, combat, characters, traits and equipment."
+    },
+    "sections": [
+      { "slug": "core/materiel",                      "title": { "fr": "Matériel",             "en": "Materials" } },
+      { "slug": "core/glossaire",                     "title": { "fr": "Glossaire",             "en": "Glossary" } },
+      { "slug": "core/personnages",                   "title": { "fr": "Personnages",           "en": "Characters" } },
+      { "slug": "core/jouer",                         "title": { "fr": "Jouer",                 "en": "Playing" } },
+      { "slug": "core/ressources",                    "title": { "fr": "Ressources",            "en": "Resources" } },
+      { "slug": "core/equipement",                    "title": { "fr": "Équipement",            "en": "Equipment" } },
+      { "slug": "core/voyager",                       "title": { "fr": "Voyager",               "en": "Travel" } },
+      { "slug": "core/epreuves",                      "title": { "fr": "Épreuves",              "en": "Challenges" } },
+      { "slug": "core/etats",                         "title": { "fr": "États",                 "en": "Conditions" } },
+      { "slug": "core/actions/universal_actions",     "title": { "fr": "Actions universelles",  "en": "Universal Actions" } },
+      { "slug": "core/actions/attribute_actions",     "title": { "fr": "Actions avancées",      "en": "Advanced Actions" } },
+      { "slug": "core/actions/defense_reactions",     "title": { "fr": "Réactions de défense",  "en": "Defense Reactions" } },
+      { "slug": "core/furtivite",                     "title": { "fr": "Furtivité",             "en": "Stealth" } },
+      { "slug": "core/combat",                        "title": { "fr": "Combat",                "en": "Combat" } },
+      { "slug": "core/traits",                        "title": { "fr": "Traits",                "en": "Traits" } }
+    ]
+  },
+  {
+    "id": "martial",
+    "title":       { "fr": "Disciplines martiales",     "en": "Martial Disciplines" },
+    "subtitle":    { "fr": "Disciplines de combat",      "en": "Combat Disciplines" },
+    "description": {
+      "fr": "Escrime, lames courtes, hast, archerie, tir tendu, arts martiaux, impact.",
+      "en": "Fencing, short blades, polearms, archery, point blank, martial arts, impact."
+    },
+    "sections": [
+      { "slug": "disciplines/martial_escrime",        "title": { "fr": "Escrime",               "en": "Fencing" } },
+      { "slug": "disciplines/martial_lames_courtes",  "title": { "fr": "Lames courtes",          "en": "Short Blades" } },
+      { "slug": "disciplines/martial_hast",           "title": { "fr": "Armes d'hast",           "en": "Polearms" } },
+      { "slug": "disciplines/martial_archerie",       "title": { "fr": "Archerie",               "en": "Archery" } },
+      { "slug": "disciplines/martial_tir_tendu",      "title": { "fr": "Tir tendu",              "en": "Point Blank" } },
+      { "slug": "disciplines/martial_arts_martiaux",  "title": { "fr": "Arts martiaux",          "en": "Martial Arts" } },
+      { "slug": "disciplines/martial_impact",         "title": { "fr": "Impact",                 "en": "Impact" } }
+    ]
+  },
+  {
+    "id": "magic",
+    "title":       { "fr": "Disciplines magiques",      "en": "Magic Disciplines" },
+    "subtitle":    { "fr": "L'art des disciplines arcanes", "en": "The Art of Arcane Disciplines" },
+    "description": {
+      "fr": "Biomancie, télépathie, électromancie, calomancie, échomancie, alchimie, choromancie.",
+      "en": "Biomancy, telepathy, electromancy, calomancy, echomancy, alchemy, choromancy."
+    },
+    "sections": [
+      { "slug": "disciplines/magie_intro",            "title": { "fr": "Introduction à la magie", "en": "Introduction to Magic" } },
+      { "slug": "disciplines/magie_biomancie",        "title": { "fr": "Biomancie",              "en": "Biomancy" } },
+      { "slug": "disciplines/magie_telepathie",       "title": { "fr": "Télépathie",             "en": "Telepathy" } },
+      { "slug": "disciplines/magie_electromancie",    "title": { "fr": "Électromancie",          "en": "Electromancy" } },
+      { "slug": "disciplines/magie_calomancie",       "title": { "fr": "Calomancie",             "en": "Calomancy" } },
+      { "slug": "disciplines/magie_echomancie",       "title": { "fr": "Échomancie",             "en": "Echomancy" } },
+      { "slug": "disciplines/magie_alchimie",         "title": { "fr": "Alchimie",               "en": "Alchemy" } },
+      { "slug": "disciplines/magie_choromancie",      "title": { "fr": "Choromancie",            "en": "Choromancy" } }
+    ]
+  },
+  {
+    "id": "creatures",
+    "title":       { "fr": "Bestiaire",                 "en": "Creatures Compendium" },
+    "subtitle":    { "fr": "Adversaires & bestiaire",   "en": "Adversaries & Bestiary" },
+    "description": {
+      "fr": "Règles de création d'adversaires et exemples de créatures d'Aeonir.",
+      "en": "Adversary creation rules and sample creatures from Aeonir."
+    },
+    "sections": [
+      { "slug": "adversaires/regles_adversaires",     "title": { "fr": "Règles adversaires",    "en": "Adversary Rules" } },
+      { "slug": "adversaires/exemples_adversaires",   "title": { "fr": "Exemples",              "en": "Examples" } }
+    ]
+  },
+  {
+    "id": "world",
+    "title":       { "fr": "Le monde d'Aeonir",         "en": "The World of Aeonir" },
+    "subtitle":    { "fr": "Univers & lore",             "en": "World & Lore" },
+    "description": {
+      "fr": "Histoire, écologie et peuples du monde d'Aeonir.",
+      "en": "History, ecology and peoples of the world of Aeonir."
+    },
+    "sections": [
+      { "slug": "univers/astronomie",                 "title": { "fr": "Astronomie",                "en": "Astronomy" } },
+      { "slug": "univers/climat",                     "title": { "fr": "Climat",                    "en": "Climate" } },
+      { "slug": "univers/lore",                       "title": { "fr": "Lore",                      "en": "Lore" } },
+      { "slug": "univers/ecologie",                   "title": { "fr": "Écologie",                   "en": "Ecology" } },
+      { "slug": "univers/peuples",                    "title": { "fr": "Peuples — Vue d'ensemble",   "en": "Peoples — Overview" } },
+      { "slug": "univers/peuple_cimes",               "title": { "fr": "Peuple des Cimes",           "en": "Peak Dwellers" } },
+      { "slug": "univers/peuple_vents",               "title": { "fr": "Peuple des Vents",           "en": "Wind People" } },
+      { "slug": "univers/peuple_pluies",              "title": { "fr": "Peuple des Pluies",          "en": "Rain People" } },
+      { "slug": "univers/peuple_neiges",              "title": { "fr": "Peuple des Neiges",          "en": "Snow People" } }
+    ]
+  }
+]
