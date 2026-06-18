@@ -1,0 +1,107 @@
+# Cartes — Réactions et Gardes
+# Source : core/actions/defense_reactions.md
+# Schéma : voir README.md
+#
+# Note : toutes les réactions de Garde fixent le score de Garde du défenseur ;
+# la carte reste en jeu jusqu'à la fin de la manche.
+
+cartes:
+  - id: frappe-opportuniste
+    nom: Frappe opportuniste
+    type: reaction
+    famille: melee
+    categorie: offensive
+    initiative: 2
+    cout: "⚡💧"
+    declencheur: "une créature à portée initie une action de **Marche**, de **Course** ou se **Relève**"
+    cible: "une créature **adjacente**"
+    jet: "Réactivité 🟨🟨 + Intelligence 🟦"
+    contre: "Garde"
+    critique: "la cible subit **🔻**"
+    succes: "la cible subit 2 **blessures 💢**"
+    echec: "la cible subit 1 **fatigue 💧**"
+    source: core/actions/defense_reactions.md
+
+  # ── Gardes ──────────────────────────────────────────────────────────────────
+
+  - id: encaisser
+    nom: Encaisser
+    type: reaction
+    famille: garde
+    categorie: defensive
+    initiative: 1
+    description: "Faute de pouvoir esquiver ou parer à temps, vous contractez vos muscles et préparez votre esprit à absorber le choc."
+    bandeau: "toujours disponible, sans coût ; ne peut pas être brisée"
+    declencheur: "être la cible d'une action **contre 🆚** votre **Garde**"
+    jet: "Robustesse 🟨🟨 + Force 🟦"
+    defaut: "augmentez votre Fatigue 💧 de 1 point"
+    critique: "vous gagnez une Réduction (1) applicable sur toutes les blessures légères 💢 subies jusqu'à la fin de la manche"
+    effet: "le résultat du jet fixe votre score de **Garde**"
+    source: core/actions/defense_reactions.md
+
+  - id: parade
+    nom: Parade
+    type: reaction
+    famille: garde
+    categorie: defensive
+    initiative: 2
+    cout: "⚡"
+    description: "Une lecture fine de la trajectoire adverse pour dévier le coup au dernier moment."
+    declencheur: "être la cible d'une action **contre 🆚** votre **Garde** (Parade)"
+    condition: "avoir une arme en main"
+    jet: "Vigilance 🟨🟨 + Acuité 🟦"
+    defaut: "augmentez votre Fatigue 💧 de 1 point"
+    critique: "votre prochaine attaque contre l'attaquant bénéficie de +🟩"
+    effet: "le résultat du jet fixe votre score de **Garde**"
+    source: core/actions/defense_reactions.md
+
+  - id: esquive
+    nom: Esquive
+    type: reaction
+    famille: garde
+    categorie: defensive
+    initiative: 3
+    cout: "⚡"
+    description: "Un mouvement fluide, un pas de côté glissé pour laisser le coup se perdre dans le vide."
+    declencheur: "être la cible d'une action **contre 🆚** votre **Garde** (Esquive)"
+    condition: "ne pas être **entravé 🕸️** ou **immobilisé 🔗**"
+    jet: "Mobilité 🟨🟨 + Agilité 🟦"
+    ameliorations:
+      - nom: Esquive plongeante
+        effet: "si vous êtes **debout 🧍** ou **à genoux 🧎**, vous pouvez ignorer le coût ⚡ de cette Esquive. Vous vous retrouvez **À terre 🙏**"
+    defaut: "augmentez votre Fatigue 💧 de 1 point"
+    critique: "votre score de Garde ne diminue que d'un point à chaque échec de vos adversaires"
+    effet: "le résultat du jet fixe votre score de **Garde**"
+    source: core/actions/defense_reactions.md
+
+  - id: derobade
+    nom: Dérobade
+    type: reaction
+    famille: garde
+    categorie: defensive
+    initiative: 3
+    cout: "⚡"
+    description: "Se fondre dans l'environnement, casser la ligne de vue au moment de l'impact."
+    declencheur: "être la cible d'une action **contre 🆚** votre **Garde** (Dérobade)"
+    condition: "ne pas être **immobilisé 🔗**, et se trouver sur (ou adjacent à) une case **occultée 🌑**"
+    jet: "Mascarade 🟨🟨 + Grâce 🟦"
+    defaut: "augmentez votre Fatigue 💧 de 1 point"
+    critique: "vous disparaissez totalement. Vous devenez immédiatement **Dissimulé 😶‍🌫️**"
+    effet: "déplacez-vous sur une case **occultée 🌑**. Le résultat du jet fixe votre score de **Garde**"
+    source: core/actions/defense_reactions.md
+
+  - id: blocage
+    nom: Blocage
+    type: reaction
+    famille: garde
+    categorie: defensive
+    initiative: 4
+    cout: "⚡"
+    description: "S'abriter derrière son bouclier, et transformer son corps en une forteresse inébranlable."
+    declencheur: "être la cible d'une action **contre 🆚** votre **Garde** (Blocage)"
+    condition: "avoir un bouclier adapté, ou improvisé (avec -🟥)"
+    jet: "Endurance 🟨🟨 + Vigueur 🟦"
+    defaut: "augmentez votre Fatigue 💧 de 1 point"
+    critique: "le bouclier absorbe le choc. Vous gagnez 1 point de Protection temporaire 🛡️"
+    effet: "le résultat du jet fixe votre score de **Garde**"
+    source: core/actions/defense_reactions.md
