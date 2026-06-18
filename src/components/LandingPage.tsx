@@ -64,6 +64,17 @@ export function LandingPage({ locale }: Props) {
               <span className="landing-book-arrow">→</span>
             </Link>
           )}
+          {localeEnabled && (
+            <Link href={`/${locale}/personnage/`} className="landing-book-card">
+              <span className="landing-book-title">Personnage</span>
+              <span className="landing-book-subtitle">Outil de table</span>
+              <span className="landing-book-desc">
+                Créez et gérez vos personnages : feuille interactive, sauvegarde
+                automatique, export JSON et impression PDF.
+              </span>
+              <span className="landing-book-arrow">→</span>
+            </Link>
+          )}
           {BOOKS.map((book) =>
             localeEnabled ? (
               <Link
