@@ -1,0 +1,34 @@
+# ───────────────────────────────────────────────────────────────────────────
+# Monorepo Quadrature — .gitignore racine
+# (Chaque sous-projet conserve aussi son propre .gitignore ; ceci est un filet
+#  de sécurité + les fichiers spécifiques à la racine.)
+# ───────────────────────────────────────────────────────────────────────────
+
+# Dépendances & artefacts de build
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+
+# État local de l'éditeur Obsidian
+.obsidian/
+
+# Config locale de l'agent (launch.json reste versionné)
+.claude/settings.local.json
+
+# Fichiers locaux, sensibles ou legacy
+.bookstack-access
+Quadrature_latest.md
+Quadrature - Feuille de Personnage.pdf
+
+# Captures d'écran de travail (non utilisées dans la documentation)
+/Capture*.png
+/horloge.png
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Sauvegarde temporaire de la migration monorepo (à supprimer une fois validée)
+/backup/
