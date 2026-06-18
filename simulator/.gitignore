@@ -1,0 +1,11 @@
+# Build output
+dist/
+
+# Dependencies
+node_modules/
+
+# Simulation reports (generated at runtime)
+combatReports/
+
+# Environment variables (API keys, secrets)
+.env

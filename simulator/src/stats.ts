@@ -1,0 +1,514 @@
+/**
+ * Statistics computation and display for Quadrature combat simulations.
+ *
+ * computeStats(logs)               → pure aggregation over any number of CombatLog
+ * printStats(stats, encounterName) → formatted console output
+ *
+ * Works for both single-run (n = 1) and batch modes.
+ * In single-run mode values are exact; "avg" labels are omitted.
+ */
+
+import type { CombatLog, ActionId, GuardId } from './combat/types'
+import { ACTION_DEFS, GUARD_DEFS }           from './combat/actions'
+
+// ─── Accumulator ──────────────────────────────────────────────────────────────
+
+interface Acc { sum: number; n: number; min: number; max: number }
+
+function mkAcc(): Acc { return { sum: 0, n: 0, min: Infinity, max: -Infinity } }
+
+function pushAcc(a: Acc, v: number): void {
+  a.sum += v; a.n++
+  if (v < a.min) a.min = v
+  if (v > a.max) a.max = v
+}
+
+function accAvg(a: Acc): number     { return a.n ? a.sum / a.n : 0 }
+function accMin(a: Acc): number     { return a.n ? a.min : 0 }
+function accMax(a: Acc): number     { return a.n ? a.max : 0 }
+
+// ─── Stat shapes ──────────────────────────────────────────────────────────────
+
+export interface ActionStat {
+  /** Total times this action was declared */
+  uses:             number
+  /** Subset of uses that targeted an opponent */
+  offensiveUses:    number
+  /** Rolls that met or beat the threshold */
+  hits:             number
+  roll:             Acc
+  crits:            number
+  flaws:            number
+  /** add-fatigue effects landing on the opponent (per offensive action) */
+  fatigueDealt:     number
+  /** light-wound effects landing on the opponent */
+  lightDealt:       number
+  /** heavy-wound effects landing on the opponent */
+  heavyDealt:       number
+  /** remove-fatigue effects landing on self (self-targeted actions) */
+  fatigueRecovered: number
+  /** heal-wounds effects landing on self */
+  woundsHealed:     number
+}
+
+export interface EnduranceStat {
+  tests:     number
+  successes: number
+  roll:      Acc
+  dd:        Acc
+}
+
+interface GuardStat {
+  /** Times this guard was chosen (≤ 1 per target per round) */
+  setups:  number
+  dcSum:   number
+  dcN:     number
+  /** Total attacks resolved against this guard */
+  faced:   number
+  /** Attacks where the attacker missed (roll < threshold) */
+  blocked: number
+}
+
+interface VitalAcc {
+  fatigue:     Acc
+  lightWounds: Acc
+  heavyWounds: Acc
+  /** Base protection remaining at end of round (tempProtection is always 0 at snapshot time) */
+  protection:  Acc
+}
+
+export interface ComputedStats {
+  runCount:        number
+  charNames:       string[]
+  wins:            Record<string, number>
+  mutual:          number
+  timeout:         number
+  rounds:          Acc
+  roundDist:       Record<number, number>
+  totalDurationMs: number
+  /** [charId][round] end-of-round vitals across runs */
+  vitalsByRound:   Record<string, Record<number, VitalAcc>>
+  endurance:       Record<string, EnduranceStat>
+  /** [charId][actionId] */
+  actionStats:     Record<string, Record<string, ActionStat>>
+  /** [defCharId][guardId] */
+  guardStats:      Record<string, Record<string, GuardStat>>
+  /** [charId][statusId] — how many times each status was applied */
+  statusCounts:    Record<string, Record<string, number>>
+}
+
+// ─── Initialisation helpers ───────────────────────────────────────────────────
+
+function mkActionStat(): ActionStat {
+  return {
+    uses: 0, offensiveUses: 0, hits: 0,
+    roll: mkAcc(), crits: 0, flaws: 0,
+    fatigueDealt: 0, lightDealt: 0, heavyDealt: 0,
+    fatigueRecovered: 0, woundsHealed: 0,
+  }
+}
+
+function mkGuardStat(): GuardStat {
+  return { setups: 0, dcSum: 0, dcN: 0, faced: 0, blocked: 0 }
+}
+
+function mkVitalAcc(): VitalAcc {
+  return { fatigue: mkAcc(), lightWounds: mkAcc(), heavyWounds: mkAcc(), protection: mkAcc() }
+}
+
+// ─── Core aggregation ────────────────────────────────────────────────────────
+
+export function computeStats(logs: CombatLog[]): ComputedStats {
+  if (logs.length === 0) throw new Error('computeStats: empty log array')
+
+  const charNames = logs[0]!.combatants.map(c => c.id)
+
+  const wins: Record<string, number>   = Object.fromEntries(charNames.map(n => [n, 0]))
+  let mutual = 0, timeout = 0
+
+  const rounds:   Acc                          = mkAcc()
+  const roundDist: Record<number, number>      = {}
+  let totalDurationMs = 0
+
+  const vitalsByRound:  Record<string, Record<number, VitalAcc>>    = {}
+  const endurance:      Record<string, EnduranceStat>               = {}
+  const actionStats:    Record<string, Record<string, ActionStat>>  = {}
+  const guardStats:     Record<string, Record<string, GuardStat>>   = {}
+  const statusCounts:   Record<string, Record<string, number>>      = {}
+
+  for (const name of charNames) {
+    vitalsByRound[name] = {}
+    endurance[name]     = { tests: 0, successes: 0, roll: mkAcc(), dd: mkAcc() }
+    statusCounts[name]  = {}
+  }
+
+  for (const log of logs) {
+
+    // ── Outcome ────────────────────────────────────────────────────────────────
+    const o = log.outcome
+    pushAcc(rounds, o.rounds)
+    roundDist[o.rounds] = (roundDist[o.rounds] ?? 0) + 1
+    totalDurationMs += log.durationMs
+
+    if (o.kind === 'victor') {
+      wins[o.victorId] = (wins[o.victorId] ?? 0) + 1
+    } else if (o.kind === 'mutual-incapacitation') {
+      mutual++
+    } else {
+      timeout++
+    }
+
+    // ── Per-round processing ───────────────────────────────────────────────────
+    for (const round of log.rounds) {
+
+      // Vitals — end-of-round snapshots
+      for (const snap of round.endOfRound) {
+        if (!vitalsByRound[snap.id]) continue
+        if (!vitalsByRound[snap.id]![round.round]) {
+          vitalsByRound[snap.id]![round.round] = mkVitalAcc()
+        }
+        const vr = vitalsByRound[snap.id]![round.round]!
+        pushAcc(vr.fatigue,     snap.fatigue)
+        pushAcc(vr.lightWounds, snap.lightWounds)
+        pushAcc(vr.heavyWounds, snap.heavyWounds)
+        pushAcc(vr.protection,  snap.protection)
+      }
+
+      // Endurance tests (maintenance phase)
+      for (const m of round.maintenance) {
+        const es = endurance[m.actorId]
+        if (!es) continue
+        es.tests++
+        if (m.success) es.successes++
+        pushAcc(es.roll, m.roll.total)
+        pushAcc(es.dd,   m.threshold)
+      }
+
+      // Guard deduplication — first attack on a target per round sets up the guard
+      const seenTargets = new Set<string>()
+
+      // Action entries across all phases (waves merged)
+      for (const phase of round.phases) {
+        for (const entry of phase.actions) {
+
+          // ── Action stats ───────────────────────────────────────────────────
+          if (!actionStats[entry.actorId]) actionStats[entry.actorId] = {}
+          const charAs = actionStats[entry.actorId]!
+          if (!charAs[entry.action]) charAs[entry.action] = mkActionStat()
+          const as = charAs[entry.action]!
+
+          as.uses++
+          if (entry.targetId) as.offensiveUses++
+          if (entry.hit)      as.hits++
+
+          if (entry.checkRoll) {
+            pushAcc(as.roll, entry.checkRoll.total)
+            if (entry.checkRoll.critical) as.crits++
+            if (entry.checkRoll.flaw)     as.flaws++
+          }
+
+          for (const fx of entry.effects) {
+            // Offensive: effects landing on opponent
+            if (entry.targetId) {
+              if (fx.kind === 'add-fatigue'  && fx.targetId === entry.targetId) as.fatigueDealt += fx.amount
+              if (fx.kind === 'light-wound'  && fx.targetId === entry.targetId) as.lightDealt += fx.amount
+              if (fx.kind === 'heavy-wound'  && fx.targetId === entry.targetId) as.heavyDealt++
+            }
+            // Self-targeted: recovery effects
+            if (fx.kind === 'remove-fatigue' && fx.targetId === entry.actorId) as.fatigueRecovered += fx.amount
+            if (fx.kind === 'heal-wounds'    && fx.targetId === entry.actorId) as.woundsHealed     += fx.amount
+          }
+
+          // ── Status counts ──────────────────────────────────────────────────
+          for (const fx of entry.effects) {
+            if (fx.kind === 'add-status' && statusCounts[fx.targetId]) {
+              const sc = statusCounts[fx.targetId]!
+              sc[fx.status] = (sc[fx.status] ?? 0) + 1
+            }
+          }
+
+          // ── Guard stats ────────────────────────────────────────────────────
+          if (entry.targetId && entry.guardId) {
+            const defId = entry.targetId
+            const gId   = entry.guardId
+            if (!guardStats[defId])    guardStats[defId] = {}
+            if (!guardStats[defId]![gId]) guardStats[defId]![gId] = mkGuardStat()
+            const gs = guardStats[defId]![gId]!
+
+            if (!seenTargets.has(defId)) {
+              // First attack on this target this round — guard was rolled here
+              seenTargets.add(defId)
+              gs.setups++
+              if (entry.guardRoll) {
+                gs.dcSum += entry.guardRoll.total
+                gs.dcN++
+              }
+            }
+            gs.faced++
+            if (!entry.hit) gs.blocked++
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    runCount: logs.length, charNames,
+    wins, mutual, timeout,
+    rounds, roundDist, totalDurationMs,
+    vitalsByRound, endurance, actionStats, guardStats, statusCounts,
+  }
+}
+
+// ─── Display ─────────────────────────────────────────────────────────────────
+
+const GUARD_LABEL: Record<string, string> = {
+  absorb: 'Encaisser',
+  dodge:  'Esquive',
+  parry:  'Parade',
+  block:  'Blocage',
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  hemorrhage:    '🩸 Hémorragie',
+  stunned:       '💫 Sonné',
+  knockdown:     '🔻 À terre',
+  winded:        '💨 Essoufflé',
+  incapacitated: '❌ Incapacité',
+}
+
+export function printStats(stats: ComputedStats, encounterName: string): void {
+  const W   = 72
+  const SEP = '═'.repeat(W)
+  const DIV = '─'.repeat(W)
+  const n   = stats.runCount
+  const isBatch = n > 1
+
+  const pct = (num: number, denom: number): string =>
+    denom > 0 ? ((num / denom) * 100).toFixed(1) : '0.0'
+
+  const fmtAvg = (a: Acc, dp = 1): string =>
+    a.n > 0 ? accAvg(a).toFixed(dp) : '—'
+
+  console.log(`\n${SEP}`)
+  console.log(`  📊 Statistiques — ${encounterName}` + (isBatch ? `  (${n} runs)` : ''))
+
+  // ─ 1. Résultats globaux ────────────────────────────────────────────────────
+  console.log(DIV)
+  console.log('  RÉSULTATS GLOBAUX')
+  const nW = String(n).length
+  for (const [charId, w] of Object.entries(stats.wins)) {
+    console.log(`  🏆 ${charId.padEnd(24)}  ${String(w).padStart(nW)} /${n}  (${pct(w, n)}%)`)
+  }
+  console.log(`  💀 Double incapacitation    ${String(stats.mutual).padStart(nW)} /${n}  (${pct(stats.mutual, n)}%)`)
+  console.log(`  ⏰ Limite de rounds         ${String(stats.timeout).padStart(nW)} /${n}  (${pct(stats.timeout, n)}%)`)
+
+  // ─ 2. Durée des combats ────────────────────────────────────────────────────
+  console.log(DIV)
+  console.log('  DURÉE DES COMBATS')
+  if (isBatch) {
+    const avgRnd = accAvg(stats.rounds)
+    const avgMs  = Math.round(stats.totalDurationMs / n)
+    console.log(
+      `  Rounds : moy. ${avgRnd.toFixed(1).padStart(4)}   ` +
+      `min ${accMin(stats.rounds)}   max ${accMax(stats.rounds)}`,
+    )
+    console.log(`  Durée  : total ${stats.totalDurationMs} ms  ·  moy. ${avgMs} ms/run`)
+
+    // Distribution histogram
+    const entries = Object.entries(stats.roundDist)
+      .map(([k, v]) => [Number(k), v] as [number, number])
+      .sort(([a], [b]) => a - b)
+    const maxC  = Math.max(...entries.map(([, v]) => v))
+    const BAR   = 30
+    console.log()
+    for (const [r, count] of entries) {
+      const filled = Math.round((count / maxC) * BAR)
+      const bar    = '█'.repeat(filled).padEnd(BAR, '░')
+      console.log(`  ${String(r).padStart(3)} rds  ▐${bar}▌  ${String(count).padStart(nW)} (${pct(count, n)}%)`)
+    }
+  } else {
+    console.log(`  Rounds : ${accMin(stats.rounds)}   Durée : ${stats.totalDurationMs} ms`)
+  }
+
+  // ─ 3. Progression des vitaux par round ─────────────────────────────────────
+  for (const charId of stats.charNames) {
+    const vbr = stats.vitalsByRound[charId]
+    if (!vbr) continue
+    const rdNums = Object.keys(vbr).map(Number).sort((a, b) => a - b)
+    if (rdNums.length === 0) continue
+
+    console.log(DIV)
+    console.log(`  PROGRESSION — ${charId}`)
+
+    if (isBatch) {
+      console.log(
+        `  ${'Rd'.padStart(3)}  ${'💧 moy'.padStart(8)}  ${'💢 moy'.padStart(7)}  ` +
+        `${'💔 moy'.padStart(7)}  ${'🛡️ moy'.padStart(7)}  ${'n runs'.padStart(6)}`,
+      )
+      for (const r of rdNums) {
+        const v = vbr[r]!
+        console.log(
+          `  ${String(r).padStart(3)}` +
+          `  ${accAvg(v.fatigue).toFixed(1).padStart(8)}` +
+          `  ${accAvg(v.lightWounds).toFixed(1).padStart(7)}` +
+          `  ${accAvg(v.heavyWounds).toFixed(2).padStart(7)}` +
+          `  ${accAvg(v.protection).toFixed(2).padStart(7)}` +
+          `  ${String(v.fatigue.n).padStart(6)}`,
+        )
+      }
+    } else {
+      console.log(
+        `  ${'Rd'.padStart(3)}  ${'💧'.padStart(8)}  ${'💢'.padStart(7)}  ${'💔'.padStart(7)}  ${'🛡️'.padStart(5)}`,
+      )
+      for (const r of rdNums) {
+        const v = vbr[r]!
+        console.log(
+          `  ${String(r).padStart(3)}` +
+          `  ${accAvg(v.fatigue).toFixed(0).padStart(8)}` +
+          `  ${accAvg(v.lightWounds).toFixed(0).padStart(7)}` +
+          `  ${accAvg(v.heavyWounds).toFixed(0).padStart(7)}` +
+          `  ${accAvg(v.protection).toFixed(0).padStart(5)}`,
+        )
+      }
+    }
+  }
+
+  // ─ 4. Tests d'endurance ────────────────────────────────────────────────────
+  const hasEndurance = Object.values(stats.endurance).some(e => e.tests > 0)
+  if (hasEndurance) {
+    console.log(DIV)
+    console.log(`  TESTS D'ENDURANCE`)
+    const eHdr =
+      `  ${'Personnage'.padEnd(22)}  ${'Tests'.padStart(5)}  ${'Succ.'.padStart(5)}  ` +
+      `${'Taux'.padStart(6)}  ${'Moy.jet'.padStart(7)}  ${'Moy.DD'.padStart(6)}`
+    console.log(eHdr)
+    console.log(`  ${'─'.repeat(eHdr.length - 2)}`)
+
+    for (const charId of stats.charNames) {
+      const e = stats.endurance[charId]
+      if (!e || e.tests === 0) continue
+      console.log(
+        `  ${charId.padEnd(22)}` +
+        `  ${String(e.tests).padStart(5)}` +
+        `  ${String(e.successes).padStart(5)}` +
+        `  ${pct(e.successes, e.tests).padStart(5)}%` +
+        `  ${fmtAvg(e.roll).padStart(7)}` +
+        `  ${fmtAvg(e.dd).padStart(6)}`,
+      )
+    }
+  }
+
+  // ─ 5. Performance des actions ──────────────────────────────────────────────
+  for (const charId of stats.charNames) {
+    const charAs = stats.actionStats[charId]
+    if (!charAs) continue
+
+    const entries = Object.entries(charAs)
+      .filter(([, s]) => s.uses > 0)
+      .sort(([a], [b]) => (ACTION_DEFS[a as ActionId]?.initiative ?? 99) - (ACTION_DEFS[b as ActionId]?.initiative ?? 99))
+    if (entries.length === 0) continue
+
+    console.log(DIV)
+    console.log(`  ACTIONS — ${charId}`)
+
+    const aHdr =
+      `  ${'Action'.padEnd(20)}  ${'Util'.padStart(4)}  ${'Hit%'.padStart(6)}  ` +
+      `${'Moy.J'.padStart(5)}  ${'Crit%'.padStart(5)}  ${'Flaw%'.padStart(5)}  Effet/util`
+    console.log(aHdr)
+    console.log(`  ${'─'.repeat(aHdr.length - 2)}`)
+
+    for (const [actionId, s] of entries) {
+      const label    = (ACTION_DEFS[actionId as ActionId]?.label ?? actionId).slice(0, 20).padEnd(20)
+      const uses     = String(s.uses).padStart(4)
+
+      // Hit rate: for offensive actions denominator = offensiveUses, else = uses
+      const hitBase  = s.offensiveUses > 0 ? s.offensiveUses : s.uses
+      const hitPct   = pct(s.hits, hitBase).padStart(5)
+      const avgRoll  = fmtAvg(s.roll).padStart(5)
+      const critPct  = pct(s.crits, s.uses).padStart(4)
+      const flawPct  = pct(s.flaws, s.uses).padStart(4)
+
+      // Summary of effects per use
+      const parts: string[] = []
+      if (s.fatigueDealt     > 0) parts.push(`${(s.fatigueDealt     / s.uses).toFixed(1)}💧↓`)
+      if (s.lightDealt       > 0) parts.push(`${(s.lightDealt       / s.uses).toFixed(1)}💢`)
+      if (s.heavyDealt       > 0) parts.push(`${(s.heavyDealt       / s.uses).toFixed(2)}💔`)
+      if (s.fatigueRecovered > 0) parts.push(`${(s.fatigueRecovered / s.uses).toFixed(1)}💧↑`)
+      if (s.woundsHealed     > 0) parts.push(`${(s.woundsHealed     / s.uses).toFixed(1)}💢↑`)
+      const effet = parts.join(' ') || '—'
+
+      console.log(
+        `  ${label}` +
+        `  ${uses}` +
+        `  ${hitPct}%` +
+        `  ${avgRoll}` +
+        `  ${critPct}%` +
+        `  ${flawPct}%` +
+        `  ${effet}`,
+      )
+    }
+  }
+
+  // ─ 6. Gardes en défense ────────────────────────────────────────────────────
+  const hasGuards = stats.charNames.some(id => stats.guardStats[id] && Object.keys(stats.guardStats[id]!).length > 0)
+  if (hasGuards) {
+    console.log(DIV)
+    console.log(`  GARDES EN DÉFENSE`)
+
+    const gHdr =
+      `  ${'Personnage'.padEnd(22)}  ${'Garde'.padEnd(10)}  ${'Setup'.padStart(5)}  ` +
+      `${'DC moy'.padStart(6)}  ${'Faces'.padStart(5)}  ${'Bloqués'.padStart(7)}  Taux`
+    console.log(gHdr)
+    console.log(`  ${'─'.repeat(gHdr.length - 2)}`)
+
+    for (const charId of stats.charNames) {
+      const charGs = stats.guardStats[charId]
+      if (!charGs) continue
+
+      const guardOrder: GuardId[] = ['absorb', 'dodge', 'parry', 'block']
+      const used = guardOrder.filter(g => charGs[g] && charGs[g]!.setups > 0)
+      for (const gId of used) {
+        const gs    = charGs[gId]!
+        const label = (GUARD_DEFS[gId]?.label ?? GUARD_LABEL[gId] ?? gId).padEnd(10)
+        const dcAvg = gs.dcN > 0 ? (gs.dcSum / gs.dcN).toFixed(1) : '—'
+        console.log(
+          `  ${charId.padEnd(22)}` +
+          `  ${label}` +
+          `  ${String(gs.setups).padStart(5)}` +
+          `  ${String(dcAvg).padStart(6)}` +
+          `  ${String(gs.faced).padStart(5)}` +
+          `  ${String(gs.blocked).padStart(7)}` +
+          `  ${pct(gs.blocked, gs.faced)}%`,
+        )
+      }
+    }
+  }
+
+  // ─ 7. Statuts appliqués ────────────────────────────────────────────────────
+  const hasStatuses = stats.charNames.some(
+    id => stats.statusCounts[id] && Object.keys(stats.statusCounts[id]!).length > 0,
+  )
+  if (hasStatuses) {
+    console.log(DIV)
+    console.log(`  STATUTS APPLIQUÉS`)
+    console.log(
+      `  ${'Personnage'.padEnd(22)}  ${'Statut'.padEnd(20)}  ${'Total'.padStart(5)}` +
+      (isBatch ? `  ${'/ run'.padStart(5)}` : ''),
+    )
+    console.log(`  ${'─'.repeat(isBatch ? 60 : 52)}`)
+
+    for (const charId of stats.charNames) {
+      const sc = stats.statusCounts[charId]
+      if (!sc || Object.keys(sc).length === 0) continue
+      const sorted = Object.entries(sc).sort(([, a], [, b]) => b - a)
+      for (const [statusId, count] of sorted) {
+        const label = (STATUS_LABEL[statusId] ?? statusId).padEnd(20)
+        const perRun = isBatch ? `  ${(count / n).toFixed(1).padStart(5)}` : ''
+        console.log(`  ${charId.padEnd(22)}  ${label}  ${String(count).padStart(5)}${perRun}`)
+      }
+    }
+  }
+
+  console.log(`${SEP}\n`)
+}

@@ -1,0 +1,30 @@
+name: "Duel LLM"
+description: >
+  Deux instances Claude s'affrontent. Chaque personnage est piloté par un appel
+  API indépendant — les deux planners tournent en parallèle à chaque vague.
+  Mode 1 run uniquement (coût API).
+
+maxRounds: 10
+
+factions:
+  - name: "Dueliste puissant"
+    characters:
+      - sheet: characterSheets/Duelist_powerful.yaml
+        persona: aggressive
+        agent: llm
+    allowedActions:
+      - armed-attack
+      - brutal-strike
+      - stabilize
+      - respiration
+
+  - name: "Dueliste précis"
+    characters:
+      - sheet: characterSheets/Duelist_precise.yaml
+        persona: opportunist
+        agent: llm
+    allowedActions:
+      - armed-attack
+      - sharp-strike
+      - stabilize
+      - respiration

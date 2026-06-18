@@ -1,0 +1,68 @@
+name: "🏋️ Powerful Duelist"
+inventory:
+  protection: 2
+people:
+  name: Humain
+  caracs: []
+  skills: []
+origin:
+  caracs:
+    - strength
+  skills:
+    - power
+    - robustness
+training:
+  skills:
+    - power
+    - recovery
+characteristics:
+  strength:
+    value: 3
+    wounds: 0
+    power: 2
+    robustness: 1
+  agility:
+    value: 1
+    wounds: 0
+    precision: 0
+    mobility: 0
+  vigor:
+    value: 2
+    wounds: 0
+    endurance: 1
+    recovery: 1
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 1
+    wounds: 0
+    observation: 0
+    vigilance: 0
+  willpower:
+    value: 1
+    wounds: 0
+    authority: 0
+    discipline: 1
+  intelligence:
+    value: 1
+    wounds: 0
+    logic: 0
+    reactivity: 0
+  tenacity:
+    value: 1
+    wounds: 0
+    conviction: 0
+    resilience: 0
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 1
+    wounds: 0
+    foresight: 0
+    intuition: 0
