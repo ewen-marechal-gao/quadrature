@@ -114,6 +114,7 @@
   /* ── ex-body ────────────────────────────────────────────────────────────── */
   font-family: "Modern Antiqua", "Georgia", serif;
   color: var(--text-color);
+  height: 100%;
 
   /* ── Conteneur de page (A4 paysage) ───────────────────────────────────────── */
   .character-sheet-page {
@@ -128,6 +129,86 @@
     background-color: var(--sheet-bg-color);
     margin: 20px auto;
     box-shadow: 0 0 15px var(--shadow-card);
+  }
+
+  /* ── Mise en scène écran : pages empilées, mises à l'échelle, bascule au clic ──
+     La page active est devant ; l'inactive dépasse en bas-droite et se ramène
+     au premier plan d'un clic. `--sheet-scale` (calculé en JS) fait tenir la pile
+     dans l'espace dispo sans scroll. Tout est neutralisé à l'impression. */
+  .sheet-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .sheet-stack {
+    position: relative;
+    width: calc(297mm + 36px);
+    height: calc(210mm + 36px);
+    transform: scale(var(--sheet-scale, 1));
+    transform-origin: center center;
+    transition: transform 0.15s ease;
+  }
+  .sheet-stack .character-sheet-page {
+    margin: 0;
+  }
+  .sheet-page-holder {
+    position: absolute;
+    transition:
+      top 0.25s ease,
+      left 0.25s ease,
+      filter 0.25s ease;
+  }
+  .sheet-page-holder.is-front {
+    top: 0;
+    left: 0;
+    z-index: 2;
+  }
+  .sheet-page-holder.is-back {
+    top: 36px;
+    left: 36px;
+    z-index: 1;
+    cursor: pointer;
+    filter: brightness(0.82) saturate(0.9);
+  }
+  /* clics interceptés par le holder (et non les champs) pour basculer */
+  .sheet-page-holder.is-back .character-sheet-page {
+    pointer-events: none;
+  }
+  .sheet-page-holder.is-back:hover {
+    filter: brightness(0.92);
+  }
+
+  /* Onglets de page (chrome — masqués à l'impression) */
+  .sheet-page-tabs {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 5;
+    display: flex;
+    gap: 4px;
+  }
+  .sheet-page-tab {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: 1px solid rgba(196, 154, 69, 0.45);
+    background: rgba(26, 21, 16, 0.72);
+    color: #e8dcc0;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .sheet-page-tab:hover {
+    background: rgba(196, 154, 69, 0.25);
+  }
+  .sheet-page-tab.active {
+    background: #c49a45;
+    color: #1a1008;
+    font-weight: bold;
   }
 
   .left-column {
@@ -1162,6 +1243,30 @@
   }
   .sheet-chrome { display: none !important; }
   .sheet-tool { background: #fff !important; }
+
+  /* Neutralise la mise en scène écran : les 2 pages reprennent un flux vertical
+     pleine taille (la pile/échelle/onglets sont uniquement pour l'écran). */
+  .sheet-tool,
+  .sheet-body,
+  .sheet-viewport,
+  .sheet-root,
+  .sheet-root .sheet-stage,
+  .sheet-root .sheet-stack {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+  }
+  .sheet-root .sheet-page-holder {
+    position: static !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .sheet-root .sheet-page-holder.is-back .character-sheet-page {
+    pointer-events: auto !important;
+  }
 
   .sheet-root .character-sheet-page {
     background: #fff !important;
