@@ -1,0 +1,67 @@
+# Source de vérité du cladogramme de la faune d'Aeonir.
+# Éditer CE fichier, puis régénérer le SVG : node tools/gen-faune-arbre.mjs
+# Champs d'un nœud : name+ref (clade interne) | tip+cd (feuille) ; biome (sous-ensemble de NLCS) ;
+# status (done|todo) ; mut (n° d'une mutation d'Aeonir, pastille sur le nœud) ; star ; branchNote ; children.
+
+title: "Arbre phylogénétique de la vie d'Aeonir — état courant (mis à jour à chaque grade peuplé)"
+rootNote: "racine : hétérotrophe · électrosensible · sexuée (méiose)"
+
+# Mutations spécifiques d'Aeonir, numérotées. Le n° apparaît sur le nœud (champ mut) où la mutation surgit.
+mutations:
+  - "Endosymbiose pourpre"
+  - "Sacs d'hydrogène"
+  - "Cristallisation (l'Arche)"
+  - "Flore mobile / prédatrice"
+  - "Symétrie tri-radiale"
+  - "Métamorphose thermique"
+  - { label: "Corne EM (télépathie)", todo: true }
+  - { label: "Carapace chitino-ferrique", todo: true }
+
+root:
+  children:
+    - name: "POURPRES"
+      ref: "autotrophes — algues, plantes"
+      mut: 1
+      children:
+        - branchNote: "sessiles à dispersion"
+          children:
+            - { tip: "Pionniers anémochores", cd: "herbe pourpre", status: done, biome: LC }
+            - { tip: "Aéroplanctes", cd: "flotteurs aériens", biome: NLC, mut: 2 }
+            - { tip: "Arbre-Anneau", cd: "l'Arche — franchit la Nuit · réf. Pando", biome: NLC, star: true, mut: 3 }
+        - branchNote: "réfugiaux polaires"
+          children:
+            - { tip: "Endémiques Nord — marais", biome: N }
+            - { tip: "Endémiques Sud — toundra", biome: S }
+        - { tip: "Phyterrants", cd: "flore mobile · réf. Dionée, Euglène", biome: LC, mut: 4 }
+
+    - name: "ZOÏDES"
+      ref: "animaux — Metazoa"
+      children:
+        - { tip: "Filtreurs", cd: "Métazoïdes · réf. éponge", status: done, biome: NC }
+        - name: "EUMÉTAZOÏDES"
+          ref: "cnidaire, ver…"
+          children:
+            - name: "RADIÉS"
+              ref: "méduse, hydre"
+              children:
+                - { tip: "Radiés", cd: "polypes & méduses", status: done, biome: NC }
+                - { tip: "Trilatériens", cd: "tri-radial · réf. Tribrachidium †", status: todo, biome: LC, mut: 5 }
+            - children:
+                - { tip: "les Vers (non-bilatériens)", cd: "brouteurs, fouisseurs · réf. Dickinsonia †", status: done, biome: LC }
+                - name: "BILATÉRIENS"
+                  ref: "ver, mollusque…"
+                  children:
+                    - name: "SEGMENTÉS"
+                      ref: "annélide, mille-pattes"
+                      children:
+                        - { tip: "Homonomes", cd: "mille-pattes · réf. Arthropleura †", status: done, biome: NLC }
+                        - name: "TAGMATISÉS"
+                          ref: "insecte, crustacé"
+                          children:
+                            - { tip: "Exosquelette", cd: "articulés · réf. trilobite †", status: done, biome: NLC }
+                            - name: "ENDOSQUELETTE"
+                              ref: "vertébré"
+                              children:
+                                - { tip: "Muants", cd: "amphibie · réf. Ichthyostega † / axolotl", status: done, biome: NLC, mut: 6 }
+                                - { tip: "Terrestres directs", cd: "→ Marcheurs, Peuples · réf. amniotes", status: done, biome: NLCS }
+                    - { tip: "Non-segmentés", cd: "pied musculeux · réf. mollusque", status: done, biome: NC }

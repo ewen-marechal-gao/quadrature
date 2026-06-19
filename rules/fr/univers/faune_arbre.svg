@@ -1,0 +1,199 @@
+<svg viewBox="0 0 957 600" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Arbre phylogénétique de la vie d'Aeonir — état courant</title>
+<desc>Cladogramme généré depuis cladogram.yaml. Encadré gauche : mutations d'Aeonir numérotées, dont le n° marque le nœud d'apparition. Pourpres (autotrophes) et Zoïdes (animaux), analogue terrestre sous chaque nom de clade, pastille de biome N L C S.</desc>
+<defs><style>
+.cn { font: 600 12px var(--font-sans, system-ui, sans-serif); fill: var(--color-text-primary, #20201e); }
+.cd { font: 400 10px var(--font-sans, system-ui, sans-serif); fill: var(--color-text-secondary, #6b6b64); }
+.ml { font: 400 9px var(--font-sans, system-ui, sans-serif); fill: var(--color-text-secondary, #6b6b64); }
+.gr { font: 700 11px var(--font-sans, system-ui, sans-serif); fill: var(--color-text-primary, #20201e); }
+.gs { font: 700 10px var(--font-sans, system-ui, sans-serif); fill: var(--color-text-primary, #20201e); }
+.rf { font: italic 9px var(--font-sans, system-ui, sans-serif); fill: var(--color-text-secondary, #6b6b64); }
+.sy { font: 400 9.5px var(--font-sans, system-ui, sans-serif); fill: var(--color-text-secondary, #6b6b64); }
+.bs { font: 600 10.5px var(--font-sans, system-ui, sans-serif); fill: var(--color-text-secondary, #6b6b64); }
+.bd { font: 700 8.5px var(--font-sans, system-ui, sans-serif); fill: #fff; }
+.mo { font: 700 8.5px var(--font-sans, system-ui, sans-serif); fill: #D4537E; }
+.br { stroke: var(--color-text-secondary, #9a9a93); stroke-width: 1.4; fill: none; opacity: .55; }
+.ul { stroke: var(--color-text-secondary, #9a9a93); stroke-width: .8; opacity: .45; }
+.gd { fill: #C9971E; }
+.bx { stroke: var(--color-text-secondary, #9a9a93); stroke-width: 1; fill: none; opacity: .35; }
+.gp { fill: var(--color-text-secondary, #6b6b64); opacity: .85; }
+.gpt { fill: #fff; font: 700 7px var(--font-sans, system-ui, sans-serif); }
+.ga { fill: none; stroke: var(--color-text-secondary, #9a9a93); stroke-width: .8; opacity: .5; }
+.gat { fill: var(--color-text-secondary, #9a9a93); opacity: .55; font: 700 7px var(--font-sans, system-ui, sans-serif); }
+</style></defs>
+<text class="bs" x="36" y="22">Arbre phylogénétique de la vie d'Aeonir — état courant (mis à jour à chaque grade peuplé)</text>
+<text class="sy" x="182" y="38">racine : hétérotrophe · électrosensible · sexuée (méiose)</text>
+<path class="br" d="M170 234 H182"/>
+<path class="br" d="M182 147 V320"/>
+<path class="br" d="M182 147 H242"/>
+<text class="gs" x="188" y="130">POURPRES</text>
+<line class="ul" x1="188" y1="133" x2="236" y2="133"/>
+<text class="rf" x="188" y="141">(autotrophes — algues, plantes)</text>
+<circle cx="230" cy="147" r="7" fill="#D4537E"/><text class="bd" x="230" y="150" text-anchor="middle">1</text>
+<path class="br" d="M242 81 V213"/>
+<path class="br" d="M242 81 H302"/>
+<text class="sy" x="306" y="77">sessiles à dispersion</text>
+<path class="br" d="M302 48 V114"/>
+<path class="br" d="M302 48 H662"/>
+<rect class="ga" x="668" y="43" width="11" height="11"/><text class="gat" x="673.5" y="51" text-anchor="middle">N</text>
+<rect class="gp" x="680" y="43" width="11" height="11"/><text class="gpt" x="685.5" y="51" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="43" width="11" height="11"/><text class="gpt" x="697.5" y="51" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="43" width="11" height="11"/><text class="gat" x="709.5" y="51" text-anchor="middle">S</text>
+<text class="cn" x="722" y="51">Pionniers anémochores ✓</text>
+<text class="cd" x="722" y="64">herbe pourpre</text>
+<path class="br" d="M302 81 H662"/>
+<circle cx="650" cy="81" r="7" fill="#D4537E"/><text class="bd" x="650" y="84" text-anchor="middle">2</text>
+<rect class="gp" x="668" y="76" width="11" height="11"/><text class="gpt" x="673.5" y="84" text-anchor="middle">N</text>
+<rect class="gp" x="680" y="76" width="11" height="11"/><text class="gpt" x="685.5" y="84" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="76" width="11" height="11"/><text class="gpt" x="697.5" y="84" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="76" width="11" height="11"/><text class="gat" x="709.5" y="84" text-anchor="middle">S</text>
+<text class="cn" x="722" y="84">Aéroplanctes</text>
+<text class="cd" x="722" y="97">flotteurs aériens</text>
+<path class="br" d="M302 114 H662"/>
+<circle cx="650" cy="114" r="7" fill="#D4537E"/><text class="bd" x="650" y="117" text-anchor="middle">3</text>
+<rect class="gp" x="668" y="109" width="11" height="11"/><text class="gpt" x="673.5" y="117" text-anchor="middle">N</text>
+<rect class="gp" x="680" y="109" width="11" height="11"/><text class="gpt" x="685.5" y="117" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="109" width="11" height="11"/><text class="gpt" x="697.5" y="117" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="109" width="11" height="11"/><text class="gat" x="709.5" y="117" text-anchor="middle">S</text>
+<text class="gd" x="722" y="117" font-size="13" font-weight="700">★</text>
+<text class="cn" x="736" y="117">Arbre-Anneau</text>
+<text class="cd" x="722" y="130">l'Arche — franchit la Nuit · réf. Pando</text>
+<path class="br" d="M242 164 H302"/>
+<text class="sy" x="306" y="160">réfugiaux polaires</text>
+<path class="br" d="M302 147 V180"/>
+<path class="br" d="M302 147 H662"/>
+<rect class="gp" x="668" y="142" width="11" height="11"/><text class="gpt" x="673.5" y="150" text-anchor="middle">N</text>
+<rect class="ga" x="680" y="142" width="11" height="11"/><text class="gat" x="685.5" y="150" text-anchor="middle">L</text>
+<rect class="ga" x="692" y="142" width="11" height="11"/><text class="gat" x="697.5" y="150" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="142" width="11" height="11"/><text class="gat" x="709.5" y="150" text-anchor="middle">S</text>
+<text class="cn" x="722" y="150">Endémiques Nord — marais</text>
+<path class="br" d="M302 180 H662"/>
+<rect class="ga" x="668" y="175" width="11" height="11"/><text class="gat" x="673.5" y="183" text-anchor="middle">N</text>
+<rect class="ga" x="680" y="175" width="11" height="11"/><text class="gat" x="685.5" y="183" text-anchor="middle">L</text>
+<rect class="ga" x="692" y="175" width="11" height="11"/><text class="gat" x="697.5" y="183" text-anchor="middle">C</text>
+<rect class="gp" x="704" y="175" width="11" height="11"/><text class="gpt" x="709.5" y="183" text-anchor="middle">S</text>
+<text class="cn" x="722" y="183">Endémiques Sud — toundra</text>
+<path class="br" d="M242 213 H662"/>
+<circle cx="650" cy="213" r="7" fill="#D4537E"/><text class="bd" x="650" y="216" text-anchor="middle">4</text>
+<rect class="ga" x="668" y="208" width="11" height="11"/><text class="gat" x="673.5" y="216" text-anchor="middle">N</text>
+<rect class="gp" x="680" y="208" width="11" height="11"/><text class="gpt" x="685.5" y="216" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="208" width="11" height="11"/><text class="gpt" x="697.5" y="216" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="208" width="11" height="11"/><text class="gat" x="709.5" y="216" text-anchor="middle">S</text>
+<text class="cn" x="722" y="216">Phyterrants</text>
+<text class="cd" x="722" y="229">flore mobile · réf. Dionée, Euglène</text>
+<path class="br" d="M182 320 H242"/>
+<text class="gs" x="188" y="303">ZOÏDES</text>
+<line class="ul" x1="188" y1="306" x2="224" y2="306"/>
+<text class="rf" x="188" y="314">(animaux — Metazoa)</text>
+<path class="br" d="M242 268 V371"/>
+<path class="br" d="M242 268 H662"/>
+<rect class="gp" x="668" y="263" width="11" height="11"/><text class="gpt" x="673.5" y="271" text-anchor="middle">N</text>
+<rect class="ga" x="680" y="263" width="11" height="11"/><text class="gat" x="685.5" y="271" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="263" width="11" height="11"/><text class="gpt" x="697.5" y="271" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="263" width="11" height="11"/><text class="gat" x="709.5" y="271" text-anchor="middle">S</text>
+<text class="cn" x="722" y="271">Filtreurs ✓</text>
+<text class="cd" x="722" y="284">Métazoïdes · réf. éponge</text>
+<path class="br" d="M242 371 H302"/>
+<text class="gs" x="248" y="354">EUMÉTAZOÏDES</text>
+<line class="ul" x1="248" y1="357" x2="320" y2="357"/>
+<text class="rf" x="248" y="365">(cnidaire, ver…)</text>
+<path class="br" d="M302 318 V424"/>
+<path class="br" d="M302 318 H362"/>
+<text class="gs" x="308" y="301">RADIÉS</text>
+<line class="ul" x1="308" y1="304" x2="344" y2="304"/>
+<text class="rf" x="308" y="312">(méduse, hydre)</text>
+<path class="br" d="M362 301 V334"/>
+<path class="br" d="M362 301 H662"/>
+<rect class="gp" x="668" y="296" width="11" height="11"/><text class="gpt" x="673.5" y="304" text-anchor="middle">N</text>
+<rect class="ga" x="680" y="296" width="11" height="11"/><text class="gat" x="685.5" y="304" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="296" width="11" height="11"/><text class="gpt" x="697.5" y="304" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="296" width="11" height="11"/><text class="gat" x="709.5" y="304" text-anchor="middle">S</text>
+<text class="cn" x="722" y="304">Radiés ✓</text>
+<text class="cd" x="722" y="317">polypes &amp; méduses</text>
+<path class="br" d="M362 334 H662"/>
+<circle cx="650" cy="334" r="7" fill="#D4537E"/><text class="bd" x="650" y="337" text-anchor="middle">5</text>
+<rect class="ga" x="668" y="329" width="11" height="11"/><text class="gat" x="673.5" y="337" text-anchor="middle">N</text>
+<rect class="gp" x="680" y="329" width="11" height="11"/><text class="gpt" x="685.5" y="337" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="329" width="11" height="11"/><text class="gpt" x="697.5" y="337" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="329" width="11" height="11"/><text class="gat" x="709.5" y="337" text-anchor="middle">S</text>
+<text class="cn" x="722" y="337">Trilatériens ☐</text>
+<text class="cd" x="722" y="350">tri-radial · réf. Tribrachidium †</text>
+<path class="br" d="M302 424 H362"/>
+<path class="br" d="M362 367 V481"/>
+<path class="br" d="M362 367 H662"/>
+<rect class="ga" x="668" y="362" width="11" height="11"/><text class="gat" x="673.5" y="370" text-anchor="middle">N</text>
+<rect class="gp" x="680" y="362" width="11" height="11"/><text class="gpt" x="685.5" y="370" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="362" width="11" height="11"/><text class="gpt" x="697.5" y="370" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="362" width="11" height="11"/><text class="gat" x="709.5" y="370" text-anchor="middle">S</text>
+<text class="cn" x="722" y="370">les Vers (non-bilatériens) ✓</text>
+<text class="cd" x="722" y="383">brouteurs, fouisseurs · réf. Dickinsonia †</text>
+<path class="br" d="M362 481 H422"/>
+<text class="gs" x="368" y="464">BILATÉRIENS</text>
+<line class="ul" x1="368" y1="467" x2="434" y2="467"/>
+<text class="rf" x="368" y="475">(ver, mollusque…)</text>
+<path class="br" d="M422 429 V532"/>
+<path class="br" d="M422 429 H482"/>
+<text class="gs" x="428" y="412">SEGMENTÉS</text>
+<line class="ul" x1="428" y1="415" x2="482" y2="415"/>
+<text class="rf" x="428" y="423">(annélide, mille-pattes)</text>
+<path class="br" d="M482 400 V458"/>
+<path class="br" d="M482 400 H662"/>
+<rect class="gp" x="668" y="395" width="11" height="11"/><text class="gpt" x="673.5" y="403" text-anchor="middle">N</text>
+<rect class="gp" x="680" y="395" width="11" height="11"/><text class="gpt" x="685.5" y="403" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="395" width="11" height="11"/><text class="gpt" x="697.5" y="403" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="395" width="11" height="11"/><text class="gat" x="709.5" y="403" text-anchor="middle">S</text>
+<text class="cn" x="722" y="403">Homonomes ✓</text>
+<text class="cd" x="722" y="416">mille-pattes · réf. Arthropleura †</text>
+<path class="br" d="M482 458 H542"/>
+<text class="gs" x="488" y="441">TAGMATISÉS</text>
+<line class="ul" x1="488" y1="444" x2="548" y2="444"/>
+<text class="rf" x="488" y="452">(insecte, crustacé)</text>
+<path class="br" d="M542 433 V483"/>
+<path class="br" d="M542 433 H662"/>
+<rect class="gp" x="668" y="428" width="11" height="11"/><text class="gpt" x="673.5" y="436" text-anchor="middle">N</text>
+<rect class="gp" x="680" y="428" width="11" height="11"/><text class="gpt" x="685.5" y="436" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="428" width="11" height="11"/><text class="gpt" x="697.5" y="436" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="428" width="11" height="11"/><text class="gat" x="709.5" y="436" text-anchor="middle">S</text>
+<text class="cn" x="722" y="436">Exosquelette ✓</text>
+<text class="cd" x="722" y="449">articulés · réf. trilobite †</text>
+<path class="br" d="M542 483 H602"/>
+<text class="gs" x="548" y="466">ENDOSQUELETTE</text>
+<line class="ul" x1="548" y1="469" x2="626" y2="469"/>
+<text class="rf" x="548" y="477">(vertébré)</text>
+<path class="br" d="M602 466 V499"/>
+<path class="br" d="M602 466 H662"/>
+<circle cx="650" cy="466" r="7" fill="#D4537E"/><text class="bd" x="650" y="469" text-anchor="middle">6</text>
+<rect class="gp" x="668" y="461" width="11" height="11"/><text class="gpt" x="673.5" y="469" text-anchor="middle">N</text>
+<rect class="gp" x="680" y="461" width="11" height="11"/><text class="gpt" x="685.5" y="469" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="461" width="11" height="11"/><text class="gpt" x="697.5" y="469" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="461" width="11" height="11"/><text class="gat" x="709.5" y="469" text-anchor="middle">S</text>
+<text class="cn" x="722" y="469">Muants ✓</text>
+<text class="cd" x="722" y="482">amphibie · réf. Ichthyostega † / axolotl</text>
+<path class="br" d="M602 499 H662"/>
+<rect class="gp" x="668" y="494" width="11" height="11"/><text class="gpt" x="673.5" y="502" text-anchor="middle">N</text>
+<rect class="gp" x="680" y="494" width="11" height="11"/><text class="gpt" x="685.5" y="502" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="494" width="11" height="11"/><text class="gpt" x="697.5" y="502" text-anchor="middle">C</text>
+<rect class="gp" x="704" y="494" width="11" height="11"/><text class="gpt" x="709.5" y="502" text-anchor="middle">S</text>
+<text class="cn" x="722" y="502">Terrestres directs ✓</text>
+<text class="cd" x="722" y="515">→ Marcheurs, Peuples · réf. amniotes</text>
+<path class="br" d="M422 532 H662"/>
+<rect class="gp" x="668" y="527" width="11" height="11"/><text class="gpt" x="673.5" y="535" text-anchor="middle">N</text>
+<rect class="ga" x="680" y="527" width="11" height="11"/><text class="gat" x="685.5" y="535" text-anchor="middle">L</text>
+<rect class="gp" x="692" y="527" width="11" height="11"/><text class="gpt" x="697.5" y="535" text-anchor="middle">C</text>
+<rect class="ga" x="704" y="527" width="11" height="11"/><text class="gat" x="709.5" y="535" text-anchor="middle">S</text>
+<text class="cn" x="722" y="535">Non-segmentés ✓</text>
+<text class="cd" x="722" y="548">pied musculeux · réf. mollusque</text>
+<rect class="bx" x="12" y="42" width="156" height="154"/>
+<text class="gr" x="22" y="60">Mutations d'Aeonir</text>
+<circle cx="28" cy="73" r="6" fill="#D4537E"/><text class="bd" x="28" y="76" text-anchor="middle">1</text><text class="ml" x="40" y="76">Endosymbiose pourpre</text>
+<circle cx="28" cy="89" r="6" fill="#D4537E"/><text class="bd" x="28" y="92" text-anchor="middle">2</text><text class="ml" x="40" y="92">Sacs d'hydrogène</text>
+<circle cx="28" cy="105" r="6" fill="#D4537E"/><text class="bd" x="28" y="108" text-anchor="middle">3</text><text class="ml" x="40" y="108">Cristallisation (l'Arche)</text>
+<circle cx="28" cy="121" r="6" fill="#D4537E"/><text class="bd" x="28" y="124" text-anchor="middle">4</text><text class="ml" x="40" y="124">Flore mobile / prédatrice</text>
+<circle cx="28" cy="137" r="6" fill="#D4537E"/><text class="bd" x="28" y="140" text-anchor="middle">5</text><text class="ml" x="40" y="140">Symétrie tri-radiale</text>
+<circle cx="28" cy="153" r="6" fill="#D4537E"/><text class="bd" x="28" y="156" text-anchor="middle">6</text><text class="ml" x="40" y="156">Métamorphose thermique</text>
+<circle cx="28" cy="169" r="6" fill="none" stroke="#D4537E" stroke-width="1"/><text class="mo" x="28" y="172" text-anchor="middle">7</text><text class="ml" x="40" y="172">Corne EM (télépathie)</text>
+<circle cx="28" cy="185" r="6" fill="none" stroke="#D4537E" stroke-width="1"/><text class="mo" x="28" y="188" text-anchor="middle">8</text><text class="ml" x="40" y="188">Carapace chitino-ferrique</text>
+<text class="gd" x="12" y="568" font-size="11" font-weight="700">★</text><text class="cd" x="24" y="568">espèce-clé · ✓ peuplé · ☐ à venir</text>
+<circle cx="218" cy="565" r="6" fill="#D4537E"/><text class="bd" x="218" y="568" text-anchor="middle">n</text><text class="cd" x="230" y="568">mutation (encadré) · cercle vide = à placer</text>
+<rect class="gp" x="12" y="576" width="10" height="10"/><text class="gpt" x="17" y="584" text-anchor="middle" font-size="6">N</text><rect class="ga" x="23" y="576" width="10" height="10"/><text class="cd" x="38" y="584">case pleine = biome du clade — N Nord · L Levant · C Couchant · S Sud</text>
+</svg>
