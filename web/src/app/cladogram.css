@@ -1,0 +1,417 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   Cladogramme interactif — route /{locale}/evolution
+   Importé localement par CladogramView (et non dans globals.css) pour cantonner
+   ces règles à la route. Thème sombre du livre : fond bois, encre parchemin,
+   accents laiton. Badges de mutation : rose signature #D4537E (cf. SVG source).
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.clado-app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--book-bg);
+  background-image: var(--noise-panel);
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+  overflow: hidden;
+}
+
+/* ── Barre d'outils ─────────────────────────────────────────────────────────── */
+.clado-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.4rem 0.7rem;
+  min-height: var(--bar-height);
+  border-bottom: 1px solid var(--brass-border);
+  background: rgba(0, 0, 0, 0.25);
+  background-image: var(--noise-panel);
+  z-index: 3;
+}
+
+.clado-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 4px;
+  color: var(--brass-bright);
+  text-decoration: none;
+  font-size: 1.1rem;
+  border: 1px solid transparent;
+}
+.clado-back:hover {
+  border-color: var(--brass-border);
+  background: var(--brass-faint);
+}
+
+.clado-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--parchment);
+  margin-right: 0.4rem;
+}
+
+.clado-bar-spacer { flex: 1 1 auto; }
+
+.clado-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-left: 0.5rem;
+  margin-left: 0.25rem;
+  border-left: 1px solid var(--brass-border);
+}
+.clado-group:first-of-type { border-left: 0; }
+
+.clado-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--panel-muted);
+  margin-right: 0.15rem;
+}
+
+.clado-chip,
+.clado-btn {
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--panel-text);
+  background: var(--brass-faint);
+  border: 1px solid var(--brass-border);
+  border-radius: 4px;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.clado-chip:hover,
+.clado-btn:hover { border-color: var(--brass-subtle); background: var(--brass-glow); }
+.clado-chip--on {
+  background: var(--brass);
+  color: var(--on-brass);
+  border-color: var(--brass-bright);
+  font-weight: 600;
+}
+.clado-iconbtn {
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 1rem;
+}
+.clado-zoom-val {
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  min-width: 2.6rem;
+  text-align: center;
+}
+
+/* ── Viewport (pan/zoom) ───────────────────────────────────────────────────── */
+.clado-viewport {
+  position: relative;
+  flex: 1 1 auto;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+.clado-viewport[data-panning="true"] { cursor: grabbing; }
+
+.clado-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.clado-links {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.clado-link {
+  fill: none;
+  stroke: var(--brass);
+  stroke-width: 1.4;
+  opacity: 0.4;
+  transition: opacity 0.12s, stroke 0.12s;
+}
+.clado-link.is-lit { stroke: var(--brass-bright); opacity: 0.95; stroke-width: 1.8; }
+.clado-link.is-dim { opacity: 0.1; }
+
+/* ── Nœuds ─────────────────────────────────────────────────────────────────── */
+.clado-node {
+  position: absolute;
+  font-family: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+.clado-node.is-dim { opacity: 0.22; }
+
+/* Clade interne : libellé posé au-dessus du point de branche. */
+.clado-clade {
+  transform: translateY(-100%);
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  white-space: nowrap;
+  padding: 0 0.2rem 0.1rem;
+}
+.clado-chevron {
+  color: var(--brass);
+  font-size: 0.6rem;
+  line-height: 1;
+}
+.clado-clade-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--brass-bright);
+}
+.clado-clade-ref {
+  font-size: 0.66rem;
+  font-style: italic;
+  color: var(--panel-muted);
+}
+.clado-clade.is-note .clado-clade-name {
+  font-weight: 400;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--panel-muted);
+}
+.clado-clade:hover .clado-clade-name,
+.clado-node:focus-visible .clado-clade-name { color: #fff; }
+
+/* Terminal : posé sur la colonne des pointes, centré verticalement. */
+.clado-tip {
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.2rem;
+}
+.clado-glyphs { display: inline-flex; gap: 2px; flex: 0 0 auto; }
+.clado-glyph {
+  width: 12px;
+  height: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: 700;
+  border-radius: 2px;
+}
+.clado-glyph--on { background: var(--brass); color: var(--on-brass); }
+.clado-glyph--off {
+  border: 1px solid var(--brass-border);
+  color: var(--panel-muted);
+}
+.clado-tip-body { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.clado-tip-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--parchment);
+  white-space: nowrap;
+}
+.clado-tip-cd {
+  font-size: 0.66rem;
+  color: var(--panel-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 340px;
+}
+.clado-star { color: #d8a72a; }
+.clado-mark { color: var(--panel-muted); font-size: 0.7rem; }
+.clado-mark--done { color: var(--card-guerison); }
+.clado-count {
+  font-size: 0.62rem;
+  color: var(--on-brass);
+  background: var(--brass-subtle);
+  border-radius: 999px;
+  padding: 0 0.3rem;
+}
+.clado-node:hover .clado-tip-name,
+.clado-node:focus-visible .clado-tip-name { color: #fff; }
+
+/* Pastille de mutation (sur le point de branche). */
+.clado-mut {
+  position: absolute;
+  transform: translate(-130%, -50%);
+  width: 15px;
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #d4537e;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+/* Note de la racine. */
+.clado-rootnote {
+  position: absolute;
+  transform: translateY(-160%);
+  font-size: 0.66rem;
+  font-style: italic;
+  color: var(--panel-muted);
+  white-space: nowrap;
+}
+
+/* ── Carte de survol (espace écran, non zoomée) ────────────────────────────── */
+.clado-hovercard {
+  position: fixed;
+  z-index: 20;
+  max-width: 340px;
+  background: #211a12;
+  background-image: var(--noise-card);
+  border: 1px solid var(--brass-subtle);
+  border-radius: 6px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  padding: 0.6rem 0.75rem;
+  pointer-events: none;
+  color: var(--panel-text);
+}
+.clado-hc-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--brass-bright);
+}
+.clado-hc-title.is-tip { color: var(--parchment); }
+.clado-hc-sub {
+  font-size: 0.74rem;
+  font-style: italic;
+  color: var(--panel-muted);
+  margin-bottom: 0.35rem;
+}
+.clado-hc-row { font-size: 0.74rem; margin-top: 0.15rem; }
+.clado-hc-row b { color: var(--parchment); font-weight: 600; }
+.clado-hc-mut {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.clado-hc-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: #d4537e;
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.clado-hc-path {
+  margin-top: 0.4rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--brass-border);
+  font-size: 0.68rem;
+  color: var(--panel-muted);
+  line-height: 1.35;
+}
+.clado-hc-path .sep { color: var(--brass-muted); margin: 0 0.25rem; }
+
+/* ── Encart des mutations (superposé, repliable) ───────────────────────────── */
+.clado-mutpanel {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 290px;
+  max-height: calc(100% - 1.2rem);
+  display: flex;
+  flex-direction: column;
+  background: rgba(20, 16, 11, 0.97);
+  background-image: var(--noise-card);
+  border: 1px solid var(--brass-subtle);
+  border-radius: 6px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  z-index: 5;
+}
+.clado-mutpanel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--brass-border);
+}
+.clado-mutpanel-title { font-weight: 700; color: var(--parchment); font-size: 0.85rem; }
+.clado-mutpanel-list {
+  overflow-y: auto;
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.clado-mutrow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  padding: 0.25rem 0.35rem;
+  color: var(--panel-text);
+  font-family: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+.clado-mutrow:hover { background: var(--brass-faint); }
+.clado-mutrow.is-on { background: var(--brass-glow); }
+.clado-mutrow[disabled] { cursor: default; opacity: 0.55; }
+.clado-mutnum {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  font-weight: 700;
+}
+.clado-mutnum--placed { background: #d4537e; color: #fff; }
+.clado-mutnum--deferred {
+  border: 1px solid #d4537e;
+  color: #d4537e;
+}
+
+/* ── Légende (bas-gauche) ──────────────────────────────────────────────────── */
+.clado-legend {
+  position: absolute;
+  left: 0.6rem;
+  bottom: 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.9rem;
+  max-width: 60%;
+  padding: 0.4rem 0.6rem;
+  background: rgba(20, 16, 11, 0.85);
+  border: 1px solid var(--brass-border);
+  border-radius: 6px;
+  font-size: 0.68rem;
+  color: var(--panel-muted);
+  z-index: 4;
+}
+.clado-legend b { color: var(--panel-text); font-weight: 600; }
