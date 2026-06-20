@@ -83,8 +83,15 @@ export interface LLMAgentSession {
  * Call once before the combat loop; pass the session to planRoundAI each turn.
  */
 export function createAgentSession(combatantId: string, config: AgentConfig): LLMAgentSession {
-  const llm  = createLLM({ provider: 'mistral', mistralApiKey: process.env.MISTRAL_API_KEY })
-  const chat = llm.chat(AI_MODEL).withSystemPrompt(buildSystemPrompt(config.persona))
+  const llm  = createLLM({
+     provider: 'mistral', 
+     mistralApiKey: process.env.MISTRAL_API_KEY,
+     requestTimeout: 60_000, // Timeout requests after 30 seconds (default)
+     maxTokens: 2000 // Limit output to 4K tokens (default)
+    })
+  const chat = llm.chat(AI_MODEL, {
+    requestTimeout: 60_000, // Timeout chat interactions after 30 seconds (default)
+  }).withSystemPrompt(buildSystemPrompt(config.persona))
   return { chat, combatantId, pendingContext: null }
 }
 
@@ -268,8 +275,8 @@ function makePlanActionTool(usable: ActionId[]): ToolDefinition {
           battleCry: {
             type:        'string',
             description:
-              "Une courte expression à voix haute : cri de guerre, provocation, réponse à l'adversaire, réaction aux actions précédentes." +
-              'Visible de tous. Cohérent avec ta persona.',
+              "Une courte phrase à voix haute : commentaire des actions précédentes, instruction simple à un allié, réponse à l'adversaire, provocation, cri de guerre" +
+              'Visible de tous. Cohérent avec ta persona et le déroulement de la bataille.',
           },
         },
         required: ['reasoning', 'action', 'battleCry'],

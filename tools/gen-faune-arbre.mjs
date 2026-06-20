@@ -17,9 +17,10 @@ const OUT  = path.join(REPO, 'rules/fr/univers/faune_arbre.svg');
 // ---- disposition ----
 const PANEL_X = 12, PANEL_Y = 42, PANEL_W = 156;   // encadré des mutations (gauche)
 const OX = 182;                                     // origine X de l'arbre (à droite de l'encadré)
-const ROOT_X = OX, LEFT_X = OX, DX = 60;            // x interne = LEFT_X + depth*DX
-const TIP_X = OX + 480, NAME_X = TIP_X + 60, GLYPH_X = TIP_X + 6;
+const ROOT_X = OX, LEFT_X = OX, DX = 84;            // x interne = LEFT_X + depth*DX
 const TOP_Y = 48, DY = 33, GAP = 22;
+// TIP_X / NAME_X / GLYPH_X dépendent de la profondeur max → calculés après le parcours,
+// pour que la largeur grandisse automatiquement à mesure que l'arbre s'approfondit.
 
 const data = yaml.load(fs.readFileSync(DATA, 'utf8'));
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -29,14 +30,20 @@ const usedMut = new Set();
 
 // ---- 1. parcours ----
 const leaves = [];
+let maxDepth = 0;
 function walk(node, depth, kingdom) {
   node._depth = depth; node._kingdom = kingdom;
+  if (depth > maxDepth) maxDepth = depth;
   if (node.mut) usedMut.add(node.mut);
   if (node.children && node.children.length) node.children.forEach(c => walk(c, depth + 1, kingdom));
   else { node._leaf = true; leaves.push(node); }
 }
 data.root._depth = 0;
 data.root.children.forEach((k, i) => walk(k, 1, i));
+
+// Colonne des pointes alignée à la profondeur max (les feuilles les plus profondes y tombent
+// à leur position naturelle, les feuilles peu profondes s'y rejoignent). La largeur suit l'arbre.
+const TIP_X = LEFT_X + maxDepth * DX, NAME_X = TIP_X + 60, GLYPH_X = TIP_X + 6;
 
 // ---- 2. y des feuilles ----
 let y = TOP_Y, prevK = leaves[0]._kingdom;

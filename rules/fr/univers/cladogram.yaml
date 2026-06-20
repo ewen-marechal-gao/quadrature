@@ -13,9 +13,31 @@ mutations:
   - "Cristallisation (l'Arche)"
   - "Flore mobile / prédatrice"
   - "Symétrie tri-radiale"
-  - "Métamorphose thermique"
-  - { label: "Corne EM (télépathie)", todo: true }
-  - { label: "Carapace chitino-ferrique", todo: true }
+  - "Néoténie (vie & repro aquatiques)"
+  - "Corne EM (télépathie)"
+  - "Carapace chitino-ferrique"
+  - "Trois paires de nageoires (plan hexapode)"
+  - "Sidérotropisme centrifuge (fer → cortex)"
+  - "Sidérotropisme centripète (corde dorsale)"
+  - "Cage de Faraday (résistance EM)"
+  - "Symétrie bilatérale"
+  - "Métamérie (segmentation)"
+  - "Exosquelette à mue"
+  - "Squelette axial + tête"
+  - "Mâchoires"
+  - "Nageoires charnues"
+  - "Membres porteurs (sortie de l'eau)"
+  - "Œuf amniote"
+  - "Paire dorsale libérée"
+  - "Ailes"
+  - "Réduction tétrapode (4 membres)"
+  - "Bipédie"
+  - "Apodie"
+  - "Cursorialité"
+  - "Poumons + peau respirante"
+  - "Métamorphose migratoire (seuil thermique)"
+  - "Levant : seuil chaud-sec"
+  - "Couchant : seuil froid-humide"
 
 root:
   children:
@@ -46,22 +68,82 @@ root:
               children:
                 - { tip: "Radiés", cd: "polypes & méduses", status: done, biome: NC }
                 - { tip: "Trilatériens", cd: "tri-radial · réf. Tribrachidium †", status: todo, biome: LC, mut: 5 }
-            - children:
+            - name: "VERMIFORMES"
+              ref: "apparition de l'AVANT (polarité antéro-postérieure)"
+              children:
                 - { tip: "les Vers (non-bilatériens)", cd: "brouteurs, fouisseurs · réf. Dickinsonia †", status: done, biome: LC }
                 - name: "BILATÉRIENS"
-                  ref: "ver, mollusque…"
+                  ref: "symétrie L/R (gauche-droite, appendices pairs)"
+                  mut: 13
                   children:
-                    - name: "SEGMENTÉS"
-                      ref: "annélide, mille-pattes"
+                    - name: "EXOFERRES"
+                      ref: "fer centrifuge → cortex/cuticule (cuirasse, coquille)"
+                      mut: 10
                       children:
-                        - { tip: "Homonomes", cd: "mille-pattes · réf. Arthropleura †", status: done, biome: NLC }
-                        - name: "TAGMATISÉS"
-                          ref: "insecte, crustacé"
+                        - { tip: "Non-segmentés", cd: "pied musculeux · réf. mollusque", status: done, biome: NC }
+                        - name: "SEGMENTÉS"
+                          ref: "segments répétés"
+                          mut: 14
                           children:
-                            - { tip: "Exosquelette", cd: "articulés · réf. trilobite †", status: done, biome: NLC }
-                            - name: "ENDOSQUELETTE"
-                              ref: "vertébré"
+                            - { tip: "Homonomes", cd: "mille-pattes · réf. Arthropleura †", status: done, biome: NLC }
+                            - { tip: "Exosquelette", cd: "arthropodes tagmatisés, à mue · réf. trilobite †, insecte", status: done, biome: NLC, mut: 15 }
+                    - name: "ENDOFERRES"
+                      ref: "fer centripète → axe interne (corde dorsale ferrique)"
+                      mut: 11
+                      children:
+                        - { tip: "Sidérocordés", cd: "cordé mou aquatique : corde ferrique, sans squelette ; électro-communiquant · réf. amphioxus, poisson-couteau électrique", status: done, biome: NC }
+                        - name: "ENDOSQUELETTE"
+                          ref: "petit nageur ondulant : vertèbres ferro-cartilagineuses + tête/crâne"
+                          mut: 16
+                          children:
+                            - { tip: "Agnathes", cd: "sans mâchoire, anguilliformes · réf. lamproie, myxine", status: todo, biome: NC }
+                            - name: "HEXAPINNÉS"
+                              ref: "3 paires de nageoires paires (= futurs membres)"
+                              mut: 9
                               children:
-                                - { tip: "Muants", cd: "amphibie · réf. Ichthyostega † / axolotl", status: done, biome: NLC, mut: 6 }
-                                - { tip: "Terrestres directs", cd: "→ Marcheurs, Peuples · réf. amniotes", status: done, biome: NLCS }
-                    - { tip: "Non-segmentés", cd: "pied musculeux · réf. mollusque", status: done, biome: NC }
+                                - { tip: "Mâchus", cd: "prédateurs aquatiques à mâchoires · réf. requins, gnathostomes", status: todo, biome: NC, mut: 17 }
+                                - name: "SARCOPTÉRYGIENS"
+                                  ref: "nageoires charnues / lobées → reptation des hauts-fonds"
+                                  mut: 18
+                                  children:
+                                    - { tip: "Lobés aquatiques", cd: "lobés restés en eau · réf. cœlacanthe, dipneuste", status: todo, biome: NC }
+                                    - name: "MEMBRÉS"
+                                      ref: "membres porteurs : nageoires charnues → pattes ; tétrapode-souche encore aquatique · réf. Ichthyostega †"
+                                      mut: 19
+                                      children:
+                                        - { tip: "Tétrapodes aquatiques", cd: "branchies conservées, restés en eau · réf. Acanthostega †", status: todo, biome: NC }
+                                        - name: "AMPHIBIENS"
+                                          ref: "poumons + peau respirante ; double vie"
+                                          mut: 27
+                                          children:
+                                            - name: "MUANTS"
+                                              ref: "néoténie : vivent & se reproduisent comme des poissons"
+                                              mut: 6
+                                              children:
+                                                - { tip: "Sédentaires", cd: "néoténiques permanents, ne métamorphosent jamais · réf. axolotl", status: todo, biome: NC }
+                                                - name: "MIGRATEURS"
+                                                  ref: "métamorphose migratoire : au seuil thermique, pattes + sortie d'eau → migration vers de nouvelles zones humides"
+                                                  mut: 28
+                                                  children:
+                                                    - { tip: "Levant", cd: "métamorphose & migre quand trop chaud & sec", status: todo, biome: LC, mut: 29 }
+                                                    - { tip: "Couchant", cd: "métamorphose & migre quand froid & humide", status: todo, biome: LC, mut: 30 }
+                                            - name: "ANNULUS"
+                                              ref: "œuf amniote clos → reproduction hors de l'eau ; conquérants de l'anneau du terminateur"
+                                              mut: 20
+                                              children:
+                                                - { tip: "Hexapodes", cd: "plan basal conservé : 6 pattes au sol, généralistes lourds", status: todo, biome: NLC }
+                                                - branchNote: "paire dorsale libérée (≠ patte au sol)"
+                                                  mut: 21
+                                                  children:
+                                                    - { tip: "Volants", cd: "paire dorsale → ailes : dracoformes (4 pattes), oiseaux (bipèdes) · réf. ptérosaures †", status: todo, biome: NLC, mut: 22 }
+                                                    - name: "Tétrapodes"
+                                                      ref: "paire dorsale résorbée · 4 membres"
+                                                      mut: 23
+                                                      children:
+                                                        - name: "Quadrupèdes"
+                                                          ref: "marchent sur 4"
+                                                          children:
+                                                            - { tip: "Carapaçonnés", cd: "armure dermique chitino-ferrique (convergente) · réf. tortue, glyptodon †", status: done, biome: LCS, mut: 8 }
+                                                            - { tip: "Coureurs de troupeaux", cd: "cursoriaux · réf. ongulés (gnou, renne)", status: done, biome: NLCS, mut: 26 }
+                                                        - { tip: "Bipèdes", cd: "antérieurs → bras ; futurs Peuples · réf. théropodes †, homininés", status: todo, biome: LCS, mut: 24 }
+                                                        - { tip: "Serpents", cd: "perte totale des membres, élongation · réf. serpents, amphisbènes", status: todo, biome: NLC, mut: 25 }

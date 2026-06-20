@@ -75,6 +75,17 @@ export function LandingPage({ locale }: Props) {
               <span className="landing-book-arrow">→</span>
             </Link>
           )}
+          {localeEnabled && (
+            <Link href={`/${locale}/evolution/`} className="landing-book-card">
+              <span className="landing-book-title">Évolution</span>
+              <span className="landing-book-subtitle">Le monde d'Aeonir</span>
+              <span className="landing-book-desc">
+                Explorez le cladogramme de la faune d'Aeonir : arbre interactif
+                des espèces, mutations et biomes, à parcourir et filtrer.
+              </span>
+              <span className="landing-book-arrow">→</span>
+            </Link>
+          )}
           {BOOKS.map((book) =>
             localeEnabled ? (
               <Link
