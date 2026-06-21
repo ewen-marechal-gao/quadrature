@@ -74,3 +74,50 @@ Deux exigences fortes :
 
 Méthode : peupler l'arbre **par grades ascendants** (basal → couronne), **lore d'abord** ; ne pas
 introduire un organe complexe avant le grade qui le permet ; renumérotation des mutations différée.
+
+---
+
+## Les Peuples — une espèce, quatre races interfécondes
+
+> **Choix structurant.** Les **nœuds terminaux** de l'arbre représentent les **races** des espèces
+> encore vivantes, pas des espèces distinctes. Ce n'est pas rigoureux cladistiquement (des races
+> interfécondes échangent des gènes → **réticulation**, pas arbre), mais l'objectif est la
+> **création du bestiaire**.
+
+Les quatre Peuples — **Cimes, Vents, Neiges, Pluies** — sont **quatre expressions d'une seule
+espèce, pleinement interfécondes**. Leurs différences morphologiques sont des **adaptations à
+l'habitat** (donc inférables depuis le biome), jamais des barrières d'espèce : le métissage produit
+des **intermédiaires viables et fertiles**. Modèle : la variabilité du chien (énorme variance
+*visible*, faible divergence *génétique*) — peu de loci régulateurs à effet majeur, sélection
+clinale forte le long de la bande, et **auto-domestication par la télépathie** (sélection
+sexuelle / sociale intense → syndrome de domestication : néoténie, dépigmentation, diversification).
+
+### Le plan podal — un seul pied, trois boutons
+
+Le point le plus tendu est la **plasticité des membres inférieurs** (sole humaine grimpante / sabot /
+griffe / large sabot). Les races de chien ne varient pas à ce point au niveau du pied : sabot, griffe
+et ongle distinguent dans le réel des *ordres* entiers. Pour rester crédible **au sein d'une espèce
+interféconde**, on ne crée pas quatre pieds différents : on **module un plan podal ancestral unique**
+via trois leviers à faible coût génétique, ce qui garantit des **hybrides « mélangeables »** :
+
+| Bouton | Mécanisme réel | Amplitude |
+| :-- | :-- | :-- |
+| **Cape de kératine** | sabot, griffe et ongle = *le même organe kératineux* ; seule change la quantité / géométrie de dépôt | ongle ↔ griffe ↔ sabot |
+| **Posture & doigts** | longueur des métatarses, fusion / réduction des doigts | plantigrade (grimpe) ↔ digitigrade ↔ ungulé |
+| **Coussinet / sole** | tissu mou ; palmure = simple défaut d'apoptose interdigitale | sole agrippante ↔ semelle isolante ↔ pied palmé |
+
+Deux points qui dé-risquent la lecture biologique :
+
+1. **Le « genou inversé » des Vents n'est pas une articulation nouvelle** : c'est la **cheville
+   surélevée** (posture digitigrade / ungulée, métatarses allongés) — le **même squelette
+   re-posturé**, comme cheval, chien ou oiseau.
+2. **Griffe, sabot et ongle sont le même organe** kératineux modulé : on ne fait jamais
+   apparaître / disparaître un organe entre peuples, on **règle un curseur**.
+
+*Levier complémentaire (interfécondité) :* une part de la différence podale peut être **plastique**
+(induite par le substrat / l'usage pendant la croissance, pas seulement génétique) → divergence
+génétique minime, hybrides triviaux, et un enfant qui change de « type » selon où il grandit.
+
+> **L'état ancestral du pied** est le **plantigrade généraliste** (≈ Cimes, le moins dérivé) ; sabots
+> (Vents, Neiges) et griffes palmées (Pluies) en sont des **dérivés** spécialisés. Comme pour le fer,
+> on lit le pied depuis l'ascendance et le biome.

@@ -36,8 +36,10 @@ export interface PositionedNode {
   node: CladoNode;
   x: number;
   y: number;
-  /** true = feuille ou clade replié (posé sur la colonne des pointes). */
+  /** true = feuille (colonne des pointes) ou clade replié (à sa profondeur). */
   terminal: boolean;
+  /** x du parent (origine de l'arête entrante) ; absent pour la racine. */
+  parentX?: number;
 }
 
 export interface CladoLink {
@@ -72,20 +74,24 @@ export function computeLayout(
 
   const isTerminal = (n: CladoNode) => n.isLeaf || collapsed.has(n.id);
 
-  // 1. Parcours : terminaux visibles (ordre de lecture) + profondeur max.
+  // 1. Parcours : terminaux visibles (ordre de lecture) + profondeurs max.
+  // La colonne des pointes s'aligne sur la feuille *réelle* la plus profonde ;
+  // les clades repliés, eux, restent à leur propre profondeur (cf. ci-dessous).
   const terminals: CladoNode[] = [];
-  let maxDepth = 0;
+  let maxLeafDepth = 0;
+  let maxTermDepth = 0;
   const visit = (n: CladoNode) => {
     if (isTerminal(n)) {
       terminals.push(n);
-      if (n.depth > maxDepth) maxDepth = n.depth;
+      if (n.depth > maxTermDepth) maxTermDepth = n.depth;
+      if (n.isLeaf && n.depth > maxLeafDepth) maxLeafDepth = n.depth;
     } else {
       n.children.forEach(visit);
     }
   };
   data.root.children.forEach(visit);
 
-  const tipX = PAD_X + maxDepth * DX;
+  const tipX = PAD_X + (maxLeafDepth || maxTermDepth) * DX;
 
   // 2. y des terminaux (interstice quand on change de règne).
   const pos = new Map<string, { x: number; y: number; terminal: boolean }>();
@@ -96,7 +102,9 @@ export function computeLayout(
       y += GAP;
       prevKingdom = t.kingdom;
     }
-    pos.set(t.id, { x: tipX, y, terminal: true });
+    // Feuille → colonne des pointes (alignée) ; clade replié → reste à sa profondeur.
+    const x = t.isLeaf ? tipX : PAD_X + t.depth * DX;
+    pos.set(t.id, { x, y, terminal: true });
     y += DY;
   }
 
@@ -160,10 +168,14 @@ export function computeLayout(
     links.push({ nodeId: "root", kind: "v", d: `M${rootPos.x} ${fy} V${ly}` });
   }
 
-  // 5. Nœuds positionnés.
+  // 5. Nœuds positionnés (avec x du parent pour placer la pastille sur l'arête).
   const nodes: PositionedNode[] = [];
+  let maxX = tipX;
   for (const [id, p] of pos) {
-    nodes.push({ node: data.nodeIndex[id], x: p.x, y: p.y, terminal: p.terminal });
+    const node = data.nodeIndex[id];
+    const parentX = node.parentId ? pos.get(node.parentId)?.x : undefined;
+    if (p.x > maxX) maxX = p.x;
+    nodes.push({ node, x: p.x, y: p.y, terminal: p.terminal, parentX });
   }
 
   const lastY = terminals.length ? y - DY : TOP_Y;
@@ -171,7 +183,7 @@ export function computeLayout(
     nodes,
     links,
     tipX,
-    width: tipX + NAME_W,
+    width: maxX + NAME_W,
     height: lastY + TOP_Y,
   };
 }

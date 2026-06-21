@@ -3,86 +3,43 @@
 /**
  * CladogramView — exploration interactive du cladogramme de la faune d'Aeonir.
  *
- * Forme : dendrogramme horizontal à pointes alignées (racine à gauche, terminaux
- * alignés à droite). Les nœuds sont du DOM HTML (boutons stylables, accessibles) ;
- * les connecteurs en équerre sont une fine couche SVG décorative posée derrière.
+ * Orchestrateur : détient l'état (repli, filtres, survol, focus), calcule le
+ * layout (cladogram-layout.ts, pur, recalculé au repli) et assemble les
+ * sous-composants (Toolbar, NodeView, MutationBadge, HoverCard, MutationsPanel,
+ * Legend). La navigation pan/zoom est déléguée au hook usePanZoom.
  *
- * Interactions :
- *   - pan (glisser le fond) + zoom (molette vers le curseur, boutons +/−, ajuster) ;
- *   - repli/dépli d'un clade (clic sur son libellé) → recalcul du layout ;
- *   - carte de survol (hover/focus) rendue en espace écran, donc non zoomée, avec
- *     surlignage du chemin d'ascendance jusqu'à la racine ;
- *   - filtres biome (N/L/C/S) et statut → estompage des nœuds hors-filtre ;
- *   - registre des mutations superposé (repliable) ; clic = focus du nœud porteur.
- *
- * Le layout (cladogram-layout.ts) est pur et recalculé à chaque repli (useMemo).
+ * Forme : dendrogramme horizontal à pointes alignées. Les nœuds sont du DOM
+ * HTML (accessibles, stylables) ; les connecteurs en équerre une couche SVG.
  */
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@/app/cladogram.css";
 import type { BiomeLetter, CladoNode, CladogramData, NodeStatus } from "@/lib/cladogram";
 import { ancestryOf, computeLayout } from "@/lib/cladogram-layout";
+import { type Anchor } from "./shared";
+import { usePanZoom, type StageSize } from "./usePanZoom";
+import { Toolbar } from "./Toolbar";
+import { NodeView } from "./NodeView";
+import { MutationBadge } from "./MutationBadge";
+import { HoverCard } from "./HoverCard";
+import { MutationsPanel } from "./MutationsPanel";
+import { Legend } from "./Legend";
 
-const BIOME_LETTERS: BiomeLetter[] = ["N", "L", "C", "S"];
-const BIOME_NAMES: Record<BiomeLetter, string> = {
-  N: "Nord",
-  L: "Levant",
-  C: "Couchant",
-  S: "Sud",
-};
-const STATUS_LABEL: Record<NodeStatus, string> = { done: "peuplé", todo: "à venir" };
-
-const ZOOM_MIN = 0.2;
-const ZOOM_MAX = 2.5;
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
-interface View {
-  zoom: number;
-  x: number;
-  y: number;
-}
-
-/** Anti-débordement : position fixe d'une carte ancrée à un nœud. */
-function placeCard(
-  anchor: { top: number; right: number; left: number; bottom: number },
-  card: { w: number; h: number }
-): { left: number; top: number } {
-  const M = 12;
-  let left = anchor.right + M;
-  if (left + card.w > window.innerWidth - 8) left = anchor.left - card.w - M;
-  if (left < 8) left = 8;
-  const top = clamp(anchor.top, 8, Math.max(8, window.innerHeight - card.h - 8));
-  return { left, top };
-}
-
-export function CladogramView({
-  data,
-  locale,
-}: {
-  data: CladogramData;
-  locale: string;
-}) {
+export function CladogramView({ data, locale }: { data: CladogramData; locale: string }) {
   // ── État ──────────────────────────────────────────────────────────────────
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
-  const [view, setView] = useState<View>({ zoom: 1, x: 16, y: 16 });
-  const [hovered, setHovered] = useState<{
-    id: string;
-    anchor: { top: number; right: number; left: number; bottom: number };
-  } | null>(null);
+  const [hovered, setHovered] = useState<{ id: string; anchor: Anchor } | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [biomeFilter, setBiomeFilter] = useState<ReadonlySet<BiomeLetter>>(() => new Set());
   const [statusFilter, setStatusFilter] = useState<NodeStatus | null>(null);
   const [showMut, setShowMut] = useState(false);
   const [focusMut, setFocusMut] = useState<number | null>(null);
 
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
-
-  // ── Layout (recalculé au repli) ─────────────────────────────────────────────
+  // ── Layout (recalculé au repli) + taille pour le pan/zoom ───────────────────
   const layout = useMemo(() => computeLayout(data, collapsed), [data, collapsed]);
-  const layoutRef = useRef(layout);
-  layoutRef.current = layout;
+  const sizeRef = useRef<StageSize>({ width: layout.width, height: layout.height });
+  sizeRef.current = { width: layout.width, height: layout.height };
+  const { view, viewportRef, panning, fit, zoomBy, centerOn, handlers } = usePanZoom(sizeRef);
 
   // ── Surlignage d'ascendance (survol ou focus mutation) ──────────────────────
   const highlightId = hovered?.id ?? focusId;
@@ -98,8 +55,7 @@ export function CladogramView({
     const rec = (n: CladoNode): boolean => {
       if (n.isLeaf || n.children.length === 0) {
         const b = (n.biome ?? "").toUpperCase();
-        const okBiome =
-          biomeFilter.size === 0 || [...biomeFilter].some((L) => b.includes(L));
+        const okBiome = biomeFilter.size === 0 || [...biomeFilter].some((L) => b.includes(L));
         const okStatus = !statusFilter || n.status === statusFilter;
         const active = okBiome && okStatus;
         if (active) set.add(n.id);
@@ -123,79 +79,6 @@ export function CladogramView({
     return m;
   }, [data]);
 
-  // ── Pan / zoom ──────────────────────────────────────────────────────────────
-  const centerOn = useCallback((wx: number, wy: number) => {
-    const vp = viewportRef.current;
-    if (!vp) return;
-    const r = vp.getBoundingClientRect();
-    setView((v) => ({ ...v, x: r.width / 2 - wx * v.zoom, y: r.height / 2 - wy * v.zoom }));
-  }, []);
-
-  const fit = useCallback(() => {
-    const vp = viewportRef.current;
-    if (!vp) return;
-    const r = vp.getBoundingClientRect();
-    const { width, height } = layoutRef.current;
-    const zoom = clamp(Math.min((r.width - 32) / width, 1), ZOOM_MIN, ZOOM_MAX);
-    const x = Math.max(16, (r.width - width * zoom) / 2);
-    // Aligné en haut (lecture naturelle de l'arbre) ; le reste est accessible au pan.
-    const y = 16;
-    setView({ zoom, x, y });
-  }, []);
-
-  // Ajustement initial (une fois le viewport mesuré).
-  useEffect(() => {
-    const id = requestAnimationFrame(fit);
-    return () => cancelAnimationFrame(id);
-  }, [fit]);
-
-  // Molette : zoom non-passif vers le curseur.
-  useEffect(() => {
-    const vp = viewportRef.current;
-    if (!vp) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const r = vp.getBoundingClientRect();
-      const cx = e.clientX - r.left;
-      const cy = e.clientY - r.top;
-      setView((v) => {
-        const z = clamp(v.zoom * Math.exp(-e.deltaY * 0.0015), ZOOM_MIN, ZOOM_MAX);
-        const k = z / v.zoom;
-        return { zoom: z, x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k };
-      });
-    };
-    vp.addEventListener("wheel", onWheel, { passive: false });
-    return () => vp.removeEventListener("wheel", onWheel);
-  }, []);
-
-  const zoomBy = (factor: number) => {
-    const vp = viewportRef.current;
-    if (!vp) return;
-    const r = vp.getBoundingClientRect();
-    const cx = r.width / 2;
-    const cy = r.height / 2;
-    setView((v) => {
-      const z = clamp(v.zoom * factor, ZOOM_MIN, ZOOM_MAX);
-      const k = z / v.zoom;
-      return { zoom: z, x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k };
-    });
-  };
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest("[data-interactive]")) return;
-    drag.current = { px: e.clientX, py: e.clientY, ox: view.x, oy: view.y };
-    viewportRef.current?.setPointerCapture(e.pointerId);
-  };
-  const onPointerMove = (e: React.PointerEvent) => {
-    const d = drag.current;
-    if (!d) return;
-    setView((v) => ({ ...v, x: d.ox + (e.clientX - d.px), y: d.oy + (e.clientY - d.py) }));
-  };
-  const onPointerUp = (e: React.PointerEvent) => {
-    drag.current = null;
-    viewportRef.current?.releasePointerCapture(e.pointerId);
-  };
-
   // ── Actions ──────────────────────────────────────────────────────────────────
   const toggleCollapse = useCallback((id: string) => {
     setCollapsed((prev) => {
@@ -208,7 +91,6 @@ export function CladogramView({
 
   const revealAndFocus = useCallback(
     (id: string) => {
-      // Déplie tous les ancêtres repliés.
       const chain = ancestryOf(data, id);
       setCollapsed((prev) => {
         const next = new Set(prev);
@@ -228,11 +110,11 @@ export function CladogramView({
     if (p) centerOn(p.x, p.y);
   }, [focusId, layout, centerOn]);
 
-  const onEnter = (id: string) => (e: React.PointerEvent | React.FocusEvent) => {
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  const onEnter = useCallback((id: string, el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
     setHovered({ id, anchor: { top: r.top, right: r.right, left: r.left, bottom: r.bottom } });
-  };
-  const onLeave = () => setHovered(null);
+  }, []);
+  const onLeave = useCallback(() => setHovered(null), []);
 
   const toggleBiome = (L: BiomeLetter) =>
     setBiomeFilter((prev) => {
@@ -243,82 +125,30 @@ export function CladogramView({
     });
 
   // ── Rendu ──────────────────────────────────────────────────────────────────
-  const dimNode = (id: string) => activeIds !== null && !activeIds.has(id);
   const hoveredNode = hovered ? data.nodeIndex[hovered.id] : null;
+  const rootPos = layout.nodes.find((n) => n.node.id === "root");
 
   return (
     <div className="clado-app">
-      {/* Barre d'outils */}
-      <header className="clado-bar">
-        <Link href={`/${locale}/`} className="clado-back" title="Retour à l'accueil" aria-label="Retour à l'accueil">
-          ←
-        </Link>
-        <span className="clado-title">Évolution — la vie d'Aeonir</span>
+      <Toolbar
+        locale={locale}
+        biomeFilter={biomeFilter}
+        onToggleBiome={toggleBiome}
+        statusFilter={statusFilter}
+        onSetStatus={setStatusFilter}
+        showMut={showMut}
+        onToggleMut={() => setShowMut((s) => !s)}
+        zoom={view.zoom}
+        onZoomIn={() => zoomBy(1.2)}
+        onZoomOut={() => zoomBy(1 / 1.2)}
+        onFit={fit}
+      />
 
-        <span className="clado-bar-spacer" />
-
-        <div className="clado-group" role="group" aria-label="Filtre biome">
-          <span className="clado-label">Biome</span>
-          {BIOME_LETTERS.map((L) => (
-            <button
-              key={L}
-              className={`clado-chip ${biomeFilter.has(L) ? "clado-chip--on" : ""}`}
-              onClick={() => toggleBiome(L)}
-              title={BIOME_NAMES[L]}
-            >
-              {L}
-            </button>
-          ))}
-        </div>
-
-        <div className="clado-group" role="group" aria-label="Filtre statut">
-          <button
-            className={`clado-chip ${statusFilter === "done" ? "clado-chip--on" : ""}`}
-            onClick={() => setStatusFilter(statusFilter === "done" ? null : "done")}
-          >
-            ✓ Peuplé
-          </button>
-          <button
-            className={`clado-chip ${statusFilter === "todo" ? "clado-chip--on" : ""}`}
-            onClick={() => setStatusFilter(statusFilter === "todo" ? null : "todo")}
-          >
-            ☐ À venir
-          </button>
-        </div>
-
-        <div className="clado-group">
-          <button
-            className={`clado-btn ${showMut ? "clado-chip--on" : ""}`}
-            onClick={() => setShowMut((s) => !s)}
-            aria-pressed={showMut}
-          >
-            Mutations
-          </button>
-        </div>
-
-        <div className="clado-group" role="group" aria-label="Zoom">
-          <button className="clado-btn clado-iconbtn" onClick={() => zoomBy(1 / 1.2)} aria-label="Dézoomer">
-            −
-          </button>
-          <span className="clado-zoom-val">{Math.round(view.zoom * 100)}%</span>
-          <button className="clado-btn clado-iconbtn" onClick={() => zoomBy(1.2)} aria-label="Zoomer">
-            +
-          </button>
-          <button className="clado-btn" onClick={fit}>
-            Ajuster
-          </button>
-        </div>
-      </header>
-
-      {/* Viewport */}
       <div
         ref={viewportRef}
         className="clado-viewport"
-        data-panning={drag.current ? "true" : undefined}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        data-panning={panning || undefined}
+        {...handlers}
       >
         <div
           className="clado-stage"
@@ -344,248 +174,63 @@ export function CladogramView({
           </svg>
 
           {/* Note de la racine */}
-          {(() => {
-            const rp = layout.nodes.find((n) => n.node.id === "root");
-            if (!rp || !data.rootNote) return null;
-            return (
-              <div className="clado-rootnote" style={{ left: rp.x, top: rp.y }}>
-                {data.rootNote}
-              </div>
-            );
-          })()}
+          {rootPos && data.rootNote && (
+            <div className="clado-rootnote" style={{ left: rootPos.x, top: rootPos.y }}>
+              {data.rootNote}
+            </div>
+          )}
 
           {/* Nœuds */}
           {layout.nodes.map((p) => {
-            const n = p.node;
-            if (n.id === "root") return null;
-            const lit = litIds?.has(n.id);
-            const dimmed = dimNode(n.id) && !lit;
-            const cls = `clado-node ${dimmed ? "is-dim" : ""}`;
-
-            if (p.terminal) {
-              const collapsedClade = !n.isLeaf; // clade replié rendu comme pointe
-              return (
-                <button
-                  key={n.id}
-                  type="button"
-                  data-interactive
-                  className={`${cls} clado-tip`}
-                  style={{ left: p.x, top: p.y }}
-                  onPointerEnter={onEnter(n.id)}
-                  onPointerLeave={onLeave}
-                  onFocus={onEnter(n.id)}
-                  onBlur={onLeave}
-                  onClick={() => (collapsedClade ? toggleCollapse(n.id) : undefined)}
-                >
-                  {collapsedClade ? (
-                    <>
-                      <span className="clado-chevron">▸</span>
-                      <span className="clado-tip-body">
-                        <span className={n.name ? "clado-clade-name" : "clado-tip-cd"}>
-                          {n.name ?? n.branchNote}
-                        </span>
-                      </span>
-                      <span className="clado-count">{n.children.length}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="clado-glyphs" aria-hidden="true">
-                        {BIOME_LETTERS.map((L) => {
-                          const on = (n.biome ?? "").toUpperCase().includes(L);
-                          return (
-                            <span key={L} className={`clado-glyph ${on ? "clado-glyph--on" : "clado-glyph--off"}`}>
-                              {L}
-                            </span>
-                          );
-                        })}
-                      </span>
-                      {n.star && <span className="clado-star">★</span>}
-                      <span className="clado-tip-body">
-                        <span className="clado-tip-name">
-                          {n.tip}
-                          {n.status === "done" && <span className="clado-mark clado-mark--done"> ✓</span>}
-                          {n.status === "todo" && <span className="clado-mark"> ☐</span>}
-                        </span>
-                        {n.cd && <span className="clado-tip-cd">{n.cd}</span>}
-                      </span>
-                    </>
-                  )}
-                </button>
-              );
-            }
-
-            // Clade interne déplié : libellé au-dessus du point de branche.
-            const isNote = !n.name && !!n.branchNote;
+            const lit = litIds?.has(p.node.id);
+            const dimmed = activeIds !== null && !activeIds.has(p.node.id) && !lit;
             return (
-              <button
-                key={n.id}
-                type="button"
-                data-interactive
-                className={`${cls} clado-clade ${isNote ? "is-note" : ""}`}
-                style={{ left: p.x, top: p.y }}
-                onPointerEnter={onEnter(n.id)}
-                onPointerLeave={onLeave}
-                onFocus={onEnter(n.id)}
-                onBlur={onLeave}
-                onClick={() => toggleCollapse(n.id)}
-                title="Replier / déplier"
-              >
-                <span className="clado-chevron">▾</span>
-                <span className="clado-clade-name">{n.name ?? n.branchNote}</span>
-                {n.name && n.ref && <span className="clado-clade-ref">({n.ref})</span>}
-              </button>
+              <NodeView
+                key={p.node.id}
+                p={p}
+                dimmed={dimmed}
+                onEnter={onEnter}
+                onLeave={onLeave}
+                onToggleCollapse={toggleCollapse}
+              />
             );
           })}
 
-          {/* Pastilles de mutation */}
+          {/* Pastilles de mutation (au milieu de l'arête entrante) */}
           {layout.nodes.map((p) =>
             typeof p.node.mut === "number" ? (
-              <span
+              <MutationBadge
                 key={`m-${p.node.id}`}
-                className="clado-mut"
-                style={{ left: p.x, top: p.y }}
-                title={data.mutations[p.node.mut - 1]?.label}
-              >
-                {p.node.mut}
-              </span>
+                n={p.node.mut}
+                label={data.mutations[p.node.mut - 1]?.label}
+                x={p.parentX !== undefined ? (p.parentX + p.x) / 2 : p.x}
+                y={p.y}
+              />
             ) : null
           )}
         </div>
 
         {/* Carte de survol (espace écran) */}
-        {hovered && hoveredNode && (
-          <HoverCard
-            node={hoveredNode}
-            data={data}
-            anchor={hovered.anchor}
-          />
-        )}
+        {hovered && hoveredNode && <HoverCard node={hoveredNode} data={data} anchor={hovered.anchor} />}
 
         {/* Encart des mutations */}
         {showMut && (
-          <aside className="clado-mutpanel" aria-label="Registre des mutations d'Aeonir">
-            <div className="clado-mutpanel-head">
-              <span className="clado-mutpanel-title">Mutations d'Aeonir</span>
-              <button className="clado-btn clado-iconbtn" onClick={() => setShowMut(false)} aria-label="Fermer">
-                ×
-              </button>
-            </div>
-            <div className="clado-mutpanel-list">
-              {data.mutations.map((m) => {
-                const placed = data.usedMut.includes(m.n);
-                const on = focusMut === m.n;
-                return (
-                  <button
-                    key={m.n}
-                    className={`clado-mutrow ${on ? "is-on" : ""}`}
-                    disabled={!placed}
-                    onClick={() => {
-                      const id = mutToId.get(m.n);
-                      if (!id) return;
-                      setFocusMut(m.n);
-                      revealAndFocus(id);
-                    }}
-                  >
-                    <span className={`clado-mutnum ${placed ? "clado-mutnum--placed" : "clado-mutnum--deferred"}`}>
-                      {m.n}
-                    </span>
-                    <span>{m.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </aside>
+          <MutationsPanel
+            mutations={data.mutations}
+            usedMut={data.usedMut}
+            focusMut={focusMut}
+            onPick={(n) => {
+              const id = mutToId.get(n);
+              if (!id) return;
+              setFocusMut(n);
+              revealAndFocus(id);
+            }}
+            onClose={() => setShowMut(false)}
+          />
         )}
 
-        {/* Légende */}
-        <div className="clado-legend">
-          <span><b>★</b> espèce-clé · <b>✓</b> peuplé · <b>☐</b> à venir</span>
-          <span><span className="clado-hc-dot" style={{ display: "inline-flex", width: 12, height: 12 }}>n</span> mutation</span>
-          <span>Biome : <b>N</b> Nord · <b>L</b> Levant · <b>C</b> Couchant · <b>S</b> Sud</span>
-          <span>Glisser pour déplacer · molette pour zoomer · clic sur un clade pour replier</span>
-        </div>
+        <Legend />
       </div>
-    </div>
-  );
-}
-
-// ─── Carte de survol ────────────────────────────────────────────────────────────
-
-function HoverCard({
-  node,
-  data,
-  anchor,
-}: {
-  node: CladoNode;
-  data: CladogramData;
-  anchor: { top: number; right: number; left: number; bottom: number };
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const { width, height } = el.getBoundingClientRect();
-    setPos(placeCard(anchor, { w: width, h: height }));
-  }, [anchor, node]);
-
-  const isTip = node.isLeaf;
-  const title = node.name ?? node.tip ?? node.branchNote ?? "—";
-  const sub = node.ref ?? node.cd;
-  const biomes = (node.biome ?? "")
-    .toUpperCase()
-    .split("")
-    .filter((c): c is BiomeLetter => c in BIOME_NAMES)
-    .map((c) => BIOME_NAMES[c]);
-  const mut = typeof node.mut === "number" ? data.mutations[node.mut - 1] : null;
-
-  // Ascendance (clades nommés, de la racine vers le nœud), nœud exclu.
-  const path = ancestryOf(data, node.id)
-    .slice(1)
-    .reverse()
-    .map((id) => data.nodeIndex[id])
-    .filter((n) => n && (n.name || n.branchNote))
-    .map((n) => n.name ?? n.branchNote!);
-
-  return (
-    <div
-      ref={ref}
-      className="clado-hovercard"
-      style={pos ? { left: pos.left, top: pos.top } : { left: -9999, top: -9999 }}
-      role="tooltip"
-    >
-      <div className={`clado-hc-title ${isTip ? "is-tip" : ""}`}>{title}</div>
-      {sub && <div className="clado-hc-sub">{sub}</div>}
-      {biomes.length > 0 && (
-        <div className="clado-hc-row">
-          <b>Biome :</b> {biomes.join(" · ")}
-        </div>
-      )}
-      {node.status && (
-        <div className="clado-hc-row">
-          <b>Statut :</b> {STATUS_LABEL[node.status]}
-        </div>
-      )}
-      {mut && (
-        <div className="clado-hc-row clado-hc-mut">
-          <span className="clado-hc-dot">{mut.n}</span>
-          <span>{mut.label}</span>
-        </div>
-      )}
-      {node.branchNote && node.name && (
-        <div className="clado-hc-row">{node.branchNote}</div>
-      )}
-      {path.length > 0 && (
-        <div className="clado-hc-path">
-          {path.map((p, i) => (
-            <span key={i}>
-              {i > 0 && <span className="sep">›</span>}
-              {p}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
