@@ -64,8 +64,8 @@
   },
   {
     "id": "creatures",
-    "title":       { "fr": "Bestiaire",                 "en": "Creatures Compendium" },
-    "subtitle":    { "fr": "Adversaires & bestiaire",   "en": "Adversaries & Bestiary" },
+    "title":       { "fr": "Adversaires",               "en": "Adversaries" },
+    "subtitle":    { "fr": "Règles & exemples",         "en": "Rules & examples" },
     "description": {
       "fr": "Règles de création d'adversaires et exemples de créatures d'Aeonir.",
       "en": "Adversary creation rules and sample creatures from Aeonir."

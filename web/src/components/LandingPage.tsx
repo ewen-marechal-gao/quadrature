@@ -86,6 +86,17 @@ export function LandingPage({ locale }: Props) {
               <span className="landing-book-arrow">→</span>
             </Link>
           )}
+          {localeEnabled && (
+            <Link href={`/${locale}/adversaires/`} className="landing-book-card">
+              <span className="landing-book-title">Bestiaire</span>
+              <span className="landing-book-subtitle">Outil de table</span>
+              <span className="landing-book-desc">
+                Consultez les fiches d'adversaires d'Aeonir : profil de menace,
+                parties du corps et deck d'actions, prêts à imprimer.
+              </span>
+              <span className="landing-book-arrow">→</span>
+            </Link>
+          )}
           {BOOKS.map((book) =>
             localeEnabled ? (
               <Link

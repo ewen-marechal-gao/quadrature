@@ -21,13 +21,34 @@ Vue d'ensemble des chantiers, par thème. Le détail et la justification sont da
 - [ ] Unifier le système de temps (Cycle/Phase/Ère) entre `lore.md` et `tools/`.
 - [ ] Dédupliquer le climat (`lore.md` vs `climat.md`).
 
+## Bestiaire & adversaires 🟠
+Cladogramme phylogénétique de la faune → génération des fiches de monstres (« ce que la créature EST découle de ses mutations »).
+- [x] ✅ Cladogramme (arbre + mutations) en `data/` (`cladogram.yaml` + `mutations.yaml`), édité via `tools/cladogram.mjs` ; visualiseur web `/evolution`.
+- [x] ✅ **Kits de combat** par mutation (`mutations[clé].kit`) : parties du corps, cartes, traits, Speed/Fatigue dérivés.
+- [x] ✅ **Consolidateur** `tools/consolidate-bestiary.mjs` : `data/bestiary/species/*.yaml` → `cards/*.card.yaml` (dérivées de l'ascendance).
+- [x] ✅ Schéma adversaire migré **anglais + `Locale`** ; champ `weapons` (sapients équipés) ; rubrique web `/adversaires`.
+- [x] ✅ Fiches : Faucheur, Lacérateur, Bandit des Cimes.
+- [ ] 🟠 Passe **nommage des membres par plan de corps** (bipèdes/sapients : « Jambes »/« Membres inférieurs » ≠ « Pattes » ; pieds différenciés).
+- [ ] 🟡 Étoffer les kits (mutations restantes) ; nouvelles espèces ; carte de la mécanique 🩸.
+- [ ] 🟡 Intégration **simulateur** (résolution asymétrique, parties du corps, ressources régénérantes).
+
+## Langue rituelle 🟡
+Conlang générative d'Aeonir ([`rules/fr/univers/language.md`](rules/fr/univers/language.md)) — noms, lieux, créatures, incantations.
+- [x] ✅ Phonologie à **deux registres** (pierre/sève) ; règles d'or (unicité ; inversion-ou-palindrome).
+- [x] ✅ Grammaire de **composition tête-initiale** ; anthroponymie ; suffixe ethnonymique `-Dor` ; **4 peuples** (Syldor/Vaedor/Lumidor/Sahgdor).
+- [x] ✅ Lexique : vivant (végétal, couleurs), grandeur/quantité, relief, **géographie** (naturelle, cosmo, météo).
+- [x] ✅ Passe d'assainissement (numérotation, collisions, runes hallucinées retirées ; systèmes polygone→chiffre & éléments documentés).
+- [ ] Compléter la table **Verbes & actions** (§VI) ; traduire l'incantation **Projection** (§XI).
+- [ ] Revoir la rune `Ghâl` (refuser).
+- [ ] 🟡 Outiller un **générateur onomastique** (noms/toponymes par registre, à partir des règles posées).
+
 ## Disciplines 🟡
 - [ ] Armes d'hast — Tier 3 ; Échomancie (étoffer) ; puis Impact et Choromancie (sortir du carnet).
 
 ## Site web 🟠 / 🟡
 - [ ] 🟠 Aligner l'inventaire de la feuille de personnage sur `equipement.md` (Dos/Taille) ; embarquer la police.
 - [ ] 🟡 **Créateur de personnage** pas-à-pas (s'appuie sur le modèle d'état `web/src/lib/character/`).
-- [ ] 🟡 Fiches d'adversaires ; **simulateur de rencontre** intégré ; mode « apprendre à jouer ».
+- [ ] 🟡 **Simulateur de rencontre** intégré ; mode « apprendre à jouer » (la rubrique Bestiaire `/adversaires` existe — cf. § *Bestiaire & adversaires*).
 - [ ] 🟡 Activer la locale **EN** (contenu `rules/en/`) ; remplacer le README boilerplate de `web/`.
 
 ## Simulateur 🟡

@@ -33,7 +33,7 @@ export function CladogramView({ data, locale }: { data: CladogramData; locale: s
   const [biomeFilter, setBiomeFilter] = useState<ReadonlySet<BiomeLetter>>(() => new Set());
   const [statusFilter, setStatusFilter] = useState<NodeStatus | null>(null);
   const [showMut, setShowMut] = useState(false);
-  const [focusMut, setFocusMut] = useState<number | null>(null);
+  const [focusMut, setFocusMut] = useState<string | null>(null);
 
   // ── Layout (recalculé au repli) + taille pour le pan/zoom ───────────────────
   const layout = useMemo(() => computeLayout(data, collapsed), [data, collapsed]);
@@ -70,14 +70,25 @@ export function CladogramView({ data, locale }: { data: CladogramData; locale: s
     return set;
   }, [data, biomeFilter, statusFilter]);
 
-  // mut → id du nœud porteur
-  const mutToId = useMemo(() => {
-    const m = new Map<number, string>();
+  // clé de mutation → ids de TOUS les nœuds porteurs (ordre pré-fixe) ; counts dérivé.
+  const mutToIds = useMemo(() => {
+    const m = new Map<string, string[]>();
     for (const node of Object.values(data.nodeIndex)) {
-      if (typeof node.mut === "number" && !m.has(node.mut)) m.set(node.mut, node.id);
+      if (typeof node.mut === "string") {
+        const arr = m.get(node.mut) ?? [];
+        arr.push(node.id);
+        m.set(node.mut, arr);
+      }
     }
     return m;
   }, [data]);
+  const mutCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const [key, ids] of mutToIds) m.set(key, ids.length);
+    return m;
+  }, [mutToIds]);
+  /** Index de cyclage par clé de mutation (pastilles convergentes). */
+  const mutCycle = useRef<{ key: string; i: number }>({ key: "", i: 0 });
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   const toggleCollapse = useCallback((id: string) => {
@@ -103,11 +114,13 @@ export function CladogramView({ data, locale }: { data: CladogramData; locale: s
     [data]
   );
 
-  // Recentre quand un focus (mutation) change, après recalcul du layout.
+  // Recentre sur la PASTILLE (milieu d'arête) du nœud focalisé, après layout.
   useEffect(() => {
     if (!focusId) return;
     const p = layout.nodes.find((n) => n.node.id === focusId);
-    if (p) centerOn(p.x, p.y);
+    if (!p) return;
+    const bx = p.parentX !== undefined ? (p.parentX + p.x) / 2 : p.x;
+    centerOn(bx, p.y);
   }, [focusId, layout, centerOn]);
 
   const onEnter = useCallback((id: string, el: HTMLElement) => {
@@ -197,17 +210,21 @@ export function CladogramView({ data, locale }: { data: CladogramData; locale: s
           })}
 
           {/* Pastilles de mutation (au milieu de l'arête entrante) */}
-          {layout.nodes.map((p) =>
-            typeof p.node.mut === "number" ? (
+          {layout.nodes.map((p) => {
+            const key = p.node.mut;
+            if (typeof key !== "string") return null;
+            const m = data.mutationByKey[key];
+            return (
               <MutationBadge
                 key={`m-${p.node.id}`}
-                n={p.node.mut}
-                label={data.mutations[p.node.mut - 1]?.label}
+                n={m?.n ?? 0}
+                label={m?.label ?? key}
+                description={m?.description}
                 x={p.parentX !== undefined ? (p.parentX + p.x) / 2 : p.x}
                 y={p.y}
               />
-            ) : null
-          )}
+            );
+          })}
         </div>
 
         {/* Carte de survol (espace écran) */}
@@ -217,13 +234,16 @@ export function CladogramView({ data, locale }: { data: CladogramData; locale: s
         {showMut && (
           <MutationsPanel
             mutations={data.mutations}
-            usedMut={data.usedMut}
+            counts={mutCounts}
             focusMut={focusMut}
-            onPick={(n) => {
-              const id = mutToId.get(n);
-              if (!id) return;
-              setFocusMut(n);
-              revealAndFocus(id);
+            onPick={(key) => {
+              const ids = mutToIds.get(key);
+              if (!ids || ids.length === 0) return;
+              // Même mutation → on avance dans le cycle ; sinon on repart à 0.
+              const i = mutCycle.current.key === key ? (mutCycle.current.i + 1) % ids.length : 0;
+              mutCycle.current = { key, i };
+              setFocusMut(key);
+              revealAndFocus(ids[i]);
             }}
             onClose={() => setShowMut(false)}
           />

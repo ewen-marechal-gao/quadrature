@@ -5,9 +5,10 @@
 > **pas** à refléter la structure courante de l'arbre (refactorings trop fréquents pour qu'une
 > synchronisation soit réaliste).
 >
-> **Source de vérité du cladogramme : [`cladogram.yaml`](cladogram.yaml).** Le schéma compagnon
-> [`faune_arbre.svg`](faune_arbre.svg) en est **généré** (`node tools/gen-faune-arbre.mjs`) — ne
-> jamais l'éditer à la main. Pour la topologie courante, se reporter au schéma et au YAML.
+> **Source de vérité du cladogramme : [`data/cladogram.yaml`](../../../data/cladogram.yaml)** (l'arbre)
+> et [`data/mutations.yaml`](../../../data/mutations.yaml) (les mutations : label, description, kit).
+> Édition via `tools/cladogram.mjs`. Le SVG `faune_arbre.svg` est **déprécié** (remplacé par la
+> visualisation web) — ne plus le régénérer.
 
 ---
 
@@ -121,3 +122,104 @@ génétique minime, hybrides triviaux, et un enfant qui change de « type » sel
 > **L'état ancestral du pied** est le **plantigrade généraliste** (≈ Cimes, le moins dérivé) ; sabots
 > (Vents, Neiges) et griffes palmées (Pluies) en sont des **dérivés** spécialisés. Comme pour le fer,
 > on lit le pied depuis l'ascendance et le biome.
+
+---
+
+## Les Faucheurs — l'ombre d'*Aeonis sapiens* (espèce aboutie)
+
+> **Espèce-monstre.** Le **cousin bestial** des Peuples : tout l'héritage sapient (télépathie, gros
+> cerveau de meute, bipédie) **sans les mains** — tourné vers l'**arme et la prédation** plutôt que
+> vers l'outil et la culture. Lecture-miroir d'*Aeonis sapiens*.
+
+**Lignée.** Faucheurs et *Aeonis sapiens* partagent tout l'arbre jusqu'au **redressement** : c'est là
+que la route bifurque. Là où *Aeonis sapiens* **achève** la verticalisation (perte de la queue,
+membres antérieurs → **mains**), les Faucheurs **s'arrêtent à mi-chemin** — d'où leur silhouette plus
+animale.
+
+**Anatomie (tout est inférable de l'ascendance) :**
+
+| Trait                                   | Mutation / origine                                                                   |
+| :-------------------------------------- | :----------------------------------------------------------------------------------- |
+| Deux longues **serpes** aux avant-bras  | **●Serpes** (les ongles s'allongent en faux — *seule mutation propre des Faucheurs*) |
+| **Semi-dressé**, queue-balancier        | redressement **incomplet** ; la queue (●Queue) n'est **pas** perdue                  |
+| **Membres inférieurs puissants**        | bipédie ●Bipédie + posture ramassée                                                  |
+| **Fourrure** dense                      | héritée des Fourrés (●Fourrure)                                                      |
+| **Léger museau**                        | **état ancestral conservé** (pas de face plate)                                      |
+| **Aiguilles EM** sur le crâne (≈ Cimes) | récepteur EM externe (●Récepteur EM) en longues épines                               |
+| **Cri neural** (sidère la proie)        | **capacité** de l'émetteur EM (●Émetteur EM) — pas une mutation                      |
+|                                         |                                                                                      |
+
+**Écologie & rôle de jeu.** Prédateur télépathe : il **sent** l'activité nerveuse de ses proies par
+ses aiguilles, **fige** d'un cri neural à courte portée, puis lacère de ses serpes. Chasse en
+groupe, coordonné en silence par l'EM. C'est l'**antagoniste-miroir** d'*Aeonis sapiens* : assez
+proche pour être troublant (même ascendance, même don), assez sauvage pour terrifier. Excellente
+créature de meneur, et amorce possible d'une lignée de « bêtes dressées ».
+
+---
+
+## Les Syntones — meutes télépathes synchronisées
+
+> **Les chasseurs en meute.** Cousins **quadrupèdes** des Peuples : restés à quatre pattes là où la
+> lignée sapiente se dressait, ils partagent la **télépathie** — mais l'ont tournée vers le
+> **collectif** plutôt que vers le gros cerveau individuel. Une famille de plusieurs espèces, un même don.
+
+**Lignée.** Dès l'apparition de l'**émetteur EM** (la télépathie active), la route se sépare en deux
+usages du don : la **voie collective** (les Syntones, l'esprit réparti) et la **voie individuelle**
+(le gros cerveau → bipèdes → Peuples et Faucheurs). Les Syntones bifurquent donc **avant**
+l'encéphalisation : ils héritent de tout — sang chaud, **fourrure**, vivipare, **vision frontale** de
+prédateur, **épines EM** réceptrices (●Récepteur EM externe), télépathie (●Émetteur EM) — **sauf** le
+gros cerveau individuel. Leur intelligence est celle du **réseau**, pas de la bête. Le tout porté par
+un corps de chasseur horizontal, **gabarit de hyène**, queue conservée.
+
+**Le don — la synchronisation (●Esprit de meute).** Ce n'est *pas* une ruche à esprit unique : chaque
+bête garde son **autonomie**, mais ses actes et ses désirs se calquent fortement sur ceux de ses
+pairs — une **contagion sociale intégrée**. La meute rabat, encercle et vire d'un même élan, en
+silence. Les **épines EM courent le long de la colonne** : un membre peut faire tressaillir par
+réflexe le corps d'un congénère.
+
+*Au combat, traduire par :* un **pool de stabilité commun** (état mental collectif), une **résistance
+aux effets mentaux**, l'**impossibilité de se dissimuler** (se cacher d'un seul = se cacher d'aucun)
+et un **bonus d'esquive tant que la bête n'est pas isolée**. Le talon d'Achille est donc
+l'**isolement** — séparer une bête de sa meute la prive de tout cela.
+
+**Les espèces (inférables du biome + de l'ascendance) :**
+
+| Espèce | Biome | Trait propre |
+| :-- | :-- | :-- |
+| **Meute-chasseresse** | Couchant (steppes) | la forme-souche : coursière-embusquée des hautes herbes, chasse par poursuite |
+| **Meute boréale** *(Lutriens)* | Nord (lacs, marais) | ●Fourrure huileuse imperméable → semi-aquatique, chasse sur terre (écho des Pluies) |
+| **Pêcheurs** *(Lutriens)* | Nord (eaux) | ●Crocs harponneurs + pattes-rames → pleinement aquatique, rabat le poisson |
+| **Lacérateurs** *(Sidéronyches)* | Couchant | ●Griffes de chasse ferro-renforcées = l'arme : éventrent d'un coup de patte |
+| **Meute fouisseuse** *(Talpidés)* | Couchant | ●Griffes fouisseuses → galeries communes, petits gardés au terrier |
+| **Meute australe** *(Talpidés)* | Sud (froid) | ●Graisse & fourrure polaires : terrier + lard isolant pour tenir au pôle Sud |
+
+**Rôle de jeu.** Adversaires de **groupe** par excellence : on n'affronte jamais *une* Syntone mais
+la meute, qui pense d'un bloc. Le meneur joue la coordination muette (flanquements, replis
+simultanés) ; le joueur avisé cherche à **isoler** une bête ou à semer la panique. Comme les
+Faucheurs, certaines lignées sont **dressables** — d'où l'idée de « chiens de chasse » au service
+d'un clan.
+
+---
+
+## Les Bondisseurs — le gibier bondissant
+
+> **La proie.** Là où Syntones et Faucheurs sont les chasseurs, les Bondisseurs sont le **gibier** :
+> des bipèdes bâtis pour la **fuite**, jamais le combat. Des **mammifères** vivipares à fourrure et
+> vision frontale — malgré la silhouette, *pas* des dinosaures.
+
+**Lignée.** Issus de la branche **bipède**, mais *avant* le redressement : dos encore **incliné**,
+longue **queue-balancier** poilue conservée, membres antérieurs réduits (ni mains ni serpes). S'y
+ajoute la **●Détente** — des postérieurs à ressort (bonds explosifs + sprint).
+
+**Bauplan partagé.** Bipède au dos horizontal, queue contrepoids, postérieurs élastiques, fourrure,
+**troupeau télépathe** ; survie par l'**alerte EM** et la fuite.
+
+| Espèce | Biome | Trait propre |
+| :-- | :-- | :-- |
+| **Coureurs** | répandus (Nord · Levant · Couchant) | la forme-souche : sauteur des clairières, sprint en troupeau — gibier de prédilection des Faucheurs |
+| **Planeurs** | Levant (canopée) | ●Voilure : membrane antérieurs↔flancs → le bond devient vol plané d'arbre en arbre |
+| **Détaleurs** | Levant (fourrés) | ●Poche ventrale : petite proie, emporte sa portée d'un bond dans la fuite (jamais abandonnée) |
+
+**Rôle de jeu.** Faune d'ambiance et gibier : leur **alerte télépathe** trahit l'approche d'un
+prédateur — donc aussi celle de PJ furtifs. Parfaits pour rythmer une scène de chasse, ou pour
+montrer ce que traquent Faucheurs et Syntones.

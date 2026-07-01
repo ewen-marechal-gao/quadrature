@@ -70,16 +70,16 @@ export function HoverCard({ node, data, anchor }: HoverCardProps) {
       {lineage.length > 0 && (
         <ol className="clado-hc-path">
           {lineage.map((n) => {
-            const mut = typeof n.mut === "number" ? data.mutations[n.mut - 1] : null;
+            const m = n.mut ? data.mutationByKey[n.mut] : null;
             return (
               <li key={n.id} className="clado-hc-step">
                 <span className="clado-hc-step-name">
                   {n.name ?? n.branchNote ?? n.tip}
                 </span>
-                {typeof n.mut === "number" && (
+                {m && (
                   <span className="clado-hc-step-mut">
-                    <span className="clado-hc-dot">{n.mut}</span>
-                    {mut?.label ?? `Mutation ${n.mut}`}
+                    <span className="clado-hc-dot">{m.n}</span>
+                    {m.label}
                   </span>
                 )}
               </li>

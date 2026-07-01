@@ -1,0 +1,26 @@
+# Source d'une fiche d'adversaire — Le Faucheur.
+# Stats NON dérivées du cladogramme ; les parties du corps, cartes et traits sont
+# DÉRIVÉS de l'ascendance (via `from`) par tools/consolidate-bestiary.mjs → cards/faucheur.card.yaml.
+# Clés en anglais, chaînes en Locale { fr, en? }.
+id: faucheur
+from: faucheurs                 # uid du tip dans data/cladogram.yaml
+name: { fr: "Faucheur", en: "Reaper" }
+power: initiate
+dice: [threat, threat, threat, threat]
+description:
+  fr: >-
+    Prédateur télépathe semi-dressé, cousin bestial des Peuples : il sent
+    l'activité nerveuse de ses proies par ses aiguilles EM, puis lacère de ses
+    deux longues serpes. Chasse en groupe, coordonné en silence.
+
+guard: { type: dodge, value: 10 }
+# speed & fatigue : dérivés des mutations (membres / corps) ; ajouter ici pour surcharger.
+
+# Mutations supplémentaires (hors ascendance) à appliquer : aucune.
+extraMutations: []
+
+# Traits propres à l'espèce (non conférés par une mutation partagée).
+extraTraits:
+  - name: { fr: "Sanguinaire" }
+    kind: passive
+    effect: { fr: "Gagne 🟩 sur ses attaques si la cible a au moins une case ▢ cochée." }

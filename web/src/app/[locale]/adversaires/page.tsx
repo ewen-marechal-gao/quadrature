@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { LOCALES, resolveLocale } from "@/lib/nav";
-import { getCladogram } from "@/lib/cladogram";
-import { CladogramView } from "@/components/cladogram/CladogramView";
+import { getAllAdversaries } from "@/lib/bestiary";
+import { BestiaryBrowser } from "@/components/adversary/BestiaryBrowser";
 
 export function generateStaticParams() {
   return LOCALES.map((l) => ({ locale: l.id }));
@@ -14,16 +14,16 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const label = locale === "fr" ? "Évolution" : "Evolution";
+  const label = locale === "fr" ? "Bestiaire" : "Bestiary";
   return { title: `${label} — Quadrature` };
 }
 
 /**
- * Rubrique Évolution : cladogramme interactif de la faune d'Aeonir.
- * Les YAML (data/cladogram.yaml + data/mutations.yaml) sont lus et normalisés au build,
- * puis passés au composant client CladogramView (pan/zoom, repli, filtres).
+ * Rubrique Bestiaire : fiches d'adversaires (format A5 paysage).
+ * Les fiches (rules/{locale}/adversaires/bestiaire/*.card.yaml) sont chargées
+ * au build, résolues dans la locale, puis rendues par le composant client AdversarySheet.
  */
-export default async function EvolutionPage({
+export default async function AdversairesPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -32,7 +32,7 @@ export default async function EvolutionPage({
   if (!LOCALES.find((l) => l.id === localeParam)) notFound();
   const locale = resolveLocale(localeParam);
 
-  const data = getCladogram(locale);
+  const adversaries = getAllAdversaries(locale);
 
-  return <CladogramView data={data} locale={locale} />;
+  return <BestiaryBrowser adversaries={adversaries} locale={locale} />;
 }

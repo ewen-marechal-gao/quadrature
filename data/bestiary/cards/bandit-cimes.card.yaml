@@ -1,0 +1,130 @@
+# GÉNÉRÉ par tools/consolidate-bestiary.mjs — NE PAS ÉDITER À LA MAIN.
+# Source : data/bestiary/species/<id>.yaml ; parties/cartes/traits dérivés du cladogramme (via `from`).
+id: bandit-cimes
+name:
+  fr: Bandit des Cimes
+  en: Peaks Bandit
+power: initiate
+dice:
+  - threat
+  - threat
+  - threat
+  - threat
+description:
+  fr: "Coupe-jarret du peuple des Cimes : embusqué dans la canopée, il décoche une flèche puis fond à l'épée. Sapient télépathe, il coordonne ses coups en silence."
+guard:
+  type: parry
+  value: 11
+speed:
+  walk: 4
+  run: 8
+fatigue: 9
+appearance:
+  fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · un crâne bombé abritant un gros cerveau · une station bipède au dos incliné, les antérieurs libérés · un port à demi dressé, la queue faisant office de balancier · entièrement dressé (sans queue), les mains préhensiles pour l'outil et l'arme
+parts:
+  - type: head
+    name:
+      fr: Tête
+    description:
+      fr: Crâne allongé à léger museau, portant les sens et les centres nerveux.
+    armor: 0
+    blocks:
+      - cases: 2
+        grants:
+          fr: +1 ◇ au début de la manche
+  - type: body
+    name:
+      fr: Corps
+    description:
+      fr: Tronc musculeux logeant les viscères. Couvert d'une fourrure dense et isolante.
+    armor: 1
+    blocks:
+      - cases: 3
+        grants:
+          fr: +1 🫁 au début de la manche
+  - type: frontLeg
+    name:
+      fr: Mains
+    description:
+      fr: "Mains préhensiles : manient armes et outils."
+    armor: 0
+    blocks:
+      - cases: 2
+        grants:
+          fr: Manie armes et outils (équipement)
+  - type: rearLeg
+    name:
+      fr: Pattes
+    description:
+      fr: Paire de membres arrière, moteur principal du déplacement. Postérieurs puissants et ramassés, porteurs de la station bipède.
+    armor: 1
+    blocks:
+      - cases: 2
+        grants:
+          fr: +1 action Charge
+      - cases: 3
+        grants:
+          fr: Déplacement normal · Évasion 1
+weapons:
+  - type: sword
+    name:
+      fr: Épée
+    description:
+      fr: Lame d'acier ferrique.
+    armor: 1
+    blocks:
+      - cases: 2
+        grants:
+          fr: Confère l'action Coup d'épée
+  - type: bow
+    name:
+      fr: Arc
+    description:
+      fr: Arc de chasse et carquois.
+    armor: 0
+    blocks:
+      - cases: 1
+        grants:
+          fr: Confère l'action Tir
+traits:
+  - name:
+      fr: Grimpeur des Cimes
+    kind: passive
+    effect:
+      fr: Se déplace librement en hauteur (troncs, parois, canopée) ; frappe volontiers en embuscade depuis les cimes.
+cards:
+  - id: swordStrike
+    name:
+      fr: Coup d'épée
+    cost: ⚫
+    initiative: 4
+    onFives:
+      fr: "Repérez un 5 : la cible est Sonnée 🫨."
+    onSuccess:
+      fr: Inflige 💢💢💢
+    onFailure:
+      fr: Inflige 💢
+    note:
+      fr: Nécessite les Mains et l'Épée intactes.
+  - id: charge
+    name:
+      fr: Charge
+    cost: ⚫
+    initiative: 5
+    onFives:
+      fr: "Repérez deux 5 : la cible est Entravée 🕸️."
+    onSuccess:
+      fr: Déplacement [6] puis inflige 💢💢
+    onFailure:
+      fr: Déplacement [4]
+  - id: bowShot
+    name:
+      fr: Tir
+    cost: ⚫
+    initiative: 6
+    onFives:
+      fr: "Repérez un 5 : la cible subit une hémorragie 🩸."
+    onSuccess:
+      fr: Inflige 💢💢 (à distance)
+    onFailure:
+      fr: Inflige 💢

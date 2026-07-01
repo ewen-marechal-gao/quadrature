@@ -1,57 +1,54 @@
 # 🐉 Adversaires
 
-## Carte d'adversaire
+> Voir aussi : [exemples_adversaires.md](exemples_adversaires.md) · [../core/combat.md](../core/combat.md) · [../core/etats.md](../core/etats.md)
 
-Les personnages non joueurs, monstres, alliés mineurs utilisent des fiches simplifiées pour limiter la charge cognitive du meneur, en particulier concernant le suivi des ressources - il est important que le MJ réalise tout de même les jets d'attaque et de défense.
+Les personnages non joueurs, monstres et alliés mineurs utilisent des **fiches simplifiées**, conçues pour limiter la charge mentale du meneur — en particulier le suivi des ressources. Le meneur réalise tout de même les **jets d'attaque et de défense** : l'adversaire reste un acteur du combat.
 
-Les groupes d'adversaires faibles, appelés Hordes, utilisent un système encore plus simplifié et font l'objet d'une section dédiée.
+Une fiche d'adversaire tient sur une **feuille A5 paysage** (plastifiable), accompagnée d'un **deck de cartes d'action** au même format que les cartes des joueurs.
 
-### Ressources simplifiées
+Les groupes d'adversaires faibles, les **Hordes**, utilisent un système encore plus simplifié et font l'objet d'une [section dédiée](#-hordes).
 
-💧 **Fatigue :** chaque case ▢ représente un point de fatigue permanent. Si l'ensemble des cases sont cochées, la créature perd conscience.
+---
 
-🫁 **Endurance X :** au début de chaque tour de la créature, prendre X jetons fatigue. Ces jetons sont dépensés avant de cocher les cases pour la fatigue ▢.
+## Résolution des jets
 
-♥️ **Santé :** chaque case ▢ représente la capacité de supporter une **blessure 💢**, et chaque *groupe* de cases |▢▢▢| représente la capacité d'une créature à subir une **blessure grave 💔**. La créature meurt si l'ensemble des cases sont cochées.
+Les adversaires n'ont ni caractéristiques ni compétences détaillées : ils résolvent leurs jets avec **quatre dés** dont on additionne le résultat (**0 à 20**), au lieu du « 1 meilleur 🟦 + 2 meilleurs 🟨 + 1 aléa » des joueurs. La qualité des dés encode la puissance de la créature (voir [§ Dés d'adversaires](#dés-dadversaires-0-à-5)).
 
-🛡️ **Armure X :** réduit les **blessures 💢** reçues de X (par attaque, minimum 1).
+### Quand l'adversaire attaque un personnage
 
-**🍀 Évasion X :** transforme les X premières **blessures graves 💔** du tour en 3 💢 (également réduit par l'armure).
+1. Le meneur lance les **4 dés** de la créature et **additionne** le résultat.
+2. Il le compare à la **valeur de Garde** du personnage ciblé (le score que le joueur a obtenu lors de sa réaction de Garde — voir [../core/actions/defense_reactions.md](../core/actions/defense_reactions.md)).
+   - Résultat **≥ Garde** → on applique l'effet **✅ Réussite**.
+   - Résultat **< Garde** → on applique l'effet **❌ Échec**.
+3. Si le jet contient **un ou plusieurs 5**, on résout en plus l'effet **⭐ Repérez X 5** de la carte (X = nombre de 5 requis).
 
-### Défenses simplifiées
+> **Pas de Défaut ⚠️ pour les adversaires.** Pour alléger le travail du meneur, les jets d'adversaires n'ont jamais d'effet de défaut : seuls **Réussite**, **Échec** et **Repérez X 5** existent.
 
-Par défaut, la défense des adversaires est l'esquive. Certains adversaires peuvent également bloquer ou parer, généralement avec un jet renforcé. ⚔️
+### Quand un personnage attaque l'adversaire
 
-### États Mentaux Simplifiés
+1. Chaque adversaire possède un **type et une valeur de Garde** fixes, inscrits sur sa fiche (ex. *Esquive 10*, *Parade 12*). Cette valeur ne fait l'objet d'aucun jet.
+2. Le joueur effectue son jet d'attaque normalement, puis le compare à la **Garde** de l'adversaire.
+   - Score **≥ Garde** → la cible est touchée, on applique les effets de l'action.
+   - Score **< Garde** → l'attaque échoue.
 
-**◇ Stabilité X :** au début de chaque tour, la créature gagne X jetons de stabilité.
+### Avantage et désavantage 🟩🟥
 
-**🧠 Ténacité :** lorsque la créature subit un effet 🔺🔻, retirer un de ses jetons de stabilité **◇**. Si la créature n'a pas de jeton, déplacer la créature sur sa piste d'état mental simplifié. Si c'est impossible, cocher une case ▢. Si toutes les cases sont cochées, la créature effectue l'action décrite à côté (généralement, la reddition ou la fuite).
+Une attaque peut bénéficier d'un **avantage 🟩** ou souffrir d'un **désavantage 🟥** selon le **type de garde** rencontré (une frappe lourde porte mieux contre une esquive qu'une botte vive, etc.). L'effet dépend de qui lance les dés :
 
-😠 État enragé : modifie le profil de menace de la créature, généralement + 1 💀 attaque / -1 💀 défense
+- **Côté joueur** (attaque ou garde) : 🟩🟥 fonctionnent normalement (dé d'aléa supplémentaire).
+- **Côté adversaire** : 🟩 **améliore** d'un cran la qualité d'un dé lancé (🟧 → ⬜ → 🟫), 🟥 la **dégrade** d'un cran. Comme chaque cran vaut exactement **±1 d'espérance**, cet ajustement est mathématiquement neutre.
 
-😐 État concentré : modifie une caractéristique de la créature, généralement + 1 🛡️
+---
 
-😬 État paniqué : modifie le profil de menace de la créature, généralement + 1 💀 défense / -1 💀 attaque
+## La fiche d'adversaire
 
-### Actions simplifiées
+### Dés d'adversaires (0 à 5)
 
-⚫ Actions : les créatures disposent d'un ou plusieurs points d'action ⚫ et parfois de réactions ⚡.
+Pour conserver la règle des quatre dés, on ne change pas leur **nombre** mais leur **qualité**, selon la fiabilité voulue pour la créature :
 
-🚶/🏃 **Vitesse :** une créature peut effectuer gratuitement un pas de placement ou une action de déplacement, ou dépenser ⚫ + ▢💧 pour effectuer une action de course.
-
-### Dés d'Adversaires (0 à 5)
-
-Tout comme les joueurs, les monstres doivent réaliser des Jets, mais ils sont simplifiés afin de fluidifier le travail du meneur. Pour maintenir la règle des 4 dés, on ne change pas le nombre, mais la qualité des dés selon la fiabilité souhaitée pour le monstre.
-
-- Dé de Nuisance 🟧 : Faces 0, 1, 1, 2, 2, 3.
-  - Usage : créatures chétives, blessées ou en panique. (Moyenne basse, forte probabilité de 0).
-- Dé de Menace ⬜ : Faces 0, 1, 2, 3, 4, 5.
-  - Usage : l'équilibre standard.
-- Dé de Danger 🟫 : Faces 2, 3, 3, 4, 4, 5.
-  - Usage : monstres massifs, vétérans, frappes lourdes. (Pas de 0 possible, plancher haut).
-
-Puisque chaque palier de la table augmente ou diminue l'espérance de résultat d'exactement **1 point**, utiliser les effets 🟩🟥 pour décaler le niveau de Menace est **mathématiquement parfaitement équilibré**.
+- **Dé de Nuisance 🟧** — faces 0, 1, 1, 2, 2, 3. *Créatures chétives, blessées ou paniquées* (moyenne basse, beaucoup de 0).
+- **Dé de Menace ⬜** — faces 0, 1, 2, 3, 4, 5. *L'équilibre standard.*
+- **Dé de Danger 🟫** — faces 2, 3, 3, 4, 4, 5. *Créatures massives, vétérans, frappes lourdes* (pas de 0 possible, plancher haut).
 
 | Puissance | Équivalent PJ | Jet de base | min | Moyenne | max |
 | :---- | :---: | :---: | :---: | :---: | :---: |
@@ -65,146 +62,179 @@ Puisque chaque palier de la table augmente ou diminue l'espérance de résultat 
 | Expert | 4/3 | 🟫🟫🟫⬜ | 3 | **13** | 20 |
 | Élite | 4/4 | 🟫🟫🟫🟫 | 4 | **14** | 20 |
 
-Au-delà, ajouter un dé et garder les meilleurs résultats.
+Au-delà, ajouter un dé et **garder les quatre meilleurs**.
+
+### Santé ♥️ et parties du corps
+
+La vitalité d'un adversaire n'est pas une barre de points de vie unique : elle est répartie entre des **parties du corps** nommées (Tête, Corps, Serres, Pattes…). Chaque partie possède :
+
+- une **Armure 🛡️ X** propre (réduit de X les **blessures 💢** reçues sur cette partie, minimum 1) ;
+- un ou plusieurs **blocs** de cases ▢ ; **chaque bloc confère une capacité** (imprimée à côté de lui).
+
+**Capacités conférées.** Une partie intacte donne à la créature ce qu'elle *est* : des **actions** disponibles dans son deck, des **ressources régénérantes** (gagnées au début de chaque manche), ou des **modificateurs**. On lit toujours ce que la créature possède encore, jamais ce qu'elle a perdu.
+
+**Cibler une partie.** L'attaquant **déclare la partie visée avant de lancer les dés**. Les blessures s'appliquent à cette partie (réduites par son armure).
+
+**Détruire un bloc.** Les **blessures 💢** cochent les cases de la partie, **bloc par bloc** dans l'ordre imprimé (du haut vers le bas). Une **blessure grave 💔** détruit immédiatement un bloc entier. Lorsque toutes les cases d'un bloc sont cochées, le bloc est **détruit** et la capacité qu'il conférait est **perdue** (par exemple, une action quitte le deck, ou son coût augmente).
+
+> Un bloc de |▢▢| absorbe donc **2 blessures légères 💢** ou **1 blessure grave 💔**. Contrairement aux personnages, les adversaires **n'effectuent pas de conversion 💢 → 💔 en fin de manche** : les blessures restent sur la partie jusqu'à ce qu'un bloc soit rempli.
+
+La créature reste en jeu tant que toutes ses parties ne sont pas détruites ; sa mise hors de combat dépend surtout de la **Fatigue 💧** (voir ci-dessous).
+
+### Fatigue 💧 et Endurance 🫁
+
+💧 **Fatigue.** Chaque case ▢ représente un point de fatigue. Si toutes les cases sont cochées, la créature **perd conscience** et tombe hors de combat.
+
+🫁 **Endurance X.** Au début de chaque tour de la créature, prendre **X jetons fatigue**. Ces jetons sont **dépensés avant** de cocher les cases de fatigue permanente ▢. L'Endurance est généralement conférée par le **Corps** : détruire le Corps coupe ce tampon, et la fatigue s'accumule alors directement.
+
+### Défenses : Évasion et Armure
+
+🛡️ **Armure X** — propre à chaque partie du corps (voir ci-dessus).
+
+🍀 **Évasion X** — défense **globale** de la créature. Au début de chaque manche, elle gagne X jetons d'Évasion. Chaque jeton transforme **une blessure grave 💔** reçue dans la manche en **3 blessures légères 💢** (elles-mêmes réduites par l'armure de la partie). L'Évasion est conférée par les **Pattes** : pattes détruites → **Évasion 0** et plus aucun déplacement possible.
+
+Par défaut, la **Garde** d'un adversaire est l'**Esquive**. Certaines créatures **bloquent** ou **parent** à la place, généralement avec une valeur plus haute. ⚔️
+
+### États mentaux simplifiés
+
+**◇ Stabilité X** — au début de chaque manche, la créature gagne X jetons de Stabilité. Souvent conférée par la **Tête**.
+
+**🧠 Ténacité** — lorsque la créature subit un effet **🔺🔻**, retirer un jeton **◇**. Si elle n'en a plus, la déplacer sur sa **piste d'état mental simplifié** ; si c'est impossible, cocher une case ▢ de sa piste. Toutes les cases cochées → la créature effectue l'action décrite (généralement **fuite** ou **reddition**).
+
+La piste mentale simplifiée n'a que **trois états** (au lieu des sept des personnages) :
+
+| État | Effet typique |
+| :-- | :-- |
+| 😠 **Enragé** | +1 💀 attaque / −1 💀 défense |
+| 😐 **Concentré** | une amélioration ciblée (ex. +1 🛡️, +1 ⚫) |
+| 😬 **Paniqué** | +1 💀 défense / −1 💀 attaque |
+
+### Actions ⚫ et réactions ⚡
+
+⚫ La créature dispose d'un ou plusieurs **points d'action ⚫**, et parfois de **réactions ⚡**. Les cartes jouables forment son **deck**, modulé par l'état de ses parties du corps.
+
+🚶/🏃 **Vitesse.** Une créature peut effectuer gratuitement un **pas de placement** ou une action de **Marche**, ou dépenser **⚫ + ▢💧** pour une action de **Course**.
 
 ---
 
-## Niveau de menace
+## Niveau de menace 💀
 
-💀 Le **Niveau de Menace** d'une créature dépend de ses dés d'adversaires, ses caractéristiques, ses actions et ses traits. La table ci-dessous donne des valeurs permettant d'estimer le **Niveau de Menace** d'un adversaire.
+Le **Niveau de Menace 💀** estime la dangerosité d'une créature, pour la doser ou comparer deux adversaires. Il vaut **(Survie × Létalité)**, ajusté par la **Fiabilité** des dés.
 
-Le **Niveau de Menace** est égal à **(Survie × Létalité)**.
-
-| Survie | 💀 Valeur | Note de Design |
+| Survie | 💀 Valeur | Note de design |
 | :---- | :---- | :---- |
-| ♥️ Santé | +5 / bloc | Barre de santé, généralement sans régénération |
-| 💢 Attrition | +1 / ▢ des blocs | Un bloc de 5 est plus résistant à l'attrition qu'un bloc de 3 |
-| 🧠 Ténacité | +2 / case | Fonctionne comme une barre de santé mentale |
+| ♥️ Bloc de partie | +5 / bloc | Capacité à encaisser une blessure grave |
+| 💢 Attrition | +1 / ▢ des blocs | Un bloc large résiste mieux à l'attrition qu'un petit |
 | 💧 Fatigue | +2 / case | Une créature inconsciente est hors de combat |
-| 🍀 Esquive | +2 / point | Dégradation : transforme la mort immédiate en délai. |
+| 🫁 Endurance | +2 / point | Tampon contre l'épuisement |
+| 🍀 Évasion | +2 / point | Transforme la mort immédiate en délai |
 | 🛡️ Armure | +3 / point | Réduction passive |
-| 🫁 Endurance | +2 / point | Bouclier contre l'épuisement. |
-| 🧠 Ténacité | +2 / point | Bouclier contre les effets mentaux |
+| 🧠 Ténacité | +2 / case | Barre de santé mentale |
 
-| **Létalité** | 💀 **Valeur** | **Note de Design** |
+| Létalité | 💀 Valeur | Note de design |
 | :---- | :---- | :---- |
-| ⚫ Actions | +5 / point | Plus d'actions signifie plus de létalité. |
-| Infliger 💧 | +5 | Équivalent d'une Attaque à main nue |
+| ⚫ Actions | +5 / point | Plus d'actions = plus de létalité |
+| Infliger 💧 | +5 | Équivalent d'une attaque à mains nues |
 | Infliger 💢 | +5 | Équivalent d'une frappe rapide |
 | Infliger 💔 | +10 | Équivalent d'une frappe lourde |
 | Infliger 🔺🔻 | +5 | Équivalent d'une frappe lourde |
 
-| Fiabilité | 💀 Valeur | Note de Design |
+| Fiabilité | 💀 Valeur | Note de design |
 | :---- | :---- | :---- |
 | 🟧 Nuisance | +2 / dé | Moyenne de 1,5 |
 | ⬜ Menace | ×1.0 / dé | Moyenne de 2,5 |
-| 🟫 Danger | ×1.2 / dé | Coefficient multiplicateur sur le total de létalité. |
+| 🟫 Danger | ×1.2 / dé | Coefficient multiplicateur sur la létalité |
 
 ---
 
-## Actions d'Adversaires
+## Actions d'adversaires
 
-Ces actions peuvent être utilisées pour construire les cartes d'adversaires. Elles prennent la forme de cartes similaires aux actions des joueurs.
+Briques réutilisables pour composer un deck. Elles prennent la forme de cartes, similaires aux cartes d'action des joueurs, mais sans effet de **Défaut ⚠️**.
 
-**Actions Offensives**
-
-**2️⃣ [💀] Harcèlement ⚫**
-
+**🗡️ Harcèlement ⚫** *(init. 2)*
 *Une pluie de coups faibles mais incessants visant à épuiser la garde.*
+⭐ Repérez un 5 : la cible subit 💧 supplémentaire.
+✅ Inflige 💢 + 💧
+❌ Inflige 💧
 
-✅ **Succès :** inflige 💢 + 💧.  
-❌ **Échec :** inflige 💧  
-**⚠️ Défaut :** vous subissez 💧.
+**⚔️ Frappe vive ⚫** *(init. 3)*
+⭐ Repérez un 5 : la cible subit 🔻.
+✅ Inflige 💢💢💢
+❌ Inflige 💢
 
----
+**🪓 Frappe lourde ⚫⚫** *(init. 5)*
+⭐ Repérez un 5 : la cible est **Sonnée 🫨**.
+✅ Inflige 💔
+❌ Inflige 💢💢
 
-**3️⃣ [💀💀] Frappe vive ⚫**
-
-✅ Inflige 💢💢💢  
-❌ Inflige 💢  
-⚠️ Subit 💧
-
----
-
-**5️⃣ [💀💀] Frappe lourde ⚫⚫**
-
-✅ Inflige 💔  
-❌ Inflige 💢💢  
-⚠️ Subit 💧
+**🦷 Morsure ⚫⚫** *(init. 3)*
+⭐ Repérez un 5 : la créature **agrippe** la cible (**Entravé 🕸️**).
+✅ Inflige 💢💢💢
+❌ Inflige 💢
 
 ---
 
-**3️⃣ [💀💀] Morsure ⚫⚫**
+## Traits d'adversaires
 
-⭐ Repérer un 5 : l'adversaire est **Entravé 🕸️**
+Briques pour concevoir et équilibrer des adversaires.
 
-✅ Inflige 💢💢💢  
-❌ Inflige 💢  
-⚠️ Subit 💧
+### Traits offensifs
 
----
+**Réflexes de prédateur :** la créature dispose de **+1 ⚡** par manche. Elle peut l'utiliser pour effectuer une *Frappe vive* sur toute cible qui tente de quitter son **Engagement serré (≬)**.
 
-## Traits d'Adversaires
+**Sanguinaire :** si la cible possède au moins une case ▢ cochée, la créature gagne **🟩** sur toutes ses attaques.
 
-Ces traits peuvent être utilisés pour concevoir et équilibrer des adversaires.
+**Frappe épuisante :** chaque succès inflige **+1 Fatigue 💧**. Si la cible n'a plus de jetons d'Endurance 🫁, elle coche **deux cases ▢** de fatigue au lieu d'une.
 
-### Traits Offensifs
+### Traits mentaux
 
-**Réflexes de Prédateur :** la créature dispose de **+1 ⚡** par tour. Elle peut utiliser cette réaction pour effectuer une *Frappe Vive* sur toute cible qui tente de quitter son **Engagement Serré (≬)**.
+**Aura de terreur :** au début de son tour, toute créature engagée avec ce monstre perd **1 jeton de Stabilité ◇**. Sans jeton, elle subit immédiatement **🔻**.
 
-**Sanguinaire :** si la cible de la créature possède au moins une case ▢ cochée, la créature gagne **🟩** sur toutes ses attaques.
+**Esprit de ruche :** la créature partage ses jetons de Stabilité ◇ avec ses alliés adjacents possédant le même trait. Une attaque mentale doit vider la réserve commune avant d'affecter la Ténacité 🧠.
 
-**Frappe Épuisante :** chaque succès inflige **+1 Fatigue 💧** supplémentaire. Si la cible n'a plus de jetons **Endurance 🫁**, elle doit cocher **deux cases ▢** de fatigue permanente au lieu d'une.
-
-### Traits Mentaux
-
-**Aura de Terreur :** au début de leur tour, toute créature engagée avec ce monstre perd immédiatement **1 jeton de Stabilité ◇**. Si un joueur n'en a plus, il subit immédiatement **🔻** (il glisse vers l'état *Paniqué*).
-
-**Esprit de Ruche :** la créature partage ses jetons de **Stabilité ◇** avec ses alliés adjacents possédant le même trait. Une attaque mentale contre le groupe doit vider la réserve commune avant d'affecter la **Ténacité 🧠**.
-
-**Regard Hypnotique :** en dépensant **⚫**, la créature force une cible à dépenser sa **Stabilité ◇** restante. Si la cible tombe à 0, elle est **Entravée** (elle reste figée par le regard).
+**Regard hypnotique :** en dépensant **⚫**, la créature force une cible à dépenser sa Stabilité ◇ restante. Si la cible tombe à 0, elle est **Entravée 🕸️**.
 
 ### Traits défensifs
 
-**Cuirasse Naturelle (X) :** la créature possède **Armure X**. Si une attaque inflige moins de X marqueurs 💢, elle est totalement ignorée (au lieu du minimum de 1 habituel).
+**Cuirasse naturelle (X) :** la créature possède **Armure X** sur la partie concernée. Si une attaque inflige moins de X marqueurs 💢, elle est **totalement ignorée** (au lieu du minimum de 1 habituel).
 
 ---
 
 ## 🕷️ Hordes
 
-Les Hordes sont un type d'adversaire particulier. Ils sont représentés sur le terrain par des jetons, leur dangerosité diminue avec leur nombre.
+Les Hordes sont un type d'adversaire particulier, représenté sur le terrain par des jetons : leur dangerosité **diminue avec leur nombre**.
 
 ### Ressources simplifiées
 
 💧 **Fatigue :** les hordes n'ont pas de fatigue. Tout dégât à la fatigue est immédiatement converti en **blessure 💢**.
 
-♥️ **Santé :** chaque case ▢ représente un membre de la horde, et la capacité de supporter une **blessure 💢**, et chaque *groupe* de cases |▢▢▢| représente un groupe de créatures, représenté par un jeton horde 🕷️.
+♥️ **Santé :** chaque case ▢ représente un membre de la horde et la capacité d'encaisser une **blessure 💢** ; chaque *groupe* |▢▢▢| représente un groupe de créatures, figuré par un jeton horde 🕷️.
 
-🛡️ **Armure ∞ :** les hordes sont un ensemble d'individus sans armure, tout dégât est automatiquement réduit à 1 💢.
+🛡️ **Armure ∞ :** les hordes sont un ensemble d'individus sans armure ; tout dégât est automatiquement réduit à 1 💢.
 
-**🍀 Évasion ∞ :** de la même manière, les hordes transforment automatiquement les **blessures graves 💔** en une 💢 et un effet 🔻.
+🍀 **Évasion ∞ :** de même, les hordes transforment automatiquement les **blessures graves 💔** en une 💢 et un effet 🔻.
 
 ### Défenses simplifiées
 
-La seule défense des hordes est l'esquive.
+La seule défense des hordes est l'**esquive**.
 
-### États Mentaux Simplifiés
+### États mentaux simplifiés
 
-**◇ Stabilité :** la horde gagne des jetons de stabilité de manière conditionnelle, généralement lorsqu'elle inflige ou qu'elle subit une blessure.
+**◇ Stabilité :** la horde gagne des jetons de manière conditionnelle, généralement lorsqu'elle inflige ou subit une blessure.
 
-**🧠 Ténacité :** lorsque la horde subit un effet 🔺🔻, retirer un de ses jetons de stabilité **◇**. Si la horde n'a plus de jetons stabilité, elle subit une **blessure 💢** à la place (représentant la fuite ou la désorganisation de ses membres).
+**🧠 Ténacité :** lorsque la horde subit un effet 🔺🔻, retirer un jeton ◇. Sans jeton, elle subit une **blessure 💢** (fuite ou désorganisation de ses membres).
 
-L'état mental de la horde dépend du nombre de ses membres. Elle commence dans l'état enragé, tend vers l'état paniqué (ou l'inverse).
+L'état mental d'une horde dépend du nombre de ses membres : elle débute **enragée** et tend vers **paniquée** (ou l'inverse).
 
-😠 État enragé : modifie le profil de menace de la créature, généralement + 1 💀 attaque / -1 💀 défense
-
-😐 État neutre : pas de modification
-
-😬 État paniqué : modifie le profil de menace de la créature, généralement + 1 💀 défense / -1 💀 attaque
+| État | Effet |
+| :-- | :-- |
+| 😠 **Enragé** | +1 💀 attaque / −1 💀 défense |
+| 😐 **Neutre** | pas de modification |
+| 😬 **Paniqué** | +1 💀 défense / −1 💀 attaque |
 
 ### Actions simplifiées
 
-Les hordes disposent uniquement de deux actions 🟢 et **🔴**. Les hordes n'ont pas de réactions ⚡.
+Les hordes ne disposent que de deux actions, 🟢 et 🔴, et **pas de réactions ⚡** :
 
-Les actions 🟢 servent à déplacer les jetons représentant les membres de la horde.  
-Les actions **🔴** servent à effectuer une attaque pour l'ensemble des membres de la horde.
+- 🟢 sert à **déplacer** les jetons des membres de la horde.
+- 🔴 sert à effectuer une **attaque** pour l'ensemble des membres.

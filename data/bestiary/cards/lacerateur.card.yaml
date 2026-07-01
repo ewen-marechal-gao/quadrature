@@ -1,0 +1,92 @@
+# GÉNÉRÉ par tools/consolidate-bestiary.mjs — NE PAS ÉDITER À LA MAIN.
+# Source : data/bestiary/species/<id>.yaml ; parties/cartes/traits dérivés du cladogramme (via `from`).
+id: lacerateur
+name:
+  fr: Lacérateur
+  en: Lacerator
+power: novice
+dice:
+  - threat
+  - threat
+  - threat
+  - nuisance
+description:
+  fr: "Prédateur de meute des steppes du Couchant : il éventre ses proies d'un coup de pattes griffues, la horde coordonnée en silence par un esprit synchronisé."
+guard:
+  type: dodge
+  value: 9
+speed:
+  walk: 5
+  run: 10
+fatigue: 9
+appearance:
+  fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · des épines EM le long de la colonne (esprits synchronisés) · de longues griffes tranchantes aux pattes avant
+parts:
+  - type: head
+    name:
+      fr: Tête
+    description:
+      fr: Crâne allongé à léger museau, portant les sens et les centres nerveux.
+    armor: 0
+    blocks:
+      - cases: 2
+        grants:
+          fr: +1 ◇ au début de la manche (pool partagé de la meute)
+  - type: body
+    name:
+      fr: Corps
+    description:
+      fr: Tronc musculeux logeant les viscères. Couvert d'une fourrure dense et isolante.
+    armor: 1
+    blocks:
+      - cases: 3
+        grants:
+          fr: +1 🫁 au début de la manche
+  - type: frontLeg
+    name:
+      fr: Pattes griffues
+    description:
+      fr: "Paire de membres avant. Griffes ferro-renforcées : l'arme principale."
+    armor: 0
+    blocks:
+      - cases: 3
+        grants:
+          fr: Confère l'action Lacération
+  - type: rearLeg
+    name:
+      fr: Membres postérieurs
+    description:
+      fr: Paire de membres arrière, moteur principal du déplacement.
+    armor: 0
+    blocks:
+      - cases: 3
+        grants:
+          fr: Déplacement normal · Évasion 1
+  - type: tail
+    name:
+      fr: Queue
+    description:
+      fr: Longue queue musclée. Queue devenue balancier terrestre.
+    armor: 0
+    blocks:
+      - cases: 2
+        grants:
+          fr: "Queue-balancier : insensible au renversement (mise à terre)"
+traits:
+  - name:
+      fr: Esprit synchronisé
+    kind: passive
+    effect:
+      fr: Le ◇ est mis en commun dans la meute ; résiste aux effets mentaux ; indissimulable (repérée par un membre = repérée par tous) ; +🍀 Évasion tant qu'elle n'est pas isolée — vulnérable une fois isolée.
+cards:
+  - id: laceration
+    name:
+      fr: Lacération
+    cost: ⚫⚫
+    initiative: 3
+    onFives:
+      fr: "Repérez un 5 : la cible subit une hémorragie 🩸."
+    onSuccess:
+      fr: Inflige 💢💢💢
+    onFailure:
+      fr: Inflige 💢

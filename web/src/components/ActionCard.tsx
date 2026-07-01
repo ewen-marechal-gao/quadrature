@@ -59,7 +59,7 @@ export function ActionCard({ card }: { card: Card }) {
     card.sacrifices?.length || card.defaut || card.critique
   );
   const hasOutcome =
-    !!(card.effet || card.effet_duree || card.succes || card.echec || card.table);
+    !!(card.repere || card.effet || card.effet_duree || card.succes || card.echec || card.table);
 
   return (
     <div className="action-card" data-categorie={card.categorie} data-type={card.type}>
@@ -117,6 +117,7 @@ export function ActionCard({ card }: { card: Card }) {
 
         {hasRoll && hasOutcome && <Separator />}
 
+        <Field icon="⭐" text={card.repere} />
         <Field icon="▶️" text={card.effet} />
         <Field icon="⏳" text={card.effet_duree} />
         <Field icon="✅" text={card.succes} />

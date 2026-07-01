@@ -1,25 +1,28 @@
 /**
  * src/lib/cladogram.ts
  *
- * Couche d'accès au cladogramme de la faune d'Aeonir
- * (rules/{locale}/univers/cladogram.yaml — source de vérité).
+ * Couche d'accès au cladogramme de la faune d'Aeonir.
+ * DEUX fichiers à la racine du dépôt (source de vérité) :
+ *   - data/cladogram.yaml — l'arbre (title, rootNote, backlog, root) ;
+ *   - data/mutations.yaml — les mutations : clé → { label:{i18n}, description:{i18n}, kit? }.
  * Utilisée côté serveur (Server Component, generateStaticParams).
  *
- * Le YAML est lu et *normalisé* en une structure sérialisable :
- *   - chaque nœud reçoit un `id` stable (chemin), sa `depth`, son `kingdom`
- *     (index du règne racine dont il descend) et son `parentId` ;
- *   - `nodeIndex` (id → nœud) et `usedMut` (mutations placées) sont pré-calculés.
+ * Schéma :
+ *   - les nœuds référencent une mutation par sa **clé** (champ `mut`) ;
+ *   - la **numérotation d'affichage n'est PAS dans le YAML** : on la calcule ici,
+ *     par **ordre d'apparition dans l'arbre** (parcours pré-ordre — la 1ʳᵉ mutation
+ *     rencontrée porte le n° 1, etc.). Les mutations qui n'apparaissent sur aucun
+ *     nœud sont « différées » (sans numéro).
+ *   - le champ `kit` des mutations (brique de fiche d'adversaire) est ignoré ici.
  *
- * La normalisation est volontairement *pure* (pas de fs) afin de pouvoir être
- * rejouée côté client si besoin ; seule getCladogram() touche au disque.
- *
- * Schéma source : cf. en-tête de cladogram.yaml et tools/gen-faune-arbre.mjs.
- * Fallback : si la locale n'a pas le fichier, on sert le fr.
+ * Les libellés/descriptions sont **résolus dans la locale demandée au chargement**
+ * (fallback fr) → le composant client reçoit des chaînes simples.
  */
 
 import fs from "fs";
 import path from "path";
 import yaml from "js-yaml";
+import { localize, type LocalizedString } from "@/lib/nav";
 
 // ─── Types bruts (forme YAML) ─────────────────────────────────────────────────
 
@@ -27,24 +30,25 @@ import yaml from "js-yaml";
 export type BiomeLetter = "N" | "L" | "C" | "S";
 export type NodeStatus = "done" | "todo";
 
+interface RawMutation {
+  label?: LocalizedString;
+  description?: LocalizedString;
+  /** Brique de fiche d'adversaire — ignorée par le visualiseur. */
+  kit?: unknown;
+}
+
 /** Nœud tel qu'écrit dans le YAML (clade interne ou feuille). */
 interface RawNode {
-  /** Clade interne : nom (majuscules). */
   name?: string;
-  /** Clade interne : glose / analogue terrestre entre parenthèses. */
   ref?: string;
-  /** Feuille : nom de l'espèce/grade. */
   tip?: string;
-  /** Feuille : glose (analogue terrestre, références). */
   cd?: string;
-  /** Étiquette de branche sans nom de clade (ex. « sessiles à dispersion »). */
   branchNote?: string;
-  /** N° de mutation d'Aeonir apparaissant sur ce nœud (pastille). */
-  mut?: number;
+  /** Clé d'une mutation du dictionnaire `mutations`. */
+  mut?: string;
   /** Sous-ensemble de "NLCS". */
   biome?: string;
   status?: NodeStatus;
-  /** Espèce-clé (étoile). */
   star?: boolean;
   children?: RawNode[];
 }
@@ -52,7 +56,8 @@ interface RawNode {
 interface RawCladogram {
   title?: string;
   rootNote?: string;
-  mutations?: string[];
+  backlog?: string[];
+  mutations?: Record<string, RawMutation>;
   root: { children: RawNode[] };
 }
 
@@ -75,7 +80,8 @@ export interface CladoNode {
   tip?: string;
   cd?: string;
   branchNote?: string;
-  mut?: number;
+  /** Clé de la mutation portée par ce nœud (cf. mutationByKey). */
+  mut?: string;
   biome?: string;
   status?: NodeStatus;
   star?: boolean;
@@ -84,32 +90,38 @@ export interface CladoNode {
 }
 
 export interface Mutation {
-  /** Numéro (1-based) tel qu'affiché. */
-  n: number;
+  /** Clé stable (référencée par les nœuds). */
+  key: string;
+  /** Numéro d'affichage (ordre d'apparition dans l'arbre) ; null si différée. */
+  n: number | null;
   label: string;
+  description: string;
 }
 
 export interface CladogramData {
   title: string;
   rootNote: string;
+  /** Mutations placées (numérotées, ordre d'apparition) puis différées. */
   mutations: Mutation[];
+  /** Accès direct clé → mutation. */
+  mutationByKey: Record<string, Mutation>;
   /** Racine synthétique (id "root"). */
   root: CladoNode;
   /** Accès direct id → nœud (inclut la racine). */
   nodeIndex: Record<string, CladoNode>;
-  /** Numéros de mutations effectivement placées sur l'arbre. */
-  usedMut: number[];
 }
 
 // ─── Normalisation ─────────────────────────────────────────────────────────────
 
 /**
- * Convertit la forme YAML en {@link CladogramData}.
- * Pure : aucun accès disque, pour être rejouable côté client si nécessaire.
+ * Convertit la forme YAML en {@link CladogramData}, libellés résolus dans `locale`.
+ * Pure : aucun accès disque.
  */
-export function normalizeCladogram(raw: RawCladogram): CladogramData {
+export function normalizeCladogram(raw: RawCladogram, locale = "fr"): CladogramData {
   const nodeIndex: Record<string, CladoNode> = {};
-  const usedMut = new Set<number>();
+  // Clés de mutation dans l'ordre de première apparition (parcours pré-ordre).
+  const appearance: string[] = [];
+  const seen = new Set<string>();
 
   function build(
     src: RawNode,
@@ -136,7 +148,10 @@ export function normalizeCladogram(raw: RawCladogram): CladogramData {
       children: [],
     };
     nodeIndex[id] = node;
-    if (typeof src.mut === "number") usedMut.add(src.mut);
+    if (typeof src.mut === "string" && !seen.has(src.mut)) {
+      seen.add(src.mut);
+      appearance.push(src.mut);
+    }
     if (src.children) {
       node.children = src.children.map((child, i) =>
         build(child, `${id}.${i}`, depth + 1, kingdom, id)
@@ -153,53 +168,51 @@ export function normalizeCladogram(raw: RawCladogram): CladogramData {
     children: [],
   };
   nodeIndex.root = root;
-  // Chaque enfant direct de la racine définit un « règne » (Pourpres, Zoïdes…).
   root.children = (raw.root?.children ?? []).map((child, i) =>
     build(child, `root.${i}`, 1, i, "root")
   );
 
-  const mutations: Mutation[] = (raw.mutations ?? []).map((label, i) => ({
-    n: i + 1,
-    label,
-  }));
+  // Numérotation = ordre d'apparition dans l'arbre.
+  const numberByKey = new Map<string, number>();
+  appearance.forEach((key, i) => numberByKey.set(key, i + 1));
+
+  const rawMuts = raw.mutations ?? {};
+  const loc = (f?: LocalizedString) => (f ? localize(f, locale) : "");
+  const toMutation = (key: string, n: number | null): Mutation => {
+    const m = rawMuts[key];
+    return { key, n, label: loc(m?.label) || key, description: loc(m?.description) };
+  };
+
+  // Placées (numérotées, dans l'ordre d'apparition) puis différées (dict, hors arbre).
+  const placed = appearance.map((key) => toMutation(key, numberByKey.get(key)!));
+  const deferred = Object.keys(rawMuts)
+    .filter((key) => !numberByKey.has(key))
+    .map((key) => toMutation(key, null));
+  const mutations = [...placed, ...deferred];
+
+  const mutationByKey: Record<string, Mutation> = {};
+  for (const m of mutations) mutationByKey[m.key] = m;
 
   return {
     title: raw.title ?? "",
     rootNote: raw.rootNote ?? "",
     mutations,
+    mutationByKey,
     root,
     nodeIndex,
-    usedMut: [...usedMut].sort((a, b) => a - b),
   };
 }
 
 // ─── Chargement (serveur) ──────────────────────────────────────────────────────
 
-function getCladogramPath(locale: string): string {
-  const p = path.join(
-    process.cwd(),
-    "..",
-    "rules",
-    locale,
-    "univers",
-    "cladogram.yaml"
-  );
-  if (!fs.existsSync(p) && locale !== "fr") {
-    return path.join(
-      process.cwd(),
-      "..",
-      "rules",
-      "fr",
-      "univers",
-      "cladogram.yaml"
-    );
-  }
-  return p;
-}
+const DATA_DIR = path.join(process.cwd(), "..", "data");
 
-/** Charge et normalise le cladogramme de la locale (fallback fr). */
+/** Charge et normalise le cladogramme (arbre + mutations), libellés résolus dans `locale`. */
 export function getCladogram(locale = "fr"): CladogramData {
-  const file = getCladogramPath(locale);
-  const raw = yaml.load(fs.readFileSync(file, "utf-8")) as RawCladogram;
-  return normalizeCladogram(raw);
+  const tree = yaml.load(fs.readFileSync(path.join(DATA_DIR, "cladogram.yaml"), "utf-8")) as RawCladogram;
+  const mutDoc = yaml.load(fs.readFileSync(path.join(DATA_DIR, "mutations.yaml"), "utf-8")) as {
+    mutations?: Record<string, RawMutation>;
+  };
+  const raw: RawCladogram = { ...tree, mutations: mutDoc.mutations ?? {} };
+  return normalizeCladogram(raw, locale);
 }

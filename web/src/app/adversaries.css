@@ -1,0 +1,613 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   adversaries.css — Rubrique Bestiaire (chrome) + fiche d'adversaire (A5 paysage)
+
+   Importée par BestiaryBrowser et AdversarySheet. Le chrome réutilise le shell
+   du site (.book-app / .top-bar / .book-sidebar, cf. shell.css) ; tout le reste
+   est scopé sous les classes `.adv-*`. Réutilise les tokens du design system.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Champ de recherche dans la sidebar ─────────────────────────────────── */
+.adv-search-wrap {
+  padding: 10px 12px 6px;
+}
+
+.adv-search {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--brass-border);
+  border-radius: 4px;
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  padding: 5px 9px;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.adv-search::placeholder {
+  color: var(--panel-muted);
+}
+.adv-search:focus {
+  border-color: var(--brass);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.adv-empty {
+  padding: 12px 16px;
+  font-size: 0.8rem;
+  color: var(--panel-muted);
+  font-style: italic;
+}
+
+/* ── Zone principale (scroll) ───────────────────────────────────────────── */
+.adv-main {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--book-bg);
+  color: var(--card-ink);
+  font-family: var(--font-ui);
+  padding: 2rem 1.5rem 4rem;
+}
+
+.adv-content {
+  max-width: 980px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+}
+
+/* ── Feuille A5 paysage (210 × 148 mm) ──────────────────────────────────── */
+.adv-sheet {
+  width: 100%;
+  max-width: 920px;
+  aspect-ratio: 210 / 148;
+  background: var(--parchment);
+  background-image: var(--noise-card);
+  color: #2a2218;
+  --adv-ink: #2a2218;
+  --adv-rule: #5d4e37;
+  --adv-rule-soft: rgba(93, 78, 55, 0.28);
+  --adv-muted: #6b5a40;
+  --adv-box: #4a3d2a;
+  border: 1px solid var(--brass-mid);
+  border-radius: 6px;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5);
+  padding: clamp(0.9rem, 2.2vw, 1.6rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  container-type: inline-size;
+}
+
+/* ── En-tête ────────────────────────────────────────────────────────────── */
+.adv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  border-bottom: 2px solid var(--adv-rule);
+  padding-bottom: 0.5rem;
+}
+
+.adv-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.adv-name {
+  font-size: clamp(1.3rem, 3.4cqw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin: 0;
+  color: var(--adv-ink);
+}
+
+.adv-power {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--adv-muted);
+}
+
+.adv-header-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: clamp(0.78rem, 1.5cqw, 0.95rem);
+  white-space: nowrap;
+}
+
+.adv-dice {
+  font-size: 1.1em;
+  letter-spacing: 0.08em;
+}
+
+.adv-guard strong {
+  font-size: 1.15em;
+}
+
+.adv-desc {
+  margin: 0;
+  font-size: clamp(0.74rem, 1.4cqw, 0.86rem);
+  font-style: italic;
+  color: var(--adv-muted);
+  line-height: 1.35;
+}
+
+/* ── Corps : colonne gauche (fatigue, traits) + parties ─────────────────── */
+.adv-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(0.7rem, 1.8cqw, 1.4rem);
+  flex: 1;
+  min-height: 0;
+}
+
+.adv-section-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--adv-muted);
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.adv-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+/* Cases ▢ ------------------------------------------------------------------ */
+.adv-boxes {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.adv-box {
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid var(--adv-box);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.adv-fatigue-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Traits ------------------------------------------------------------------ */
+.adv-traits ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.adv-trait {
+  font-size: clamp(0.72rem, 1.4cqw, 0.82rem);
+  line-height: 1.3;
+}
+
+.adv-trait-type {
+  font-size: 0.9em;
+}
+
+/* ── Parties du corps ──────────────────────────────────────────────────── */
+.adv-parts {
+  min-width: 0;
+}
+
+.adv-parts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.adv-part {
+  border: 1px solid var(--adv-rule-soft);
+  border-radius: 4px;
+  padding: 0.4rem 0.55rem 0.5rem;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.adv-part-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid var(--adv-rule-soft);
+  padding-bottom: 0.2rem;
+  margin-bottom: 0.35rem;
+}
+
+.adv-part-name {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: clamp(0.74rem, 1.5cqw, 0.88rem);
+}
+
+.adv-part-armor {
+  font-size: 0.78rem;
+  color: var(--adv-muted);
+}
+
+.adv-blocs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.adv-bloc {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.adv-bloc-confere {
+  font-size: clamp(0.68rem, 1.35cqw, 0.8rem);
+  line-height: 1.25;
+}
+
+/* ── Deck d'actions (composant ActionCard partagé) ─────────────────────── */
+.adv-deck {
+  width: 100%;
+  max-width: 920px;
+}
+
+.adv-deck-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--brass-bright);
+  font-weight: 700;
+  margin: 0 0 0.9rem;
+}
+
+/* Même gabarit que la galerie des Cartes (/cartes) : colonnes minmax(252px,1fr),
+   gap 18px → l'ActionCard (width:100% + aspect-ratio carte à jouer) rend à la
+   même taille à l'écran. La taille physique exacte est imposée à l'impression
+   (voir @media print plus bas). */
+.adv-deck-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
+  gap: 18px;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .adv-main {
+    padding: 1.2rem 0.9rem 3rem;
+  }
+  .adv-sheet {
+    aspect-ratio: auto;
+  }
+  .adv-body {
+    grid-template-columns: 1fr;
+  }
+  .adv-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .adv-header-stats {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  .adv-deck-cards {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+
+/* ── Panneau d'impression (écran) ──────────────────────────────────────── */
+.adv-print-panel {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--brass-border);
+  border-radius: 8px;
+  padding: 1rem 1.2rem 1.2rem;
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+}
+
+.adv-print-panel-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--brass-bright);
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+}
+
+.adv-print-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--brass-faint);
+}
+
+.adv-print-row--cards {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.adv-print-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+.adv-print-label small {
+  color: var(--panel-muted);
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
+
+/* Sélecteur segmenté (copies de la fiche) */
+.adv-seg {
+  display: inline-flex;
+  border: 1px solid var(--brass-border);
+  border-radius: 5px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.adv-seg-btn {
+  width: 34px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--brass-faint);
+  color: var(--panel-text);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+}
+.adv-seg-btn:first-child {
+  border-left: none;
+}
+.adv-seg-btn--on {
+  background: var(--brass);
+  color: var(--on-brass);
+}
+
+/* Quantités par carte de deck */
+.adv-print-cards {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.adv-print-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+.adv-print-card-name {
+  font-size: 0.85rem;
+}
+.adv-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.adv-stepper-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--brass-border);
+  background: transparent;
+  color: var(--panel-text);
+  cursor: pointer;
+  line-height: 1;
+  font-size: 1rem;
+}
+.adv-stepper-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.adv-stepper-val {
+  min-width: 1.2em;
+  text-align: center;
+  color: var(--brass-bright);
+}
+
+.adv-print-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.9rem;
+}
+.adv-print-summary {
+  font-size: 0.78rem;
+  color: var(--panel-muted);
+  margin-right: auto;
+}
+.adv-print-btn {
+  background: var(--brass);
+  color: var(--on-brass);
+  border: none;
+  border-radius: 5px;
+  padding: 7px 16px;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.adv-print-btn:hover {
+  background: var(--brass-bright);
+}
+.adv-print-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ── Verso de la fiche (illustration ou placeholder) ───────────────────── */
+.adv-verso {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: var(--parchment);
+  overflow: hidden;
+  border: 0.3pt solid #bbb;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.adv-verso-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.adv-verso-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6mm;
+  color: #5d4e37;
+  text-align: center;
+}
+.adv-verso-kicker {
+  font-size: 5mm;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+}
+.adv-verso-name {
+  font-size: 13mm;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ── DOM d'impression ──────────────────────────────────────────────────── */
+/* Caché à l'écran ; révélé par window.print() (modèle de /cartes). */
+.adv-print {
+  display: none;
+}
+
+/* Orientation par planche (Chrome : @page nommées à tailles distinctes). */
+@page adv-portrait {
+  size: A4 portrait;
+  margin: 0;
+}
+@page adv-landscape {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
+/* ── Responsive (écran) ────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .adv-main {
+    padding: 1.2rem 0.9rem 3rem;
+  }
+  .adv-sheet {
+    aspect-ratio: auto;
+  }
+  .adv-body {
+    grid-template-columns: 1fr;
+  }
+  .adv-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .adv-header-stats {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  .adv-deck-cards {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+
+/* ── Impression ─────────────────────────────────────────────────────────── */
+@media print {
+  /* On masque l'interface ; seules les planches .adv-print sont imprimées. */
+  .adv-app {
+    display: none !important;
+  }
+  .adv-print {
+    display: block;
+  }
+
+  /* Planche FICHE — A4 portrait, jusqu'à 2 fiches A5 paysage empilées. */
+  .adv-print-page--sheet {
+    page: adv-portrait;
+    width: 210mm;
+    height: 297mm;
+    display: flex;
+    flex-direction: column;
+    break-after: page;
+    page-break-after: always;
+  }
+  .adv-a5 {
+    width: 210mm;
+    height: 148.5mm;
+    overflow: hidden;
+    position: relative;
+  }
+  /* La fiche (recto) remplit exactement sa moitié d'A4. */
+  .adv-print-page--sheet .adv-sheet {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    aspect-ratio: auto;
+    margin: 0;
+    border: 0.3pt solid #bbb;
+    border-radius: 0;
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Planche DECK — A4 paysage, grille 4 × 2 (8 cartes), dimensions exactes. */
+  .adv-print-page--deck {
+    page: adv-landscape;
+    width: 281mm; /* 297 − 2×8 de marges */
+    height: 194mm; /* 210 − 2×8 */
+    display: grid;
+    grid-template-columns: repeat(4, 63.5mm);
+    grid-template-rows: repeat(2, 88.9mm);
+    gap: 4mm;
+    justify-content: center;
+    align-content: center;
+    break-after: page;
+    page-break-after: always;
+  }
+  .adv-print-page--deck .action-card {
+    width: 63.5mm;
+    height: 88.9mm;
+    aspect-ratio: auto;
+    font-size: 5.6pt;
+    border-radius: 0;
+    border: 0.3pt solid #999;
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Dernière planche : pas de page blanche en trop. */
+  .adv-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}

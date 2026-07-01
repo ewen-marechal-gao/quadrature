@@ -12,14 +12,16 @@ import { clamp } from "./shared";
 
 export interface MutationBadgeProps {
   n: number;
-  /** Libellé du registre, ou undefined si la mutation n'y figure pas encore. */
+  /** Nom de la mutation. */
   label?: string;
+  /** Description (affichée sous le nom dans l'infobulle). */
+  description?: string;
   /** Coordonnées « monde » du milieu de l'arête. */
   x: number;
   y: number;
 }
 
-export function MutationBadge({ n, label, x, y }: MutationBadgeProps) {
+export function MutationBadge({ n, label, description, x, y }: MutationBadgeProps) {
   const [tip, setTip] = useState<{ cx: number; top: number } | null>(null);
 
   const show = (el: HTMLElement) => {
@@ -53,7 +55,10 @@ export function MutationBadge({ n, label, x, y }: MutationBadgeProps) {
         createPortal(
           <div className="clado-muttip" style={{ left: tip.cx, top: tip.top }} role="tooltip">
             <span className="clado-muttip-n">{n}</span>
-            {label ?? `Mutation ${n}`}
+            <span className="clado-muttip-body">
+              <span className="clado-muttip-label">{label ?? `Mutation ${n}`}</span>
+              {description && <span className="clado-muttip-desc">{description}</span>}
+            </span>
           </div>,
           document.body
         )}

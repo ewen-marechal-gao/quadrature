@@ -1,0 +1,583 @@
+# Mutations d'Aeonir — clé -> { label{Locale}, description{Locale}, kit? }.
+# label/description = lore (i18n) ; kit = brique de fiche d'adversaire (cf. rules/fr/adversaires/regles_adversaires.md, connexion III).
+# Référencées par l'arbre (data/cladogram.yaml, champ `mut`) et par les fiches de bestiaire.
+# Édition via tools/cladogram.mjs.
+mutations:
+  purpleEndosymbiosis:
+    label:
+      fr: Endosymbiose pourpre
+    description:
+      fr: "Capture et conservation d'un phototrophe au rétinal (microbe pourpre) : autotrophie dérivée ; définit les Pourpres, colore le vivant en bordeaux."
+  hydrogenSacs:
+    label:
+      fr: Sacs d'hydrogène
+    description:
+      fr: "Vésicules de flottaison : dispersion et flotteurs aériens portés par les vents."
+  crystallization:
+    label:
+      fr: Cristallisation (l'Arche)
+    description:
+      fr: L'Arbre-Anneau se cristallise pour franchir la Nuit et ferryer le vivant d'un terminateur à l'autre.
+  mobileFlora:
+    label:
+      fr: Flore mobile / prédatrice
+    description:
+      fr: "Autotrophe ayant regagné la motilité (mixotrophe) : une « plante » qui marche ou chasse."
+  triradialSymmetry:
+    label:
+      fr: Symétrie tri-radiale
+    description:
+      fr: "Trois axes à 120° : locomotion omnidirectionnelle, sans avant."
+  neoteny:
+    label:
+      fr: Néoténie (vie & repro aquatiques)
+    description:
+      fr: "Maturité sexuelle conservée à l'état larvaire : vit et se reproduit comme un poisson (pédomorphose)."
+  emEmitter:
+    label:
+      fr: Émetteur EM (télépathie active)
+    description:
+      fr: "Organe d'émission électromagnétique active : télépathie ; socle de la communication des Peuples."
+    kit:
+      body:
+        fr: un organe émetteur électromagnétique (télépathie)
+  chitinoFerricCarapace:
+    label:
+      fr: Carapace chitino-ferrique
+    description:
+      fr: "Armure dermique externe sur un corps déjà marcheur : blindé, lent, endurant."
+  threeFinPairs:
+    label:
+      fr: Trois paires de nageoires (plan hexapode)
+    description:
+      fr: "Trois paires d'appendices pairs propres à la lignée endosquelettique : socle des plans à six membres."
+  centrifugalSiderotropism:
+    label:
+      fr: Sidérotropisme centrifuge (fer → cortex)
+    description:
+      fr: "Routage du fer vers la périphérie (cuirasse, coquille) : définit les Exoferres, écrantés à l'EM."
+  centripetalSiderotropism:
+    label:
+      fr: Sidérotropisme centripète (corde dorsale)
+    description:
+      fr: "Routage du fer vers un axe interne (corde dorsale ferrique) : antenne EM, ossature axiale ; définit les Endoferres."
+  faradayCage:
+    label:
+      fr: Cage de Faraday (résistance EM)
+    description:
+      fr: "Cuirasse ferrique écrantante (Exoferres) : sourd à l'EM, résistant à la télépathie. (différée)"
+  bilateralSymmetry:
+    label:
+      fr: Symétrie bilatérale
+    description:
+      fr: "Symétrie gauche/droite, appendices pairs : corps orienté à mobilité dirigée."
+  metamerism:
+    label:
+      fr: Métamérie (segmentation)
+    description:
+      fr: "Corps répété en segments : modularité, allongement, spécialisation régionale."
+  moltingExoskeleton:
+    label:
+      fr: Exosquelette à mue
+    description:
+      fr: "Cuticule rigide articulée renouvelée par mues : arthropodes tagmatisés."
+  axialSkeleton:
+    label:
+      fr: Squelette axial + tête
+    description:
+      fr: "Vertèbres ferro-cartilagineuses et crâne : nageur ondulant céphalisé."
+    kit:
+      body:
+        fr: un corps vertébré à tête distincte
+      addParts:
+        - type: head
+          name:
+            fr: Tête
+          description:
+            fr: Crâne allongé à léger museau, portant les sens et les centres nerveux.
+          armor: 0
+          blocks: []
+        - type: body
+          name:
+            fr: Corps
+          description:
+            fr: Tronc musculeux logeant les viscères.
+          armor: 0
+          blocks:
+            - cases: 3
+              grants:
+                fr: +1 🫁 au début de la manche
+      fatigue: 8
+  jaws:
+    label:
+      fr: Mâchoires
+    description:
+      fr: "Mâchoires et dents : préhension, mastication, prédation active (Gnathostomes)."
+    kit:
+      body:
+        fr: des mâchoires dentées
+  fleshyFins:
+    label:
+      fr: Nageoires charnues
+    description:
+      fr: "Nageoires lobées musclées : reptation des hauts-fonds, précurseur des membres."
+  weightBearingLimbs:
+    label:
+      fr: Membres porteurs (sortie de l'eau)
+    description:
+      fr: "Nageoires charnues devenues pattes portantes : tétrapode-souche encore aquatique."
+    kit:
+      body:
+        fr: trois paires de membres porteurs (plan hexapode)
+      addParts:
+        - type: frontLeg
+          name:
+            fr: Membres antérieurs
+          description:
+            fr: Paire de membres avant.
+          armor: 0
+          blocks: []
+        - type: middleLeg
+          name:
+            fr: Membres médians
+          description:
+            fr: Paire de membres médians.
+          armor: 0
+          blocks: []
+        - type: rearLeg
+          name:
+            fr: Membres postérieurs
+          description:
+            fr: Paire de membres arrière, moteur principal du déplacement.
+          armor: 0
+          blocks:
+            - cases: 3
+              grants:
+                fr: Déplacement normal · Évasion 1
+      speed:
+        walk: 4
+        run: 8
+  amnioticEgg:
+    label:
+      fr: Œuf amniote
+    description:
+      fr: "Œuf clos : reproduction hors de l'eau, conquête de la terre ferme."
+  vision:
+    label:
+      fr: Vision (yeux)
+    description:
+      fr: "Œil formant une image (upgrade des taches photosensibles) : exploite la lumière du terminateur."
+  dorsalWings:
+    label:
+      fr: Ailes dorsales (draconides)
+    description:
+      fr: "Paire dorsale devenue ailes : prédateurs aveugles volants, les « dragons »."
+  quadrupedalism:
+    label:
+      fr: Quadrupédie (6→4 membres)
+    description:
+      fr: "Réduction de six à quatre membres : quadrupèdes ; socle de la lignée mammifère prédatrice."
+    kit:
+      body:
+        fr: une silhouette quadrupède (deux paires de pattes)
+      removeParts:
+        - middleLeg
+      speed:
+        walk: 5
+        run: 10
+  ectothermy:
+    label:
+      fr: Ectothermie
+    description:
+      fr: "Thermorégulation externe (héliotherme), écailles : définit les Sauropsides."
+  endothermy:
+    label:
+      fr: Endothermie
+    description:
+      fr: "Sang chaud (thermorégulation interne) : lignée mammifère (Synapsides)."
+  cursoriality:
+    label:
+      fr: Cursorialité
+    description:
+      fr: Corps léger et longues pattes pour la course en troupeau. (OBSOLÈTE — à reprendre lors du développement des sauropsides)
+  lungs:
+    label:
+      fr: Poumons + peau respirante
+    description:
+      fr: "Respiration aérienne (poumons) et cutanée : double vie amphibie."
+  migratoryMetamorphosis:
+    label:
+      fr: Métamorphose migratoire (seuil thermique)
+    description:
+      fr: Au seuil thermique, développe des pattes et migre vers de nouvelles zones humides.
+  levantThreshold:
+    label:
+      fr: "Levant : seuil chaud-sec"
+    description:
+      fr: Métamorphose et migre quand il fait trop chaud et sec (versant Levant).
+  couchantThreshold:
+    label:
+      fr: "Couchant : seuil froid-humide"
+    description:
+      fr: Métamorphose et migre quand il fait froid et humide (versant Couchant).
+  firstWingPair:
+    label:
+      fr: Première paire d'ailes
+    description:
+      fr: "Une paire de membres devient des ailes (lézards ailés : 4 pattes + 2 ailes)."
+  secondWingPair:
+    label:
+      fr: Seconde paire d'ailes
+    description:
+      fr: "Seconde paire d'ailes (oiseaux : 2 pattes + 4 ailes ; endothermie convergente)."
+  fur:
+    label:
+      fr: Fourrure (isolation dense)
+    description:
+      fr: Pelage dense isolant, apparu au pôle Sud froid.
+    kit:
+      body:
+        fr: une fourrure dense
+      modifyParts:
+        - type: body
+          armor_add: 1
+          descriptionAppend:
+            fr: " Couvert d'une fourrure dense et isolante."
+        - type: tail
+          descriptionAppend:
+            fr: " Queue devenue balancier terrestre."
+          blocksRemove:
+            - 0
+          blocksAdd:
+            - cases: 2
+              grants:
+                fr: "Queue-balancier : insensible au renversement (mise à terre)"
+      fatigue: 1
+  viviparity:
+    label:
+      fr: Viviparité
+    description:
+      fr: "Gestation interne : s'affranchit de l'œuf et recolonise le Nord (mammifères vrais)."
+  fatPouches:
+    label:
+      fr: Poches de graisse
+    description:
+      fr: "Réserves adipeuses : gros herbivores lents (bétail du Sud)."
+  frontalVision:
+    label:
+      fr: Vision frontale (binoculaire)
+    description:
+      fr: "Yeux frontaux : relief et estimation des distances, chasse de précision."
+    kit:
+      body:
+        fr: des yeux frontaux au regard perçant
+  footPlasticity:
+    label:
+      fr: Plasticité podale (pied modulable)
+    description:
+      fr: "Pied modulable (kératine, posture, sole) : quitte le Sud et reconquiert tous les biomes."
+    kit:
+      body:
+        fr: des pieds modulables adaptés au terrain
+  externalEmReceptor:
+    label:
+      fr: Récepteur EM externe (épines)
+    description:
+      fr: "Une partie de la fourrure devient des épines EM réceptrices : électrosensibilité polydirectionnelle."
+    kit:
+      body:
+        fr: de longues aiguilles électromagnétiques dressées sur la nuque et le dos
+  encephalization:
+    label:
+      fr: Encéphalisation (signaux complexes)
+    description:
+      fr: "Gros cerveau social : traite les signaux EM complexes."
+    kit:
+      body:
+        fr: un crâne bombé abritant un gros cerveau
+      modifyPart:
+        type: head
+        blocksAdd:
+          - cases: 2
+            grants:
+              fr: +1 ◇ au début de la manche
+  bipedalism:
+    label:
+      fr: Bipédie
+    description:
+      fr: Locomotion sur les membres postérieurs ; membres antérieurs libérés, dos encore incliné.
+    kit:
+      body:
+        fr: une station bipède au dos incliné, les antérieurs libérés
+      modifyParts:
+        - type: rearLeg
+          name:
+            fr: Pattes
+          armor_add: 1
+          descriptionAppend:
+            fr: " Postérieurs puissants et ramassés, porteurs de la station bipède."
+          blocksPrepend:
+            - cases: 2
+              grants:
+                fr: +1 action Charge
+        - type: frontLeg
+          name:
+            fr: Bras
+          descriptionAppend:
+            fr: " Membres antérieurs libérés de la marche."
+      cards:
+        - id: charge
+          name:
+            fr: Charge
+          cost: ⚫
+          initiative: 5
+          onFives:
+            fr: "Repérez deux 5 : la cible est Entravée 🕸️."
+          onSuccess:
+            fr: Déplacement [6] puis inflige 💢💢
+          onFailure:
+            fr: Déplacement [4]
+      speed:
+        walk: 4
+        run: 8
+  uprighting:
+    label:
+      fr: Redressement (dos se dresse, queue balancier)
+    description:
+      fr: Le dos se dresse mais la queue reste balancier (verticalisation incomplète).
+    kit:
+      body:
+        fr: un port à demi dressé, la queue faisant office de balancier
+  handsAndFullUprighting:
+    label:
+      fr: Mains + verticalisation complète (perte de la queue)
+    description:
+      fr: "Verticalisation achevée (perte de la queue) et membres antérieurs devenus mains préhensiles : l'outil et la culture."
+    kit:
+      body:
+        fr: entièrement dressé (sans queue), les mains préhensiles pour l'outil et l'arme
+      removeParts:
+        - tail
+      modifyPart:
+        type: frontLeg
+        name:
+          fr: Mains
+        description:
+          fr: "Mains préhensiles : manient armes et outils."
+        blocksAdd:
+          - cases: 2
+            grants:
+              fr: Manie armes et outils (équipement)
+  trueTissues:
+    label:
+      fr: Tissus vrais (gastrula)
+    description:
+      fr: "Gastrulation et vrais tissus (vs éponges) : cavité digestive, ébauche nerveuse."
+  cephalization:
+    label:
+      fr: "Céphalisation : un AVANT + photoception"
+    description:
+      fr: Un AVANT nerveux portant des taches photosensibles (polarité antéro-postérieure).
+  throughGut:
+    label:
+      fr: Tube digestif complet
+    description:
+      fr: "Intestin traversant (bouche vers anus) : alimentation continue, corps plus grands et actifs."
+  ferricCirculation:
+    label:
+      fr: Circulation (sang ferrique)
+    description:
+      fr: "Cœur, vaisseaux et pigment respiratoire au fer : métabolisme accru ; fournit le fer routé par le Sidérotropisme."
+  ossification:
+    label:
+      fr: Ossification (os porteur)
+    description:
+      fr: "Os vrai porteur : la gravité hors de l'eau impose un squelette ossifié (les aquatiques restent ferro-cartilagineux)."
+  lactation:
+    label:
+      fr: Allaitement (lactation)
+    description:
+      fr: "Lactation : nourrit le petit au lait — apparaît avant la viviparité (grade monotrème : œuf + lait)."
+  sickleClaws:
+    label:
+      fr: Serpes (ongles → griffes faucheuses)
+    description:
+      fr: Les ongles des membres antérieurs s'allongent en deux longues serpes tranchantes.
+    kit:
+      body:
+        fr: deux longues serpes recourbées au bout des avant-bras
+      removeParts:
+        - frontLeg
+      addParts:
+        - type: sickles
+          name:
+            fr: Serpes
+          description:
+            fr: "Deux longues faux (ongles allongés en lames recourbées) : l'arme maîtresse."
+          armor: 0
+          blocks:
+            - cases: 3
+              grants:
+                fr: Frappe faucheuse coûte ⚫ (au lieu de ⚫⚫)
+            - cases: 3
+              grants:
+                fr: Confère l'action Frappe faucheuse
+      cards:
+        - id: sickleStrike
+          name:
+            fr: Frappe faucheuse
+          cost: ⚫⚫
+          initiative: 4
+          onFives:
+            fr: "Repérez un 5 : la cible subit 🔻."
+          onSuccess:
+            fr: Inflige 💢💢💢
+          onFailure:
+            fr: Inflige 💢
+          note:
+            fr: Coût réduit à ⚫ tant que le bloc supérieur des Serpes est intact.
+  packMind:
+    label:
+      fr: Esprit de meute (synchronisation télépathe)
+    description:
+      fr: "Les télépathes quadrupèdes synchronisent leurs esprits : chacun garde son autonomie, mais ses actes et ses désirs se calquent fortement sur ceux de ses pairs — une contagion sociale intégrée. La meute agit d'un même élan sans dissoudre l'individu."
+    kit:
+      body:
+        fr: des épines EM le long de la colonne (esprits synchronisés)
+      modifyPart:
+        type: head
+        blocksAdd:
+          - cases: 2
+            grants:
+              fr: +1 ◇ au début de la manche (pool partagé de la meute)
+      traits:
+        - name:
+            fr: Esprit synchronisé
+          kind: passive
+          effect:
+            fr: Le ◇ est mis en commun dans la meute ; résiste aux effets mentaux ; indissimulable (repérée par un membre = repérée par tous) ; +🍀 Évasion tant qu'elle n'est pas isolée — vulnérable une fois isolée.
+  tail:
+    label:
+      fr: Queue (rame caudale)
+    description:
+      fr: "Rame caudale post-anale : nage agile en eau ; prérequis de l'endosquelette, marqueur Endoferres."
+    kit:
+      body:
+        fr: une longue queue
+      addParts:
+        - type: tail
+          name:
+            fr: Queue
+          description:
+            fr: Longue queue musclée.
+          armor: 0
+          blocks:
+            - cases: 2
+              grants:
+                fr: "Rame caudale : déplacement en milieu aquatique"
+  springLeap:
+    label:
+      fr: Détente (membres postérieurs à ressort)
+    description:
+      fr: "Membres postérieurs élastiques (tendons longs) : bonds explosifs et sprint ; fuite anti-embuscade déclenchée par l'alerte EM."
+    kit:
+      body:
+        fr: des membres postérieurs à ressort (bonds explosifs)
+      speed:
+        walk: 4
+        run: 12
+  patagium:
+    label:
+      fr: Voilure (membrane planante)
+    description:
+      fr: "Une membrane tendue entre les membres antérieurs et les flancs : le bond se prolonge en vol plané d'arbre en arbre ; perche haut, fuit vers le bas, malhabile au sol."
+  eusociality:
+    label:
+      fr: Eusocialité (castes)
+    description:
+      fr: "Division reproductive du travail : une matriarche reproductrice + chasseurs / ouvriers stériles. (différée — réservée à la branche des arthropodes / insectes sociaux, plus basale)"
+  pouch:
+    label:
+      fr: Poche ventrale (marsupium)
+    description:
+      fr: "Repli cutané ventral où s'accroche la portée : la mère emporte ses petits dans sa fuite plutôt que de les abandonner — réponse de proie qui ne s'arrête jamais."
+  polarCoat:
+    label:
+      fr: Graisse & fourrure polaires
+    description:
+      fr: "Lard isolant et pelage dense et pâle : permet de tenir au pôle Sud froid, en complément de la chaleur du terrier."
+  oilyFur:
+    label:
+      fr: Fourrure huileuse (étanche)
+    description:
+      fr: "Pelage dense et huileux, imperméable : permet la vie semi-aquatique dans les lacs et marais du Nord tempéré et pluvieux."
+  harpoonFangs:
+    label:
+      fr: Crocs harponneurs (pattes nageuses)
+    description:
+      fr: "Longs crocs recourbés qui harponnent le poisson et membres devenus rames : prédateur pleinement aquatique."
+  clawHunting:
+    label:
+      fr: Griffes de chasse
+    description:
+      fr: "Les griffes des membres antérieurs, ferro-renforcées, deviennent l'arme principale : on lacère au lieu de mordre."
+    kit:
+      body:
+        fr: de longues griffes tranchantes aux pattes avant
+      modifyPart:
+        type: frontLeg
+        name:
+          fr: Pattes griffues
+        descriptionAppend:
+          fr: " Griffes ferro-renforcées : l'arme principale."
+        blocksAdd:
+          - cases: 3
+            grants:
+              fr: Confère l'action Lacération
+      cards:
+        - id: laceration
+          name:
+            fr: Lacération
+          cost: ⚫⚫
+          initiative: 3
+          onFives:
+            fr: "Repérez un 5 : la cible subit une hémorragie 🩸."
+          onSuccess:
+            fr: Inflige 💢💢💢
+          onFailure:
+            fr: Inflige 💢
+  diggingClaws:
+    label:
+      fr: Griffes fouisseuses
+    description:
+      fr: "Griffes élargies et renforcées pour creuser : meutes terricoles vivant en galeries communes."
+  crypticCoat:
+    label:
+      fr: Pelage cryptique
+    description:
+      fr: "Robe disruptive lie-de-vin : se fond dans la flore pourpre et l'écorce ; immobile, l'animal disparaît (camouflage visuel)."
+  insectivory:
+    label:
+      fr: Insectivore
+    description:
+      fr: "Museau-sonde et dents fines : déterre et perce les arthropodes Exoferres dans l'écorce et le sol."
+  climbingClaws:
+    label:
+      fr: Griffes grimpantes
+    description:
+      fr: "Griffes courbes semi-rétractiles et chevilles souples : grimpe et se réfugie dans les grands arbres, hors d'atteinte des prédateurs au sol."
+  frugivory:
+    label:
+      fr: Frugivore
+    description:
+      fr: Dentition et digestion adaptées aux fruits, graines et sève rétinienne de la canopée.
+  prehensileTail:
+    label:
+      fr: Queue préhensile
+    description:
+      fr: "La queue devient un cinquième membre agrippant : ancrage et suspension dans la canopée."
+  whiskers:
+    label:
+      fr: Vibrisses développées
+    description:
+      fr: "Longues vibrisses tactiles : navigue branches et cavités dans l'obscurité, sent l'air avant le saut."

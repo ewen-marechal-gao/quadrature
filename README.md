@@ -20,7 +20,7 @@ de worldbuilding.
 | [`rules/`](#règles-rules)         | Vault Obsidian — **source de vérité** des règles et de l'univers | Markdown / Obsidian |
 | [`web/`](#site-web-web)           | Site de lecture (livre paginé + PDF), cartes d'action, feuille de personnage | Next.js 16 · React 19 · Tailwind v4 |
 | [`simulator/`](#simulateur-simulator) | Moteur de combat avec agents (scriptés et LLM)               | TypeScript · Jest |
-| [`tools/`](#outils-tools)         | Calculateur astronomique d'Aeonir                                | Python |
+| [`tools/`](#outils-tools)         | Calculateur astronomique + **cladogramme du bestiaire**          | Python · Node |
 
 ---
 
@@ -46,6 +46,12 @@ des siècles. Quatre peuples (Cimes, Neiges, Pluies, Vents) s'y sont adaptés. L
 physique du monde n'est pas qu'évoquée : elle est **calculée** par [`tools/astronomy.py`](tools/astronomy.py)
 (quasi-verrouillage, lune-horloge, saisons polaires asymétriques, gravité 0,75 g…).
 
+Aeonir possède aussi une **langue rituelle ancienne** ([`rules/fr/univers/language.md`](rules/fr/univers/language.md)) :
+une phonologie à **deux registres** — voix de *pierre* (minérale, gutturale) et voix de *sève*
+(vivante, chantante) — où l'**inversion sonore encode les antonymes** (un contre-sort renverse
+l'incantation). Elle outille la génération de **noms propres, toponymes, créatures et incantations**,
+et nomme les quatre peuples : *Syldor* (Cimes), *Vaedor* (Vents), *Lumidor* (Pluies), *Sahgdor* (Neiges).
+
 ---
 
 ## Structure du dépôt
@@ -55,11 +61,12 @@ partage le même historique git.
 
 ```
 Quadrature/
-├── rules/        # Vault Obsidian (core/, disciplines/, univers/, cartes/…) — SOURCE DE VÉRITÉ
+├── rules/        # Vault Obsidian (core/, disciplines/, univers/, cartes/…) — SOURCE DE VÉRITÉ des règles
 │   └── fr/       #   entrée : _index.md
-├── web/          # Site Next.js (lit rules/fr/ au build)
+├── data/         # Données structurées (cladogramme, mutations, bestiaire) — lues par web/ & tools/
+├── web/          # Site Next.js (lit rules/fr/ + data/ au build)
 ├── simulator/    # Moteur de combat TypeScript
-├── tools/        # astronomy.py → aeonir_astronomy.md
+├── tools/        # astronomy.py · cladogram.mjs · consolidate-bestiary.mjs
 ├── images/       # Illustrations et concept art
 ├── README.md · Roadmap.md · CHANGELOG.md
 └── rapport_avancement_*.md   # revues d'avancement ponctuelles
@@ -72,7 +79,7 @@ Quadrature/
 
 ## Démarrage rapide
 
-Prérequis : **Node 20+** (web, simulator), **Python 3** (tools), **Obsidian** (rules).
+Prérequis : **Node 20+** (web, simulator, `tools/cladogram.mjs`), **Python 3** (`tools/astronomy.py`), **Obsidian** (rules).
 
 ### Règles (`rules/`)
 Ouvrir le dossier `rules/` comme **vault Obsidian** ; commencer par
@@ -103,8 +110,44 @@ Les agents pilotés par LLM utilisent l'API **Mistral** — renseigner `MISTRAL_
 dans un `.env` (cf. `.env.example`). Les agents scriptés n'en ont pas besoin.
 
 ### Outils (`tools/`)
+
+**Astronomie** — modèle physique d'Aeonir :
 ```bash
 python tools/astronomy.py    # régénère tools/aeonir_astronomy.md
+```
+
+**Cladogramme du bestiaire** — [`data/cladogram.yaml`](data/cladogram.yaml) (l'arbre) et
+[`data/mutations.yaml`](data/mutations.yaml) (les mutations : label, description, `kit` de combat)
+sont la **source de vérité** de l'arbre phylogénétique de la faune d'Aeonir (clades, mutations,
+biomes, statut). On les édite via l'utilitaire `tools/cladogram.mjs` **plutôt qu'à la main** : il
+préserve le style de l'arbre et **valide** après chaque opération.
+
+```bash
+# nécessite js-yaml — lancer `npm install` dans web/ au préalable
+node tools/cladogram.mjs validate                          # contrôle (clés inconnues, mutations non placées)
+node tools/cladogram.mjs print                             # arbre indenté + label de chaque mutation
+node tools/cladogram.mjs node-mut "Faucheurs" sickleClaws  # pose une mutation (référencée par CLÉ)
+node tools/cladogram.mjs node-status "Faucheurs" done      # marque une espèce comme peuplée
+node tools/cladogram.mjs mut-add maCle "Label fr" "Description fr"
+# autres : node-cd · node-ref · node-rename · node-clear-mut · mut-relabel · mut-describe
+```
+
+Les **mutations** (`data/mutations.yaml`) forment un dictionnaire `clé → { label, description, kit? }`
+(chaînes `Locale`) ; les nœuds de l'arbre y réfèrent par **clé** (champ `mut`) et chacun porte un
+**`uid`** stable. Le **`kit`** décrit la brique de fiche d'adversaire conférée par la mutation
+(cf. `rules/fr/adversaires/`). La **numérotation d'affichage est calculée côté front**. Une
+**insertion de nœud** (qui ré-indente le sous-arbre) se fait en important la lib
+(`import { loadRaw, save, findAny } from "./cladogram.mjs"`) dans un petit script ponctuel.
+
+**Bestiaire d'adversaires** — [`data/bestiary/`](data/bestiary/) relie le cladogramme aux fiches de monstres :
+les **sources** `species/<id>.yaml` (stats propres + `from:` = uid d'une espèce du cladogramme) sont
+consolidées en **fiches** `cards/<id>.card.yaml` par [`tools/consolidate-bestiary.mjs`](tools/consolidate-bestiary.mjs).
+Chaque **mutation** de l'ascendance apporte sa brique (`kit` : parties du corps, cartes, traits ;
+Speed/Fatigue dérivés) → *ce que la créature EST découle de ses mutations*. Les fiches (anglais + `Locale`)
+alimentent la rubrique web `/adversaires`.
+
+```bash
+node tools/consolidate-bestiary.mjs   # régénère data/bestiary/cards/*.card.yaml
 ```
 
 ---

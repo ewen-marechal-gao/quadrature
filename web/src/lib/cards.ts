@@ -62,6 +62,8 @@ export interface ActionCard {
   cible?: string;
   jet?: string;
   contre?: string;
+  /** Effet ⭐ « Repérez X 5 » — déclencheur de lecture des dés (cartes d'adversaires). */
+  repere?: string;
   ameliorations?: CardUpgrade[];
   sacrifices?: CardSacrifice[];
   defaut?: string;

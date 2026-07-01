@@ -1,0 +1,17 @@
+# Source d'une fiche d'adversaire — Le Lacérateur (Sidéronyches).
+# Parties/cartes/traits dérivés du cladogramme via `from` ; cf. tools/consolidate-bestiary.mjs.
+id: lacerateur
+from: lacerateurs               # uid du tip dans data/cladogram.yaml
+name: { fr: "Lacérateur", en: "Lacerator" }
+power: novice
+dice: [threat, threat, threat, nuisance]
+description:
+  fr: >-
+    Prédateur de meute des steppes du Couchant : il éventre ses proies d'un coup
+    de pattes griffues, la horde coordonnée en silence par un esprit synchronisé.
+
+guard: { type: dodge, value: 9 }
+# speed & fatigue : dérivés des mutations (membres / corps).
+
+extraMutations: []
+extraTraits: []
