@@ -62,3 +62,25 @@ cartes:
 
 Les champs absents ou vides sont omis. Les valeurs conservent les symboles normalisés
 (voir `core/glossaire.md`) et un balisage léger : `**gras**`, `*italique*`.
+
+## Tags (typage machine des cartes)
+
+En complément de `famille`/`categorie` (affichage), chaque carte d'action — joueur
+**et** adversaire — porte un **ensemble de tags** en anglais, lus par les règles
+(ex. le trait *Sanguinaire* s'applique aux cartes `physicalDamage`) et par le
+simulateur (traits, heuristiques d'agent). Une carte cumule librement plusieurs
+tags ; ils ne sont **jamais inférés des effets**.
+
+| Groupe | Tags | Sens |
+| :--- | :--- | :--- |
+| Intention | `offensive` `defensive` `movement` `support` `healing` `enhancement` | ce que la carte cherche à faire |
+| Domaine | `melee` `ranged` `mental` `physical` `social` | par quel vecteur |
+| Marqueur d'effet | `physicalDamage` | inflige des blessures 💢/💔 |
+| | `mentalDamage` | inflige 🔻/🔺 ou une perte de Stabilité ◇ |
+| | `fatigueDamage` | inflige de la Fatigue 💧 |
+
+Exemple : *Charge* = `[offensive, movement, melee, physical, physicalDamage]` ;
+*Cri terrifiant* = `[offensive, mental, mentalDamage]`.
+
+Sources machine : `data/adversary_actions.yaml` (adversaires) et, pour l'instant,
+`simulator/src/combat/actions.ts` (actions joueur — convergence vers le YAML prévue).

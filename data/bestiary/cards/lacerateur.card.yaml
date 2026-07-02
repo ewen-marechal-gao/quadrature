@@ -23,6 +23,7 @@ appearance:
   fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · des épines EM le long de la colonne (esprits synchronisés) · de longues griffes tranchantes aux pattes avant
 parts:
   - type: head
+    tag: support
     name:
       fr: Tête
     description:
@@ -31,8 +32,12 @@ parts:
     blocks:
       - cases: 2
         grants:
-          fr: +1 ◇ au début de la manche (pool partagé de la meute)
+          text:
+            fr: +1 ◇ au début de la manche (pool partagé de la meute)
+          resource: stability
+          amount: 1
   - type: body
+    tag: support
     name:
       fr: Corps
     description:
@@ -41,8 +46,12 @@ parts:
     blocks:
       - cases: 3
         grants:
-          fr: +1 🫁 au début de la manche
+          text:
+            fr: +1 🫁 au début de la manche
+          resource: endurance
+          amount: 1
   - type: frontLeg
+    tag: offensive
     name:
       fr: Pattes griffues
     description:
@@ -51,8 +60,11 @@ parts:
     blocks:
       - cases: 3
         grants:
-          fr: Confère l'action Lacération
+          text:
+            fr: Confère l'action Lacération
+          grantsCard: laceration
   - type: rearLeg
+    tag: mobility
     name:
       fr: Membres postérieurs
     description:
@@ -61,8 +73,12 @@ parts:
     blocks:
       - cases: 3
         grants:
-          fr: Déplacement normal · Évasion 1
+          text:
+            fr: Déplacement normal · Évasion 1
+          resource: evasion
+          amount: 1
   - type: tail
+    tag: defensive
     name:
       fr: Queue
     description:
@@ -71,7 +87,9 @@ parts:
     blocks:
       - cases: 2
         grants:
-          fr: "Queue-balancier : insensible au renversement (mise à terre)"
+          text:
+            fr: "Queue-balancier : insensible au renversement (mise à terre)"
+          immunity: knockdown
 traits:
   - name:
       fr: Esprit synchronisé
@@ -82,11 +100,23 @@ cards:
   - id: laceration
     name:
       fr: Lacération
-    cost: ⚫⚫
+      en: Laceration
+    cost: 2
     initiative: 3
-    onFives:
-      fr: "Repérez un 5 : la cible subit une hémorragie 🩸."
     onSuccess:
-      fr: Inflige 💢💢💢
+      text:
+        fr: Inflige 💢💢💢
+      effect:
+        - wound: 3
     onFailure:
-      fr: Inflige 💢
+      text:
+        fr: Inflige 💢
+      effect:
+        - wound: 1
+    onFives:
+      text:
+        fr: "Repérez un 5 : la cible subit une hémorragie 🩸 et le prédateur gagne +1 ◇."
+      count: 1
+      effect:
+        - status: hemorrhage
+        - gainStability: 1

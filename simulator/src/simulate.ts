@@ -25,10 +25,19 @@ import { loadEncounter, resolveCharacterPath } from './encounter/io'
 import type { EncounterConfig, EncounterFaction, EncounterCharacter, AgentType } from './encounter/types'
 
 import {
-  initCombatant, resetRoundTokensWithLog, isDefeated, effChar, resistanceThreshold,
+  initCombatant, resetRoundTokensWithLog, effChar, resistanceThreshold,
 } from './combat/combatant'
 import { resolveRoundWaves } from './combat/round'
-import type { GuardProvider, PlannedAction } from './combat/round'
+import type { GuardProvider, PlannedAction, Plan } from './combat/round'
+
+import { loadAdversary } from './adversary/io'
+import type { AdversarySheet } from './adversary/types'
+import {
+  initAdversary, DEFAULT_ADVERSARY_ACTIONS, type AdversarySnapshot,
+} from './adversary/combatant'
+import { ADVERSARY_EMOJI, type AdversaryRollResult } from './adversary/dice'
+import { planAdversaryCard, selectTargetPart } from './adversary/agent'
+import { type Actor, isAdversaryActor, actorDefeated, actorStartRound } from './adversary/actor'
 import {
   planNextAction, planRoundAI, makeGuardProvider,
   createAgentSession, recordOpponentActions,
@@ -83,44 +92,50 @@ async function simulate(): Promise<void> {
     console.warn('⚠️  Plusieurs personnages par faction détectés — seul le premier sera utilisé (mode 1v1).')
   }
 
-  const charConfig1 = faction1.characters[0]
-  const charConfig2 = faction2.characters[0]
+  const side1 = await loadSide(faction1.characters[0], faction1)
+  const side2 = await loadSide(faction2.characters[0], faction2)
 
-  const char1 = await loadCharacter(resolveCharacterPath(charConfig1.sheet))
-  const char2 = await loadCharacter(resolveCharacterPath(charConfig2.sheet))
+  // Cross-wire target ids (needed the other side's id)
+  if (side1.kind === 'pc') side1.cfg.targetId = side2.id
+  if (side2.kind === 'pc') side2.cfg.targetId = side1.id
 
-  // ── LLM guard: pas de batch si un agent LLM est présent ─────────────────────
-  const hasLLM = charConfig1.agent === 'llm' || charConfig2.agent === 'llm'
+  // ── LLM guards ───────────────────────────────────────────────────────────────
+  const hasLLM = (side1.kind === 'pc' && side1.agentType === 'llm')
+              || (side2.kind === 'pc' && side2.agentType === 'llm')
   if (hasLLM && runCount > 1) {
     throw new Error(
       `Le mode LLM ne peut pas être utilisé en mode batch.\n` +
       `Limitez à 1 run (argument omis ou "1") pour utiliser un agent LLM.`
     )
   }
-
-  printHeader(encounter.name, encounter.description, faction1, faction2, char1, char2, charConfig1, charConfig2)
-
-  // ── Agent configs ─────────────────────────────────────────────────────────────
-  const cfg1: AgentConfig = {
-    persona:        charConfig1.persona,
-    targetId:       char2.name,
-    allowedActions: faction1.allowedActions,
+  const hasAdversary = side1.kind === 'adversary' || side2.kind === 'adversary'
+  if (hasLLM && hasAdversary) {
+    throw new Error(
+      `Agent LLM contre un adversaire : pas encore supporté (le prompt de combat ` +
+      `est construit sur l'état d'un personnage). Utilisez un agent scripted.`
+    )
   }
-  const cfg2: AgentConfig = {
-    persona:        charConfig2.persona,
-    targetId:       char1.name,
-    allowedActions: faction2.allowedActions,
+
+  // Card-name registry for console display (card ids → localized names)
+  for (const side of [side1, side2]) {
+    if (side.kind === 'adversary') {
+      for (const card of side.sheet.cards) CARD_LABELS.set(card.id, card.name)
+    }
   }
+
+  printHeader(encounter.name, encounter.description, faction1, faction2, side1, side2)
 
   // ── Guard provider (scripted, stateless — réutilisable entre les runs) ───────
   // La garde reste scripted même pour les agents LLM : trop coûteux à déléguer au modèle.
-  const guardProviders = new Map([
-    [char1.name, makeGuardProvider(cfg1)],
-    [char2.name, makeGuardProvider(cfg2)],
-  ])
-  const getGuard: GuardProvider = (targetId, state, available, attackerId, actionId) => {
+  // Seuls les PJ roulent une garde — les adversaires défendent sur valeur fixe.
+  const guardProviders = new Map(
+    [side1, side2]
+      .filter((s): s is PcSide => s.kind === 'pc')
+      .map(s => [s.id, makeGuardProvider(s.cfg)] as const),
+  )
+  const getGuard: GuardProvider = (targetId, state, available, attackerId, actionId, attackInitiative) => {
     const p = guardProviders.get(targetId)
-    return p ? p(targetId, state, available, attackerId, actionId) : 'absorb'
+    return p ? p(targetId, state, available, attackerId, actionId, attackInitiative) : 'absorb'
   }
 
   await mkdir(REPORTS_DIR, { recursive: true })
@@ -128,8 +143,7 @@ async function simulate(): Promise<void> {
   // ── Mode 1 run — callbacks temps réel ──────────────────────────────────────
   if (runCount === 1) {
     const log = await runCombat(
-      encounter, char1, char2, cfg1, cfg2, getGuard,
-      charConfig1.agent ?? 'scripted', charConfig2.agent ?? 'scripted',
+      encounter, side1, side2, getGuard,
       {
         onRoundStart: (round, maintenance) => {
           console.log(`\n  ── ROUND ${round} ${'─'.repeat(52 - round.toString().length)}`)
@@ -145,7 +159,7 @@ async function simulate(): Promise<void> {
             for (const entry of phase.actions) printAction(entry)
           }
         },
-        onRoundEnd: (snapshots) => printRoundEnd(snapshots),
+        onRoundEnd: (snapshots, advSnapshots) => printRoundEnd(snapshots, advSnapshots),
       },
     )
     const reportPath = path.join(REPORTS_DIR, `${log.id}.json`)
@@ -159,14 +173,14 @@ async function simulate(): Promise<void> {
   // (hasLLM est false ici — garanti par la guard ci-dessus ; pas de callbacks)
   const logs: CombatLog[] = []
   for (let i = 1; i <= runCount; i++) {
-    const log = await runCombat(encounter, char1, char2, cfg1, cfg2, getGuard)
+    const log = await runCombat(encounter, side1, side2, getGuard)
     logs.push(log)
     printRunLine(i, runCount, log)
   }
 
   const timestamp  = new Date().toISOString()
-  const batchId    = makeBatchId(timestamp, runCount, encounter.name, char1.name, char2.name)
-  const batchReport = buildBatchReport(batchId, timestamp, encounter.name, logs, char1.name, char2.name)
+  const batchId    = makeBatchId(timestamp, runCount, encounter.name, side1.id, side2.id)
+  const batchReport = buildBatchReport(batchId, timestamp, encounter.name, logs, side1.id, side2.id)
   const reportPath  = path.join(REPORTS_DIR, `${batchId}.json`)
   await writeFile(reportPath, JSON.stringify(batchReport, null, 2), 'utf-8')
 
@@ -182,6 +196,46 @@ async function simulate(): Promise<void> {
   console.log(`  📊 ${statsPath}\n`)
 }
 
+// ─── Sides ───────────────────────────────────────────────────────────────────
+
+/** A player-character side: sheet + persona-driven agent (scripted or LLM). */
+interface PcSide {
+  kind:      'pc'
+  id:        string
+  char:      Character
+  cfg:       AgentConfig
+  agentType: AgentType
+}
+
+/** An adversary side: fiche-driven, scripted deck heuristic, fixed guard. */
+interface AdversarySide {
+  kind:  'adversary'
+  id:    string
+  sheet: AdversarySheet
+}
+
+type Side = PcSide | AdversarySide
+
+/** Load one faction slot into a Side (PC sheet or adversary fiche). */
+async function loadSide(cfg: EncounterCharacter, faction: EncounterFaction): Promise<Side> {
+  if (cfg.adversary) {
+    const sheet = await loadAdversary(cfg.adversary)
+    return { kind: 'adversary', id: sheet.id, sheet }
+  }
+  const char = await loadCharacter(resolveCharacterPath(cfg.sheet!))
+  return {
+    kind:      'pc',
+    id:        char.name,
+    char,
+    agentType: cfg.agent ?? 'scripted',
+    // targetId is cross-wired in simulate() once both sides are loaded
+    cfg: { persona: cfg.persona!, targetId: '', allowedActions: faction.allowedActions },
+  }
+}
+
+/** Card id → localized name, for console display (populated in simulate()). */
+const CARD_LABELS = new Map<string, string>()
+
 // ─── Combat loop ─────────────────────────────────────────────────────────────
 
 /**
@@ -194,7 +248,7 @@ interface CombatCallbacks {
   /** Called after each wave is fully resolved, before the next wave's plans are requested */
   onWave?:       (phaseLogs: PhaseLog[]) => void
   /** Called after end-of-round processing (wound conversion, status ticks) */
-  onRoundEnd?:   (snapshots: CombatantSnapshot[]) => void
+  onRoundEnd?:   (snapshots: CombatantSnapshot[], advSnapshots?: AdversarySnapshot[]) => void
 }
 
 /**
@@ -210,30 +264,31 @@ interface CombatCallbacks {
  */
 async function runCombat(
   encounter:  EncounterConfig,
-  char1:      Character,
-  char2:      Character,
-  cfg1:       AgentConfig,
-  cfg2:       AgentConfig,
+  side1:      Side,
+  side2:      Side,
   getGuard:   GuardProvider,
-  agentType1: AgentType = 'scripted',
-  agentType2: AgentType = 'scripted',
   callbacks?: CombatCallbacks,
 ): Promise<CombatLog> {
   const startMs = Date.now()
 
   // Créer les sessions LLM une seule fois — le system prompt n'est envoyé qu'une fois
-  const session1 = agentType1 === 'llm' ? createAgentSession(char1.name, cfg1) : undefined
-  const session2 = agentType2 === 'llm' ? createAgentSession(char2.name, cfg2) : undefined
+  const session1 = side1.kind === 'pc' && side1.agentType === 'llm'
+    ? createAgentSession(side1.id, side1.cfg) : undefined
+  const session2 = side2.kind === 'pc' && side2.agentType === 'llm'
+    ? createAgentSession(side2.id, side2.cfg) : undefined
 
   // Délai minimum entre vagues pour les agents LLM (évite le rate-limit Mistral)
-  const hasLLM      = agentType1 === 'llm' || agentType2 === 'llm'
+  const hasLLM      = session1 !== undefined || session2 !== undefined
   const rateLimitMs = hasLLM
     ? Math.max(0, parseInt(process.env.MISTRAL_API_RATELIMIT_MS ?? '0', 10))
     : 0
 
-  let states = new Map<string, CombatantState>([
-    [char1.name, initCombatant(char1)],
-    [char2.name, initCombatant(char2)],
+  const initSide = (s: Side): Actor =>
+    s.kind === 'pc' ? initCombatant(s.char) : initAdversary(s.sheet)
+
+  let states = new Map<string, Actor>([
+    [side1.id, initSide(side1)],
+    [side2.id, initSide(side2)],
   ])
 
   const roundLogs: RoundLog[] = []
@@ -242,9 +297,14 @@ async function runCombat(
   while (roundNumber < encounter.maxRounds) {
     roundNumber++
 
-    // Phase d'entretien — reset tokens + test d'endurance
+    // Phase d'entretien — PJ : reset tokens + test d'endurance ;
+    // adversaire : refill des ressources régénérantes (◇/🫁/🍀) et des ⚫
     const maintenanceEntries: MaintenanceEntry[] = []
     for (const [id, s] of states) {
+      if (isAdversaryActor(s)) {
+        states.set(id, actorStartRound(s))
+        continue
+      }
       const { state, maintenanceEntry } = resetRoundTokensWithLog(s)
       states.set(id, state)
       if (maintenanceEntry) maintenanceEntries.push(maintenanceEntry)
@@ -257,12 +317,10 @@ async function runCombat(
       states, roundNumber, getGuard, maintenanceEntries,
       async (currentStates) => {
         const t0 = Date.now()
-        const s1 = currentStates.get(char1.name)!
-        const s2 = currentStates.get(char2.name)!
         // Les deux planners tournent en parallèle (gain latence en mode LLM)
         const [plans1, plans2] = await Promise.all([
-          planFor(agentType1, s1, s2, cfg1, session1),
-          planFor(agentType2, s2, s1, cfg2, session2),
+          plansForSide(side1, side2, currentStates, session1),
+          plansForSide(side2, side1, currentStates, session2),
         ])
         // Rate limit : si les appels ont été plus rapides que le seuil, on attend le reste
         if (rateLimitMs > 0) {
@@ -273,8 +331,8 @@ async function runCombat(
       },
       (phaseLogs) => {
         // Mise à jour du contexte LLM avec les actions adverses (avant la prochaine vague)
-        if (session1) recordOpponentActions(session1, phaseLogs, char2.name)
-        if (session2) recordOpponentActions(session2, phaseLogs, char1.name)
+        if (session1) recordOpponentActions(session1, phaseLogs, side2.id)
+        if (session2) recordOpponentActions(session2, phaseLogs, side1.id)
         // Affichage temps réel
         callbacks?.onWave?.(phaseLogs)
       },
@@ -282,37 +340,69 @@ async function runCombat(
     states = next
     roundLogs.push(log)
 
-    callbacks?.onRoundEnd?.(log.endOfRound)
+    callbacks?.onRoundEnd?.(log.endOfRound, log.adversariesEndOfRound)
 
-    const dead1 = isDefeated(states.get(char1.name)!)
-    const dead2 = isDefeated(states.get(char2.name)!)
-    if (dead1 || dead2) break
+    if (actorDefeated(states.get(side1.id)!) || actorDefeated(states.get(side2.id)!)) break
   }
 
-  const dead1 = isDefeated(states.get(char1.name)!)
-  const dead2 = isDefeated(states.get(char2.name)!)
+  const dead1 = actorDefeated(states.get(side1.id)!)
+  const dead2 = actorDefeated(states.get(side2.id)!)
 
   const outcome: CombatOutcome =
     dead1 && dead2 ? { kind: 'mutual-incapacitation', rounds: roundNumber } :
-    dead2          ? { kind: 'victor', victorId: char1.name, rounds: roundNumber } :
-    dead1          ? { kind: 'victor', victorId: char2.name, rounds: roundNumber } :
+    dead2          ? { kind: 'victor', victorId: side1.id, rounds: roundNumber } :
+    dead1          ? { kind: 'victor', victorId: side2.id, rounds: roundNumber } :
                      { kind: 'max-rounds-reached', rounds: roundNumber }
 
   const durationMs = Date.now() - startMs
   const timestamp  = new Date().toISOString()
-  const id         = makeReportId(timestamp, encounter.name, char1.name, char2.name)
+  const id         = makeReportId(timestamp, encounter.name, side1.id, side2.id)
 
   return {
     id,
     timestamp,
-    combatants: [char1, char2].map(makeCombatantSummary),
+    combatants: [side1, side2].map(makeSideSummary),
     rounds:     roundLogs,
     outcome,
     durationMs,
   }
 }
 
-// ─── Agent planner helper ─────────────────────────────────────────────────────
+// ─── Agent planner helpers ────────────────────────────────────────────────────
+
+/**
+ * Plan one side's actions for the current wave.
+ *
+ * - Adversary side → scripted deck heuristic (planAdversaryCard).
+ * - PC side        → planFor (scripted or LLM); when the opponent is an
+ *   adversary, the declared body part (melee priority) is attached to each
+ *   offensive plan (§ Cibler une partie).
+ */
+async function plansForSide(
+  side:     Side,
+  other:    Side,
+  states:   ReadonlyMap<string, Actor>,
+  session?: LLMAgentSession,
+): Promise<Plan[]> {
+  const self = states.get(side.id)
+  const opp  = states.get(other.id)
+  if (!self || !opp) return []
+
+  if (side.kind === 'adversary') {
+    if (!isAdversaryActor(self) || actorDefeated(self) || actorDefeated(opp)) return []
+    const plan = planAdversaryCard(self, other.id)
+    return plan ? [plan] : []
+  }
+
+  if (isAdversaryActor(self)) return []  // defensive — a pc side holds a PC state
+  const plans = await planFor(side.agentType, self, opp, side.cfg, session)
+  if (isAdversaryActor(opp)) {
+    return plans.map(p => p.targetId === other.id
+      ? { ...p, targetPart: p.targetPart ?? selectTargetPart(opp, 'melee')?.type }
+      : p)
+  }
+  return plans
+}
 
 /**
  * Dispatch action planning to the appropriate agent implementation.
@@ -324,12 +414,13 @@ async function runCombat(
 async function planFor(
   agentType: AgentType,
   self:      CombatantState,
-  opponent:  CombatantState,
+  opponent:  Actor,
   cfg:       AgentConfig,
   session?:  LLMAgentSession,
 ): Promise<PlannedAction[]> {
   if (agentType === 'llm') {
-    return planRoundAI(self, opponent, cfg, session)
+    // LLM vs adversaire : bloqué en amont dans simulate() (prompt PC-shaped)
+    return planRoundAI(self, opponent as CombatantState, cfg, session)
   }
   const action = planNextAction(self, opponent, cfg)
   return action ? [action] : []
@@ -342,10 +433,8 @@ function printHeader(
   description:   string | undefined,
   faction1:      EncounterFaction,
   faction2:      EncounterFaction,
-  char1:         Character,
-  char2:         Character,
-  charCfg1:      EncounterCharacter,
-  charCfg2:      EncounterCharacter,
+  side1:         Side,
+  side2:         Side,
 ): void {
   const sep = '═'.repeat(62)
   console.log(`\n${sep}`)
@@ -361,19 +450,28 @@ function printHeader(
   }
   console.log(sep)
 
-  const charCfgs = [charCfg1, charCfg2]
-  for (const [idx, [char, faction]] of ([[char1, faction1], [char2, faction2]] as [Character, EncounterFaction][]).entries()) {
-    const charCfg = charCfgs[idx]
-    const s      = initCombatant(char)
+  for (const [side, faction] of [[side1, faction1], [side2, faction2]] as [Side, EncounterFaction][]) {
+    if (side.kind === 'adversary') {
+      const sh   = side.sheet
+      const dice = sh.dice.map(d => ADVERSARY_EMOJI[d]).join('')
+      console.log(
+        `  ${sh.name.padEnd(18)}` +
+        `  ${dice}  garde ${sh.guard.type} ${sh.guard.value}` +
+        `  │  💧 ${sh.fatigue}  ⚫ ${sh.actions ?? DEFAULT_ADVERSARY_ACTIONS}  [fiche:deck]`
+      )
+      console.log(`    Deck : [${sh.cards.map(c => c.name).join(', ')}]`)
+      continue
+    }
+    const s      = initCombatant(side.char)
     const rt     = resistanceThreshold(s)
     const allowed = faction.allowedActions.length
       ? `[${faction.allowedActions.join(', ')}]`
       : '[toutes]'
-    const agentTag = charCfg.agent === 'llm'
-      ? `🤖 llm:${charCfg.persona}`
-      : charCfg.persona
+    const agentTag = side.agentType === 'llm'
+      ? `🤖 llm:${side.cfg.persona}`
+      : side.cfg.persona
     console.log(
-      `  ${char.name.padEnd(18)}` +
+      `  ${side.char.name.padEnd(18)}` +
       `  For ${effChar(s,'strength')}  Agi ${effChar(s,'agility')}` +
       `  Vig ${effChar(s,'vigor')}  Acu ${effChar(s,'acuity')}` +
       `  │  rés ${rt}  ⚡ ${s.maxReactions}  [${agentTag}]`
@@ -384,7 +482,7 @@ function printHeader(
 }
 
 /** Vitaux de fin de round (appelé via callback onRoundEnd) */
-function printRoundEnd(snapshots: CombatantSnapshot[]): void {
+function printRoundEnd(snapshots: CombatantSnapshot[], advSnapshots: AdversarySnapshot[] = []): void {
   console.log()
   for (const snap of snapshots) {
     const status  = snap.status.length ? `  ⚑ ${snap.status.join(' ')}` : ''
@@ -400,6 +498,20 @@ function printRoundEnd(snapshots: CombatantSnapshot[]): void {
       charStr + status
     )
   }
+  const MENTAL_ICON = { enraged: '😠', focused: '😐', panicked: '😬' } as const
+  for (const snap of advSnapshots) {
+    const parts = snap.parts
+      .filter(p => p.marked > 0)
+      .map(p => `${p.type} ${p.marked}/${p.total}${p.destroyed ? '✖' : ''}`)
+      .join(' · ')
+    console.log(
+      `  ${snap.id.padEnd(18)}` +
+      `  💧 ${String(snap.fatigue).padStart(2)}/${snap.fatigueMax}` +
+      `  ◇${snap.stability} 🫁${snap.endurance} 🍀${snap.evasion}` +
+      `  ${MENTAL_ICON[snap.mentalState]}` +
+      (parts ? `  ⟨${parts}⟩` : '')
+    )
+  }
 }
 
 function printMaintenance(e: MaintenanceEntry): void {
@@ -413,18 +525,22 @@ function printMaintenance(e: MaintenanceEntry): void {
 
 function printAction(e: ActionLogEntry): void {
   const tokens  = `[${e.actorActions}⚫][${e.actorReactions}⚡] `
-  const roll    = e.checkRoll ? formatRoll(e.checkRoll) : ''
+  const label   = CARD_LABELS.get(e.action) ?? e.action
+  const roll    = e.checkRoll     ? formatRoll(e.checkRoll)
+                : e.adversaryRoll ? formatAdversaryRoll(e.adversaryRoll)
+                : ''
   const dc      = `  DD:${e.threshold}`
   const outcome = e.hit ? '  ✅' : '  ❌'
 
   let line: string
   if (e.targetId) {
-    // Offensive action: show target + guard roll
+    // Offensive action: show target (+ declared body part) + guard roll
+    const part  = e.targetPart ? `(${e.targetPart})` : ''
     const guard = e.guardId ? `  garde:${e.guardId}(${e.guardRoll?.total ?? '?'})` : ''
-    line = `    ${tokens}${e.actorId}: ${e.action} → ${e.targetId} ${roll} vs${guard}${dc}${outcome}`
+    line = `    ${tokens}${e.actorId}: ${label} → ${e.targetId}${part} ${roll} vs${guard}${dc}${outcome}`
   } else {
     // Self-targeted action (Respiration, Stabiliser): no guard, no "vs"
-    line = `    ${tokens}${e.actorId}: ${e.action} ${roll}${dc}${outcome}`
+    line = `    ${tokens}${e.actorId}: ${label} ${roll}${dc}${outcome}`
   }
 
   // Cri de guerre — visible de tous, affiché avant le résultat
@@ -441,7 +557,14 @@ function printAction(e: ActionLogEntry): void {
   }
 }
 
-function formatRoll(roll: RollResult): string {  
+/** Jet d'adversaire : dés sommés, ex. [3][5][2][4] = 14 ⭐ */
+function formatAdversaryRoll(r: AdversaryRollResult): string {
+  const dice  = r.values.map(v => colors.magenta(`[${v}]`)).join('')
+  const stars = r.fives > 0 ? ` ${'⭐'.repeat(r.fives)}` : ''
+  return `${dice} = ${r.total}${stars}`
+}
+
+function formatRoll(roll: RollResult): string {
   const formatWild = roll.wild === 'advantage' ? colors.green : roll.wild === 'disadvantage' ? colors.red : colors.grey
   const wildDie = formatWild(`[${roll.kept.wild.value}]`)
   const caracDie = colors.blue(`[${roll.kept.characteristic.value}]`)
@@ -669,6 +792,23 @@ function makeCombatantSummary(char: Character): CombatantSummary {
     id:       char.name,
     charName: char.name,
     ...(char.people && { people: char.people.name }),
+    stats,
+    skills,
+  }
+}
+
+/**
+ * Summary for either side. Adversaries have no characteristics/skills — the
+ * records are zero-filled so the CombatLog schema (and stats aggregation) holds.
+ * Dedicated adversary stats are part of the upcoming balancing pass (I.4).
+ */
+function makeSideSummary(side: Side): CombatantSummary {
+  if (side.kind === 'pc') return makeCombatantSummary(side.char)
+  const stats  = Object.fromEntries(ALL_CHARACTERISTICS.map(c => [c, 0])) as Record<CharacteristicName, number>
+  const skills = Object.fromEntries(ALL_SKILLS.map(s => [s, 0])) as Record<SkillName, number>
+  return {
+    id:       side.id,
+    charName: side.sheet.name,
     stats,
     skills,
   }

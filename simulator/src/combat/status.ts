@@ -161,6 +161,23 @@ export const STATUS_DEFS: Record<StatusEffect, StatusDef> = {
     onTokenReset: () => ({ actionPenalty: 1, clear: true }),
   },
 
+  // ── À genoux 🧎 ────────────────────────────────────────────────────────────
+  //
+  // Real rule (etats.md): ne peut pas effectuer Course ; les actions en mêlée
+  // contre un personnage à genoux bénéficient de 🟩. Se relever fait partie
+  // d'une Manœuvre. Simulateur : le personnage se relève automatiquement en
+  // début de manche suivante, sans coût en ⚫ (contrairement à À terre) —
+  // l'avantage adverse ne dure donc que la manche en cours.
+  kneeling: {
+    id: 'kneeling', label: 'À genoux', icon: '🧎',
+    description:
+      'Ne peut pas effectuer l\'action Course. ' +
+      'Les attaques en mêlée contre lui bénéficient de 🟩 (avantage). ' +
+      'Retiré en début de manche suivante (le personnage se relève en se déplaçant, sans coût en ⚫).',
+    attackerAdvantage: 1,
+    onTokenReset: () => ({ actionPenalty: 0, clear: true }),
+  },
+
   // ── Essoufflé 😮‍💨 ──────────────────────────────────────────────────────────
   //
   // Real rule: +🟥 à tous ses jets. Ne peut pas effectuer Course.
@@ -177,6 +194,20 @@ export const STATUS_DEFS: Record<StatusEffect, StatusDef> = {
       const clear = state.fatigue < 10
       return { actionPenalty, clear }
     },
+  },
+
+  // ── Entravé 🕸️ ─────────────────────────────────────────────────────────────
+  //
+  // Real rule (etats.md): une créature ou un personnage entravé ne peut pas
+  // effectuer les actions Marche et Course.
+  // Simulateur : aucun modèle de déplacement pour l'instant → le statut est
+  // suivi et loggé (infligé par ex. par la Charge d'un adversaire) mais son
+  // effet mécanique (blocage du déplacement) sera câblé avec le modèle spatial.
+  entrapped: {
+    id: 'entrapped', label: 'Entravé', icon: '🕸️',
+    description:
+      'Ne peut pas effectuer les actions Marche ni Course. ' +
+      'Simulateur : le déplacement n\'est pas encore modélisé (statut suivi mais sans effet mécanique).',
   },
 
   // ── Inconscient 😵‍💫 ─────────────────────────────────────────────────────────

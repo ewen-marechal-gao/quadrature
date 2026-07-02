@@ -182,7 +182,7 @@ Briques pour concevoir et équilibrer des adversaires.
 
 **Réflexes de prédateur :** la créature dispose de **+1 ⚡** par manche. Elle peut l'utiliser pour effectuer une *Frappe vive* sur toute cible qui tente de quitter son **Engagement serré (≬)**.
 
-**Sanguinaire :** si la cible possède au moins une case ▢ cochée, la créature gagne **🟩** sur toutes ses attaques.
+**Sanguinaire :** si la cible souffre d'au moins une **hémorragie 🩸**, la créature gagne **🟩** sur ses actions infligeant des dégâts physiques.
 
 **Frappe épuisante :** chaque succès inflige **+1 Fatigue 💧**. Si la cible n'a plus de jetons d'Endurance 🫁, elle coche **deux cases ▢** de fatigue au lieu d'une.
 

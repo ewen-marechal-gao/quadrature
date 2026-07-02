@@ -29,6 +29,8 @@ import type { PlannedAction, GuardProvider } from './round'
 import { ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction, availableGuards } from './actions'
 import { spendActionCost, effChar, isDefeated } from './combatant'
 import { STATUS_DEFS } from './status'
+import { type Actor, isAdversaryActor, actorDefeated } from '../adversary/actor'
+import { isPartDestroyed } from '../adversary/combatant'
 
 export type { GuardProvider }
 
@@ -115,7 +117,7 @@ export function recordOpponentActions(
   const lines: string[] = ['[Actions adverses lors de la vague précédente]']
 
   for (const e of entries) {
-    const label  = ACTION_DEFS[e.action]?.label ?? e.action
+    const label  = ACTION_DEFS[e.action as ActionId]?.label ?? e.action
     const target = e.targetId
       ? ` → ${e.targetId === session.combatantId ? 'TOI' : e.targetId}`
       : ' (action personnelle)'
@@ -148,7 +150,7 @@ export function recordOpponentActions(
  */
 export function planNextAction(
   self:     CombatantState,
-  opponent: CombatantState,
+  opponent: Actor,
   config:   AgentConfig,
 ): PlannedAction | null {
   if (isDefeated(self)) return null
@@ -158,7 +160,7 @@ export function planNextAction(
     return { actorId: self.id, action: selfAction }
   }
 
-  if (!isDefeated(opponent)) {
+  if (!actorDefeated(opponent)) {
     const offAction = selectOffensiveAction(self, opponent, config)
     if (offAction !== null) {
       return { actorId: self.id, action: offAction, targetId: config.targetId }
@@ -233,8 +235,8 @@ export function planRound(
  *     guards can improve with extra reactions.
  */
 export function makeGuardProvider(_config: AgentConfig): GuardProvider {
-  return (_targetId, state, available, _attackerId, actionId) => {
-    return selectGuardByStats(state, available, actionId)
+  return (_targetId, state, available, _attackerId, actionId, attackInitiative) => {
+    return selectGuardByStats(state, available, actionId, attackInitiative)
   }
 }
 
@@ -401,9 +403,13 @@ function isActionAllowed(actionId: ActionId, config: AgentConfig): boolean {
 function selectGuardByStats(
   state:     CombatantState,
   available: GuardId[],
-  attackId:  ActionId,
+  attackId:  ActionId | string,
+  attackInitiative?: number,
 ): GuardId {
-  const attackInit = ACTION_DEFS[attackId].initiative
+  // Adversary card ids are not in ACTION_DEFS: their initiative arrives explicitly.
+  const attackInit = attackInitiative
+    ?? ACTION_DEFS[attackId as ActionId]?.initiative
+    ?? 99  // unknown attack: every guard may react
 
   // Canonical priority for tiebreaking (active guards first)
   const TIEBREAK_ORDER: GuardId[] = ['dodge', 'parry', 'block', 'absorb']
@@ -504,7 +510,7 @@ function selectSelfAction(
  */
 function selectOffensiveAction(
   state:    CombatantState,
-  opponent: CombatantState,
+  opponent: Actor,
   config:   AgentConfig,
 ): ActionId | null {
   const { persona } = config
@@ -557,9 +563,14 @@ function selectOffensiveAction(
  * True when the opponent is vulnerable enough to justify gambling on
  * brutal-strike (1💔 hit vs 2💢 miss).
  *
- * Heuristic: ≥ 2 heavy wounds, or has a status that costs them PA next round.
+ * PC opponent: ≥ 2 heavy wounds, or a status that costs them PA next round.
+ * Adversary opponent: a destroyed body part, or half its fatigue clock filled.
  */
-function shouldGamble(opponent: CombatantState): boolean {
+function shouldGamble(opponent: Actor): boolean {
+  if (isAdversaryActor(opponent)) {
+    return opponent.parts.some(isPartDestroyed)
+        || opponent.fatigue * 2 >= opponent.sheet.fatigue
+  }
   return opponent.heavyWounds >= 2
       || opponent.status.includes('hemorrhage')
       || opponent.status.includes('stunned')

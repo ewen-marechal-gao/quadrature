@@ -21,11 +21,51 @@ const yaml = require("js-yaml");
 
 const SPECIES_DIR = path.join(REPO, "data/bestiary/species");
 const CARDS_DIR = path.join(REPO, "data/bestiary/cards");
+const ACTIONS_FILE = path.join(REPO, "data/adversary_actions.yaml");
+
+// Bibliothèque d'actions partagée : id -> def (name/cost/initiative/onSuccess…).
+// Référencée par les blocs (grantsCard) et les kits (grant_action).
+const ACTION_LIBRARY = yaml.load(fs.readFileSync(ACTIONS_FILE, "utf8")).actions || {};
 
 // Ordre anatomique canonique d'affichage des parties.
 const PART_ORDER = ["head", "body", "jaws", "carapace", "emSpines", "sickles",
   "huntingClaws", "glidingMembrane", "frontLeg", "middleLeg", "rearLeg", "tail"];
 const partRank = (t) => { const i = PART_ORDER.indexOf(t); return i === -1 ? 99 : i; };
+
+// Normalise la forme d'un bloc en sortie : le champ `grants` doit toujours être
+// { text: {Locale}, …ops }. Les blocs sources hérités (grants = {fr,en?}) sont
+// enveloppés ; ceux déjà en nouvelle forme (grants.text présent) sont inchangés.
+function normalizeBlock(block) {
+  const g = block.grants;
+  if (!g || g.text) return block;
+  return { ...block, grants: { text: g } };
+}
+function normalizePartBlocks(part) {
+  return { ...part, blocks: (part.blocks || []).map(normalizeBlock) };
+}
+
+// Ids d'actions conférées par les blocs d'une liste de parties (grantsCard).
+function deckIdsFromParts(parts) {
+  const ids = [];
+  for (const p of parts || []) for (const b of p.blocks || []) {
+    if (b.grants && b.grants.grantsCard) ids.push(b.grants.grantsCard);
+  }
+  return ids;
+}
+
+// Résout une liste d'ids (dédupliquée) en cartes depuis la bibliothèque, triées par initiative.
+function resolveDeck(ids) {
+  const seen = new Set();
+  const cards = [];
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const def = ACTION_LIBRARY[id];
+    if (!def) throw new Error(`action introuvable dans data/adversary_actions.yaml : ${id}`);
+    cards.push({ id, ...structuredClone(def) });
+  }
+  return cards.sort((a, b) => a.initiative - b.initiative);
+}
 
 // Remonte l'ascendance (racine -> espèce) et retourne les clés de mutation, dans l'ordre.
 function ancestryMutations(map, fromUid) {
@@ -59,6 +99,7 @@ function applyKit(state, key, kit) {
     if (!part) throw new Error(`${key}: modifyPart d'une partie absente : ${m.type}`);
     if (m.armor_set !== undefined) part.armor = m.armor_set;
     if (m.armor_add !== undefined) part.armor = (part.armor ?? 0) + m.armor_add;
+    if (m.tag) part.tag = m.tag;
     if (m.name) part.name = structuredClone(m.name);
     if (m.description) part.description = structuredClone(m.description);
     if (m.descriptionAppend) appendDescription(part, m.descriptionAppend);
@@ -71,13 +112,16 @@ function applyKit(state, key, kit) {
     if (i === -1) throw new Error(`${key}: removeParts d'une partie absente : ${t}`);
     state.parts.splice(i, 1);
   }
-  if (kit.cards) state.cards.push(...structuredClone(kit.cards));
+  if (kit.grant_action) {
+    const ids = Array.isArray(kit.grant_action) ? kit.grant_action : [kit.grant_action];
+    state.grantActions.push(...ids); // actions innées (non liées à un bloc destructible)
+  }
   if (kit.traits) state.traits.push(...structuredClone(kit.traits));
 }
 
 function consolidate(source, map, mutations) {
   const keys = [...ancestryMutations(map, source.from), ...(source.extraMutations || [])];
-  const state = { parts: [], cards: [], traits: [], appearance: [], fatigue: 0, speed: null };
+  const state = { parts: [], traits: [], appearance: [], fatigue: 0, speed: null, grantActions: [] };
   for (const key of keys) applyKit(state, key, mutations[key]?.kit);
 
   for (const p of source.extraParts || []) {
@@ -85,10 +129,18 @@ function consolidate(source, map, mutations) {
     state.parts.push(structuredClone(p));
   }
   if (source.extraTraits) state.traits.push(...structuredClone(source.extraTraits));
-  if (source.extraCards) state.cards.push(...structuredClone(source.extraCards));
 
   state.parts.sort((a, b) => partRank(a.type) - partRank(b.type));
-  state.cards.sort((a, b) => a.initiative - b.initiative);
+
+  // Deck : actions conférées par les blocs (grantsCard) + innées (grant_action),
+  // résolues depuis la bibliothèque partagée. Les armes confèrent via leurs blocs.
+  const weapons = source.weapons ? structuredClone(source.weapons) : null;
+  const deckIds = [
+    ...state.grantActions,
+    ...deckIdsFromParts(state.parts),
+    ...deckIdsFromParts(weapons),
+  ];
+  const cards = resolveDeck(deckIds);
 
   const appearanceFr = state.appearance.map((b) => b.fr).filter(Boolean).join(" · ");
   return {
@@ -101,10 +153,10 @@ function consolidate(source, map, mutations) {
     speed: source.speed ?? state.speed ?? { walk: 0, run: 0 }, // source surcharge sinon dérivé
     fatigue: source.fatigue ?? state.fatigue,
     ...(appearanceFr ? { appearance: { fr: appearanceFr } } : {}),
-    parts: state.parts,
-    ...(source.weapons ? { weapons: structuredClone(source.weapons) } : {}),
+    parts: state.parts.map(normalizePartBlocks),
+    ...(weapons ? { weapons: weapons.map(normalizePartBlocks) } : {}),
     ...(state.traits.length ? { traits: state.traits } : {}),
-    cards: state.cards,
+    cards,
   };
 }
 

@@ -23,6 +23,7 @@ appearance:
   fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · un crâne bombé abritant un gros cerveau · une station bipède au dos incliné, les antérieurs libérés · un port à demi dressé, la queue faisant office de balancier · entièrement dressé (sans queue), les mains préhensiles pour l'outil et l'arme
 parts:
   - type: head
+    tag: support
     name:
       fr: Tête
     description:
@@ -31,8 +32,12 @@ parts:
     blocks:
       - cases: 2
         grants:
-          fr: +1 ◇ au début de la manche
+          text:
+            fr: +1 ◇ au début de la manche
+          resource: stability
+          amount: 1
   - type: body
+    tag: support
     name:
       fr: Corps
     description:
@@ -41,8 +46,12 @@ parts:
     blocks:
       - cases: 3
         grants:
-          fr: +1 🫁 au début de la manche
+          text:
+            fr: +1 🫁 au début de la manche
+          resource: endurance
+          amount: 1
   - type: frontLeg
+    tag: offensive
     name:
       fr: Mains
     description:
@@ -51,8 +60,10 @@ parts:
     blocks:
       - cases: 2
         grants:
-          fr: Manie armes et outils (équipement)
+          text:
+            fr: Manie armes et outils (équipement)
   - type: rearLeg
+    tag: mobility
     name:
       fr: Pattes
     description:
@@ -61,12 +72,18 @@ parts:
     blocks:
       - cases: 2
         grants:
-          fr: +1 action Charge
+          text:
+            fr: +1 action Charge
+          grantsCard: charge
       - cases: 3
         grants:
-          fr: Déplacement normal · Évasion 1
+          text:
+            fr: Déplacement normal · Évasion 1
+          resource: evasion
+          amount: 1
 weapons:
   - type: sword
+    tag: offensive
     name:
       fr: Épée
     description:
@@ -75,8 +92,11 @@ weapons:
     blocks:
       - cases: 2
         grants:
-          fr: Confère l'action Coup d'épée
+          text:
+            fr: Confère l'action Coup d'épée
+          grantsCard: swordStrike
   - type: bow
+    tag: offensive
     name:
       fr: Arc
     description:
@@ -85,7 +105,9 @@ weapons:
     blocks:
       - cases: 1
         grants:
-          fr: Confère l'action Tir
+          text:
+            fr: Confère l'action Tir
+          grantsCard: bowShot
 traits:
   - name:
       fr: Grimpeur des Cimes
@@ -96,35 +118,86 @@ cards:
   - id: swordStrike
     name:
       fr: Coup d'épée
-    cost: ⚫
+      en: Sword Strike
+    cost: 1
     initiative: 4
-    onFives:
-      fr: "Repérez un 5 : la cible est Sonnée 🫨."
+    tags:
+      - offensive
+      - melee
+      - physical
+      - physicalDamage
     onSuccess:
-      fr: Inflige 💢💢💢
+      text:
+        fr: Inflige 💢💢💢
+      effect:
+        - wound: 3
     onFailure:
-      fr: Inflige 💢
+      text:
+        fr: Inflige 💢
+      effect:
+        - wound: 1
+    onFives:
+      text:
+        fr: "Repérez un 5 : la cible est Sonnée 🫨."
+      count: 1
+      effect:
+        - status: stunned
     note:
       fr: Nécessite les Mains et l'Épée intactes.
   - id: charge
     name:
       fr: Charge
-    cost: ⚫
+      en: Charge
+    cost: 1
     initiative: 5
-    onFives:
-      fr: "Repérez deux 5 : la cible est Entravée 🕸️."
+    tags:
+      - offensive
+      - movement
+      - melee
+      - physical
+      - physicalDamage
     onSuccess:
-      fr: Déplacement [6] puis inflige 💢💢
+      text:
+        fr: Déplacement [6] puis inflige 💢💢
+      effect:
+        - move: 6
+        - wound: 2
     onFailure:
-      fr: Déplacement [4]
+      text:
+        fr: Déplacement [4]
+      effect:
+        - move: 4
+    onFives:
+      text:
+        fr: "Repérez deux 5 : la cible est Entravée 🕸️."
+      count: 2
+      effect:
+        - status: entrapped
   - id: bowShot
     name:
       fr: Tir
-    cost: ⚫
+      en: Shot
+    cost: 1
     initiative: 6
-    onFives:
-      fr: "Repérez un 5 : la cible subit une hémorragie 🩸."
+    tags:
+      - offensive
+      - ranged
+      - physical
+      - physicalDamage
+    ranged: true
     onSuccess:
-      fr: Inflige 💢💢 (à distance)
+      text:
+        fr: Inflige 💢💢 (à distance)
+      effect:
+        - wound: 2
     onFailure:
-      fr: Inflige 💢
+      text:
+        fr: Inflige 💢
+      effect:
+        - wound: 1
+    onFives:
+      text:
+        fr: "Repérez un 5 : la cible subit une hémorragie 🩸."
+      count: 1
+      effect:
+        - status: hemorrhage

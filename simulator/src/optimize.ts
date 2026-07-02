@@ -242,11 +242,16 @@ async function optimize(): Promise<void> {
   const [f1, f2]   = encounter.factions
   const charCfg1   = f1.characters[0]
   const charCfg2   = f2.characters[0]
+  // L'optimiseur est un outil PJ-only : les adversaires du bestiaire n'ont pas
+  // de seuil de Respiration à optimiser.
+  if (!charCfg1.sheet || !charCfg2.sheet) {
+    throw new Error('optimize: les deux camps doivent être des personnages (champ "sheet") — adversaires non supportés.')
+  }
   const char1      = await loadCharacter(resolveCharacterPath(charCfg1.sheet))
   const char2      = await loadCharacter(resolveCharacterPath(charCfg2.sheet))
 
-  const cfg1Base: AgentConfig = { persona: charCfg1.persona, targetId: char2.name, allowedActions: f1.allowedActions }
-  const cfg2Base: AgentConfig = { persona: charCfg2.persona, targetId: char1.name, allowedActions: f2.allowedActions }
+  const cfg1Base: AgentConfig = { persona: charCfg1.persona!, targetId: char2.name, allowedActions: f1.allowedActions }
+  const cfg2Base: AgentConfig = { persona: charCfg2.persona!, targetId: char1.name, allowedActions: f2.allowedActions }
 
   // Guard providers : ne dépendent pas du seuil de Respiration — créés une seule fois
   const gp1 = makeGuardProvider(cfg1Base)

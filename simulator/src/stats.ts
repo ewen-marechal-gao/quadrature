@@ -88,6 +88,12 @@ export interface ComputedStats {
   totalDurationMs: number
   /** [charId][round] end-of-round vitals across runs */
   vitalsByRound:   Record<string, Record<number, VitalAcc>>
+  /**
+   * [charId] vitals at the END of each run — the resources the fight cost.
+   * A 100 % win rate can hide a pyrrhic fight: what gets balanced is how many
+   * heavy wounds 💔 and how much fatigue 💧 the victory costs the PC.
+   */
+  finalVitals:     Record<string, VitalAcc>
   endurance:       Record<string, EnduranceStat>
   /** [charId][actionId] */
   actionStats:     Record<string, Record<string, ActionStat>>
@@ -131,6 +137,7 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
   let totalDurationMs = 0
 
   const vitalsByRound:  Record<string, Record<number, VitalAcc>>    = {}
+  const finalVitals:    Record<string, VitalAcc>                    = {}
   const endurance:      Record<string, EnduranceStat>               = {}
   const actionStats:    Record<string, Record<string, ActionStat>>  = {}
   const guardStats:     Record<string, Record<string, GuardStat>>   = {}
@@ -138,6 +145,7 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
 
   for (const name of charNames) {
     vitalsByRound[name] = {}
+    finalVitals[name]   = mkVitalAcc()
     endurance[name]     = { tests: 0, successes: 0, roll: mkAcc(), dd: mkAcc() }
     statusCounts[name]  = {}
   }
@@ -156,6 +164,17 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
       mutual++
     } else {
       timeout++
+    }
+
+    // ── Coût du combat : vitaux du dernier round (état final des PJ) ──────────
+    const lastRound = log.rounds[log.rounds.length - 1]
+    for (const snap of lastRound?.endOfRound ?? []) {
+      const fv = finalVitals[snap.id]
+      if (!fv) continue
+      pushAcc(fv.fatigue,     snap.fatigue)
+      pushAcc(fv.lightWounds, snap.lightWounds)
+      pushAcc(fv.heavyWounds, snap.heavyWounds)
+      pushAcc(fv.protection,  snap.protection)
     }
 
     // ── Per-round processing ───────────────────────────────────────────────────
@@ -256,7 +275,7 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
     runCount: logs.length, charNames,
     wins, mutual, timeout,
     rounds, roundDist, totalDurationMs,
-    vitalsByRound, endurance, actionStats, guardStats, statusCounts,
+    vitalsByRound, finalVitals, endurance, actionStats, guardStats, statusCounts,
   }
 }
 
@@ -272,7 +291,9 @@ const GUARD_LABEL: Record<string, string> = {
 const STATUS_LABEL: Record<string, string> = {
   hemorrhage:    '🩸 Hémorragie',
   stunned:       '💫 Sonné',
-  knockdown:     '🔻 À terre',
+  knockdown:     '🙏 À terre',
+  kneeling:      '🧎 À genoux',
+  entrapped:     '🕸️ Entravé',
   winded:        '💨 Essoufflé',
   incapacitated: '❌ Incapacité',
 }
@@ -371,6 +392,30 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
           `  ${accAvg(v.protection).toFixed(0).padStart(5)}`,
         )
       }
+    }
+  }
+
+  // ─ 3 bis. Coût du combat — ressources perdues par les PJ ───────────────────
+  const hasCost = stats.charNames.some(id => (stats.finalVitals[id]?.fatigue.n ?? 0) > 0)
+  if (hasCost) {
+    console.log(DIV)
+    console.log('  COÛT DU COMBAT — état final des PJ')
+    const cHdr =
+      `  ${'Personnage'.padEnd(22)}  ${'💔 moy'.padStart(7)}  ${'💔 max'.padStart(6)}  ` +
+      `${'💧 moy'.padStart(7)}  ${'💧 max'.padStart(6)}  ${'💢 moy'.padStart(7)}`
+    console.log(cHdr)
+    console.log(`  ${'─'.repeat(cHdr.length - 2)}`)
+    for (const charId of stats.charNames) {
+      const fv = stats.finalVitals[charId]
+      if (!fv || fv.fatigue.n === 0) continue  // adversaires : pas de snapshot PJ
+      console.log(
+        `  ${charId.padEnd(22)}` +
+        `  ${accAvg(fv.heavyWounds).toFixed(2).padStart(7)}` +
+        `  ${String(accMax(fv.heavyWounds)).padStart(6)}` +
+        `  ${accAvg(fv.fatigue).toFixed(1).padStart(7)}` +
+        `  ${String(accMax(fv.fatigue)).padStart(6)}` +
+        `  ${accAvg(fv.lightWounds).toFixed(1).padStart(7)}`,
+      )
     }
   }
 

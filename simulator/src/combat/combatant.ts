@@ -455,6 +455,7 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'spend-reaction':      return spendReaction(s)
     case 'shift-mental':        return shiftMentalState(s, effect.direction)
     case 'add-temp-protection': return { ...s, tempProtection: s.tempProtection + effect.amount }
+    case 'add-stability':       return s  // ◇ n'existe que sur les adversaires (routé par actor.ts)
   }
 }
 

@@ -1,4 +1,4 @@
-{
+{  
   "compilerOptions": {
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -20,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["node","jest"]
   },
   "include": [
     "next-env.d.ts",

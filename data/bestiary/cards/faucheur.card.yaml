@@ -23,6 +23,7 @@ appearance:
   fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · un crâne bombé abritant un gros cerveau · une station bipède au dos incliné, les antérieurs libérés · un port à demi dressé, la queue faisant office de balancier · deux longues serpes recourbées au bout des avant-bras
 parts:
   - type: head
+    tag: support
     name:
       fr: Tête
     description:
@@ -31,8 +32,22 @@ parts:
     blocks:
       - cases: 2
         grants:
-          fr: +1 ◇ au début de la manche
+          text:
+            fr: +1 ◇ au début de la manche
+          resource: stability
+          amount: 1
+      - cases: 2
+        grants:
+          text:
+            fr: Confère l'action Morsure
+          grantsCard: bite
+      - cases: 2
+        grants:
+          text:
+            fr: Confère l'action Cri terrifiant
+          grantsCard: shriek
   - type: body
+    tag: support
     name:
       fr: Corps
     description:
@@ -41,21 +56,32 @@ parts:
     blocks:
       - cases: 3
         grants:
-          fr: +1 🫁 au début de la manche
+          text:
+            fr: +1 🫁 au début de la manche
+          resource: endurance
+          amount: 1
   - type: sickles
+    tag: offensive
     name:
       fr: Serpes
     description:
       fr: "Deux longues faux (ongles allongés en lames recourbées) : l'arme maîtresse."
-    armor: 0
+    armor: 1
     blocks:
       - cases: 3
         grants:
-          fr: Frappe faucheuse coûte ⚫ (au lieu de ⚫⚫)
+          text:
+            fr: Frappe faucheuse coûte ⚫ (au lieu de ⚫⚫)
+          cardCost:
+            card: sickleStrike
+            cost: 1
       - cases: 3
         grants:
-          fr: Confère l'action Frappe faucheuse
+          text:
+            fr: Confère l'action Frappe faucheuse
+          grantsCard: sickleStrike
   - type: rearLeg
+    tag: mobility
     name:
       fr: Pattes
     description:
@@ -64,11 +90,17 @@ parts:
     blocks:
       - cases: 2
         grants:
-          fr: +1 action Charge
+          text:
+            fr: +1 action Charge
+          grantsCard: charge
       - cases: 3
         grants:
-          fr: Déplacement normal · Évasion 1
+          text:
+            fr: Déplacement normal · Évasion 1
+          resource: evasion
+          amount: 1
   - type: tail
+    tag: defensive
     name:
       fr: Queue
     description:
@@ -77,35 +109,155 @@ parts:
     blocks:
       - cases: 2
         grants:
-          fr: "Queue-balancier : insensible au renversement (mise à terre)"
+          text:
+            fr: "Queue-balancier : insensible au renversement (mise à terre)"
+          immunity: knockdown
+      - cases: 2
+        grants:
+          text:
+            fr: Confère l'action Balayage caudal
+          grantsCard: tailSweep
 traits:
-  - name:
+  - id: sanguinaire
+    name:
       fr: Sanguinaire
     kind: passive
     effect:
-      fr: Gagne 🟩 sur ses attaques si la cible a au moins une case ▢ cochée.
+      fr: Si la cible souffre d'au moins une hémorragie 🩸, gagne 🟩 sur ses actions infligeant des dégâts physiques.
 cards:
+  - id: bite
+    name:
+      fr: Morsure
+      en: Bite
+    cost: 1
+    initiative: 3
+    tags:
+      - offensive
+      - melee
+      - physical
+      - physicalDamage
+    onSuccess:
+      text:
+        fr: Inflige 💢💢 et une hémorragie 🩸
+      effect:
+        - wound: 2
+        - status: hemorrhage
+    onFailure:
+      text:
+        fr: Inflige 💢
+      effect:
+        - wound: 1
   - id: sickleStrike
     name:
       fr: Frappe faucheuse
-    cost: ⚫⚫
+      en: Sickle Strike
+    cost: 2
     initiative: 4
-    onFives:
-      fr: "Repérez un 5 : la cible subit 🔻."
+    tags:
+      - offensive
+      - melee
+      - physical
+      - physicalDamage
+      - mentalDamage
     onSuccess:
-      fr: Inflige 💢💢💢
+      text:
+        fr: Inflige 💢💢💢
+      effect:
+        - wound: 3
     onFailure:
-      fr: Inflige 💢
+      text:
+        fr: Inflige 💢
+      effect:
+        - wound: 1
+    onFives:
+      text:
+        fr: "Repérez un 5 : la cible subit 🔻."
+      count: 1
+      effect:
+        - mental: -1
     note:
       fr: Coût réduit à ⚫ tant que le bloc supérieur des Serpes est intact.
+  - id: tailSweep
+    name:
+      fr: Balayage caudal
+      en: Tail Sweep
+    cost: 1
+    initiative: 4
+    tags:
+      - offensive
+      - melee
+      - physical
+      - fatigueDamage
+    onSuccess:
+      text:
+        fr: La cible est À terre 🙏
+      effect:
+        - status: knockdown
+    onFailure:
+      text:
+        fr: La cible est À genoux 🧎
+      effect:
+        - status: kneeling
+    onFives:
+      text:
+        fr: "Repérez un 5 : inflige 💧💧."
+      count: 1
+      effect:
+        - fatigue: 2
+  - id: shriek
+    name:
+      fr: Cri terrifiant
+      en: Terrifying Shriek
+    cost: 2
+    initiative: 5
+    tags:
+      - offensive
+      - mental
+      - mentalDamage
+    onSuccess:
+      text:
+        fr: Toutes les créatures de la zone subissent 🔻
+      effect:
+        - mental: -1
+    onFailure:
+      text:
+        fr: La créature la plus proche subit 🔻
+      effect:
+        - mental: -1
+    onFives:
+      text:
+        fr: "Repérez un 5 : la cible est Sonnée 🫨."
+      count: 1
+      effect:
+        - status: stunned
+    note:
+      fr: "Cri de zone : sans modèle spatial, le simulateur l'applique à la cible unique."
   - id: charge
     name:
       fr: Charge
-    cost: ⚫
+      en: Charge
+    cost: 1
     initiative: 5
-    onFives:
-      fr: "Repérez deux 5 : la cible est Entravée 🕸️."
+    tags:
+      - offensive
+      - movement
+      - melee
+      - physical
+      - physicalDamage
     onSuccess:
-      fr: Déplacement [6] puis inflige 💢💢
+      text:
+        fr: Déplacement [6] puis inflige 💢💢
+      effect:
+        - move: 6
+        - wound: 2
     onFailure:
-      fr: Déplacement [4]
+      text:
+        fr: Déplacement [4]
+      effect:
+        - move: 4
+    onFives:
+      text:
+        fr: "Repérez deux 5 : la cible est Entravée 🕸️."
+      count: 2
+      effect:
+        - status: entrapped

@@ -3,7 +3,7 @@
 # DÉRIVÉS de l'ascendance (via `from`) par tools/consolidate-bestiary.mjs → cards/faucheur.card.yaml.
 # Clés en anglais, chaînes en Locale { fr, en? }.
 id: faucheur
-from: faucheurs                 # uid du tip dans data/cladogram.yaml
+from: faucheurs # uid du tip dans data/cladogram.yaml
 name: { fr: "Faucheur", en: "Reaper" }
 power: initiate
 dice: [threat, threat, threat, threat]
@@ -16,11 +16,17 @@ description:
 guard: { type: dodge, value: 10 }
 # speed & fatigue : dérivés des mutations (membres / corps) ; ajouter ici pour surcharger.
 
-# Mutations supplémentaires (hors ascendance) à appliquer : aucune.
-extraMutations: []
+# Mutations supplémentaires (hors ascendance) à appliquer.
+# Attaques naturelles du prédateur — candidates à une future intégration au cladogramme.
+extraMutations: [predatoryBite, terrorShriek, sweepingTail]
 
 # Traits propres à l'espèce (non conférés par une mutation partagée).
+# `id` : clé stable branchée dans le simulateur (adversary/traits.ts) — la prose reste l'affichage MJ.
 extraTraits:
-  - name: { fr: "Sanguinaire" }
+  - id: sanguinaire
+    name: { fr: "Sanguinaire" }
     kind: passive
-    effect: { fr: "Gagne 🟩 sur ses attaques si la cible a au moins une case ▢ cochée." }
+    effect:
+      {
+        fr: "Si la cible souffre d'au moins une hémorragie 🩸, gagne 🟩 sur ses actions infligeant des dégâts physiques.",
+      }

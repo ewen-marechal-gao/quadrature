@@ -91,6 +91,7 @@ mutations:
         fr: un corps vertébré à tête distincte
       addParts:
         - type: head
+          tag: support
           name:
             fr: Tête
           description:
@@ -98,6 +99,7 @@ mutations:
           armor: 0
           blocks: []
         - type: body
+          tag: support
           name:
             fr: Corps
           description:
@@ -106,7 +108,10 @@ mutations:
           blocks:
             - cases: 3
               grants:
-                fr: +1 🫁 au début de la manche
+                text:
+                  fr: +1 🫁 au début de la manche
+                resource: endurance
+                amount: 1
       fatigue: 8
   jaws:
     label:
@@ -116,6 +121,20 @@ mutations:
     kit:
       body:
         fr: des mâchoires dentées
+  predatoryBite:
+    label:
+      fr: Morsure prédatrice
+    description:
+      fr: "Mâchoires devenues arme de chasse : morsure déchirante qui fait saigner la proie. (Espèce — hors cladogramme pour l'instant, via extraMutations.)"
+    kit:
+      modifyPart:
+        type: head
+        blocksAdd:
+          - cases: 2
+            grants:
+              text:
+                fr: Confère l'action Morsure
+              grantsCard: bite
   fleshyFins:
     label:
       fr: Nageoires charnues
@@ -131,6 +150,7 @@ mutations:
         fr: trois paires de membres porteurs (plan hexapode)
       addParts:
         - type: frontLeg
+          tag: mobility
           name:
             fr: Membres antérieurs
           description:
@@ -138,6 +158,7 @@ mutations:
           armor: 0
           blocks: []
         - type: middleLeg
+          tag: mobility
           name:
             fr: Membres médians
           description:
@@ -145,6 +166,7 @@ mutations:
           armor: 0
           blocks: []
         - type: rearLeg
+          tag: mobility
           name:
             fr: Membres postérieurs
           description:
@@ -153,7 +175,10 @@ mutations:
           blocks:
             - cases: 3
               grants:
-                fr: Déplacement normal · Évasion 1
+                text:
+                  fr: Déplacement normal · Évasion 1
+                resource: evasion
+                amount: 1
       speed:
         walk: 4
         run: 8
@@ -244,6 +269,7 @@ mutations:
           descriptionAppend:
             fr: " Couvert d'une fourrure dense et isolante."
         - type: tail
+          tag: defensive
           descriptionAppend:
             fr: " Queue devenue balancier terrestre."
           blocksRemove:
@@ -251,8 +277,24 @@ mutations:
           blocksAdd:
             - cases: 2
               grants:
-                fr: "Queue-balancier : insensible au renversement (mise à terre)"
+                text:
+                  fr: "Queue-balancier : insensible au renversement (mise à terre)"
+                immunity: knockdown
       fatigue: 1
+  sweepingTail:
+    label:
+      fr: Queue balayeuse
+    description:
+      fr: "La queue-balancier devient une arme de fauchage : un balayage bas qui jette la proie au sol. (Espèce — hors cladogramme pour l'instant, via extraMutations.)"
+    kit:
+      modifyPart:
+        type: tail
+        blocksAdd:
+          - cases: 2
+            grants:
+              text:
+                fr: Confère l'action Balayage caudal
+              grantsCard: tailSweep
   viviparity:
     label:
       fr: Viviparité
@@ -300,7 +342,24 @@ mutations:
         blocksAdd:
           - cases: 2
             grants:
-              fr: +1 ◇ au début de la manche
+              text:
+                fr: +1 ◇ au début de la manche
+              resource: stability
+              amount: 1
+  terrorShriek:
+    label:
+      fr: Cri terrifiant
+    description:
+      fr: "Vocalisation de chasse : un cri strident qui glace les proies de la zone. (Espèce — hors cladogramme pour l'instant, via extraMutations.)"
+    kit:
+      modifyPart:
+        type: head
+        blocksAdd:
+          - cases: 2
+            grants:
+              text:
+                fr: Confère l'action Cri terrifiant
+              grantsCard: shriek
   bipedalism:
     label:
       fr: Bipédie
@@ -319,24 +378,14 @@ mutations:
           blocksPrepend:
             - cases: 2
               grants:
-                fr: +1 action Charge
+                text:
+                  fr: +1 action Charge
+                grantsCard: charge
         - type: frontLeg
           name:
             fr: Bras
           descriptionAppend:
             fr: " Membres antérieurs libérés de la marche."
-      cards:
-        - id: charge
-          name:
-            fr: Charge
-          cost: ⚫
-          initiative: 5
-          onFives:
-            fr: "Repérez deux 5 : la cible est Entravée 🕸️."
-          onSuccess:
-            fr: Déplacement [6] puis inflige 💢💢
-          onFailure:
-            fr: Déplacement [4]
       speed:
         walk: 4
         run: 8
@@ -360,6 +409,7 @@ mutations:
         - tail
       modifyPart:
         type: frontLeg
+        tag: offensive
         name:
           fr: Mains
         description:
@@ -410,32 +460,25 @@ mutations:
         - frontLeg
       addParts:
         - type: sickles
+          tag: offensive
           name:
             fr: Serpes
           description:
             fr: "Deux longues faux (ongles allongés en lames recourbées) : l'arme maîtresse."
-          armor: 0
+          armor: 1
           blocks:
             - cases: 3
               grants:
-                fr: Frappe faucheuse coûte ⚫ (au lieu de ⚫⚫)
+                text:
+                  fr: Frappe faucheuse coûte ⚫ (au lieu de ⚫⚫)
+                cardCost:
+                  card: sickleStrike
+                  cost: 1
             - cases: 3
               grants:
-                fr: Confère l'action Frappe faucheuse
-      cards:
-        - id: sickleStrike
-          name:
-            fr: Frappe faucheuse
-          cost: ⚫⚫
-          initiative: 4
-          onFives:
-            fr: "Repérez un 5 : la cible subit 🔻."
-          onSuccess:
-            fr: Inflige 💢💢💢
-          onFailure:
-            fr: Inflige 💢
-          note:
-            fr: Coût réduit à ⚫ tant que le bloc supérieur des Serpes est intact.
+                text:
+                  fr: Confère l'action Frappe faucheuse
+                grantsCard: sickleStrike
   packMind:
     label:
       fr: Esprit de meute (synchronisation télépathe)
@@ -449,7 +492,10 @@ mutations:
         blocksAdd:
           - cases: 2
             grants:
-              fr: +1 ◇ au début de la manche (pool partagé de la meute)
+              text:
+                fr: +1 ◇ au début de la manche (pool partagé de la meute)
+              resource: stability
+              amount: 1
       traits:
         - name:
             fr: Esprit synchronisé
@@ -466,6 +512,7 @@ mutations:
         fr: une longue queue
       addParts:
         - type: tail
+          tag: mobility
           name:
             fr: Queue
           description:
@@ -526,6 +573,7 @@ mutations:
         fr: de longues griffes tranchantes aux pattes avant
       modifyPart:
         type: frontLeg
+        tag: offensive
         name:
           fr: Pattes griffues
         descriptionAppend:
@@ -533,19 +581,9 @@ mutations:
         blocksAdd:
           - cases: 3
             grants:
-              fr: Confère l'action Lacération
-      cards:
-        - id: laceration
-          name:
-            fr: Lacération
-          cost: ⚫⚫
-          initiative: 3
-          onFives:
-            fr: "Repérez un 5 : la cible subit une hémorragie 🩸."
-          onSuccess:
-            fr: Inflige 💢💢💢
-          onFailure:
-            fr: Inflige 💢
+              text:
+                fr: Confère l'action Lacération
+              grantsCard: laceration
   diggingClaws:
     label:
       fr: Griffes fouisseuses

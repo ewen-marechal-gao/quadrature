@@ -42,19 +42,19 @@ Un même concept peut basculer de registre selon qu'on le considère comme mati�
 
 ## 1. Voyelles
 
-| Registre        | Voyelles  | Caractère                                               |
-| --------------- | --------- | ------------------------------------------------------- |
-| Graves (pierre) | â · ô · û | longues, profondes, gutturales                          |
-| Neutre          | a         | charnière, présente partout                             |
-| Claires (sève)  | i · u · o | brèves, lumineuses                                      |
-| Cadre du monde  | æ         | charpente du monde, *hors registre* (ni pierre ni sève) |
-| Vitale          | y         | n'apparaît que sur le vivant (*Syn*, vie) ; pôle sève   |
-|                 |           |                                                         |
-|                 |           |                                                         |
+Deux axes se superposent : le **registre** (pierre / neutre / sève) et la **profondeur** (légère / grave).
 
-**Règle d'approfondissement :** seules les voyelles postérieures s'approfondissent (a → â, o → ô, u → û). Les voyelles claires `i`, `y` et la `æ` (cadre du monde) n'ont jamais de forme grave — le fond de la gorge appartient à la pierre, l'avant de la bouche au vivant.
+| Classe             | Voyelles  | Caractère                                                              |
+| ------------------ | --------- | ---------------------------------------------------------------------- |
+| Graves (pierre)    | â · ô · û | longues, profondes, gutturales                                          |
+| Neutre             | a         | charnière, présente partout                                             |
+| Claires (sève)     | i · o · u | brèves, lumineuses                                                      |
+| Vitale (sève pure) | y         | n'apparaît que sur le vivant (*Syn*, vie) ; jamais grave                |
+| Cadre du monde     | æ         | charpente du monde, *hors registre* (ni pierre ni sève) ; jamais grave |
 
-> **La voyelle `æ` — le cadre du monde.** Hors registre (ni pierre ni sève), `æ` est rare et scelle les concepts qui *charpentent* le monde : l'Anneau-Monde (`Æon`, l'Unité), le souffle et le sol qui l'enveloppent (`Vær` air / `Ræv` sol), la floraison qui scande son cycle (`Æli`), l'astre tutélaire et son reflet (`Shæl` / `Læsh`), l'onde qui parcourt la matière (`Væv`). Ce n'est pas une voyelle interdite ou « sacrée » au sens cultuel, mais le sceau d'une poignée de runes fondatrices — d'où sa présence dans des mots aussi courants que l'air ou la fleur.
+**Règle d'approfondissement :** seules les voyelles postérieures s'approfondissent (a → â, o → ô, u → û) — et l'approfondissement fait **basculer la voyelle côté pierre** : `o` et `u` sont claires (sève) tant qu'elles restent légères, `ô` et `û` appartiennent à la pierre. Les antérieures `i`, `y` et la `æ` n'ont jamais de forme grave — le fond de la gorge appartient à la pierre, l'avant de la bouche au vivant.
+
+> **La voyelle `æ` — le cadre du monde.** Hors registre (ni pierre ni sève), `æ` est rare et scelle les concepts qui *charpentent* le monde : l'Anneau-Monde (`Æon`, l'Unité), le souffle et le sol qui l'enveloppent (`Vær` air / `Ræv` sol), la floraison qui scande son cycle (`Æli`), l'astre tutélaire et son reflet (`Shæl` / `Læsh`), l'onde qui parcourt la matière (`Væv`), la pureté et son envers (`Sæv` / `Væs`). Ce n'est pas une voyelle interdite ou « sacrée » au sens cultuel, mais le sceau d'une poignée de runes fondatrices — d'où sa présence dans des mots aussi courants que l'air ou la fleur.
 
 ---
 
@@ -68,9 +68,11 @@ Un même concept peut basculer de registre selon qu'on le considère comme mati�
 | Continues           |               | s · f        | v · z · y   |
 
 - `q` est **uvulaire** (le son du fond de gorge, signature de la voix de pierre).
-- `sh` et `r` sont **neutres** : ils servent les deux registres (`Drash`/métal *et* `Sha`/chanter ; `r` roulé et dur côté pierre, battu et doux côté sève).
+- `sh` et `r` sont **neutres** : ils servent les deux registres (`Drash`/métal *et* `Shor`/mousse ; `r` roulé et dur côté pierre, battu et doux côté sève).
 - `y` fonctionne comme voyelle *et* comme glide consonantique du pôle vivant.
 - `f` est le **pendant sourd de `v`** (continue, noyau neutre) ; longtemps implicite (`Far`/`Raf`), il est désormais explicite.
+
+Les pôles consonantiques sont des **affinités**, non des interdits : une rune peut recruter une consonne de l'autre pôle quand le sens l'exige (`Zâkh`, la foudre, emprunte le `z` vivant ; `Sôl`, la lumière, le `l`). Seules sont des règles dures : les groupes consonantiques (réservés à la pierre, §3) et les voyelles `y`/`æ` (jamais graves).
 
 ### Le h n'est pas une consonne
 
@@ -99,6 +101,8 @@ Les **groupes consonantiques** (attaque CC) sont **réservés à la voix de pier
 
 La voix de sève **n'admet aucun groupe** : attaque à consonne simple, syllabes ouvertes, hiatus (suites de voyelles) et finales en `-a` / `-i` / `-y` autorisés. C'est ce débit ouvert qui lui donne son caractère chantant.
 
+Ces gabarits décrivent les runes « à l'endroit » : l'inversion produit leurs **miroirs** (VC `Ul`, CVCC `Shard`), pleinement valides. Quelques runes de base habitent nativement un gabarit miroir (`Ash`, `Ir`, `Ith`).
+
 ---
 
 ## 4. Sons-outils
@@ -109,8 +113,9 @@ Quatre voyelles isolées servent de **mots-outils** grammaticaux (et non de rune
 | --- | ------------ |
 | a   | et           |
 | u   | ou           |
-| â   | vers         |
 | i   | de / liaison |
+
+La direction (« vers », « depuis ») n'est pas portée par un son-outil mais par les **particules rituelles** `Ur` / `Ak` (§XI).
 
 ---
 
@@ -147,13 +152,13 @@ Pour inverser un mot :
 | `Syn`     | vie     | `Nys`     | mort           |
 | `Khâ`     | chaleur | `Âhk`     | froid          |
 | `Ghor`    | cavité  | `Rohg`    | masse rocheuse |
-| `Lu-mi`   | pluie   | `Imul`    | flamme         |
+| `Lu-Mi`   | pluie   | `Imul`    | flamme         |
 | `Nûr-Mil` | graine  | `Lim-Rûn` | pollen         |
 
 - **Rune simple** : on inverse les phonèmes — `Lu` → `Ul`.
 - **Réajustement guttural** : un `h` se réinsère pour tenir la gorge — `Khâ` → `Âhk` ; `Ghor` → `Rohg` (l'attaque `gh-` devient la coda `-hg`).
-- **Mot composé** : on inverse **l'ordre des runes** *puis* les phonèmes de chacune — `Lu-mi` (eau-tomber) → `Imul` (feu-monter).
-- **Palindromes** (sans inverse) : `Vakav`, `tot`, `Iri`, `Rir`.
+- **Mot composé** : on inverse **l'ordre des runes** *puis* les phonèmes de chacune — `Lu-Mi` (eau-vers-le-bas) → `Imul` (feu-vers-le-haut).
+- **Palindromes** (sans inverse) : `Vakav`, `Tot`, `Iri`, `Rir`.
 
 
 ---
@@ -205,8 +210,8 @@ On accole le nombre exact en suffixe du nom.
 
 ### 2. Pluriel Indéfini (Populaire)
 Issu de la famille des nombres en "-al" (2 à 5).
-- **-al** (après consonne) : *Ghoral* (Les pierres).
-- **-la** (après voyelle) : *Lumila* (Les eaux).
+- **-al** (après consonne) : *Sylal* (Les arbres).
+- **-la** (après voyelle) : *Lumila* (Les pluies).
 
 # V. Une Rune : mots basiques 
 
@@ -214,7 +219,7 @@ Issu de la famille des nombres en "-al" (2 à 5).
 
 | Concept (Fr) | Traduction | Inversion | Concept opposé |
 | ------------ | ---------- | --------- | -------------- |
-| Point        | tot        | -         | (palindrome)   |
+| Point        | Tot        | -         | (palindrome)   |
 | Courbe       | Iri        | -         | (palindrome)   |
 | Cercle       | Ir         | Ri        | Droite         |
 | Triangle     | Rir        | —         | (palindrome)   |
@@ -251,7 +256,7 @@ Issu de la famille des nombres en "-al" (2 à 5).
 | Eau | Lu | Ul | Feu |
 | Air | Vær | Ræv | Sol |
 | Sable | Lôn | Nôl | Pierre |
-| Métal | Drash | shard | Verre |
+| Métal | Drash | Shard | Verre |
 | Chair | Rot | Tor | Bois |
 
 ## Mots courants
@@ -262,7 +267,7 @@ Issu de la famille des nombres en "-al" (2 à 5).
 
 
 *Notes :*
-- la racine de Dûl est Ul, le foyer
+- `Dûl` fait écho à `Ul` (le feu) : le foyer est le feu domestiqué. Clin d'œil phonétique, non composition — la rune reste insécable.
 - `Lûd` (ruine) = le foyer mort, son exact inverse — écho des cités gelées et scellées que l'on abandonne au Couchant. Le désert *de sable*, lui, se dit `Lôn-Nim` (§IX).
 
 
@@ -270,31 +275,38 @@ Issu de la famille des nombres en "-al" (2 à 5).
 
 Le vocabulaire du vivant relève de la **voix de sève** (cf. §II). Il s'organise autour du patron **`Sy-` / `-ys`** : le radical `Sy-` désigne le vivant manifeste, son inversion `-ys` en désigne l'envers (mort, souterrain, caché). La rune `Syn`/`Nys` (vie/mort, cf. *Personnes*) en est la graine.
 
-| Concept (Fr) | Traduction | Inversion | Concept opposé |
-|---|---|---|---|
-| Arbre | Syl | Lys | Racine |
-| Croître / pousser | Vyn | Nyv | Faner / flétrir |
-| Fleur | Æli | Ilae | Fruit |
-| Feuille | Læl | — | (palindrome) |
-| Liane | Yvy | — | (palindrome) |
-| Mousse | Shor | Rosh | Écorce |
-| Nectar | Sav | Vas | Poison |
+| Concept (Fr)      | Traduction | Inversion | Concept opposé  |
+| ----------------- | ---------- | --------- | --------------- |
+| Arbre             | Syl        | Lys       | Racine          |
+| Croître / pousser | Vyn        | Nyv       | Faner / flétrir |
+| Fleur             | Æli        | Ilæ       | Fruit           |
+| Feuille           | Læl        | —         | (palindrome)    |
+| Liane             | Yvy        | —         | (palindrome)    |
+| Mousse            | Shor       | Rosh      | Écorce          |
 
-`Syl` (arbre) évoque la *sylve* sans rompre l'exotisme propre à Aeonir. La **sève** se dit `Syl-Lu` (« eau de l'arbre », composé courant — voir *Composés du vivant* plus bas). L'**Arbre-Anneau**, qui se pétrifie en cristal, portera un nom propre encore à fixer — pont entre la sève et la pierre.
+`Syl` (arbre) évoque la *sylve* sans rompre l'exotisme propre à Aeonir. La **sève** se dit `Syl-Lu` (« eau de l'arbre », composé courant — voir *Composés du vivant* plus bas). L'**Arbre-Anneau**, qui se pétrifie en cristal, se nomme **`Syl-Ir`** (§IX) — pont entre la sève et la pierre, écho vivant de `Æon-Ir`, le monde.
 
-L'inversion **`Æli` (fleur) ↔ `Ilae` (fruit)** suit la biologie : la fleur est la promesse *non fécondée*, le fruit son envers *fécondé*.
+L'inversion **`Æli` (fleur) ↔ `Ilæ` (fruit)** suit la biologie : la fleur est la promesse *non fécondée*, le fruit son envers *fécondé*.
 
 ### Composés du vivant
 
 Les concepts dérivés se construisent en deux runes :
 
-| Concept | Composition (rituel) | Populaire | Sens | Inversion |
-|---|---|---|---|---|
-| Sève | Syl-Lu | Sylu | eau de l'arbre | — |
-| Graine | Nûr-Mil | Nurmil | femelle qui tombe | Lim-Rûn |
-| Pollen | Lim-Rûn | Limrun | mâle qui vole | Nûr-Mil |
+| Concept | Composition (rituel) | Populaire | Sens              | Inversion |
+| ------- | -------------------- | --------- | ----------------- | --------- |
+| Sève    | Syl-Lu               | Sylu      | eau de l'arbre    | —         |
+| Graine  | Nûr-Mil              | Nurmil    | femelle qui tombe | Lim-Rûn   |
+| Pollen  | Lim-Rûn              | Limrun    | mâle qui vole     | Nûr-Mil   |
+| Nectar  | Æli-Lu               | Ælilu     | l'eau de la fleur | Ul-Ilæ    |
+| Liqueur | Ul-Ilæ               | Ulilæ     | le feu du fruit (fermenté) | Æli-Lu |
+| Poison  | Lu-Væs               | Luvæs     | l'eau souillée    | Sæv-Ul    |
+| Cautère | Sæv-Ul               | Sævul     | le pur ardent (flamme purificatrice) | Lu-Væs |
+| Remède  | Lu-Sæv               | Lusæv     | l'eau pure        | Væs-Ul    |
+| Fièvre  | Væs-Ul               | Væsul     | le souillé ardent | Lu-Sæv    |
 
-**Graine** et **pollen** sont l'inverse phonétique exact l'un de l'autre — la semence lourde et femelle qui chute ↔ la poussière mâle qui s'envole. Le cycle reproductif se lit ainsi : `Æli` (fleur) → `Lim-Rûn` / `Nûr-Mil` (pollen / graine) → `Ilae` (fruit).
+**Graine** et **pollen** sont l'inverse phonétique exact l'un de l'autre — la semence lourde et femelle qui chute ↔ la poussière mâle qui s'envole. Le cycle reproductif se lit ainsi : `Æli` (fleur) → `Lim-Rûn` / `Nûr-Mil` (pollen / graine) → `Ilæ` (fruit) — et se prolonge dans la coupe : `Æli-Lu` (nectar) ↔ `Ul-Ilæ` (liqueur).
+
+Le **lexique du guérisseur** naît de la paire `Sæv`/`Væs` (pur/souillé, §V *Caractère & qualités*) croisée avec l'eau et le feu : poison ↔ cautère, remède ↔ fièvre — quatre mots, deux inversions exactes. Les anciennes runes `Sav`/`Vas` (nectar/poison) sont **retirées du corpus** au profit de ces composés.
 
 ## Couleurs
 
@@ -334,8 +346,11 @@ Modificateurs d'**échelle** : ils ne désignent pas un objet mais *modulent* un
 | Peu | Qôr | Rôq | Beaucoup |
 | Faible | Nâkh | Khân | Fort |
 | Court | Sat | Tas | Long |
+| Part / Portion | Fâs | Sâf | Tout / Entier |
 
 `Nâkh` (faible) porte la coda `-âkh` de `Âhk` (froid) ; son inverse `Khân` (fort) la racine `Khâ` (chaleur) — l'intensité se lit comme une température.
+
+`Fâs` (part) fractionne aussi bien la matière que le ciel : `Lu-Fâs` (*Lufas*), la ration d'eau du nomade ; `Læsh-Fâs` (*Læshfas*), le quartier de lune ; `Thân-Fâs`, la Phase (§IX *Mesure du temps*). (Proximité assumée : `Fâth` loyal.)
 
 ## Caractère & qualités
 
@@ -345,6 +360,15 @@ Qualités morales et esthétiques des personnes — très employées dans la com
 |---|---|---|---|
 | Joli / Gracieux | Lin | Nil | Laid / Disgracieux |
 | Loyal / Fidèle | Fâth | Thâf | Traître / Félon |
+| Vaillant / Brave | Krân | Nârk | Lâche / Couard |
+| Vif / Alerte | Zil | Liz | Lent / Engourdi |
+| Patient / Constant | Sûn | Nûs | Impétueux / Impatient |
+| Doux / Tendre | Lav | Val | Rude / Âpre |
+| Modeste / Humble | San | Nas | Orgueilleux / Vaniteux |
+| Sage / Avisé | Sim | Mis | Insensé / Fou |
+| Pur | Sæv | Væs | Souillé / Corrompu |
+
+Les registres se répartissent selon la nature de la vertu : `Krân` (seul groupe CC des qualités — le courage est de pierre) et `Sûn` (la patience profonde, vertu cardinale des Sahgdor) côté minéral ; `Zil` et `Lav` côté sève ; `San` et `Sim` au noyau neutre. **`Sæv`/`Væs`** portent le `æ` du cadre du monde : la pureté n'est pas une humeur mais un *état fondamental* — c'est elle qui fonde le lexique du guérisseur (*Composés du vivant*). Proximités assumées : `Krân`/`Khân` (fort) — une même famille sonore de la force ; `Nûs`/`Nys` (mort) ; `Væs`/`Væv` (onde).
 
 ## Directions
 
@@ -364,15 +388,18 @@ Qualités morales et esthétiques des personnes — très employées dans la com
 | Vitesse | Vâr | Râv | Immobilité |
 | Masse | Mhag | Gahm | Allègement |
 | Dissipation | Rûhk | Khûr | Concentration |
-| Imprégner / Saturer | rûth | thûr | Drainer / Refluer |
+| Imprégner / Saturer | Rûth | Thûr | Drainer / Refluer |
 | Lumière | Sôl | Lôs | Ténèbres |
 | Grondement | Drâkh | Khârd | Silence |
 | Vapeur | Ghâs | Sâhg | Glace |
 | Foudre | Zâkh | Khâz | Charge |
 | Onde / Oscillation | Væv | — | (palindrome) |
 | Fusion (changement de phase) | Ghûn | Nûgh | Solidification |
+| Temps / Durée | Thân | Nâth | Instant |
 
 `Væv` (onde) est un **palindrome** — l'oscillation est sa propre symétrie. Composés : *vague* = `Væv-Lu` (onde d'eau, *Vævlu*) · *onde sonore* = `Væv-Vær` (onde d'air, *Vævær*). `Ghûn` ↔ `Nûgh` suit le patron guttural `gh→hg` (comme `Ghor→Rohg`).
+
+`Thân` (temps) ↔ `Nâth` (instant) : la durée étendue contre le point sans durée — distinct de `Vâr`/`Râv` (vitesse/immobilité) et de `Qûm`/`Mûq` (aller/rester). La paire arme les incantations de tempo : `Thâ Nâth`, « devenir-instant » — *figer*. (Proximités assumées : la particule `Thâ` et `Nâkh`, faible.) `Thân` est le noyau de toutes les **unités de temps** (§IX *Mesure du temps*).
 
 ## Relief
 
@@ -394,7 +421,7 @@ Runes de base du terrain (voix de pierre).
 
 | Concept (Fr) | Composition | Traduction | Inversion | Composition | Opposition |
 |---|---|---|---|---|---|
-| Pluie | Eau-tomber | Lu-mi | Imul | Feu-monter | Flamme |
+| Pluie | Eau-vers-le-bas | Lu-Mi | Imul | Feu-vers-le-haut | Flamme |
 
 
 ## Verbes et actions
@@ -406,17 +433,16 @@ Runes de base du terrain (voix de pierre).
 
 | Concept (Fr) | Composition | Traduction | Inversion | Composition | Opposition |
 |---|---|---|---|---|---|
-| Volonté | Conscience-agir | Nâq-ra | Qân-ar | Fantome Attendre | Trépas |
+| Volonté | Conscience-agir | Nâq-Ra | Ar-Qân | Attendre-fantôme | Trépas |
 
 ## Physique
 
 | Concept (Fr) | Composition | Inversion | Opposition |
 |---|---|---|---|
-| Embrasement           | Khâ-rûth   | Thûr-âhk   | Extinction            |
+| Embrasement           | Khâ-Rûth   | Thûr-Âhk   | Extinction            |
 | Quantité de mouvement | Vâr-Mhag   | Gahm-Râv   | Dispersion dynamique  |
-| Projection            | Khâ-râ-qûm | Mûq-âr-âhk | Stabilisation brutale |
-| Mouvement             | Ra-qûm     | Mûq-ar     | Arrêt                 |
-| Extinction            | Thûr-âhk   | Khâ-rûth   | Embrasement           |
+| Projection            | Khâ-Ra-Qûm | Mûq-Ar-Âhk | Stabilisation brutale |
+| Mouvement             | Ra-Qûm     | Mûq-Ar     | Arrêt                 |
 
 ## Géographie
 
@@ -428,8 +454,8 @@ Le monde est en verrouillage gravitationnel. La vie n'existe que sur le terminat
 | --------------- | ----------- | ---------------------- |
 | Hameau          | Dûl-Min     | petit foyer            |
 | Ville           | Dûl-Nim     | grand foyer            |
-| Cité de pouvoir | Qâr-Dûl     | foyer du pouvoir       |
-| Capitale        | Qâr-Dûl-Nim | grand foyer du pouvoir |
+| Cité de pouvoir | Dûl-Qâr     | foyer du pouvoir       |
+| Capitale        | Dûl-Qâr-Nim | grand foyer du pouvoir |
 
 ---
 
@@ -450,10 +476,10 @@ Le suffixe **ethnonymique `-Dor`** (« peuple / communauté », cf. §V *Personn
 | ------ | ------------------ | --------- | --------- | ------------------ |
 | Cimes  | Levant (canopée)   | Syl-Dor   | Syldor    | peuple de la forêt |
 | Vents  | Couchant (steppes) | Vær-Dor   | Vaedor    | peuple du vent     |
-| Pluies | Pôle Nord (marais) | Lu-mi-Dor | Lumidor   | peuple de la pluie |
+| Pluies | Pôle Nord (marais) | Lu-Mi-Dor | Lumidor   | peuple de la pluie |
 | Neiges | Pôle Sud (glaces)  | Sâhg-Dor  | Sahgdor   | peuple de la glace |
 
-À l'oral, le `r` de `Vær` s'élide : `Vaedor`.
+À l'oral, le `r` de `Vær` s'élide : `Vaedor`. L'érosion populaire n'est pas normalisée (§II.5) : ailleurs, `Vær` s'use plutôt en *Ver-* (`Verkum`, `Vergas`, §IX).
 
 ## Base, peuple et genre
 
@@ -468,36 +494,54 @@ L'adjectif qui suit est **libre** : n'importe quelle couleur (§V), qualité de 
 
 | Peuple | Bases **féminines** | Bases **masculines** |
 |---|---|---|
-| **Syldor** (forêt) | `Æli` fleur · `Ilae` fruit · `Vyn` pousse · `Sav` nectar · `Yvy` liane · `Shor` mousse | `Syl` arbre · `Tor` bois · `Rosh` écorce · `Lys` racine |
-| **Vaedor** (vent, ciel) | `Læsh` reflet · `Vær` brise | `Shæl` astre · `Lôn` sable · `Vâr` rafale · `Zâkh` foudre |
-| **Lumidor** (eau, marais) | `Lu` eau · `Væv` onde · `Læsh` reflet | `Lôn-Lu` grève · `Vôl` crue |
-| **Sahgdor** (glace) | `Sôl` lumière · `Shil` éclat | `Sâhg` glace · `Rohg` roc · `Ul` feu · `Khâ` chaleur · `Ghûn` fusion |
+| **Syldor** (forêt) | `Æli` fleur · `Ilæ` fruit · `Vyn` pousse · `Læl` feuille · `Yvy` liane · `Shor` mousse | `Syl` arbre · `Tor` bois · `Rosh` écorce · `Lys` racine |
+| **Vaedor** (vent, ciel) | `Læsh` reflet · `Vær` air | `Shæl` astre · `Lôn` sable · `Vâr` vitesse · `Zâkh` foudre |
+| **Lumidor** (eau, marais) | `Lu` eau · `Væv` onde · `Læsh` reflet | `Lu-Vâr` torrent · `Gâr-Lu` digue |
+| **Sahgdor** (glace) | `Sôl` lumière · `Shil` brillant · `Thil` blanc · `Væv` onde · `Læsh` reflet | `Sâhg` glace · `Rohg` roc · `Ul` feu · `Khâ` chaleur · `Ghûn` fusion |
 
-> **Encore ouvert** (discussion en cours) : la grève Lumidor `Lôn-Lu` et la crue `Vôl` restent à valider ; le sous-pool **féminin de Sahgdor** est mince (`Sôl`/`Shil`) — une rune de *givre doux* dédiée reste à trancher. `Læsh` (reflet) est partagé entre Vaedor (le ciel nocturne) et Lumidor (les eaux dormantes).
+> Les bases masculines Lumidor sont les seules **composées** : `Lu-Vâr` (*Luvar*), l'eau violente, et `Gâr-Lu` (*Garlu*), l'ouvrage qui la dompte — tout l'ethos des Guildes du Flux. Quelques bases sont **partagées** entre peuples ; c'est leur lecture qui change : `Læsh` est le ciel nocturne des Vaedor, les eaux dormantes des Lumidor, la lueur sur la glace des Sahgdor ; `Væv` est l'onde des marais ou la lumière pulsée des forteresses ; `Thil` (blanc) est la cape des femmes Sahgdor.
 
 ## Prénoms
 
 Le **genre se lit à la base**, la **personnalité à l'adjectif** : la même base accueille une couleur, une qualité de caractère, ou les deux. Les formes érodées de la langue commune sont notées *entre parenthèses* quand elles divergent (cf. §II.5).
 
-### Féminin
+Un prénom est un **vœu** : on ne compose qu'avec les **vertus**. Les runes de vice (`Nârk`, `Liz`, `Val`, `Nas`…) n'apparaissent que dans les **surnoms infligés** — exilés, ennemis, bêtes.
 
-| Prénom | Composition — sens | Prénom | Composition — sens |
+### Syldor
+
+| Féminin | Composition — sens | Masculin | Composition — sens |
 |---|---|---|---|
-| *Ælinir* | Æli·Nir — fleur verte | *Ælilin* | Æli·Lin — fleur gracieuse |
-| *Vynson* | Vyn·Son — pousse dorée | *Savrin* | Sav·Rin — nectar pourpre |
-| *Læshlin* | Læsh·Lin — reflet gracieux | *Værnir* | Vær·Nir — brise verte |
-| *Lulin* | Lu·Lin — eau gracieuse | *Vævsôl* | Væv·Sôl — onde lumineuse |
-| *Sôllin* | Sôl·Lin — lumière gracieuse | *Shilrin* | Shil·Rin — éclat pourpre |
+| *Ælilav* | Æli·Lav — fleur douce | *Sylkrân* | Syl·Krân — arbre vaillant |
+| *Lælzil* | Læl·Zil — feuille vive | *Torfâth* | Tor·Fâth — bois loyal |
+| *Vynsan* | Vyn·San — pousse modeste | *Roshkrân* | Rosh·Krân — écorce vaillante |
+| *Ælinir* | Æli·Nir — fleur verte | *Syldâr* | Syl·Dâr — arbre aigu |
 
-### Masculin
+### Vaedor
 
-| Prénom | Composition — sens | Prénom | Composition — sens |
+| Féminin | Composition — sens | Masculin | Composition — sens |
 |---|---|---|---|
-| *Syldâr* | Syl·Dâr — arbre aigu | *Torfâth* | Tor·Fâth — bois loyal |
-| *Shælkhân* | Shæl·Khân — astre fort | *Lôndâr* | Lôn·Dâr — sable aigu |
-| *Vârkhân* | Vâr·Khân — rafale forte | *Lônlukhân* | Lôn-Lu·Khân — grève forte |
-| *Rohgfâth* | Rohg·Fâth — roc loyal | *Sâhgdâr* | Sâhg·Dâr — glace aiguë |
-| *Ulkhân* | Ul·Khân — feu ardent | *Ghûndrâkh* | Ghûn·Drâkh — fusion grondante |
+| *Værlav* | Vær·Lav — air doux (« la brise ») | *Shælsim* | Shæl·Sim — astre sage |
+| *Læshzil* | Læsh·Zil — reflet vif | *Zâkhzil* | Zâkh·Zil — foudre vive |
+| *Læshlin* | Læsh·Lin — reflet gracieux | *Lônsûn* | Lôn·Sûn — sable patient |
+| *Værnir* | Vær·Nir — air vert | *Vârkhân* | Vâr·Khân — vitesse forte |
+
+### Lumidor
+
+| Féminin | Composition — sens | Masculin | Composition — sens |
+|---|---|---|---|
+| *Luzil* | Lu·Zil — eau vive | *Luvarkrân* | Lu-Vâr·Krân — torrent vaillant |
+| *Vævlin* | Væv·Lin — onde gracieuse | *Garlusim* | Gâr-Lu·Sim — digue sage |
+| *Lurin* | Lu·Rin — eau pourpre | *Garlukhân* | Gâr-Lu·Khân — digue forte |
+| *Læshsan* | Læsh·San — reflet modeste | *Luvarsûn* | Lu-Vâr·Sûn — torrent patient |
+
+### Sahgdor
+
+| Féminin | Composition — sens | Masculin | Composition — sens |
+|---|---|---|---|
+| *Thillav* | Thil·Lav — blanche douce | *Sâhgsûn* | Sâhg·Sûn — glace patiente |
+| *Sôlsûn* | Sôl·Sûn — lumière patiente | *Ulkrân* | Ul·Krân — feu vaillant |
+| *Thilsæv* | Thil·Sæv — blanche pure | *Rohgsim* | Rohg·Sim — roc sage |
+| *Vævsôl* | Væv·Sôl — onde lumineuse | *Ghûndrâkh* | Ghûn·Drâkh — fusion grondante |
 
 ---
 
@@ -526,11 +570,14 @@ Le **genre se lit à la base**, la **personnalité à l'adjectif** : la même ba
 | Plaine       | Ræv-Râd     | Ravrad    | sol plat              |
 | Steppe       | Vyn-Rin-Nim | Vyrinim   | grande herbe pourpre  |
 | Désert       | Lôn-Nim     | Lonim     | grand sable           |
-|              |             |           |                       |
 
 ## Cosmo-géographie
 
-Le vocabulaire planétaire d'Aeonir. Levant et Couchant sont les deux **demi-anneaux** (`Iri`, l'arc) du terminateur — ils se répondent en miroir par l'inversion.
+Le vocabulaire planétaire d'Aeonir. Levant et Couchant sont les deux **demi-anneaux** (`Iri`, l'arc) du terminateur — ils se répondent en miroir, terme à terme.
+
+> **Aeonir = `Æon-Ir`.** Le nom du monde est la forme populaire de `Æon-Ir` — noyau `Æon` (l'Unité, §IV), qualifieur `Ir` (le cercle) : « l'Unité-anneau ». La romanisation `Æ` → *Ae* suit le même patron que `Vær-Dor` → *Vaedor*. `Æon` et `Ir` ne sont donc pas deux noms concurrents du monde, mais les deux moitiés de son nom complet — dont `Syl-Ir`, l'Arbre-Anneau, est l'écho vivant.
+
+> **Les toponymes échappent à l'inversion stricte.** Comme les prénoms (§VIII), les noms de lieux sont des **noms propres** : ils gardent leur noyau en tête et substituent les antonymes **en place**, au lieu de subir l'inversion phonétique complète (§III). C'est pourquoi le Couchant se dit `Iri-Lôs-Mi` — miroir terme à terme du Levant `Iri-Sôl-Im` — et non *Mi-Lôs-Iri*.
 
 | Concept | Rituel | Populaire | Sens |
 |---|---|---|---|
@@ -549,13 +596,27 @@ Le vocabulaire planétaire d'Aeonir. Levant et Couchant sont les deux **demi-ann
 | Reflet | Læsh | Laesh | la lumière réfléchie |
 | Lune | Læsh-Shil | Læshil | le reflet brillant (argenté) |
 
-`Irisol` ↔ `Irilos` et `Ravka` ↔ `Ravak` : aube/crépuscule et faces chaude/froide sont des inversions exactes. **`Shæl` (astre) ↔ `Læsh` (reflet)** : la source et son reflet sont inverses ; l'astre rejoint le `æ` du *cadre du monde* (§II). La **Lune** se nomme « le Reflet Argenté » (`Læsh-Shil`).
+`Irisol` ↔ `Irilos` et `Ravka` ↔ `Ravak` : aube/crépuscule et faces chaude/froide se répondent terme à terme (cf. l'encart ci-dessus). **`Shæl` (astre) ↔ `Læsh` (reflet)**, en revanche, est une inversion phonétique exacte : la source et son reflet sont inverses ; l'astre rejoint le `æ` du *cadre du monde* (§II). La **Lune** se nomme « le Reflet Argenté » (`Læsh-Shil`).
+
+## Mesure du temps
+
+Sur Aeonir, ni jour ni nuit : l'étoile est immobile, et c'est la lune — `Læsh-Shil`, le Reflet Brillant — qui rythme l'existence de ses phases. Toutes les unités ont pour **noyau `Thân`** (le temps, §V *Physique*), qualifié par l'astre ou le cercle qu'il mesure.
+
+| Unité | Rituel | Populaire | Sens |
+|---|---|---|---|
+| Course (~30 h) | Thân-Læsh | Talæsh | le temps du Reflet (une orbite de la lune) |
+| Phase | Thân-Fâs | Tafas | le temps fractionné (un quartier de Course) |
+| Cycle | Thân-Ir-Syn | Tansyn | le temps du terminateur (une traversée) |
+| Ère | Thân-Iri | Tanri | le temps du demi-anneau (une demi-rotation du monde) |
+| Rotation complète | Thân-Ir | Thânir | le temps du cercle |
+
+L'érosion populaire suit les patrons attestés : le `h` de gorge tombe (`Sâhg` → *Sag*), une rune peut s'avaler entière (le `Gâr` d'*Arkadrak*) — d'où *Talæsh* (le mot du quotidien, le plus usé) et *Tansyn* (le `Ir` avalé). `Thân-Ir`, terme de chrono-cartographe, reste presque rituel à l'oral : *Thânir*, bien distinct de *Tanri*. Le quartier de lune lui-même se dit `Læsh-Fâs` (§V *Grandeur & quantité*) ; « au premier quartier de la douzième course » attend encore ses **ordinaux** (chantier grammaire à ouvrir).
 
 ## Météorologie
 
 | Concept | Composition | Populaire | Sens |
 |---|---|---|---|
-| Pluie | Lu-mi | Lumi | eau tombante |
+| Pluie | Lu-Mi | Lumi | eau tombante |
 | Neige | Sâhg-Mi | Sagmi | glace tombante |
 | Nuage | Vær-Ghâs | Vergas | air-vapeur |
 | Vent | Vær-Qûm | Verkum | air courant |
@@ -571,24 +632,24 @@ Runes de base associées (§V *Physique*) : `Ghâs`/`Sâhg` (vapeur/glace), `Dr�
 
 ## Elements
 
-Les éléments sont désignés par leur **numéro atomique** (en base 6) suivi de la rune `ith`. La forme **populaire** accole `ith` à la forme populaire du numéro (§IV).
+Les éléments sont désignés par leur **numéro atomique** (en base 6) suivi de la rune `Ith`. La forme **populaire** accole `Ith` à la forme populaire du numéro (§IV).
 
 | Numéro atomique | Élément (Fr) | Rituelle        | Populaire  |
 | --------------- | ------------ | --------------- | ---------- |
-| 1               | Hydrogène    | Æon-ith         | Æonith     |
-| 2               | Hélium       | Dal-ith         | Dalith     |
-| 6               | Carbone      | Æon-Nan-ith     | Ænanith    |
-| 7               | Azote        | Æon-Æon-ith     | Ænonith    |
-| 8               | Oxygène      | Æon-Dal-ith     | Ædalith    |
-| 14              | Silicium     | Dal-Dal-ith     | Daadith    |
-| 15              | Phosphore    | Dal-Ral-ith     | Daralith   |
-| 20              | Calcium      | Ral-Dal-ith     | Radalith   |
-| 26              | Fer          | Kal-Dal-ith     | Kadalith   |
-| 29              | Cuivre       | Kal-Mal-ith     | Kamalith   |
-| 47              | Argent       | Æon-Æon-Mal-ith | Ænmith †   |
-| 50              | Étain        | Æon-Dal-Dal-ith | Æddith †   |
-| 79              | Or           | Dal-Æon-Æon-ith | Dænonith † |
-| 82              | Plomb        | Dal-Æon-Kal-ith | Dækith †   |
+| 1               | Hydrogène    | Æon-Ith         | Æonith     |
+| 2               | Hélium       | Dal-Ith         | Dalith     |
+| 6               | Carbone      | Æon-Nan-Ith     | Ænanith    |
+| 7               | Azote        | Æon-Æon-Ith     | Ænonith    |
+| 8               | Oxygène      | Æon-Dal-Ith     | Ædalith    |
+| 14              | Silicium     | Dal-Dal-Ith     | Daadith    |
+| 15              | Phosphore    | Dal-Ral-Ith     | Daralith   |
+| 20              | Calcium      | Ral-Dal-Ith     | Radalith   |
+| 26              | Fer          | Kal-Dal-Ith     | Kadalith   |
+| 29              | Cuivre       | Kal-Mal-Ith     | Kamalith   |
+| 47              | Argent       | Æon-Æon-Mal-Ith | Ænmith †   |
+| 50              | Étain        | Æon-Dal-Dal-Ith | Æddith †   |
+| 79              | Or           | Dal-Æon-Æon-Ith | Dænonith † |
+| 82              | Plomb        | Dal-Æon-Kal-Ith | Dækith †   |
 
 > † Numéros à 3 chiffres : forme populaire indicative (la contraction des grands nombres reste à formaliser).
 
@@ -646,9 +707,9 @@ Les éléments sont désignés par leur **numéro atomique** (en base 6) suivi d
 ### Langue rituelle
 
 ```text
-Za Nâq-ra ghâl Vakav.
-Za Khâ va Ræv rûth ur Syl.
-Thâ Khâ-rûth.
+Za Nâq-Ra Ghâl Vakav.
+Za Khâ Va Ræv Rûth Ur Syl.
+Thâ Khâ-Rûth.
 ```
 
 ---

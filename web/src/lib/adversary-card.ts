@@ -28,7 +28,7 @@ export function adversaryCardToPlayerCard(card: AdversaryCard): PlayerCard {
     famille: "melee",
     categorie: "offensive",
     initiative: card.initiative,
-    cout: card.cost,
+    cout: "⚫".repeat(card.cost),
     repere: card.onFives,
     succes: card.onSuccess,
     echec: card.onFailure,

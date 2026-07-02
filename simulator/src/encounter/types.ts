@@ -28,14 +28,24 @@ export type AgentType = 'scripted' | 'llm'
 // ─── Per-character config ─────────────────────────────────────────────────────
 
 export interface EncounterCharacter {
-  /** Path to character sheet YAML, relative to the simulator root */
-  sheet: string
-
-  /** Tactical personality driving action choices */
-  persona: AgentPersona
+  /**
+   * Path to a character sheet YAML, relative to the simulator root.
+   * Exactly one of `sheet` | `adversary` must be set.
+   */
+  sheet?: string
 
   /**
-   * Agent implementation.
+   * Adversary id — loads data/bestiary/cards/<id>.card.yaml.
+   * Adversaries are scripted (deck heuristic + fixed guard); `persona` and
+   * `agent` do not apply to them.
+   */
+  adversary?: string
+
+  /** Tactical personality driving action choices (required for `sheet` characters) */
+  persona?: AgentPersona
+
+  /**
+   * Agent implementation (sheet characters only).
    * - 'scripted' (default) — rule-based heuristics, synchronous, batch-safe
    * - 'llm'                — Claude API, async, single-run only
    */

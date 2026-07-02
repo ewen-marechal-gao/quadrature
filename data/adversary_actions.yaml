@@ -1,0 +1,100 @@
+# Bibliothèque d'actions d'adversaires — réutilisables entre kits / espèces.
+#
+# Une action est référencée par son id : un BLOC de partie la confère via
+# `grantsCard: <id>` (inclusion au deck + gate sur l'intégrité du bloc), ou un
+# kit via `grant_action: [<id>]` (action innée, non liée à un bloc destructible).
+# Le consolidateur (tools/consolidate-bestiary.mjs) résout ces références et
+# EMBARQUE la def complète dans data/bestiary/cards/<id>.card.yaml (fiche
+# auto-suffisante ; cette bibliothèque n'est qu'un mécanisme DRY côté source).
+#
+# Chaque issue fusionne prose + effet : { text: <Locale | "auto">, effect: [ops] }.
+# `onFives` ajoute `count` (⭐ Repérez N 5). Grammaire d'ops :
+#   { wound: N }  💢   { fatigue: N } 💧   { heavyWound: N } 💔
+#   { status: knockdown|stunned|hemorrhage|entrapped|kneeling }
+#   { mental: -N } 🔻 vers Peur   { mental: +N } 🔺 vers Colère
+#   { move: N }  Déplacement [N] (loggé ; modèle spatial différé)
+#   { gainStability: N }  auto-ciblé : la créature gagne N ◇
+# `text: auto` est accepté (rendu auto de la prose différé) ; la prose explicite
+# reste renseignée pour l'affichage MJ tant que l'auto-rendu n'existe pas.
+#
+# `tags` : typage partagé avec les actions joueur (vocabulaire CardTag, anglais,
+# documenté dans rules/fr/cartes/README.md) — intention (offensive/defensive/
+# movement/support/healing/enhancement), domaine (melee/ranged/mental/physical/
+# social), marqueurs d'effet (physicalDamage 💢💔 · mentalDamage 🔻🔺◇ ·
+# fatigueDamage 💧). Lus par les règles (ex. Sanguinaire → offensive) et le
+# simulateur (traits, heuristiques d'agent) — jamais inférés des effets.
+
+actions:
+  sickleStrike:
+    name: { fr: "Frappe faucheuse", en: "Sickle Strike" }
+    cost: 2
+    initiative: 4
+    tags: [offensive, melee, physical, physicalDamage, mentalDamage]
+    onSuccess: { text: { fr: "Inflige 💢💢💢" }, effect: [{ wound: 3 }] }
+    onFailure: { text: { fr: "Inflige 💢" },     effect: [{ wound: 1 }] }
+    onFives:   { text: { fr: "Repérez un 5 : la cible subit 🔻." }, count: 1, effect: [{ mental: -1 }] }
+    note:      { fr: "Coût réduit à ⚫ tant que le bloc supérieur des Serpes est intact." }
+
+  charge:
+    name: { fr: "Charge", en: "Charge" }
+    cost: 1
+    initiative: 5
+    tags: [offensive, movement, melee, physical, physicalDamage]
+    onSuccess: { text: { fr: "Déplacement [6] puis inflige 💢💢" }, effect: [{ move: 6 }, { wound: 2 }] }
+    onFailure: { text: { fr: "Déplacement [4]" },                   effect: [{ move: 4 }] }
+    onFives:   { text: { fr: "Repérez deux 5 : la cible est Entravée 🕸️." }, count: 2, effect: [{ status: entrapped }] }
+
+  bite:
+    name: { fr: "Morsure", en: "Bite" }
+    cost: 1
+    initiative: 3
+    tags: [offensive, melee, physical, physicalDamage]
+    onSuccess: { text: { fr: "Inflige 💢💢 et une hémorragie 🩸" }, effect: [{ wound: 2 }, { status: hemorrhage }] }
+    onFailure: { text: { fr: "Inflige 💢" },                        effect: [{ wound: 1 }] }
+
+  shriek:
+    name: { fr: "Cri terrifiant", en: "Terrifying Shriek" }
+    cost: 2
+    initiative: 5
+    tags: [offensive, mental, mentalDamage]
+    onSuccess: { text: { fr: "Toutes les créatures de la zone subissent 🔻" }, effect: [{ mental: -1 }] }
+    onFailure: { text: { fr: "La créature la plus proche subit 🔻" },          effect: [{ mental: -1 }] }
+    onFives:   { text: { fr: "Repérez un 5 : la cible est Sonnée 🫨." }, count: 1, effect: [{ status: stunned }] }
+    note:      { fr: "Cri de zone : sans modèle spatial, le simulateur l'applique à la cible unique." }
+
+  tailSweep:
+    name: { fr: "Balayage caudal", en: "Tail Sweep" }
+    cost: 1
+    initiative: 4
+    tags: [offensive, melee, physical, fatigueDamage]
+    onSuccess: { text: { fr: "La cible est À terre 🙏" },   effect: [{ status: knockdown }] }
+    onFailure: { text: { fr: "La cible est À genoux 🧎" },  effect: [{ status: kneeling }] }
+    onFives:   { text: { fr: "Repérez un 5 : inflige 💧💧." }, count: 1, effect: [{ fatigue: 2 }] }
+
+  laceration:
+    name: { fr: "Lacération", en: "Laceration" }
+    cost: 2
+    initiative: 3
+    onSuccess: { text: { fr: "Inflige 💢💢💢" }, effect: [{ wound: 3 }] }
+    onFailure: { text: { fr: "Inflige 💢" },     effect: [{ wound: 1 }] }
+    onFives:   { text: { fr: "Repérez un 5 : la cible subit une hémorragie 🩸 et le prédateur gagne +1 ◇." }, count: 1, effect: [{ status: hemorrhage }, { gainStability: 1 }] }
+
+  swordStrike:
+    name: { fr: "Coup d'épée", en: "Sword Strike" }
+    cost: 1
+    initiative: 4
+    tags: [offensive, melee, physical, physicalDamage]
+    onSuccess: { text: { fr: "Inflige 💢💢💢" }, effect: [{ wound: 3 }] }
+    onFailure: { text: { fr: "Inflige 💢" },     effect: [{ wound: 1 }] }
+    onFives:   { text: { fr: "Repérez un 5 : la cible est Sonnée 🫨." }, count: 1, effect: [{ status: stunned }] }
+    note:      { fr: "Nécessite les Mains et l'Épée intactes." }
+
+  bowShot:
+    name: { fr: "Tir", en: "Shot" }
+    cost: 1
+    initiative: 6
+    tags: [offensive, ranged, physical, physicalDamage]
+    ranged: true   # legacy affichage — le tag `ranged` fait foi côté moteur
+    onSuccess: { text: { fr: "Inflige 💢💢 (à distance)" }, effect: [{ wound: 2 }] }
+    onFailure: { text: { fr: "Inflige 💢" },                effect: [{ wound: 1 }] }
+    onFives:   { text: { fr: "Repérez un 5 : la cible subit une hémorragie 🩸." }, count: 1, effect: [{ status: hemorrhage }] }

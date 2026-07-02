@@ -29,7 +29,12 @@ export type PowerTier =
 
 // ─── Types bruts (forme YAML : clés anglaises, chaînes Locale) ──────────────────
 
-interface RawBlock { cases: number; grants: LocalizedString; }
+/**
+ * Ce que confère un bloc : prose d'affichage (`text`) + ops mécaniques
+ * (grantsCard, cardCost, resource…). Le web n'affiche que la prose.
+ */
+interface RawGrant { text: LocalizedString | "auto"; [k: string]: unknown; }
+interface RawBlock { cases: number; grants: RawGrant; }
 interface RawPart {
   /** Slug d'identification stable (head, body, tail, frontLeg, sickles…). */
   type: string;
@@ -39,14 +44,17 @@ interface RawPart {
   blocks: RawBlock[];
 }
 interface RawTrait { id?: string; name: LocalizedString; kind: "passive" | "active"; effect: LocalizedString; }
+/** Issue de carte : prose d'affichage + effets structurés (ces derniers ignorés côté web). */
+interface RawOutcome { text: LocalizedString | "auto"; [k: string]: unknown; }
 interface RawCard {
   id: string;
   name: LocalizedString;
-  cost: string;
+  cost: number;
   initiative: number;
-  onFives?: LocalizedString;
-  onSuccess?: LocalizedString;
-  onFailure?: LocalizedString;
+  ranged?: boolean;
+  onSuccess: RawOutcome;
+  onFailure: RawOutcome;
+  onFives?: RawOutcome;
   note?: LocalizedString;
 }
 interface RawAdversary {
@@ -78,7 +86,8 @@ export interface AdversaryTrait { name: string; kind: "passive" | "active"; effe
 export interface AdversaryCard {
   id: string;
   name: string;
-  cost: string;
+  /** Cost in action points ⚫ (integer); rendered as N symbols by the front-end. */
+  cost: number;
   initiative: number;
   onFives?: string;
   onSuccess?: string;
@@ -127,13 +136,18 @@ const GUARD_LABELS: Record<GuardType, LocalizedString> = {
 
 // ─── Résolution Locale → chaînes ────────────────────────────────────────────────
 
+/** Résout une prose Locale, avec le sentinel « auto » rendu vide (auto-rendu différé). */
+function localizeText(t: LocalizedString | "auto", locale: string): string {
+  return t === "auto" ? "" : localize(t, locale);
+}
+
 function resolvePart(p: RawPart, locale: string): BodyPart {
   return {
     type: p.type,
     name: localize(p.name, locale),
     description: p.description ? localize(p.description, locale) : undefined,
     armor: p.armor,
-    blocks: p.blocks.map((b) => ({ cases: b.cases, grants: localize(b.grants, locale) })),
+    blocks: p.blocks.map((b) => ({ cases: b.cases, grants: localizeText(b.grants.text, locale) })),
   };
 }
 
@@ -157,9 +171,9 @@ function resolveAdversary(raw: RawAdversary, locale: string): Adversary {
       name: localize(c.name, locale),
       cost: c.cost,
       initiative: c.initiative,
-      onFives: opt(c.onFives),
-      onSuccess: opt(c.onSuccess),
-      onFailure: opt(c.onFailure),
+      onFives: c.onFives ? localizeText(c.onFives.text, locale) : undefined,
+      onSuccess: localizeText(c.onSuccess.text, locale),
+      onFailure: localizeText(c.onFailure.text, locale),
       note: opt(c.note),
     })),
     image: raw.image,

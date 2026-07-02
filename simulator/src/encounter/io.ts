@@ -52,10 +52,23 @@ export async function loadEncounter(filePath: string): Promise<EncounterConfig> 
 
     // ── Per-character validation ─────────────────────────────────────────────
     for (const char of faction.characters as EncounterCharacter[]) {
-      if (!char.sheet || typeof char.sheet !== 'string')
+      const hasSheet     = typeof char.sheet === 'string' && char.sheet.length > 0
+      const hasAdversary = typeof char.adversary === 'string' && char.adversary.length > 0
+
+      if (hasSheet === hasAdversary)
         throw new Error(
-          `A character in faction "${faction.name}" is missing required field "sheet" in: ${filePath}`
+          `A character in faction "${faction.name}" must set exactly one of "sheet" | "adversary" in: ${filePath}`
         )
+
+      if (hasAdversary) {
+        // Adversaries are scripted: persona/agent do not apply.
+        if (char.persona !== undefined || char.agent !== undefined)
+          throw new Error(
+            `Adversary "${char.adversary}" in faction "${faction.name}" must not set "persona" or "agent" (scripted deck heuristic) in: ${filePath}`
+          )
+        continue
+      }
+
       if (!char.persona)
         throw new Error(
           `Character "${char.sheet}" in faction "${faction.name}" is missing required field "persona" in: ${filePath}`

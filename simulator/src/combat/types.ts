@@ -9,6 +9,8 @@
 
 import type { Character, CharacteristicName, SkillName, CharacteristicState } from '../character/types'
 import type { RollResult } from '../types'
+import type { AdversaryRollResult } from '../adversary/dice'
+import type { AdversarySnapshot } from '../adversary/combatant'
 
 // ─── Mental state track ───────────────────────────────────────────────────────
 
@@ -36,10 +38,31 @@ export const MENTAL_STATES: MentalState[] = [
 export type StatusEffect =
   | 'hemorrhage'    // 🩸 Hémorragie  : stacking (n tokens); prevents Protection on wound overflow
   | 'stunned'       // 💫 Sonné       : −1 PA next round
-  | 'knockdown'     // 🔻 À terre     : −1 PA next round (must spend action to stand)
+  | 'knockdown'     // 🙏 À terre     : −1 PA next round (must spend action to stand)
+  | 'kneeling'      // 🧎 À genoux    : melee attackers gain 🟩; stands up free at next round start
   | 'winded'        // 💨 Essoufflé   : cannot use 🔴 token (endPlayerRound actions blocked)
+  | 'entrapped'     // 🕸️ Entravé    : cannot perform Marche/Course (movement not yet simulated)
   | 'incapacitated' // ❌ Incapacité  : out of combat (fatigue ≥ 20)
   | 'near-death'    // 😵 Aux portes de la Mort : out of combat (all physical characteristics at 0)
+
+// ─── Card tags ────────────────────────────────────────────────────────────────
+
+/**
+ * Shared typing of every action card — player actions AND adversary cards.
+ * A card carries a free SET of tags; rules and engine read them instead of
+ * inferring intent from effects (e.g. the Sanguinaire trait fires on
+ * `offensive`, targeting heuristics read `melee`/`ranged`).
+ *
+ * Three loose groups (taxonomy documented in rules/fr/cartes/README.md):
+ *  - intent : offensive / defensive / movement / support / healing / enhancement
+ *  - domain : melee / ranged / mental / physical / social
+ *  - effect : physicalDamage (💢/💔) · mentalDamage (🔻🔺 ou perte de ◇) ·
+ *             fatigueDamage (💧 infligée)
+ */
+export type CardTag =
+  | 'offensive' | 'defensive' | 'movement' | 'support' | 'healing' | 'enhancement'
+  | 'melee' | 'ranged' | 'mental' | 'physical' | 'social'
+  | 'physicalDamage' | 'mentalDamage' | 'fatigueDamage'
 
 // ─── Action economy ───────────────────────────────────────────────────────────
 
@@ -132,8 +155,12 @@ export interface CombatantState {
 /**
  * A single discrete combat effect — pure data, applied by `applyEffects()`.
  * All effects carry a `targetId` so they can be batch-applied to any state map.
+ *
+ * `targetPart` is set when the target is an adversary (body-part health model):
+ * the attacker declares the part before rolling, and wound effects land on it.
+ * Ignored for player-character targets.
  */
-export type CombatEffect = { targetId: string } & (
+export type CombatEffect = { targetId: string; targetPart?: string } & (
   | { kind: 'light-wound';    amount: number }
   | { kind: 'heavy-wound' }
   | { kind: 'heal-wounds';    amount: number }  // reduce lightWounds (floor 0)
@@ -146,6 +173,7 @@ export type CombatEffect = { targetId: string } & (
   | { kind: 'spend-reaction' }                  // defender uses a guard (costs 1 ⚡)
   | { kind: 'shift-mental';        direction: 'toward-terror' | 'toward-rage' | 'toward-focused' }
   | { kind: 'add-temp-protection'; amount: number }
+  | { kind: 'add-stability';       amount: number }  // ◇ adversaire (op de carte auto-ciblée) ; sans effet sur un PJ
 )
 
 // ─── Resolution records ───────────────────────────────────────────────────────
@@ -208,9 +236,14 @@ export interface CombatantSnapshot {
 /** Log entry for a single action within a phase */
 export interface ActionLogEntry {
   actorId:        string
-  action:         ActionId
+  /** ActionId for a player action; the card id (e.g. sickleStrike) for an adversary play */
+  action:         string
   targetId?:      string
+  /** Declared body part when the target is an adversary */
+  targetPart?:    string
   checkRoll?:     RollResult
+  /** Summed-dice roll when the actor is an adversary (checkRoll is then absent) */
+  adversaryRoll?: AdversaryRollResult
   guardId?:       GuardId
   guardRoll?:     RollResult
   threshold:      number
@@ -241,6 +274,8 @@ export interface RoundLog {
   phases:      PhaseLog[]
   /** Combatant vitals after wound overflow + hemorrhage tick */
   endOfRound:  CombatantSnapshot[]
+  /** Adversary vitals at round end (only present in mixed encounters) */
+  adversariesEndOfRound?: AdversarySnapshot[]
 }
 
 // ─── Combat log (top-level, written to /combatReports) ───────────────────────
