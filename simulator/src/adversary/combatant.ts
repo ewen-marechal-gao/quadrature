@@ -30,6 +30,13 @@ import type { AdversarySheet, AdversaryPart, AdversaryCardDef, AdversaryResource
 export type AdversaryMental = 'enraged' | 'focused' | 'panicked'
 const MENTAL_TRACK: AdversaryMental[] = ['enraged', 'focused', 'panicked']
 
+/** Display icon per adversary mental state (shared by simulate.ts and stats.ts). */
+export const ADVERSARY_MENTAL_ICONS: Record<AdversaryMental, string> = {
+  panicked: '😬',
+  focused:  '😐',
+  enraged:  '😠',
+}
+
 /** Default action points ⚫ per round when the sheet does not specify (kit not yet modelled). */
 export const DEFAULT_ADVERSARY_ACTIONS = 2
 

@@ -1,6 +1,45 @@
-import type { DieResult, PoolRolls, RollResult } from '../types'
+import type { DieResult, DieType, PoolRolls, RollResult } from '../types'
 import type { DicePool } from './pool'
 import { rollDie } from './dice'
+
+/**
+ * Reroll priority when several candidate dice tie for the lowest value.
+ * Reroll the 🟨 skill die first, then 🟪 weakened, then 🟦 characteristic, and
+ * the 🟫 reinforced (a strong die) last. Only characteristic/skill dice are
+ * relance candidates — never the wild ⬜/🟩/🟥.
+ */
+const REROLL_PRIORITY: Partial<Record<DieType, number>> = {
+  skill:          0,  // 🟨
+  weakened:       1,  // 🟪
+  characteristic: 2,  // 🟦
+  reinforced:     3,  // 🟫
+}
+
+/**
+ * Pick the single die a relance ⟳ should reroll: the worst (lowest value) among
+ * the characteristic and skill dice, breaking ties by REROLL_PRIORITY. Dice in
+ * `used` (already rerolled this roll) are skipped. Pure — no RNG.
+ */
+type RerollCandidate = { category: 'characteristic' | 'skill'; index: number; value: number; prio: number }
+
+export function worstRerollTarget(
+  rolls: PoolRolls,
+  used: Set<string> = new Set(),
+): { category: 'characteristic' | 'skill'; index: number } | null {
+  const candidates: RerollCandidate[] = []
+  const collect = (category: 'characteristic' | 'skill', dice: DieResult[]) => {
+    dice.forEach((d, index) => {
+      if (used.has(`${category}:${index}`)) return
+      candidates.push({ category, index, value: d.value, prio: REROLL_PRIORITY[d.type] ?? 9 })
+    })
+  }
+  collect('characteristic', rolls.characteristic)
+  collect('skill', rolls.skill)
+  if (candidates.length === 0) return null
+  // Worst value first; break ties by reroll priority (🟨 < 🟪 < 🟦 < 🟫).
+  candidates.sort((a, b) => a.value - b.value || a.prio - b.prio)
+  return { category: candidates[0].category, index: candidates[0].index }
+}
 
 /**
  * Step 2: roll all dice in the pool.
@@ -85,7 +124,21 @@ export function computeResult(rolls: PoolRolls, pool: DicePool): RollResult {
   }
 }
 
-/** Complete roll in one step (no manual rerolls) */
-export function roll(pool: DicePool): RollResult {
-  return computeResult(rollPool(pool), pool)
+/**
+ * Complete roll in one step, applying `rerolls` relances ⟳ before selection.
+ * Each relance rerolls the current worst char/skill die (worstRerollTarget),
+ * a die is never rerolled twice, and the final 4 kept dice are then selected.
+ */
+export function roll(pool: DicePool, rerolls = 0): RollResult {
+  let rolls = rollPool(pool)
+  if (rerolls > 0) {
+    const used = new Set<string>()
+    for (let i = 0; i < rerolls; i++) {
+      const target = worstRerollTarget(rolls, used)
+      if (!target) break
+      used.add(`${target.category}:${target.index}`)
+      rolls = rerollDice(rolls, [target])
+    }
+  }
+  return computeResult(rolls, pool)
 }

@@ -1,0 +1,19 @@
+﻿# Premier duel mixte : un personnage-joueur contre une créature du bestiaire.
+# L'adversaire est charge depuis data/bestiary/cards/faucheur.card.yaml”
+# résolution asymétrique (4 dés sommés vs garde du PJ ; garde fixe Esquive 10
+# quand le PJ attaque, dégats sur la partie du corps déclarée).
+name: Duel — le Boxeur contre le Faucheur
+description: >-
+  En lisière de canopé, un boxeur croise un Faucheur en chasse.
+maxRounds: 30
+factions:
+  - name: Aventuriers
+    characters:
+      - sheet: characterSheets/Brawler_powerful.yaml
+        persona: opportunist
+    allowedActions: [unarmed-attack, respiration]
+
+  - name: Faune d'Aeonir
+    characters:
+      - adversary: faucheur
+    allowedActions: []

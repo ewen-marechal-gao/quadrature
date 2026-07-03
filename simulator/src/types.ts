@@ -66,4 +66,9 @@ export interface RollParams {
    * use sacrifices (⛞) to upgrade 🟪 → 🟨.
    */
   skillBoosts?: number
+  /**
+   * Relances ⟳ : reroll the worst char/skill die, worst-first (see roll()).
+   * Sources include the mental track (Prudent/Agressif), equipment, disciplines.
+   */
+  rerolls?: number
 }

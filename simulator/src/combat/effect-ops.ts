@@ -31,6 +31,55 @@ export type EffectOp =
   | { gainStability: number }
   | { selfFatigue: number }
 
+// ─── Declarative action outcomes ──────────────────────────────────────────────
+
+/** One outcome tier: display text (rendered in notes) + shared effect ops. */
+export interface ActionOutcome {
+  text?:  string
+  effect: EffectOp[]
+}
+
+/**
+ * Declarative description of a target-directed action's results.
+ * onCritical / onFlaw are ADDITIVE to the success/failure base.
+ */
+export interface ActionOutcomes {
+  onSuccess:   ActionOutcome
+  onFailure:   ActionOutcome
+  onCritical?: ActionOutcome
+  onFlaw?:     ActionOutcome
+}
+
+/** Result flags of an action check, input to a resolver. */
+export interface OutcomeFlags { hit: boolean; critical: boolean; flaw: boolean }
+
+/**
+ * Generate a resolve() from declarative outcomes — the single generic
+ * interpreter shared by every standard action. Self-targeted ops (selfFatigue…)
+ * land on the actor; everything else on the target. Mirrors the legacy
+ * hand-written resolvers: no target → no effects (target-directed actions only).
+ */
+export function makeResolve(outcomes: ActionOutcomes) {
+  return (
+    { hit, critical, flaw }: OutcomeFlags,
+    actor:   { id: string },
+    target?: { id: string },
+  ): { effects: CombatEffect[]; notes: string[] } => {
+    if (!target) return { effects: [], notes: [] }
+    const effects: CombatEffect[] = []
+    const notes:   string[]       = []
+    const apply = (o: ActionOutcome | undefined, prefix: string) => {
+      if (!o) return
+      effects.push(...opsToCombatEffects(o.effect, target.id, actor.id))
+      if (o.text) notes.push(`${prefix} ${o.text}`)
+    }
+    apply(hit ? outcomes.onSuccess : outcomes.onFailure, hit ? '✅' : '❌')
+    if (flaw)     apply(outcomes.onFlaw, '⚠️')
+    if (critical) apply(outcomes.onCritical, '✴️')
+    return { effects, notes }
+  }
+}
+
 /** Interpret a list of ops into CombatEffects aimed at `targetId` (self ops at `selfId`). */
 export function opsToCombatEffects(
   ops:      EffectOp[],

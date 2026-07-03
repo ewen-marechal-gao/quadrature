@@ -33,6 +33,20 @@ export const MENTAL_STATES: MentalState[] = [
   'enraged', 'furious', 'aggressive', 'focused', 'cautious', 'panicked', 'terrified',
 ]
 
+/**
+ * Display icon per mental state, consistent with intensity: neutral 😐 at the
+ * centre, growing fear toward 😱 and growing rage toward 😡.
+ */
+export const MENTAL_ICONS: Record<MentalState, string> = {
+  terrified:  '😱',
+  panicked:   '😨',
+  cautious:   '🤨',
+  focused:    '😑',
+  aggressive: '😠',
+  furious:    '😤',
+  enraged:    '😡',
+}
+
 // ─── Status effects ───────────────────────────────────────────────────────────
 
 export type StatusEffect =
@@ -121,6 +135,14 @@ export interface CombatantState {
   fatigue: number
   /** Current position on the mental state track */
   mentalState: MentalState
+  /**
+   * Stability tokens ◇ (§ Stabilité = Ténacité + Discipline). A combat-long
+   * pool set at initialisation: each 🔻/🔺 mental shift may be absorbed by
+   * spending one ◇ instead of moving the track. It does NOT refill each round
+   * (no recovery rule yet) — unlike the adversary ◇, which regenerates from
+   * intact body-part blocks.
+   */
+  stability: number
   /** Active status effects */
   status: StatusEffect[]
 
@@ -224,6 +246,8 @@ export interface CombatantSnapshot {
   heavyWounds:    number
   fatigue:        number
   mentalState:    MentalState
+  /** Stability tokens ◇ remaining at this moment (mental-shock buffer) */
+  stability:      number
   status:         StatusEffect[]
   /** Only characteristics that have at least 1 wound (saves space) */
   charWounds:     Partial<Record<CharacteristicName, number>>
@@ -283,6 +307,8 @@ export interface RoundLog {
 export interface CombatantSummary {
   id:       string
   charName: string
+  /** Faction (team) this combatant fights for — the unit victory is keyed on. */
+  faction?: string
   people?:  string
   origin?:  string
   /** Characteristic values at combat start */
@@ -292,6 +318,8 @@ export interface CombatantSummary {
 }
 
 export type CombatOutcome =
+  // victorId is the winning FACTION's name (a faction wins when every opposing
+  // combatant is defeated) — not an individual combatant.
   | { kind: 'victor';               victorId: string; rounds: number }
   | { kind: 'mutual-incapacitation';                  rounds: number }
   | { kind: 'max-rounds-reached';                     rounds: number }

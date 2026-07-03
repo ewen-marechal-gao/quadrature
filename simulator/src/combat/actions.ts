@@ -26,9 +26,16 @@ import type {
 } from './types'
 import type { AdversaryCombatant } from '../adversary/combatant'
 import { buildPool, roll } from '../dieSystem'
-import { effChar, isDefeated } from './combatant'
+import { effChar, isDefeated, mentalRollModifiers, canReact } from './combatant'
 import { STATUS_DEFS } from './status'
-import { opsToCombatEffects, type EffectOp } from './effect-ops'
+import { loadPlayerActionDefs } from './actions-data'
+
+// Grammaire et interpréteur déclaratifs : ré-exportés depuis effect-ops.ts
+// (les issues elles-mêmes vivent dans data/player_actions.yaml).
+export {
+  makeResolve, type ActionOutcome, type ActionOutcomes, type OutcomeFlags,
+} from './effect-ops'
+import type { ActionOutcomes } from './effect-ops'
 
 // ─── Attack target ────────────────────────────────────────────────────────────
 
@@ -39,54 +46,6 @@ import { opsToCombatEffects, type EffectOp } from './effect-ops'
  * ActionDef.resolve implementations only ever read `target.id`.
  */
 export type AttackTarget = CombatantState | AdversaryCombatant
-
-// ─── Declarative outcomes ─────────────────────────────────────────────────────
-
-/** One outcome tier: display text (rendered in notes) + shared effect ops. */
-export interface ActionOutcome {
-  text?:  string
-  effect: EffectOp[]
-}
-
-/**
- * Declarative description of a target-directed action's results — the data
- * that will migrate to YAML (chantier « unification des actions », étape 3).
- * onCritical / onFlaw are ADDITIVE to the success/failure base.
- */
-export interface ActionOutcomes {
-  onSuccess:   ActionOutcome
-  onFailure:   ActionOutcome
-  onCritical?: ActionOutcome
-  onFlaw?:     ActionOutcome
-}
-
-/**
- * Generate a resolve() from declarative outcomes — the single generic
- * interpreter shared by every standard action. Self-targeted ops (selfFatigue…)
- * land on the actor; everything else on the target. Mirrors the legacy
- * hand-written resolvers: no target → no effects (offensive actions only).
- */
-export function makeResolve(outcomes: ActionOutcomes): ActionDef['resolve'] {
-  return ({ hit, critical, flaw }, actor, target) => {
-    if (!target) return { effects: [], notes: [] }
-    const effects: CombatEffect[] = []
-    const notes:   string[]       = []
-    const apply = (o: ActionOutcome | undefined, prefix: string) => {
-      if (!o) return
-      effects.push(...opsToCombatEffects(o.effect, target.id, actor.id))
-      if (o.text) notes.push(`${prefix} ${o.text}`)
-    }
-    apply(hit ? outcomes.onSuccess : outcomes.onFailure, hit ? '✅' : '❌')
-    if (flaw)     apply(outcomes.onFlaw, '⚠️')
-    if (critical) apply(outcomes.onCritical, '✴️')
-    return { effects, notes }
-  }
-}
-
-/** Def fragment: declared outcomes + their generated resolver, in one spread. */
-function actionOutcomes(outcomes: ActionOutcomes): Pick<ActionDef, 'outcomes' | 'resolve'> {
-  return { outcomes, resolve: makeResolve(outcomes) }
-}
 
 // ─── ActionDef ────────────────────────────────────────────────────────────────
 
@@ -204,10 +163,14 @@ export interface ActionContext {
 
 // ─── Guard factories ──────────────────────────────────────────────────────────
 
-/** Build a `rollDC` function from a static char + skill pair */
+/** Build a `rollDC` function from a static char + skill pair (a guard is a DEFENSIVE roll). */
 function makeGuardRoll(char: CharacteristicName, skill: SkillName) {
-  return (snap: CombatantState): RollResult =>
-    roll(buildPool(rollParamsFrom(snap, char, skill)))
+  return (snap: CombatantState): RollResult => {
+    const { rerolls, disadvantages } = mentalRollModifiers(snap.mentalState, 'defensive')
+    const params = rollParamsFrom(snap, char, skill,
+      disadvantages > 0 ? { disadvantages } : {})
+    return roll(buildPool(params), rerolls)
+  }
 }
 
 /**
@@ -250,7 +213,7 @@ export function rollParamsFrom(
   state:    CombatantState,
   charName: CharacteristicName,
   skill:    SkillName,
-  opts:     Pick<RollParams, 'advantages' | 'disadvantages'> = {},
+  opts:     Pick<RollParams, 'advantages' | 'disadvantages' | 'rerolls'> = {},
 ): RollParams {
   const statusDisadvantages = state.status.reduce(
     (sum, id) => sum + (STATUS_DEFS[id]?.rollDisadvantage ?? 0),
@@ -265,197 +228,13 @@ export function rollParamsFrom(
 }
 
 // ─── Action definitions ───────────────────────────────────────────────────────
+//
+// Les définitions d'actions vivent dans data/player_actions.yaml (source
+// structurée, anglais + Locale) : métadonnées, tags et issues déclaratives ;
+// resolve() est généré par makeResolve, les customs (Respiration, Stabiliser)
+// sont branchés via le registre action-resolvers.ts. Chargement synchrone.
 
-export const ACTION_DEFS: Record<ActionId, ActionDef> = {
-
-  // ── Attaque armée ────────────────────────────────────────────────────────────
-  'armed-attack': {
-    id: 'armed-attack', label: 'Attaque armée',
-    description: 'Frappe avec une arme. Succès : 3💢 sur la cible, Échec : 1💢. Critique : cible à terre 🔻. Défaut : +1💧 pour toi.',
-    initiative: 5,
-    cost: { actions: 2, reactions: 0, fatigue: 0, endPlayerRound: false },
-    tags: ['offensive', 'melee', 'physical', 'physicalDamage'],
-    requiresFirstAction: false,
-    rollChar: 'strength', rollSkill: 'power',
-    selfTargeted: false,
-    resolve({ hit, critical, flaw }, actor, target) {
-      if (!target) return { effects: [], notes: [] }
-      const fx: CombatEffect[] = []
-      const notes: string[]    = []
-      fx.push({ targetId: target.id, kind: 'light-wound', amount: hit ? 3 : 1 })
-      notes.push(hit ? '✅ Touché — 3💢' : '❌ Égratigné — 1💢')
-      if (flaw) {
-        fx.push({ targetId: actor.id, kind: 'add-fatigue', amount: 1 })
-        notes.push('⚠️ Maladresse — attaquant +1💧')
-      }
-      if (critical) {
-        fx.push({ targetId: target.id, kind: 'add-status', status: 'knockdown' })
-        notes.push('✴️ Critique — cible à terre 🔻')
-      }
-      return { effects: fx, notes }
-    },
-  },
-
-  // ── Attaque à mains nues ──────────────────────────────────────────────────────
-  // Cannot be absorbed (Encaisser) — only Esquive / Parade / Dérobade.
-  // Guard validity is the GuardProvider's responsibility (agent level).
-  'unarmed-attack': {
-    id: 'unarmed-attack', label: 'Attaque à mains nues',
-    description: 'Attaque rapide sans arme, inflige de la fatigue. Succès : 3💧 sur la cible, Échec : 1💧. Critique : cible sonnée 💫. Défaut : +1💧 pour toi. Ne peut être encaissée.',
-    initiative: 3,
-    cost: { actions: 1, reactions: 0, endPlayerRound: false },
-    tags: ['offensive', 'melee', 'physical', 'fatigueDamage'],
-    requiresFirstAction: false,
-    rollChar: 'strength', rollSkill: 'power',
-    selfTargeted: false,
-    resolve({ hit, critical, flaw }, actor, target) {
-      if (!target) return { effects: [], notes: [] }
-      const fx: CombatEffect[] = []
-      const notes: string[]    = []
-      fx.push({ targetId: target.id, kind: 'add-fatigue', amount: hit ? 3 : 1 })
-      notes.push(hit ? '✅ Touché — 3💧' : '❌ Effleuré — 1💧')
-      if (flaw) {
-        fx.push({ targetId: actor.id, kind: 'add-fatigue', amount: 1 })
-        notes.push('⚠️ Maladresse — attaquant +1💧')
-      }
-      if (critical) {
-        fx.push({ targetId: target.id, kind: 'add-status', status: 'stunned' })
-        notes.push('✴️ Critique — cible sonnée 💫')
-      }
-      return { effects: fx, notes }
-    },
-  },
-
-  // ── Frappe brutale ────────────────────────────────────────────────────────────
-  'brutal-strike': {
-    id: 'brutal-strike', label: 'Frappe brutale',
-    description: 'Coup dévastateur à haut risque. Succès : 1💔 blessure grave, Échec : 2💢. Critique : cible sonnée 💫. Coûte 1💧 à toi en plus des PA.',
-    initiative: 6,
-    cost: { actions: 2, reactions: 0, endPlayerRound: false, fatigue: 2 },
-    tags: ['offensive', 'melee', 'physical', 'physicalDamage'],
-    prerequisite: { skill: 'power', minValue: 1 },
-    requiresFirstAction: false,
-    rollChar: 'strength', rollSkill: 'power',
-    selfTargeted: false,
-    resolve({ hit, critical }, _actor, target) {
-      if (!target) return { effects: [], notes: [] }
-      const fx: CombatEffect[] = []
-      const notes: string[]    = []
-      if (hit) {
-        fx.push({ targetId: target.id, kind: 'heavy-wound' })
-        notes.push('✅ Touché — 1💔 blessure grave')
-      } else {
-        fx.push({ targetId: target.id, kind: 'light-wound', amount: 2 })
-        notes.push('❌ Raté — 2💢')
-      }
-      if (critical) {
-        fx.push({ targetId: target.id, kind: 'add-status', status: 'stunned' })
-        notes.push('✴️ Critique — cible sonnée 💫')
-      }
-      return { effects: fx, notes }
-    },
-  },
-
-  // ── Frappe vive ───────────────────────────────────────────────────────────────
-  'sharp-strike': {
-    id: 'sharp-strike', label: 'Frappe vive',
-    description: 'Attaque agile et précise. Succès : 2💢, Échec : 1💢. Critique : hémorragie 🩸 sur la cible. Défaut : +1💧 pour toi. Coûte 1💧 à toi en plus des PA.',
-    initiative: 3,
-    cost: { actions: 1, reactions: 0, endPlayerRound: false, fatigue: 1 },
-    tags: ['offensive', 'melee', 'physical', 'physicalDamage'],
-    prerequisite: { skill: 'precision', minValue: 1 },
-    requiresFirstAction: false,
-    rollChar: 'agility', rollSkill: 'precision',
-    selfTargeted: false,
-    resolve({ hit, critical, flaw }, actor, target) {
-      if (!target) return { effects: [], notes: [] }
-      const fx: CombatEffect[] = []
-      const notes: string[]    = []
-      fx.push({ targetId: target.id, kind: 'light-wound', amount: hit ? 2 : 1 })
-      notes.push(hit ? '✅ Touché — 2💢' : '❌ Égratigné — 1💢')
-      if (flaw) {
-        fx.push({ targetId: actor.id, kind: 'add-fatigue', amount: 1 })
-        notes.push('⚠️ Maladresse — attaquant +1💧')
-      }
-      if (critical) {
-        fx.push({ targetId: target.id, kind: 'add-status', status: 'hemorrhage' })
-        notes.push('✴️ Critique — hémorragie 🩸')
-      }
-      return { effects: fx, notes }
-    },
-  },
-
-  // ── Respiration ───────────────────────────────────────────────────────────────
-  'respiration': {
-    id: 'respiration', label: 'Respiration',
-    description: 'Régulation du souffle (première action uniquement). Retire Essoufflé 💨 toujours. Succès : retire (1 + Endurance)💧. Critique : +1💧 bonus. Échec : retire 1💧. Défaut : perd 1 PA. DD = fatigue actuelle.',
-    initiative: 1,
-    cost: { actions: 1, reactions: 0, endPlayerRound: false },
-    tags: ['support', 'healing', 'physical'],
-    prerequisite: { skill: 'endurance', minValue: 1 },
-    requiresFirstAction: true,
-    rollChar: 'vigor', rollSkill: 'endurance',
-    selfTargeted: true,
-    getDC: (actor) => actor.fatigue,
-    resolve({ hit, critical, flaw }, actor) {
-      const aId = actor.id
-      const fx: CombatEffect[] = []
-      const notes: string[]    = []
-      // Immediate: remove winded (always fires regardless of roll)
-      fx.push({ targetId: aId, kind: 'remove-status', status: 'winded' })
-      // Fatigue recovery
-      const endurance  = actor.skills.endurance
-      const baseAmount = hit ? 1 + endurance : 1
-      const bonus      = critical ? 1 : 0
-      fx.push({ targetId: aId, kind: 'remove-fatigue', amount: baseAmount + bonus })
-      notes.push(hit
-        ? `✅ Récupération — retire ${baseAmount + bonus}💧` + (critical ? ' (✴️ +1)' : '')
-        : '❌ Partiel — retire 1💧')
-      if (flaw) {
-        fx.push({ targetId: aId, kind: 'spend-actions', amount: 1 })
-        notes.push('⚠️ Maladresse — perd 1 PA')
-      }
-      return { effects: fx, notes }
-    },
-  },
-
-  // ── Stabiliser ────────────────────────────────────────────────────────────────
-  'stabilize': {
-    id: 'stabilize', label: 'Stabiliser',
-    description: 'Premiers soins (première action uniquement). Retire Hémorragie 🩸 toujours. Succès : soigne (1 + Récupération)💢. Critique : +1⚡. Échec : soigne 1💢. Défaut : perd 1 PA. DD = 8 + blessures graves.',
-    initiative: 1,
-    cost: { actions: 1, reactions: 0, endPlayerRound: false },
-    tags: ['support', 'healing', 'physical'],
-    prerequisite: { skill: 'recovery', minValue: 1 },
-    requiresFirstAction: true,
-    rollChar: 'vigor', rollSkill: 'recovery',
-    selfTargeted: true,
-    getDC: (actor) => 8 + actor.heavyWounds,
-    resolve({ hit, critical, flaw }, actor) {
-      const aId = actor.id
-      const fx: CombatEffect[] = []
-      const notes: string[]    = []
-      // Immediate: remove hemorrhage (always fires regardless of roll)
-      fx.push({ targetId: aId, kind: 'remove-status', status: 'hemorrhage' })
-      // Light wound healing
-      const recovery   = actor.skills.recovery
-      const healAmount = hit ? 1 + recovery : 1
-      fx.push({ targetId: aId, kind: 'heal-wounds', amount: healAmount })
-      notes.push(hit
-        ? `✅ Stabilisation — soigne ${healAmount}💢`
-        : '❌ Partiel — soigne 1💢')
-      if (critical) {
-        fx.push({ targetId: aId, kind: 'add-reaction', amount: 1 })
-        notes.push('✴️ Critique — gagne 1⚡')
-      }
-      if (flaw) {
-        fx.push({ targetId: aId, kind: 'spend-actions', amount: 1 })
-        notes.push('⚠️ Maladresse — perd 1 PA')
-      }
-      return { effects: fx, notes }
-    },
-  },
-}
+export const ACTION_DEFS: Record<ActionId, ActionDef> = loadPlayerActionDefs()
 
 // ─── Guard definitions ────────────────────────────────────────────────────────
 
@@ -556,10 +335,16 @@ export function resolveAction(
     ? (GUARD_DEFS[ctx.guardId].attackerAdvantage ?? 0)
     : 0
   const totalAdvantages = targetAdvantages + guardAdvantage
-  const checkRoll = roll(buildPool(
-    rollParamsFrom(actorSnapshot, action.rollChar, action.rollSkill,
-      totalAdvantages > 0 ? { advantages: totalAdvantages } : {}),
-  ))
+  // Mental track: an attack is an OFFENSIVE roll (self-targeted actions are neither).
+  const mentalMods = action.selfTargeted
+    ? { rerolls: 0, disadvantages: 0 }
+    : mentalRollModifiers(actorSnapshot.mentalState, 'offensive')
+  const params = rollParamsFrom(actorSnapshot, action.rollChar, action.rollSkill, {
+    ...(totalAdvantages > 0 ? { advantages: totalAdvantages } : {}),
+    ...(mentalMods.disadvantages > 0 ? { disadvantages: mentalMods.disadvantages } : {}),
+    ...(mentalMods.rerolls > 0 ? { rerolls: mentalMods.rerolls } : {}),
+  })
+  const checkRoll = roll(buildPool(params), params.rerolls ?? 0)
 
   const hit      = checkRoll.total >= ctx.dc
   const critical = checkRoll.critical
@@ -619,8 +404,12 @@ export function canAffordAction(state: CombatantState, actionId: ActionId): bool
 
 /** True if the defender has reactions available and the guard is usable */
 export function canUseGuard(state: CombatantState, guardId: GuardId): boolean {
-  return state.reactions >= GUARD_DEFS[guardId].cost.reactions
-      && GUARD_DEFS[guardId].isAvailable(state)
+  const def = GUARD_DEFS[guardId]
+  // Terrifié : impossible d'effectuer des réactions ⚡ → seules les gardes
+  // gratuites (Encaisser, 0⚡) restent disponibles.
+  if (def.cost.reactions > 0 && !canReact(state)) return false
+  return state.reactions >= def.cost.reactions
+      && def.isAvailable(state)
 }
 
 /** All guards currently available to this combatant */

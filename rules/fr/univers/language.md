@@ -509,12 +509,12 @@ Un prénom est un **vœu** : on ne compose qu'avec les **vertus**. Les runes de 
 
 ### Syldor
 
-| Féminin | Composition — sens | Masculin | Composition — sens |
-|---|---|---|---|
-| *Ælilav* | Æli·Lav — fleur douce | *Sylkrân* | Syl·Krân — arbre vaillant |
-| *Lælzil* | Læl·Zil — feuille vive | *Torfâth* | Tor·Fâth — bois loyal |
+| Féminin  | Composition — sens       | Masculin   | Composition — sens           |
+| -------- | ------------------------ | ---------- | ---------------------------- |
+| *Ælilav* | Æli·Lav — fleur douce    | *Sylkrân*  | Syl·Krân — arbre vaillant    |
+| *Lælzil* | Læl·Zil — feuille vive   | *Torfâth*  | Tor·Fâth — bois loyal        |
 | *Vynsan* | Vyn·San — pousse modeste | *Roshkrân* | Rosh·Krân — écorce vaillante |
-| *Ælinir* | Æli·Nir — fleur verte | *Syldâr* | Syl·Dâr — arbre aigu |
+| *Ælinir* | Æli·Nir — fleur verte    | *Syldâr*   | Syl·Dâr — arbre aigu         |
 
 ### Vaedor
 

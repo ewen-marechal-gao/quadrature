@@ -26,7 +26,7 @@ import { roll, buildPool } from '../dieSystem'
  */
 export function initCombatant(char: Character): CombatantState {
   const reactivity = char.skills.reactivity
-  return {
+  const base: CombatantState = {
     id:                char.name,
     char,
     characteristics:   structuredClone(char.characteristics),
@@ -35,6 +35,7 @@ export function initCombatant(char: Character): CombatantState {
     heavyWounds:       0,
     fatigue:           0,
     mentalState:       'focused',
+    stability:         0,   // set below via stabilityPool (needs the built state)
     status:            [],
     protection:        char.protection ?? 0,
     tempProtection:    0,
@@ -44,6 +45,16 @@ export function initCombatant(char: Character): CombatantState {
     reactions:         reactivity,
     maxReactions:      reactivity,
   }
+  return { ...base, stability: stabilityPool(base) }
+}
+
+/**
+ * Stability ◇ pool (§ Stabilité = Ténacité ✪ + Discipline ✫).
+ * Combat-long buffer against mental shocks, set once at initialisation. It does
+ * not regenerate between rounds (no recovery rule yet).
+ */
+export function stabilityPool(state: CombatantState): number {
+  return effChar(state, 'tenacity') + state.skills.discipline
 }
 
 /**
@@ -79,6 +90,9 @@ export function resetRoundTokens(state: CombatantState): CombatantState {
     lastActionPlayed:  false,
     status:            newStatus,
     reactions:         state.maxReactions + focusedBonus,
+    // NB : ◇ Stabilité n'est PAS rechargé chaque manche — c'est un pool de
+    // combat (§ Stabilité) fixé à l'initialisation, qui se dépense et ne se
+    // régénère pas (aucune règle de récupération pour l'instant).
   }
 
   // ── Test d'Endurance (phase d'entretien) ────────────────────────────────────
@@ -137,6 +151,9 @@ export function resetRoundTokensWithLog(
     lastActionPlayed:  false,
     status:            newStatus,
     reactions:         state.maxReactions + focusedBonus,
+    // NB : ◇ Stabilité n'est PAS rechargé chaque manche — c'est un pool de
+    // combat (§ Stabilité) fixé à l'initialisation, qui se dépense et ne se
+    // régénère pas (aucune règle de récupération pour l'instant).
   }
 
   let maintenanceEntry: MaintenanceEntry | null = null
@@ -218,7 +235,10 @@ export function spendActionCost(state: CombatantState, cost: ActionCost): Combat
   }
   if (cost.endPlayerRound) s = { ...s, lastActionPlayed: true }
   if (cost.reactions > 0)  s = { ...s, reactions: Math.max(0, s.reactions - cost.reactions) }
-  if ((cost.fatigue ?? 0) > 0) s = addFatigue(s, cost.fatigue!)
+  // Enragé : +1 fatigue 💧 supplémentaire à chaque action (§ Piste des États Mentaux)
+  const enragedFatigue = state.mentalState === 'enraged' ? 1 : 0
+  const totalFatigue = (cost.fatigue ?? 0) + enragedFatigue
+  if (totalFatigue > 0) s = addFatigue(s, totalFatigue)
   return s
 }
 
@@ -365,20 +385,71 @@ export function removeFatigue(state: CombatantState, amount: number): CombatantS
 
 // ─── Mental state ─────────────────────────────────────────────────────────────
 
-/** Shift 1 step along the mental state track toward calm (higher index) or rage (lower) */
+/**
+ * Shift one step along the mental track (§ État mental + Stabilité).
+ *
+ * MENTAL_STATES is ordered enraged(0) … focused(3) … terrified(6):
+ *  - 🔻 toward-terror → toward terrified (index +1)
+ *  - 🔺 toward-rage   → toward enraged   (index −1)
+ *  - toward-focused   → recovery toward 'focused' (index 3) — beneficial
+ *
+ * A 🔻/🔺 shock is first ABSORBED by a Stability token ◇ when available: the
+ * character spends one ◇ instead of moving the track. Recovery (toward-focused)
+ * is never buffered.
+ */
 export function shiftMentalState(
   state:     CombatantState,
-  direction: 'toward-terror' | 'toward-rage' | 'toward-focused', 
+  direction: 'toward-terror' | 'toward-rage' | 'toward-focused',
 ): CombatantState {
+  const idx = MENTAL_STATES.indexOf(state.mentalState)
 
-  const level = MENTAL_STATES.indexOf(state.mentalState) - 3
   if (direction === 'toward-focused') {
-    const newLevel = level < 0 ? level + 1 : Math.max(0, level - 1)
-    return { ...state, mentalState: MENTAL_STATES[newLevel + 3] }
-  } else {
-    const newLevel = direction === 'toward-terror' ? Math.max(level - 1, -3) : Math.min(level + 1, 3)
-    return { ...state, mentalState: MENTAL_STATES[newLevel + 3] }
+    const FOCUSED = 3
+    const next = idx < FOCUSED ? idx + 1 : idx > FOCUSED ? idx - 1 : idx
+    return { ...state, mentalState: MENTAL_STATES[next] }
   }
+
+  // Stability ◇ absorbs the shock before the track moves.
+  if (state.stability > 0) {
+    return { ...state, stability: state.stability - 1 }
+  }
+
+  const step = direction === 'toward-terror' ? 1 : -1
+  const next = Math.max(0, Math.min(MENTAL_STATES.length - 1, idx + step))
+  return { ...state, mentalState: MENTAL_STATES[next] }
+}
+
+/**
+ * Roll modifiers from the mental track (§ Piste des États Mentaux), cumulative
+ * by threshold. MENTAL_STATES: enraged(0) … focused(3) … terrified(6).
+ *
+ *  Fear side  — Prudent(4)+  : +1 relance ⟳ on DEFENSIVE rolls
+ *               Paniqué(5)+  : 🟥 on OFFENSIVE rolls
+ *  Rage side  — Agressif(2)- : +1 relance ⟳ on OFFENSIVE rolls
+ *               Furieux(1)-  : 🟥 on DEFENSIVE rolls
+ *
+ * Concentré's +1 reaction, Terrifié's no-reaction and Enragé's +1 fatigue are
+ * handled at their own sites (resetRoundTokens / canUseGuard / spendActionCost).
+ */
+export function mentalRollModifiers(
+  state:   MentalState,
+  context: 'offensive' | 'defensive',
+): { rerolls: number; disadvantages: number } {
+  const idx = MENTAL_STATES.indexOf(state)
+  let rerolls = 0, disadvantages = 0
+  if (context === 'defensive') {
+    if (idx >= 4) rerolls += 1        // Prudent ou plus vers la Peur
+    if (idx <= 1) disadvantages += 1  // Furieux ou plus vers la Colère
+  } else {
+    if (idx <= 2) rerolls += 1        // Agressif ou plus vers la Colère
+    if (idx >= 5) disadvantages += 1  // Paniqué ou plus vers la Peur
+  }
+  return { rerolls, disadvantages }
+}
+
+/** Terrifié : « Impossible d'effectuer des réactions ⚡ » — gate for active guards. */
+export function canReact(state: CombatantState): boolean {
+  return state.mentalState !== 'terrified'
 }
 
 // ─── Status effects ───────────────────────────────────────────────────────────
@@ -455,7 +526,7 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'spend-reaction':      return spendReaction(s)
     case 'shift-mental':        return shiftMentalState(s, effect.direction)
     case 'add-temp-protection': return { ...s, tempProtection: s.tempProtection + effect.amount }
-    case 'add-stability':       return s  // ◇ n'existe que sur les adversaires (routé par actor.ts)
+    case 'add-stability':       return { ...s, stability: s.stability + effect.amount }
   }
 }
 
@@ -491,6 +562,7 @@ export function toCombatantSnapshot(state: CombatantState): CombatantSnapshot {
     heavyWounds:    state.heavyWounds,
     fatigue:        state.fatigue,
     mentalState:    state.mentalState,
+    stability:      state.stability,
     status:         [...state.status],
     charWounds,
     protection:     state.protection,

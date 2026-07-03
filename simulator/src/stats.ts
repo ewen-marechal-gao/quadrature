@@ -8,8 +8,11 @@
  * In single-run mode values are exact; "avg" labels are omitted.
  */
 
-import type { CombatLog, ActionId, GuardId } from './combat/types'
+import type { CombatLog, ActionId, GuardId, MentalState } from './combat/types'
+import { MENTAL_ICONS }                       from './combat/types'
 import { ACTION_DEFS, GUARD_DEFS }           from './combat/actions'
+import type { AdversaryMental }              from './adversary/combatant'
+import { ADVERSARY_MENTAL_ICONS }            from './adversary/combatant'
 
 // ─── Accumulator ──────────────────────────────────────────────────────────────
 
@@ -26,6 +29,30 @@ function pushAcc(a: Acc, v: number): void {
 function accAvg(a: Acc): number     { return a.n ? a.sum / a.n : 0 }
 function accMin(a: Acc): number     { return a.n ? a.min : 0 }
 function accMax(a: Acc): number     { return a.n ? a.max : 0 }
+
+// ─── Terminal width-aware padding ──────────────────────────────────────────────
+//
+// padStart/padEnd count UTF-16 code units, but emoji occupy 2 terminal columns
+// while their JS length varies (😱 → 2, 🛡️ → 3 with its variation selector).
+// This drifts columns progressively once emoji headers are involved. vwidth /
+// padv account for the *visual* width instead.
+
+/** Visual width of a string in terminal columns (emoji ≈ 2, VS-16 = 0). */
+function vwidth(s: string): number {
+  let w = 0
+  for (const ch of s) {
+    const cp = ch.codePointAt(0)!
+    if (cp === 0xfe0f) continue                                  // variation selector → 0
+    w += (cp >= 0x1f000 || (cp >= 0x2600 && cp <= 0x27bf)) ? 2 : 1  // emoji/dingbats → 2
+  }
+  return w
+}
+
+/** Pad `s` to `target` visual columns (right-aligned by default). */
+function padv(s: string, target: number, align: 'left' | 'right' = 'right'): string {
+  const gap = ' '.repeat(Math.max(0, target - vwidth(s)))
+  return align === 'right' ? gap + s : s + gap
+}
 
 // ─── Stat shapes ──────────────────────────────────────────────────────────────
 
@@ -75,6 +102,20 @@ interface VitalAcc {
   heavyWounds: Acc
   /** Base protection remaining at end of round (tempProtection is always 0 at snapshot time) */
   protection:  Acc
+  /** Stability ◇ remaining at end of round */
+  stability:   Acc
+}
+
+/** End-of-round vitals accumulator for an adversary (§ Progression adversaire). */
+interface AdvVitalAcc {
+  fatigue:        Acc
+  /** Fatigue death-clock size (constant per adversary). */
+  fatigueMax:     number
+  stability:      Acc  // ◇
+  endurance:      Acc  // 🫁
+  evasion:        Acc  // 🍀
+  /** Number of destroyed body parts (weapons included). */
+  partsDestroyed: Acc
 }
 
 export interface ComputedStats {
@@ -88,6 +129,12 @@ export interface ComputedStats {
   totalDurationMs: number
   /** [charId][round] end-of-round vitals across runs */
   vitalsByRound:   Record<string, Record<number, VitalAcc>>
+  /** [charId][round][mentalState] → count of runs in that state at end of round */
+  mentalByRound:   Record<string, Record<number, Partial<Record<MentalState, number>>>>
+  /** [advId][round] end-of-round adversary vitals across runs */
+  advVitalsByRound: Record<string, Record<number, AdvVitalAcc>>
+  /** [advId][round][adversaryMentalState] → count of runs in that state */
+  advMentalByRound: Record<string, Record<number, Partial<Record<AdversaryMental, number>>>>
   /**
    * [charId] vitals at the END of each run — the resources the fight cost.
    * A 100 % win rate can hide a pyrrhic fight: what gets balanced is how many
@@ -99,6 +146,12 @@ export interface ComputedStats {
   actionStats:     Record<string, Record<string, ActionStat>>
   /** [defCharId][guardId] */
   guardStats:      Record<string, Record<string, GuardStat>>
+  /**
+   * [charId] total defensive reaction tokens ⚡ spent (one spend-reaction per
+   * active guard used). Measures how actively a combatant defends — a PC that
+   * only ever Encaisse (free) spends 0.
+   */
+  reactionsUsed:   Record<string, number>
   /** [charId][statusId] — how many times each status was applied */
   statusCounts:    Record<string, Record<string, number>>
 }
@@ -119,7 +172,11 @@ function mkGuardStat(): GuardStat {
 }
 
 function mkVitalAcc(): VitalAcc {
-  return { fatigue: mkAcc(), lightWounds: mkAcc(), heavyWounds: mkAcc(), protection: mkAcc() }
+  return { fatigue: mkAcc(), lightWounds: mkAcc(), heavyWounds: mkAcc(), protection: mkAcc(), stability: mkAcc() }
+}
+
+function mkAdvVitalAcc(fatigueMax: number): AdvVitalAcc {
+  return { fatigue: mkAcc(), fatigueMax, stability: mkAcc(), endurance: mkAcc(), evasion: mkAcc(), partsDestroyed: mkAcc() }
 }
 
 // ─── Core aggregation ────────────────────────────────────────────────────────
@@ -129,7 +186,13 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
 
   const charNames = logs[0]!.combatants.map(c => c.id)
 
-  const wins: Record<string, number>   = Object.fromEntries(charNames.map(n => [n, 0]))
+  // Victories are keyed by FACTION (outcome.victorId is a faction name). Fall
+  // back to combatant ids for older logs that predate the faction field.
+  const factionNames = [...new Set(
+    logs[0]!.combatants.map(c => c.faction).filter((f): f is string => !!f),
+  )]
+  const winKeys = factionNames.length > 0 ? factionNames : charNames
+  const wins: Record<string, number>   = Object.fromEntries(winKeys.map(n => [n, 0]))
   let mutual = 0, timeout = 0
 
   const rounds:   Acc                          = mkAcc()
@@ -137,16 +200,22 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
   let totalDurationMs = 0
 
   const vitalsByRound:  Record<string, Record<number, VitalAcc>>    = {}
+  const mentalByRound:  Record<string, Record<number, Partial<Record<MentalState, number>>>> = {}
+  const advVitalsByRound: Record<string, Record<number, AdvVitalAcc>> = {}
+  const advMentalByRound: Record<string, Record<number, Partial<Record<AdversaryMental, number>>>> = {}
   const finalVitals:    Record<string, VitalAcc>                    = {}
   const endurance:      Record<string, EnduranceStat>               = {}
   const actionStats:    Record<string, Record<string, ActionStat>>  = {}
   const guardStats:     Record<string, Record<string, GuardStat>>   = {}
+  const reactionsUsed:  Record<string, number>                      = {}
   const statusCounts:   Record<string, Record<string, number>>      = {}
 
   for (const name of charNames) {
     vitalsByRound[name] = {}
+    mentalByRound[name] = {}
     finalVitals[name]   = mkVitalAcc()
     endurance[name]     = { tests: 0, successes: 0, roll: mkAcc(), dd: mkAcc() }
+    reactionsUsed[name] = 0
     statusCounts[name]  = {}
   }
 
@@ -191,6 +260,33 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
         pushAcc(vr.lightWounds, snap.lightWounds)
         pushAcc(vr.heavyWounds, snap.heavyWounds)
         pushAcc(vr.protection,  snap.protection)
+        pushAcc(vr.stability,   snap.stability)
+
+        // Mental-state distribution for this round
+        const mbr = mentalByRound[snap.id]!
+        if (!mbr[round.round]) mbr[round.round] = {}
+        const dist = mbr[round.round]!
+        dist[snap.mentalState] = (dist[snap.mentalState] ?? 0) + 1
+      }
+
+      // Adversary vitals + mental — end-of-round snapshots
+      for (const snap of round.adversariesEndOfRound ?? []) {
+        if (!advVitalsByRound[snap.id]) advVitalsByRound[snap.id] = {}
+        if (!advVitalsByRound[snap.id]![round.round]) {
+          advVitalsByRound[snap.id]![round.round] = mkAdvVitalAcc(snap.fatigueMax)
+        }
+        const av = advVitalsByRound[snap.id]![round.round]!
+        pushAcc(av.fatigue,        snap.fatigue)
+        pushAcc(av.stability,      snap.stability)
+        pushAcc(av.endurance,      snap.endurance)
+        pushAcc(av.evasion,        snap.evasion)
+        pushAcc(av.partsDestroyed, snap.parts.filter(p => p.destroyed).length)
+
+        if (!advMentalByRound[snap.id]) advMentalByRound[snap.id] = {}
+        const ambr = advMentalByRound[snap.id]!
+        if (!ambr[round.round]) ambr[round.round] = {}
+        const adist = ambr[round.round]!
+        adist[snap.mentalState] = (adist[snap.mentalState] ?? 0) + 1
       }
 
       // Endurance tests (maintenance phase)
@@ -238,11 +334,15 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
             if (fx.kind === 'heal-wounds'    && fx.targetId === entry.actorId) as.woundsHealed     += fx.amount
           }
 
-          // ── Status counts ──────────────────────────────────────────────────
+          // ── Status counts + defensive reactions spent ───────────────────────
           for (const fx of entry.effects) {
             if (fx.kind === 'add-status' && statusCounts[fx.targetId]) {
               const sc = statusCounts[fx.targetId]!
               sc[fx.status] = (sc[fx.status] ?? 0) + 1
+            }
+            // spend-reaction is only produced by active guards (defense)
+            if (fx.kind === 'spend-reaction' && reactionsUsed[fx.targetId] !== undefined) {
+              reactionsUsed[fx.targetId]++
             }
           }
 
@@ -275,7 +375,8 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
     runCount: logs.length, charNames,
     wins, mutual, timeout,
     rounds, roundDist, totalDurationMs,
-    vitalsByRound, finalVitals, endurance, actionStats, guardStats, statusCounts,
+    vitalsByRound, mentalByRound, advVitalsByRound, advMentalByRound,
+    finalVitals, endurance, actionStats, guardStats, reactionsUsed, statusCounts,
   }
 }
 
@@ -286,6 +387,20 @@ const GUARD_LABEL: Record<string, string> = {
   dodge:  'Esquive',
   parry:  'Parade',
   block:  'Blocage',
+}
+
+/** Mental-state columns, fear → rage (matches the batch progression header). */
+const MENTAL_COLUMN_ORDER: MentalState[] = [
+  'terrified', 'panicked', 'cautious', 'focused', 'aggressive', 'furious', 'enraged',
+]
+
+/**
+ * Compact 2-char cell for a mental-state percentage: blank below 10 %, the number
+ * otherwise, with 100 rendered as "00" to stay two digits.
+ */
+function mentalCell(pct: number): string {
+  if (pct < 10) return '  '
+  return (pct >= 100 ? '00' : String(pct)).padStart(2)
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -362,34 +477,114 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
     console.log(DIV)
     console.log(`  PROGRESSION — ${charId}`)
 
+    const mbr = stats.mentalByRound[charId] ?? {}
+
     if (isBatch) {
+      // Mental-state distribution columns (% of runs in each state, fear → rage).
+      // Each mental column is a fixed 2-visual-column field so header icons and
+      // percentage cells share the same grid.
+      const mentalHdr = MENTAL_COLUMN_ORDER.map(s => padv(MENTAL_ICONS[s], 2)).join(' ')
       console.log(
-        `  ${'Rd'.padStart(3)}  ${'💧 moy'.padStart(8)}  ${'💢 moy'.padStart(7)}  ` +
-        `${'💔 moy'.padStart(7)}  ${'🛡️ moy'.padStart(7)}  ${'n runs'.padStart(6)}`,
+        `  ${padv('Rd', 3)}  ${padv('💧 moy', 8)}  ${padv('💢 moy', 7)}  ` +
+        `${padv('💔 moy', 7)}  ${padv('🛡️ moy', 7)}  ${padv('◇ moy', 6)}  ` +
+        `${mentalHdr}  ${padv('n runs', 6)}`,
       )
       for (const r of rdNums) {
-        const v = vbr[r]!
+        const v      = vbr[r]!
+        const dist   = mbr[r] ?? {}
+        const nRound = v.fatigue.n
+        const mentalCells = MENTAL_COLUMN_ORDER
+          .map(s => padv(mentalCell(Math.round(((dist[s] ?? 0) / nRound) * 100)), 2))
+          .join(' ')
         console.log(
-          `  ${String(r).padStart(3)}` +
-          `  ${accAvg(v.fatigue).toFixed(1).padStart(8)}` +
-          `  ${accAvg(v.lightWounds).toFixed(1).padStart(7)}` +
-          `  ${accAvg(v.heavyWounds).toFixed(2).padStart(7)}` +
-          `  ${accAvg(v.protection).toFixed(2).padStart(7)}` +
-          `  ${String(v.fatigue.n).padStart(6)}`,
+          `  ${padv(String(r), 3)}` +
+          `  ${padv(accAvg(v.fatigue).toFixed(1), 8)}` +
+          `  ${padv(accAvg(v.lightWounds).toFixed(1), 7)}` +
+          `  ${padv(accAvg(v.heavyWounds).toFixed(2), 7)}` +
+          `  ${padv(accAvg(v.protection).toFixed(2), 7)}` +
+          `  ${padv(accAvg(v.stability).toFixed(1), 6)}` +
+          `  ${mentalCells}` +
+          `  ${padv(String(nRound), 6)}`,
         )
       }
     } else {
       console.log(
-        `  ${'Rd'.padStart(3)}  ${'💧'.padStart(8)}  ${'💢'.padStart(7)}  ${'💔'.padStart(7)}  ${'🛡️'.padStart(5)}`,
+        `  ${padv('Rd', 3)}  ${padv('💧', 8)}  ${padv('💢', 7)}  ${padv('💔', 7)}  ` +
+        `${padv('🛡️', 5)}  ${padv('◇', 3)}  🧠`,
       )
       for (const r of rdNums) {
-        const v = vbr[r]!
+        const v     = vbr[r]!
+        const dist  = mbr[r] ?? {}
+        const state = (Object.keys(dist)[0] as MentalState | undefined)
+        const icon  = state ? MENTAL_ICONS[state] : ''
         console.log(
-          `  ${String(r).padStart(3)}` +
-          `  ${accAvg(v.fatigue).toFixed(0).padStart(8)}` +
-          `  ${accAvg(v.lightWounds).toFixed(0).padStart(7)}` +
-          `  ${accAvg(v.heavyWounds).toFixed(0).padStart(7)}` +
-          `  ${accAvg(v.protection).toFixed(0).padStart(5)}`,
+          `  ${padv(String(r), 3)}` +
+          `  ${padv(accAvg(v.fatigue).toFixed(0), 8)}` +
+          `  ${padv(accAvg(v.lightWounds).toFixed(0), 7)}` +
+          `  ${padv(accAvg(v.heavyWounds).toFixed(0), 7)}` +
+          `  ${padv(accAvg(v.protection).toFixed(0), 5)}` +
+          `  ${padv(accAvg(v.stability).toFixed(0), 3)}` +
+          `  ${icon}`,
+        )
+      }
+    }
+  }
+
+  // ─ 3 ter. Progression des adversaires par round ────────────────────────────
+  // Colonnes : 💧 (horloge /max), ◇/🫁/🍀 ressources, ✖ parties détruites (moy),
+  // et distribution mentale 3 états (peur → rage : 😬 😐 😠).
+  const ADV_MENTAL_COLUMN_ORDER: AdversaryMental[] = ['panicked', 'focused', 'enraged']
+  for (const advId of Object.keys(stats.advVitalsByRound)) {
+    const vbr = stats.advVitalsByRound[advId]!
+    const rdNums = Object.keys(vbr).map(Number).sort((a, b) => a - b)
+    if (rdNums.length === 0) continue
+    const mbr = stats.advMentalByRound[advId] ?? {}
+
+    console.log(DIV)
+    console.log(`  PROGRESSION (adversaire) — ${advId}`)
+
+    if (isBatch) {
+      const mentalHdr = ADV_MENTAL_COLUMN_ORDER.map(s => padv(ADVERSARY_MENTAL_ICONS[s], 2)).join(' ')
+      console.log(
+        `  ${padv('Rd', 3)}  ${padv('💧 moy', 8)}  ${padv('◇ moy', 6)}  ${padv('🫁 moy', 6)}  ` +
+        `${padv('🍀 moy', 6)}  ${padv('✖ moy', 6)}  ${mentalHdr}  ${padv('n runs', 6)}`,
+      )
+      for (const r of rdNums) {
+        const v      = vbr[r]!
+        const dist   = mbr[r] ?? {}
+        const nRound = v.fatigue.n
+        const mentalCells = ADV_MENTAL_COLUMN_ORDER
+          .map(s => padv(mentalCell(Math.round(((dist[s] ?? 0) / nRound) * 100)), 2))
+          .join(' ')
+        console.log(
+          `  ${padv(String(r), 3)}` +
+          `  ${padv(`${accAvg(v.fatigue).toFixed(1)}/${v.fatigueMax}`, 8)}` +
+          `  ${padv(accAvg(v.stability).toFixed(1), 6)}` +
+          `  ${padv(accAvg(v.endurance).toFixed(1), 6)}` +
+          `  ${padv(accAvg(v.evasion).toFixed(1), 6)}` +
+          `  ${padv(accAvg(v.partsDestroyed).toFixed(1), 6)}` +
+          `  ${mentalCells}` +
+          `  ${padv(String(nRound), 6)}`,
+        )
+      }
+    } else {
+      console.log(
+        `  ${padv('Rd', 3)}  ${padv('💧', 8)}  ${padv('◇', 3)}  ${padv('🫁', 3)}  ` +
+        `${padv('🍀', 3)}  ${padv('✖', 3)}  🧠`,
+      )
+      for (const r of rdNums) {
+        const v     = vbr[r]!
+        const dist  = mbr[r] ?? {}
+        const state = (Object.keys(dist)[0] as AdversaryMental | undefined)
+        const icon  = state ? ADVERSARY_MENTAL_ICONS[state] : ''
+        console.log(
+          `  ${padv(String(r), 3)}` +
+          `  ${padv(`${accAvg(v.fatigue).toFixed(0)}/${v.fatigueMax}`, 8)}` +
+          `  ${padv(accAvg(v.stability).toFixed(0), 3)}` +
+          `  ${padv(accAvg(v.endurance).toFixed(0), 3)}` +
+          `  ${padv(accAvg(v.evasion).toFixed(0), 3)}` +
+          `  ${padv(accAvg(v.partsDestroyed).toFixed(0), 3)}` +
+          `  ${icon}`,
         )
       }
     }
@@ -525,6 +720,23 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
           `  ${String(gs.faced).padStart(5)}` +
           `  ${String(gs.blocked).padStart(7)}` +
           `  ${pct(gs.blocked, gs.faced)}%`,
+        )
+      }
+
+      // Synthèse défensive : réactions ⚡ dépensées + niveau de garde moyen
+      // (pondéré sur tous les setups, Encaisser compris) + taux de blocage global.
+      if (used.length > 0) {
+        const dcSum    = used.reduce((s, g) => s + charGs[g]!.dcSum, 0)
+        const dcN      = used.reduce((s, g) => s + charGs[g]!.dcN, 0)
+        const faced    = used.reduce((s, g) => s + charGs[g]!.faced, 0)
+        const blocked  = used.reduce((s, g) => s + charGs[g]!.blocked, 0)
+        const avgGuard = dcN > 0 ? (dcSum / dcN).toFixed(1) : '—'
+        const react    = stats.reactionsUsed[charId] ?? 0
+        const reactStr = isBatch ? `${react} (${(react / n).toFixed(1)}/run)` : `${react}`
+        console.log(
+          `  ${''.padEnd(22)}  → ⚡ réactions déf. ${reactStr}` +
+          `  ·  garde moy. ${avgGuard}` +
+          `  ·  blocage global ${pct(blocked, faced)}%`,
         )
       }
     }

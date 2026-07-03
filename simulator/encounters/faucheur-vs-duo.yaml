@@ -1,0 +1,22 @@
+# Combat de groupe : les deux duellistes (Précis + Puissant) contre un Faucheur.
+# Le Faucheur concentre ses attaques sur le premier ennemi vivant ; les deux PJ
+# le ciblent ensemble (résolution multi-combattants, issue par faction).
+name: Duo — les duellistes contre le Faucheur
+description: >-
+  Deux duellistes unissent leurs lames contre un Faucheur solitaire. Le Précis
+  esquive et harcèle, le Puissant frappe lourd. Test du moteur 2 contre 1.
+maxRounds: 30
+
+factions:
+  - name: Aventuriers
+    characters:
+      - sheet: characterSheets/Duelist_precise.yaml
+        persona: opportunist
+      - sheet: characterSheets/Duelist_powerful.yaml
+        persona: aggressive
+    allowedActions: []
+
+  - name: Faune d'Aeonir
+    characters:
+      - adversary: faucheur
+    allowedActions: []

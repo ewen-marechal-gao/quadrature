@@ -1,0 +1,20 @@
+﻿# Premier duel mixte : un personnage-joueur contre une créature du bestiaire.
+# L'adversaire est charge depuis data/bestiary/cards/faucheur.card.yaml”
+# résolution asymétrique (4 dés sommés vs garde du PJ ; garde fixe Esquive 10
+# quand le PJ attaque, dégats sur la partie du corps déclarée).
+name: Duel — le Précis contre le Faucheur
+description: >-
+  En lisière de canopé, un duelliste croise un Faucheur en chasse.
+  Premier test du moteur mixte personnage contre créature.
+maxRounds: 30
+factions:
+  - name: Aventuriers
+    characters:
+      - sheet: characterSheets/Duelist_precise.yaml
+        persona: opportunist
+    allowedActions: []
+
+  - name: Faune d'Aeonir
+    characters:
+      - adversary: faucheur
+    allowedActions: []

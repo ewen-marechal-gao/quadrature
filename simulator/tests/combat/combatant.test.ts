@@ -89,7 +89,8 @@ describe('resetRoundTokens', () => {
   })
 
   it('does not grant bonus reaction when not focused', () => {
-    const s = shiftMentalState(makeCombatant(), 'toward-rage')  // cautious
+    // Exhaust ◇ so the shift actually moves the track off 'focused'.
+    const s = shiftMentalState({ ...makeCombatant(), stability: 0 }, 'toward-rage')  // aggressive
     const r = resetRoundTokens(s)
     expect(r.reactions).toBe(r.maxReactions)
   })
@@ -383,30 +384,63 @@ describe('removeFatigue', () => {
 // ─── Mental state ─────────────────────────────────────────────────────────────
 
 describe('shiftMentalState', () => {
-  // toward-terror → décrémente le niveau → vers 'enraged' (index 0)
-  // toward-rage   → incrémente le niveau → vers 'terrified' (index 6)
-  // toward-focused → ramène toujours vers 0 (focused)
+  // MENTAL_STATES : enraged(0) … focused(3) … terrified(6)
+  //   🔻 toward-terror → index +1 (vers terrified)
+  //   🔺 toward-rage   → index −1 (vers enraged)
+  //   toward-focused   → récupération vers 'focused'
+  // Un 🔻/🔺 est d'abord absorbé par un ◇ (Stabilité) ; on met stability: 0
+  // pour tester le déplacement de la piste.
 
-  it('toward-terror from focused moves one step toward aggressive', () => {
-    const s = shiftMentalState(makeCombatant(), 'toward-terror')
-    expect(s.mentalState).toBe('aggressive')
-  })
+  const shaken = () => ({ ...makeCombatant(), stability: 0 })
 
-  it('toward-rage from focused moves one step toward cautious', () => {
-    const s = shiftMentalState(makeCombatant(), 'toward-rage')
+  it('toward-terror from focused moves one step toward terrified (cautious)', () => {
+    const s = shiftMentalState(shaken(), 'toward-terror')
     expect(s.mentalState).toBe('cautious')
   })
 
-  it('caps at enraged after repeated toward-terror', () => {
-    let s = makeCombatant()
-    for (let i = 0; i < 10; i++) s = shiftMentalState(s, 'toward-terror')
+  it('toward-rage from focused moves one step toward enraged (aggressive)', () => {
+    const s = shiftMentalState(shaken(), 'toward-rage')
+    expect(s.mentalState).toBe('aggressive')
+  })
+
+  it('caps at terrified after repeated toward-terror', () => {
+    let s = shaken()
+    for (let i = 0; i < 10; i++) s = shiftMentalState({ ...s, stability: 0 }, 'toward-terror')
+    expect(s.mentalState).toBe('terrified')
+  })
+
+  it('caps at enraged after repeated toward-rage', () => {
+    let s = shaken()
+    for (let i = 0; i < 10; i++) s = shiftMentalState({ ...s, stability: 0 }, 'toward-rage')
     expect(s.mentalState).toBe('enraged')
   })
 
-  it('caps at terrified after repeated toward-rage', () => {
-    let s = makeCombatant()
-    for (let i = 0; i < 10; i++) s = shiftMentalState(s, 'toward-rage')
-    expect(s.mentalState).toBe('terrified')
+  // ── Stability ◇ buffer (§ Stabilité) ──────────────────────────────────────
+  it('absorbs a 🔻 shift by spending one ◇ instead of moving the track', () => {
+    const s = shiftMentalState({ ...makeCombatant(), stability: 2 }, 'toward-terror')
+    expect(s.stability).toBe(1)
+    expect(s.mentalState).toBe('focused')
+  })
+
+  it('moves the track only once ◇ is exhausted', () => {
+    const s = shiftMentalState({ ...makeCombatant(), stability: 0 }, 'toward-terror')
+    expect(s.stability).toBe(0)
+    expect(s.mentalState).toBe('cautious')
+  })
+
+  it('does not spend ◇ on beneficial recovery (toward-focused)', () => {
+    const base = { ...makeCombatant(), mentalState: 'cautious' as const, stability: 2 }
+    const s    = shiftMentalState(base, 'toward-focused')
+    expect(s.stability).toBe(2)
+    expect(s.mentalState).toBe('focused')
+  })
+
+  it('is a combat-long pool — round start does NOT refill ◇', () => {
+    // ◇ is set at initialisation (TestFighter: tenacity 2 + discipline 0 = 2)
+    // and only depletes; a spent pool stays spent across rounds.
+    expect(makeCombatant().stability).toBe(2)
+    const spent = { ...makeCombatant(), stability: 0 }
+    expect(resetRoundTokens(spent).stability).toBe(0)
   })
 
   it('toward-focused from aggressive returns to focused in one step', () => {

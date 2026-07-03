@@ -1,0 +1,20 @@
+# Duel mixte : le Duelliste Puissant (bruiser Force/Puissance) contre le Faucheur.
+# Résolution asymétrique (4 dés sommés vs garde du PJ ; garde fixe Esquive 10
+# quand le PJ attaque, dégâts sur la partie du corps déclarée).
+name: Duel — le Puissant contre le Faucheur
+description: >-
+  Un duelliste bâti pour encaisser et frapper lourd affronte un Faucheur en
+  chasse. Pendant du duel du Précis, profil Force/Robustesse.
+maxRounds: 30
+
+factions:
+  - name: Aventuriers
+    characters:
+      - sheet: characterSheets/Duelist_powerful.yaml
+        persona: aggressive
+    allowedActions: []
+
+  - name: Faune d'Aeonir
+    characters:
+      - adversary: faucheur
+    allowedActions: []
