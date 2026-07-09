@@ -49,13 +49,13 @@ describe('unarmed-attack resolve', () => {
   const actor  = makeCombatant('A')
   const target = makeCombatant('B')
 
-  it('hit=true  → 3💧 fatigue on target', () => {
+  it('hit=true  → 2💧 fatigue on target', () => {
     const { effects } = ACTION_DEFS['unarmed-attack'].resolve(
       { hit: true, critical: false, flaw: false }, actor, target)
-    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-fatigue', amount: 3 })
+    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-fatigue', amount: 2 })
   })
 
-  it('hit=false → 1💧 fatigue on target', () => {
+  it('partiel → 1💧 fatigue on target', () => {
     const { effects } = ACTION_DEFS['unarmed-attack'].resolve(
       { hit: false, critical: false, flaw: false }, actor, target)
     expect(effects).toContainEqual({ targetId: 'B', kind: 'add-fatigue', amount: 1 })

@@ -22,14 +22,10 @@ import {
 } from './effect-ops'
 import { ACTION_RESOLVERS, type ActionResolverId } from './action-resolvers'
 import type { ActionDef } from './actions'
+import type { MentalState } from './types'
+import { localize, type LocalizedString } from '../locale'
 
 // ─── Raw YAML shapes (English keys, Locale strings) ───────────────────────────
-
-type LocalizedString = { fr: string; en?: string }
-
-function localize(s: LocalizedString, locale: string): string {
-  return (s as Record<string, string>)[locale] ?? s.fr ?? s.en ?? ''
-}
 
 interface RawOutcome { text?: LocalizedString; effect: EffectOp[] }
 
@@ -42,6 +38,8 @@ interface RawPlayerAction {
   cost:         { actions: number; reactions?: number; fatigue?: number; endPlayerRound?: boolean }
   tags:         CardTag[]
   prerequisite?: { skill: SkillName; minValue: number }
+  /** Mental states allowing this action (empty/absent = no constraint). */
+  mentalConditions?: MentalState[]
   requiresFirstAction?: boolean
   roll:         { characteristic: CharacteristicName; skill: SkillName }
   selfTargeted?: boolean
@@ -79,6 +77,7 @@ function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string): Action
     cost,
     tags:        raw.tags,
     ...(raw.prerequisite && { prerequisite: raw.prerequisite }),
+    mentalConditions: raw.mentalConditions ?? [],
     requiresFirstAction: raw.requiresFirstAction ?? false,
     rollChar:    raw.roll.characteristic,
     rollSkill:   raw.roll.skill,

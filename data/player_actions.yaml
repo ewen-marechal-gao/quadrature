@@ -17,61 +17,108 @@ actions:
   armed-attack:
     vaultCard: attaque-armee
     name: { fr: "Attaque armée" }
-    description: { fr: "Frappe avec une arme. Succès : 3💢 sur la cible, Échec : 1💢. Critique : cible à terre 🔻. Défaut : +1💧 pour toi." }
+    description:
+      {
+        fr: "Frappe avec une arme. Succès : 3💢 sur la cible, Échec : 1💢. Critique : cible à terre 🔻. Défaut : +1💧 pour toi.",
+      }
     initiative: 5
     cost: { actions: 2 }
     tags: [offensive, melee, physical, physicalDamage]
     roll: { characteristic: strength, skill: power }
-    onSuccess:  { text: { fr: "Touché — 3💢" },                effect: [{ wound: 3 }] }
-    onFailure:  { text: { fr: "Égratigné — 1💢" },             effect: [{ wound: 1 }] }
-    onCritical: { text: { fr: "Critique — cible à terre 🔻" }, effect: [{ status: knockdown }] }
-    onFlaw:     { text: { fr: "Maladresse — attaquant +1💧" }, effect: [{ selfFatigue: 1 }] }
+    onSuccess: { text: { fr: "Touché — 3💢" }, effect: [{ wound: 3 }] }
+    onFailure: { text: { fr: "Égratigné — 1💢" }, effect: [{ wound: 1 }] }
+    onCritical:
+      {
+        text: { fr: "Critique — cible à terre 🔻" },
+        effect: [{ status: knockdown }],
+      }
+    onFlaw:
+      {
+        text: { fr: "Maladresse — attaquant +1💧" },
+        effect: [{ selfFatigue: 1 }],
+      }
 
   # Ne peut être encaissée — validité des gardes gérée côté GuardProvider (agent).
   unarmed-attack:
     vaultCard: attaque-mains-nues
     name: { fr: "Attaque à mains nues" }
-    description: { fr: "Attaque rapide sans arme, inflige de la fatigue. Succès : 3💧 sur la cible, Échec : 1💧. Critique : cible sonnée 💫. Défaut : +1💧 pour toi. Ne peut être encaissée." }
+    description:
+      {
+        fr: "Attaque rapide sans arme, inflige de la fatigue. Succès : 2💧 sur la cible, partiel : 1💧. Critique : cible sonnée 💫. Défaut : +1💧 pour toi. Ne peut être encaissée.",
+      }
     initiative: 3
-    cost: { actions: 1 }
+    cost: { actions: 2 }
     tags: [offensive, melee, physical, fatigueDamage]
     roll: { characteristic: strength, skill: power }
-    onSuccess:  { text: { fr: "Touché — 3💧" },                effect: [{ fatigue: 3 }] }
-    onFailure:  { text: { fr: "Effleuré — 1💧" },              effect: [{ fatigue: 1 }] }
-    onCritical: { text: { fr: "Critique — cible sonnée 💫" },  effect: [{ status: stunned }] }
-    onFlaw:     { text: { fr: "Maladresse — attaquant +1💧" }, effect: [{ selfFatigue: 1 }] }
+    onSuccess: { text: { fr: "Touché — 2💧" }, effect: [{ fatigue: 2 }] }
+    onFailure: { text: { fr: "Effleuré — 1💧" }, effect: [{ fatigue: 1 }] }
+    onCritical:
+      {
+        text: { fr: "Critique — cible sonnée 💫" },
+        effect: [{ status: stunned }],
+      }
+    onFlaw:
+      {
+        text: { fr: "Maladresse — attaquant +1💧" },
+        effect: [{ selfFatigue: 1 }],
+      }
 
   brutal-strike:
     vaultCard: frappe-brutale
     name: { fr: "Frappe brutale" }
-    description: { fr: "Coup dévastateur à haut risque. Succès : 1💔 blessure grave, Échec : 2💢. Critique : cible sonnée 💫. Coûte 1💧 à toi en plus des PA." }
+    description:
+      {
+        fr: "Coup dévastateur à haut risque. Succès : 1💔 blessure grave, Échec : 2💢. Critique : cible sonnée 💫. Coûte 1💧 à toi en plus des PA.",
+      }
     initiative: 6
     cost: { actions: 2, fatigue: 2 }
     tags: [offensive, melee, physical, physicalDamage]
     prerequisite: { skill: power, minValue: 1 }
     roll: { characteristic: strength, skill: power }
-    onSuccess:  { text: { fr: "Touché — 1💔 blessure grave" }, effect: [{ heavyWound: 1 }] }
-    onFailure:  { text: { fr: "Raté — 2💢" },                  effect: [{ wound: 2 }] }
-    onCritical: { text: { fr: "Critique — cible sonnée 💫" },  effect: [{ status: stunned }] }
+    onSuccess:
+      {
+        text: { fr: "Touché — 1💔 blessure grave" },
+        effect: [{ heavyWound: 1 }],
+      }
+    onFailure: { text: { fr: "Raté — 2💢" }, effect: [{ wound: 2 }] }
+    onCritical:
+      {
+        text: { fr: "Critique — cible sonnée 💫" },
+        effect: [{ status: stunned }],
+      }
 
   sharp-strike:
     vaultCard: frappe-vive
     name: { fr: "Frappe vive" }
-    description: { fr: "Attaque agile et précise. Succès : 2💢, Échec : 1💢. Critique : hémorragie 🩸 sur la cible. Défaut : +1💧 pour toi. Coûte 1💧 à toi en plus des PA." }
+    description:
+      {
+        fr: "Attaque agile et précise. Succès : 2💢, Échec : 1💢. Critique : hémorragie 🩸 sur la cible. Défaut : +1💧 pour toi. Coûte 1💧 à toi en plus des PA.",
+      }
     initiative: 3
     cost: { actions: 1, fatigue: 1 }
     tags: [offensive, melee, physical, physicalDamage]
     prerequisite: { skill: precision, minValue: 1 }
     roll: { characteristic: agility, skill: precision }
-    onSuccess:  { text: { fr: "Touché — 2💢" },                effect: [{ wound: 2 }] }
-    onFailure:  { text: { fr: "Égratigné — 1💢" },             effect: [{ wound: 1 }] }
-    onCritical: { text: { fr: "Critique — hémorragie 🩸" },    effect: [{ status: hemorrhage }] }
-    onFlaw:     { text: { fr: "Maladresse — attaquant +1💧" }, effect: [{ selfFatigue: 1 }] }
+    onSuccess: { text: { fr: "Touché — 2💢" }, effect: [{ wound: 2 }] }
+    onFailure: { text: { fr: "Égratigné — 1💢" }, effect: [{ wound: 1 }] }
+    onCritical:
+      {
+        text: { fr: "Critique — hémorragie 🩸" },
+        effect: [{ status: hemorrhage }],
+      }
+    onFlaw:
+      {
+        text: { fr: "Maladresse — attaquant +1💧" },
+        effect: [{ selfFatigue: 1 }],
+      }
 
   respiration:
     vaultCard: respiration
     name: { fr: "Respiration" }
-    description: { fr: "Régulation du souffle (première action uniquement). Retire Essoufflé 💨 toujours. Succès : retire (1 + Endurance)💧. Critique : +1💧 bonus. Échec : retire 1💧. Défaut : perd 1 PA. DD = fatigue actuelle." }
+    description:
+      {
+        fr: "Régulation du souffle (première action uniquement). Retire Essoufflé 💨 toujours. Succès : retire (1 + Endurance)💧. Critique : +1💧 bonus. Échec : retire 1💧. Défaut : perd 1 PA. DD = fatigue actuelle.",
+      }
     initiative: 1
     cost: { actions: 1 }
     tags: [support, healing, physical]
@@ -84,7 +131,10 @@ actions:
   stabilize:
     vaultCard: stabiliser
     name: { fr: "Stabiliser" }
-    description: { fr: "Premiers soins (première action uniquement). Retire Hémorragie 🩸 toujours. Succès : soigne (1 + Récupération)💢. Critique : +1⚡. Échec : soigne 1💢. Défaut : perd 1 PA. DD = 8 + blessures graves." }
+    description:
+      {
+        fr: "Premiers soins (première action uniquement). Retire Hémorragie 🩸 toujours. Succès : soigne (1 + Récupération)💢. Critique : +1⚡. Échec : soigne 1💢. Défaut : perd 1 PA. DD = 8 + blessures graves.",
+      }
     initiative: 1
     cost: { actions: 1 }
     tags: [support, healing, physical]
@@ -93,3 +143,74 @@ actions:
     roll: { characteristic: vigor, skill: recovery }
     selfTargeted: true
     resolver: stabilize
+
+  # ── Consolidation mentale (§ attribute_actions.md) ──────────────────────────
+  # Tronc commun : 🟢 (première action), DD = 8 + degré d'état mental,
+  # ✅/❌ regagnent du ◇, ⚠️ Défaut = −1 PA. Variantes ⚒️ différées.
+
+  preservation:
+    vaultCard: preservation
+    name: { fr: "Préservation" }
+    description:
+      {
+        fr: "Vous bridez vos émotions (concentré ou état colérique). Succès : 🔻 vers Prudent (jamais en dessous) et +1 ◇. Partiel : +1 ◇. Critique : 🔻 supplémentaire. Défaut : perd 1 PA. DD = 8 + degré mental.",
+      }
+    initiative: 1
+    cost: { actions: 1 }
+    tags: [support, mental, enhancement]
+    prerequisite: { skill: discipline, minValue: 1 }
+    mentalConditions: [enraged, furious, aggressive, focused] # concentré ou colère
+    requiresFirstAction: true
+    roll: { characteristic: willpower, skill: discipline }
+    selfTargeted: true
+    resolver: preservation
+
+  focalisation:
+    vaultCard: focalisation
+    name: { fr: "Focalisation" }
+    description:
+      {
+        fr: "Vous retrouvez votre clarté d'esprit. Succès : déplacement vers Concentré et +1 ◇. Partiel : +1 ◇. Critique : déplacement supplémentaire vers Concentré. Défaut : perd 1 PA. DD = 8 + degré mental.",
+      }
+    initiative: 1
+    cost: { actions: 1 }
+    tags: [support, mental, enhancement]
+    prerequisite: { skill: logic, minValue: 1 }
+    requiresFirstAction: true
+    roll: { characteristic: intelligence, skill: logic }
+    selfTargeted: true
+    resolver: focalisation
+
+  resolution:
+    vaultCard: resolution
+    name: { fr: "Résolution" }
+    description:
+      {
+        fr: "Vous transformez la peur en détermination (concentré ou état craintif). Succès : 🔺 vers Agressif (jamais au-dessus) et +1 ◇. Partiel : +1 ◇. Critique : 🔺 supplémentaire. Défaut : perd 1 PA. DD = 8 + degré mental.",
+      }
+    initiative: 1
+    cost: { actions: 1 }
+    tags: [support, mental, enhancement]
+    prerequisite: { skill: conviction, minValue: 1 }
+    mentalConditions: [focused, cautious, panicked, terrified] # concentré ou crainte
+    requiresFirstAction: true
+    roll: { characteristic: tenacity, skill: conviction }
+    selfTargeted: true
+    resolver: resolution
+
+  meditation:
+    vaultCard: meditation
+    name: { fr: "Méditation" }
+    description:
+      {
+        fr: "Vous videz votre esprit (uniquement concentré). Succès : +1 ◇ par point de Résilience. Partiel : +1 ◇. Défaut : perd 1 PA. DD = 8 + degré mental.",
+      }
+    initiative: 1
+    cost: { actions: 1 }
+    tags: [support, mental, enhancement]
+    prerequisite: { skill: resilience, minValue: 1 }
+    mentalConditions: [focused]
+    requiresFirstAction: true
+    roll: { characteristic: tenacity, skill: resilience }
+    selfTargeted: true
+    resolver: meditation

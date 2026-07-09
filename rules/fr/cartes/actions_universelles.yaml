@@ -27,7 +27,7 @@ cartes:
     famille: melee
     categorie: offensive
     initiative: 3
-    cout: "⚫"
+    cout: "⚫⚫"
     jet: "Puissance 🟨🟨 + Force 🟦"
     contre: "Garde (esquive, parade, dérobade)"
     ameliorations:
@@ -35,7 +35,7 @@ cartes:
         effet: "en cas de succès, votre attaque à mains nues inflige une blessure 💢 supplémentaire"
     defaut: "augmentez votre **fatigue 💧**"
     critique: "la cible est **sonnée 🫨**"
-    succes: "infligez 3 **fatigue 💧** à la cible"
+    succes: "infligez 2 **fatigue 💧** à la cible"
     echec: "la cible subit 💧"
     source: core/actions/universal_actions.md
 

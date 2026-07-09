@@ -48,15 +48,15 @@ describe('cardRank', () => {
     expect(cardRank(card(c, 'bite'))).toBe(0)
     expect(cardRank(card(c, 'charge'))).toBe(0)
     // offensive but not physicalDamage → tier 1
-    expect(cardRank(card(c, 'shriek'))).toBe(1)     // mentalDamage
+    expect(cardRank(card(c, 'cry'))).toBe(1)        // mentalDamage
     expect(cardRank(card(c, 'tailSweep'))).toBe(1)  // fatigueDamage
   })
 })
 
 describe('planAdversaryCard', () => {
-  it('prefers a wound-dealer over the equally-costed Cri (⚫⚫)', async () => {
+  it('prefers a wound-dealer over other offensive cards', async () => {
     const c = await faucheur()
-    // Both sickleStrike and shriek are base cost 2; the wound-dealer wins.
+    // sickleStrike (base cost 2, physicalDamage) beats the cheaper Cri and Sweep.
     expect(planAdversaryCard(c, 'pc')!.card).toBe('sickleStrike')
   })
 
@@ -73,17 +73,16 @@ describe('planAdversaryCard', () => {
   it('plays the Cri only when no wound-dealer is playable', async () => {
     let c = await faucheur()
     c = { ...c, evasion: 0 }
-    // Destroy every physicalDamage source: Serpes (2 → sickleStrike), Pattes (2 →
-    // charge), and the head's top two blocks (◇ then bite) while keeping the head's
-    // shriek block intact (destruction is top → bottom).
+    // Destroy every physicalDamage source: Serpes (2 → sickleStrike), the Pattes
+    // top block (→ charge) and the head's top block (→ bite), keeping the head's
+    // Cri block intact (destruction is top → bottom; head order = bite · cry · ◇).
     c = damagePart(c, 'sickles', { heavy: 1 })
     c = damagePart(c, 'sickles', { heavy: 1 })
     c = damagePart(c, 'rearLeg', { heavy: 1 })
-    c = damagePart(c, 'rearLeg', { heavy: 1 })
     c = damagePart(c, 'head', { heavy: 1 })
-    c = damagePart(c, 'head', { heavy: 1 })
-    // Remaining offensive cards: shriek (mental, cost 2) and tailSweep (fatigue, cost 1).
-    expect(planAdversaryCard(c, 'pc')!.card).toBe('shriek')
+    // Remaining offensive cards: cry (mental, init 2) and tailSweep (fatigue, init 4)
+    // → deck order picks the Cri.
+    expect(planAdversaryCard(c, 'pc')!.card).toBe('cry')
   })
 
   it('returns null when the creature is defeated', async () => {

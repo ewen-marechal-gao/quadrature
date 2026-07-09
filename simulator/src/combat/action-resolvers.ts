@@ -10,8 +10,11 @@
 
 import type { CombatantState, CombatEffect } from './types'
 import type { OutcomeFlags } from './effect-ops'
+import { mentalDegree, stepMentalToward } from './combatant'
 
-export type ActionResolverId = 'respiration' | 'stabilize'
+export type ActionResolverId =
+  | 'respiration' | 'stabilize'
+  | 'preservation' | 'focalisation' | 'resolution' | 'meditation'
 
 export interface CustomActionResolver {
   /** DC formula (reads live state for dynamic values). */
@@ -40,10 +43,7 @@ export const ACTION_RESOLVERS: Record<ActionResolverId, CustomActionResolver> = 
       notes.push(hit
         ? `✅ Récupération — retire ${baseAmount + bonus}💧` + (critical ? ' (✴️ +1)' : '')
         : '❌ Partiel — retire 1💧')
-      if (flaw) {
-        fx.push({ targetId: aId, kind: 'spend-actions', amount: 1 })
-        notes.push('⚠️ Maladresse — perd 1 PA')
-      }
+      if (flaw) applyFlawPenalty(fx, notes, aId)
       return { effects: fx, notes }
     },
   },
@@ -69,11 +69,68 @@ export const ACTION_RESOLVERS: Record<ActionResolverId, CustomActionResolver> = 
         fx.push({ targetId: aId, kind: 'add-reaction', amount: 1 })
         notes.push('✴️ Critique — gagne 1⚡')
       }
-      if (flaw) {
-        fx.push({ targetId: aId, kind: 'spend-actions', amount: 1 })
-        notes.push('⚠️ Maladresse — perd 1 PA')
-      }
+      if (flaw) applyFlawPenalty(fx, notes, aId)
       return { effects: fx, notes }
     },
   },
+
+  // ── Consolidation mentale (§ attribute_actions.md) ─────────────────────────
+  // Tronc commun : DD = 8 + degré d'état mental ; ✅/❌ regagnent du ◇ ;
+  // ⚠️ Défaut = −1 PA. Le décalage volontaire (set-mental) ne passe PAS par le ◇.
+  // Variantes ⚒️ (Précaution/Incantation/Militant/Tranquillité) différées.
+
+  // Préservation : depuis la colère/concentré, 🔻 vers Prudent (jamais en dessous) + ◇.
+  preservation: mentalAction(4, 'Préservation', '🔻'),
+
+  // Focalisation : recentre vers Concentré depuis n'importe où + ◇.
+  focalisation: mentalAction(3, 'Focalisation', '↔'),
+
+  // Résolution : depuis la crainte/concentré, 🔺 vers Agressif (jamais au-dessus) + ◇.
+  resolution: mentalAction(2, 'Résolution', '🔺'),
+
+  // Méditation : uniquement concentré ; fait le plein de ◇ (1 par Résilience), sans décalage.
+  meditation: {
+    getDC: (a) => 8 + mentalDegree(a.mentalState),
+    resolve({ hit, flaw }, actor) {
+      const fx: CombatEffect[] = []
+      const notes: string[]    = []
+      const gain = hit ? Math.max(1, actor.skills.resilience) : 1
+      fx.push({ targetId: actor.id, kind: 'add-stability', amount: gain })
+      notes.push(hit ? `✅ Méditation — +${gain} ◇` : '◐ Méditation partielle — +1 ◇')
+      if (flaw) applyFlawPenalty(fx, notes, actor.id)
+      return { effects: fx, notes }
+    },
+  },
+}
+
+/** ⚠️ Défaut commun aux actions personnelles : perd 1 PA (effet + note de log). */
+function applyFlawPenalty(fx: CombatEffect[], notes: string[], actorId: string): void {
+  fx.push({ targetId: actorId, kind: 'spend-actions', amount: 1 })
+  notes.push('⚠️ Maladresse — perd 1 PA')
+}
+
+/**
+ * Factory for the three shift-and-recover consolidations (Préservation /
+ * Focalisation / Résolution). They share the shape: DD = 8 + degré ; +1 ◇
+ * (succès ou échec) ; sur succès, déplacement VOLONTAIRE d'un cran (deux sur
+ * critique) vers `targetIdx` (plafonné) ; ⚠️ Défaut = −1 PA.
+ */
+function mentalAction(targetIdx: number, label: string, arrow: string): CustomActionResolver {
+  return {
+    getDC: (a) => 8 + mentalDegree(a.mentalState),
+    resolve({ hit, critical, flaw }, actor) {
+      const fx: CombatEffect[] = []
+      const notes: string[]    = []
+      fx.push({ targetId: actor.id, kind: 'add-stability', amount: 1 })  // +1 ◇ (plafonné au pool)
+      if (hit) {
+        const next = stepMentalToward(actor.mentalState, targetIdx, critical ? 2 : 1)
+        fx.push({ targetId: actor.id, kind: 'set-mental', state: next })
+        notes.push(`✅ ${label} — ${arrow} ${next}${critical ? ' (✴️ +1)' : ''}, +1 ◇`)
+      } else {
+        notes.push(`◐ ${label} partielle — +1 ◇`)
+      }
+      if (flaw) applyFlawPenalty(fx, notes, actor.id)
+      return { effects: fx, notes }
+    },
+  }
 }

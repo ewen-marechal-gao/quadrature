@@ -22,6 +22,7 @@ import {
 } from '../combat/combatant'
 import {
   isAdversaryDefeated, damagePart, addAdversaryFatigue, shiftAdversaryMental,
+  addBleed, bleedTick,
   startRound as adversaryStartRound,
   type AdversaryCombatant,
 } from './combatant'
@@ -59,10 +60,11 @@ export function actorStartRound(a: Actor): Actor {
 
 /**
  * End-of-round processing. PCs run wound overflow / status hooks
- * (processRoundEnd); adversaries have NO end-of-round conversion — identity.
+ * (processRoundEnd); adversaries have no 💢→💔 conversion but bleed 🩸 (marking
+ * cases on the most-wounded blocks, § Hémorragie — saignée).
  */
 export function actorEndRound(a: Actor): Actor {
-  return isAdversaryActor(a) ? a : processRoundEnd(a)
+  return isAdversaryActor(a) ? bleedTick(a) : processRoundEnd(a)
 }
 
 // ─── Effect application ───────────────────────────────────────────────────────
@@ -90,7 +92,13 @@ function applyEffectToAdversary(a: AdversaryCombatant, fx: CombatEffect): Advers
       return a  // toward-focused: PC-only recovery concept
     case 'add-stability':
       return { ...a, stability: a.stability + fx.amount }
-    // add-status & PC-only kinds (heal, reactions, protection…): not modelled.
+    case 'add-status':
+      // Sonné 🫨 : désactive l'Évasion 🍀 jusqu'au reset ; Hémorragie 🩸 : +1
+      // jeton de saignée. Les autres statuts PJ (À terre…) restent non modélisés.
+      if (fx.status === 'stunned')    return { ...a, stunned: true }
+      if (fx.status === 'hemorrhage') return addBleed(a, 1)
+      return a
+    // PC-only kinds (heal, reactions, protection…): not modelled.
     default:
       return a
   }

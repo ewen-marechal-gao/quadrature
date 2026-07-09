@@ -27,7 +27,7 @@ import type { ActionId, GuardId } from './types'
 import type { PhaseLog }          from './types'
 import type { PlannedAction, GuardProvider } from './round'
 import { ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction, availableGuards } from './actions'
-import { spendActionCost, effChar, isDefeated } from './combatant'
+import { spendActionCost, effChar, isDefeated, mentalDegree } from './combatant'
 import { STATUS_DEFS } from './status'
 import { type Actor, isAdversaryActor, actorDefeated } from '../adversary/actor'
 import { isPartDestroyed } from '../adversary/combatant'
@@ -464,6 +464,18 @@ function selectSelfAction(
 
   const fatigueThreshold = config.respirationThreshold ?? fatigueThresholdDefault[persona]
 
+  // Consolidation mentale (🟢) : dès que l'état mental est pénalisant (degré ≥ 2 :
+  // Paniqué/Terrifié → 🟥 offensif + plus de réactions ; Furieux/Enragé → 🟥 défensif
+  // + fatigue), tenter de se recentrer. Priorité Focalisation > Résolution >
+  // Préservation (la première utilisable selon les compétences du personnage).
+  if (mentalDegree(state.mentalState) >= 2) {
+    for (const id of ['focalisation', 'resolution', 'preservation'] as ActionId[]) {
+      if (isActionAllowed(id, config) && canUseAction(state, id) && canAffordAction(state, id)) {
+        return id
+      }
+    }
+  }
+
   // Respiration: clears winded or reduces fatigue
   const wantRespiration =
     state.status.includes('winded') ||
@@ -819,17 +831,16 @@ ${availableThisTurn}
 Déclare ton action parmi les disponibles avec l'outil plan_action.`
 }
 
+/** Every action known to the engine, in data/player_actions.yaml order. */
+const ALL_ACTION_IDS = Object.keys(ACTION_DEFS) as ActionId[]
+
 /**
  * Actions unlocked by the character's skills (prerequisite check only).
  * Used to build the full action catalogue shown in AI prompts.
  * Does NOT filter by current PA / reaction / state constraints.
  */
 function unlockedActions(state: CombatantState): ActionId[] {
-  const allActions: ActionId[] = [
-    'armed-attack', 'unarmed-attack', 'brutal-strike',
-    'sharp-strike', 'respiration', 'stabilize',
-  ]
-  return allActions.filter(id => {
+  return ALL_ACTION_IDS.filter(id => {
     const def = ACTION_DEFS[id]
     return !def.prerequisite
         || state.skills[def.prerequisite.skill] >= def.prerequisite.minValue
@@ -838,9 +849,5 @@ function unlockedActions(state: CombatantState): ActionId[] {
 
 /** Actions that are both unlocked AND currently usable + affordable this turn */
 function usableActions(state: CombatantState): ActionId[] {
-  const allActions: ActionId[] = [
-    'armed-attack', 'unarmed-attack', 'brutal-strike',
-    'sharp-strike', 'respiration', 'stabilize',
-  ]
-  return allActions.filter(id => canUseAction(state, id) && canAffordAction(state, id))
+  return ALL_ACTION_IDS.filter(id => canUseAction(state, id) && canAffordAction(state, id))
 }

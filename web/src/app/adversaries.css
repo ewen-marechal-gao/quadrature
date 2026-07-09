@@ -75,11 +75,24 @@
   border: 1px solid var(--brass-mid);
   border-radius: 6px;
   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5);
-  padding: clamp(0.9rem, 2.2vw, 1.6rem);
+  /* CADRE à taille FIXE A5 : `container-type: size` retire l'influence du contenu
+     sur la taille (la fiche ne grandit plus avec le nombre de parties) ; l'aspect-
+     ratio + la largeur donnent une hauteur définie. Le contenu vit dans
+     `.adv-sheet-fit`, mis à l'échelle (scale-to-fit JS) pour toujours tenir. */
+  container-type: size;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Contenu de la fiche : dimensionné en unités de conteneur (cqw), puis mis à
+   l'échelle ≤ 1 par le hook useFitScale pour tenir dans le cadre sans clipping. */
+.adv-sheet-fit {
+  width: 100%;
+  padding: clamp(0.7rem, 2.6cqw, 1.2rem);
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  container-type: inline-size;
+  gap: 0.4rem;
+  transform-origin: top left;
 }
 
 /* ── En-tête ────────────────────────────────────────────────────────────── */
@@ -155,7 +168,7 @@
   margin-bottom: 0.35rem;
 }
 
-.adv-left {
+.adv-aside {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
@@ -210,13 +223,13 @@
 .adv-parts-grid {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .adv-part {
   border: 1px solid var(--adv-rule-soft);
   border-radius: 4px;
-  padding: 0.4rem 0.55rem 0.5rem;
+  padding: 0.3rem 0.5rem 0.35rem;
   background: rgba(255, 255, 255, 0.18);
 }
 
@@ -225,8 +238,8 @@
   justify-content: space-between;
   align-items: baseline;
   border-bottom: 1px solid var(--adv-rule-soft);
-  padding-bottom: 0.2rem;
-  margin-bottom: 0.35rem;
+  padding-bottom: 0.15rem;
+  margin-bottom: 0.25rem;
 }
 
 .adv-part-name {
@@ -292,7 +305,10 @@
     padding: 1.2rem 0.9rem 3rem;
   }
   .adv-sheet {
+    /* Sur mobile, la fiche redevient fluide (défile) : pas de cadre A5 fixe. */
     aspect-ratio: auto;
+    container-type: inline-size;
+    overflow: visible;
   }
   .adv-body {
     grid-template-columns: 1fr;
@@ -520,7 +536,10 @@
     padding: 1.2rem 0.9rem 3rem;
   }
   .adv-sheet {
+    /* Sur mobile, la fiche redevient fluide (défile) : pas de cadre A5 fixe. */
     aspect-ratio: auto;
+    container-type: inline-size;
+    overflow: visible;
   }
   .adv-body {
     grid-template-columns: 1fr;

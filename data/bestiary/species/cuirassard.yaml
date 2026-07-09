@@ -1,0 +1,20 @@
+# Source d'une fiche d'adversaire — le Cuirassard (Carapaçonnés).
+# PREMIER monstre hors lignée télépathe : tank blindé ectotherme, hexapode (réf. tortue / ankylosaure).
+# Anatomie 100 % dérivée du cladogramme (carapace, 6 pattes, queue-balancier terrestre, PAS de ◇).
+# NOM DE TRAVAIL — à valider / renommer par le créateur.
+id: cuirassard
+from: carapaconnes              # uid du tip dans data/cladogram.yaml
+name: { fr: "Cuirassard", en: "Carapaced" }
+power: competent
+dice: [danger, threat, threat, threat]
+description:
+  fr: >-
+    Brouteur hexapode cuirassé, lent et presque inébranlable : sa carapace
+    chitino-ferrique fait ricocher les coups légers. Acculé, il mord et pèse de
+    toute sa masse. Nul esprit, nulle télépathie — un mur de fer et d'écailles.
+
+guard: { type: block, value: 12 }
+# speed & fatigue : dérivés des mutations (carapace lente, corps massif).
+
+extraMutations: []
+extraTraits: []

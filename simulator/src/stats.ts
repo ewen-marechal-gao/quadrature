@@ -116,6 +116,7 @@ interface AdvVitalAcc {
   evasion:        Acc  // 🍀
   /** Number of destroyed body parts (weapons included). */
   partsDestroyed: Acc
+  bleed:          Acc  // 🩸 cumulative hemorrhage tokens
 }
 
 export interface ComputedStats {
@@ -176,7 +177,7 @@ function mkVitalAcc(): VitalAcc {
 }
 
 function mkAdvVitalAcc(fatigueMax: number): AdvVitalAcc {
-  return { fatigue: mkAcc(), fatigueMax, stability: mkAcc(), endurance: mkAcc(), evasion: mkAcc(), partsDestroyed: mkAcc() }
+  return { fatigue: mkAcc(), fatigueMax, stability: mkAcc(), endurance: mkAcc(), evasion: mkAcc(), partsDestroyed: mkAcc(), bleed: mkAcc() }
 }
 
 // ─── Core aggregation ────────────────────────────────────────────────────────
@@ -281,6 +282,7 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
         pushAcc(av.endurance,      snap.endurance)
         pushAcc(av.evasion,        snap.evasion)
         pushAcc(av.partsDestroyed, snap.parts.filter(p => p.destroyed).length)
+        pushAcc(av.bleed,          snap.bleed)
 
         if (!advMentalByRound[snap.id]) advMentalByRound[snap.id] = {}
         const ambr = advMentalByRound[snap.id]!
@@ -547,7 +549,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
       const mentalHdr = ADV_MENTAL_COLUMN_ORDER.map(s => padv(ADVERSARY_MENTAL_ICONS[s], 2)).join(' ')
       console.log(
         `  ${padv('Rd', 3)}  ${padv('💧 moy', 8)}  ${padv('◇ moy', 6)}  ${padv('🫁 moy', 6)}  ` +
-        `${padv('🍀 moy', 6)}  ${padv('✖ moy', 6)}  ${mentalHdr}  ${padv('n runs', 6)}`,
+        `${padv('🍀 moy', 6)}  ${padv('✖ moy', 6)}  ${padv('🩸 moy', 6)}  ${mentalHdr}  ${padv('n runs', 6)}`,
       )
       for (const r of rdNums) {
         const v      = vbr[r]!
@@ -563,6 +565,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
           `  ${padv(accAvg(v.endurance).toFixed(1), 6)}` +
           `  ${padv(accAvg(v.evasion).toFixed(1), 6)}` +
           `  ${padv(accAvg(v.partsDestroyed).toFixed(1), 6)}` +
+          `  ${padv(accAvg(v.bleed).toFixed(1), 6)}` +
           `  ${mentalCells}` +
           `  ${padv(String(nRound), 6)}`,
         )
@@ -570,7 +573,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
     } else {
       console.log(
         `  ${padv('Rd', 3)}  ${padv('💧', 8)}  ${padv('◇', 3)}  ${padv('🫁', 3)}  ` +
-        `${padv('🍀', 3)}  ${padv('✖', 3)}  🧠`,
+        `${padv('🍀', 3)}  ${padv('✖', 3)}  ${padv('🩸', 3)}  🧠`,
       )
       for (const r of rdNums) {
         const v     = vbr[r]!
@@ -584,6 +587,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
           `  ${padv(accAvg(v.endurance).toFixed(0), 3)}` +
           `  ${padv(accAvg(v.evasion).toFixed(0), 3)}` +
           `  ${padv(accAvg(v.partsDestroyed).toFixed(0), 3)}` +
+          `  ${padv(accAvg(v.bleed).toFixed(0), 3)}` +
           `  ${icon}`,
         )
       }
@@ -653,7 +657,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
     console.log(`  ACTIONS — ${charId}`)
 
     const aHdr =
-      `  ${'Action'.padEnd(20)}  ${'Util'.padStart(4)}  ${'Hit%'.padStart(6)}  ` +
+      `  ${'Action'.padEnd(20)}  ${'Util'.padStart(4)}  ${'/comb'.padStart(5)}  ${'Hit%'.padStart(6)}  ` +
       `${'Moy.J'.padStart(5)}  ${'Crit%'.padStart(5)}  ${'Flaw%'.padStart(5)}  Effet/util`
     console.log(aHdr)
     console.log(`  ${'─'.repeat(aHdr.length - 2)}`)
@@ -661,6 +665,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
     for (const [actionId, s] of entries) {
       const label    = (ACTION_DEFS[actionId as ActionId]?.label ?? actionId).slice(0, 20).padEnd(20)
       const uses     = String(s.uses).padStart(4)
+      const perCombat = (s.uses / stats.runCount).toFixed(1).padStart(5)
 
       // Hit rate: for offensive actions denominator = offensiveUses, else = uses
       const hitBase  = s.offensiveUses > 0 ? s.offensiveUses : s.uses
@@ -681,6 +686,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
       console.log(
         `  ${label}` +
         `  ${uses}` +
+        `  ${perCombat}` +
         `  ${hitPct}%` +
         `  ${avgRoll}` +
         `  ${critPct}%` +

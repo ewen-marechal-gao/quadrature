@@ -46,6 +46,7 @@ export const DEFAULT_ADVERSARY_ACTIONS = 2
 export interface BlockState {
   cases:  number
   damage: number
+  name?:  string
   grant:  AdversaryPart['blocks'][number]['grants']
 }
 
@@ -77,6 +78,19 @@ export interface AdversaryCombatant {
   mentalState: AdversaryMental
   /** Action points ⚫ remaining this round (no reaction ⚡ economy for adversaries). */
   actions:   number
+  /**
+   * Sonné 🫨 this round: the creature cannot use reactive defences — its Evasion
+   * 🍀 is disabled (heavy wounds land in full). Set when a stun lands, cleared at
+   * round start. Parallels a PC losing its reactions ⚡.
+   */
+  stunned:   boolean
+  /**
+   * 🩸 Hémorragie : jetons cumulatifs. En fin de manche la créature coche autant
+   * de cases ▢ qu'elle a de jetons, en ignorant armure/réduction, sur les blocs
+   * les plus entamés d'abord (§ Hémorragie — saignée), PUIS la plaie se referme
+   * d'un cran (−1 jeton). Un saignement s'estompe seul sans nouvelle blessure.
+   */
+  bleed:     number
 }
 
 // ─── Block / part predicates ──────────────────────────────────────────────────
@@ -104,7 +118,7 @@ function initPart(p: AdversaryPart): PartState {
     name:   p.name,
     ...(p.tag && { tag: p.tag }),
     armor:  p.armor,
-    blocks: p.blocks.map(b => ({ cases: b.cases, damage: 0, grant: b.grants })),
+    blocks: p.blocks.map(b => ({ cases: b.cases, damage: 0, ...(b.name && { name: b.name }), grant: b.grants })),
   }
 }
 
@@ -124,13 +138,25 @@ export function initAdversary(sheet: AdversarySheet): AdversaryCombatant {
     stability:   0,
     mentalState: 'focused',
     actions:     0,
+    stunned:     false,
+    bleed:       0,
   }
   return startRound(base)
 }
 
-/** Base action points ⚫ granted each round (sheet override, else the default). */
+/**
+ * Base action points ⚫ granted each round (sheet override, else the default),
+ * minus 1 when Essoufflé — i.e. past half its fatigue clock (§ État mental /
+ * Essoufflé : la créature agit moins en s'épuisant). Never below 1.
+ */
 export function baseActions(c: AdversaryCombatant): number {
-  return c.sheet.actions ?? DEFAULT_ADVERSARY_ACTIONS
+  const base = c.sheet.actions ?? DEFAULT_ADVERSARY_ACTIONS
+  return Math.max(1, base - (isAdversaryWinded(c) ? 1 : 0))
+}
+
+/** Essoufflé 😮‍💨 : past half the fatigue clock (drives the −1 ⚫ in baseActions). */
+export function isAdversaryWinded(c: AdversaryCombatant): boolean {
+  return c.fatigue > c.sheet.fatigue / 2
 }
 
 // ─── Resources (round start) ──────────────────────────────────────────────────
@@ -154,6 +180,7 @@ export function startRound(c: AdversaryCombatant): AdversaryCombatant {
     endurance: grantedResource(c, 'endurance'),
     evasion:   grantedResource(c, 'evasion'),
     actions:   baseActions(c),
+    stunned:   false,   // Sonné se dissipe au début de la manche
   }
 }
 
@@ -190,21 +217,47 @@ export function hasImmunity(c: AdversaryCombatant, status: string): boolean {
   return allBlocks(c).some(b => !isBlockDestroyed(b) && b.grant.immunity === status)
 }
 
-/** True if the card is currently in the deck and its cost fits the remaining ⚫. */
-export function canPlayCard(c: AdversaryCombatant, cardId: string): boolean {
-  return activeDeck(c).some(k => k.id === cardId) && cardCost(c, cardId) <= c.actions
+/**
+ * Bonus armor 🛡️ conferred to `targetType` by intact `armorAll` blocks on OTHER
+ * parts (e.g. a carapace shields the rest of the body). The source part shields
+ * itself with its own armor only — hence the exclusion — and the bonus vanishes
+ * when the carrying block is destroyed (crack the shell → the body is exposed).
+ */
+export function grantedArmorAll(c: AdversaryCombatant, targetType: string): number {
+  return [...c.parts, ...c.weapons].reduce((sum, p) => {
+    if (p.type === targetType) return sum
+    return sum + p.blocks.reduce((s, b) => s + (isBlockDestroyed(b) ? 0 : (b.grant.armorAll ?? 0)), 0)
+  }, 0)
 }
 
-/** Spend a card's current ⚫ cost from the remaining action points (floor 0). */
+/** Base fatigue cost 💧 of a card (innate — no block override). */
+export function cardFatigueCost(c: AdversaryCombatant, cardId: string): number {
+  return c.sheet.cards.find(k => k.id === cardId)?.fatigueCost ?? 0
+}
+
+/**
+ * True if the card is in the deck, its ⚫ cost fits the remaining actions, and
+ * paying its 💧 cost would not fill the death clock — une créature ne peut pas
+ * se mettre hors de combat en agissant.
+ */
+export function canPlayCard(c: AdversaryCombatant, cardId: string): boolean {
+  if (!activeDeck(c).some(k => k.id === cardId)) return false
+  if (cardCost(c, cardId) > c.actions) return false
+  const permanent = Math.max(0, cardFatigueCost(c, cardId) - c.endurance)
+  return c.fatigue + permanent < c.sheet.fatigue
+}
+
+/** Spend a card's ⚫ and 💧 costs (💧 fully absorbable by the 🫁 buffer). */
 export function spendCardCost(c: AdversaryCombatant, cardId: string): AdversaryCombatant {
-  return { ...c, actions: Math.max(0, c.actions - cardCost(c, cardId)) }
+  const spent = { ...c, actions: Math.max(0, c.actions - cardCost(c, cardId)) }
+  return spendAdversaryFatigueCost(spent, cardFatigueCost(c, cardId))
 }
 
 // ─── Damage to a part ─────────────────────────────────────────────────────────
 
-/** Light wounds through the part's armor: at least 1 always lands (§ minimum 1). */
-function armorReduced(part: PartState, light: number): number {
-  return light > 0 ? Math.max(1, light - part.armor) : 0
+/** Light wounds through armor: at least 1 always lands (§ minimum 1). */
+function armorReduced(armor: number, light: number): number {
+  return light > 0 ? Math.max(1, light - armor) : 0
 }
 
 /** Fill a part's blocks with light wounds, top → bottom; overflow is lost. */
@@ -247,33 +300,83 @@ export function damagePart(
   let light = wounds.light ?? 0
   let heavy = wounds.heavy ?? 0
 
-  // Evasion converts heavy wounds (while tokens last) into armor-reduced light.
-  while (heavy > 0 && next.evasion > 0) {
+  // Evasion converts heavy wounds (while tokens last) into armor-reduced light —
+  // UNLESS the creature is Sonné 🫨 (its reactive defence is disabled this round).
+  while (heavy > 0 && next.evasion > 0 && !next.stunned) {
     next.evasion -= 1
     heavy -= 1
     light += 3
   }
 
-  fillBlocks(part, armorReduced(part, light))
+  // Effective armor = the part's own armor + any global bonus (armorAll) still
+  // conferred by intact blocks on OTHER parts (e.g. an intact carapace).
+  const effectiveArmor = part.armor + grantedArmorAll(next, part.type)
+  fillBlocks(part, armorReduced(effectiveArmor, light))
   for (let i = 0; i < heavy; i++) destroyTopBlock(part)
 
   return next
 }
 
-// ─── Fatigue ──────────────────────────────────────────────────────────────────
+// ─── Hémorragie 🩸 ──────────────────────────────────────────────────────────────
+
+/** Add N cumulative bleed 🩸 tokens (each marks one case at round end). */
+export function addBleed(c: AdversaryCombatant, amount = 1): AdversaryCombatant {
+  return { ...c, bleed: c.bleed + amount }
+}
 
 /**
- * Add fatigue 💧. Endurance 🫁 tokens absorb it first; only the remainder marks
- * the permanent death clock (capped at the sheet's fatigue size).
+ * End-of-round bleed: mark `bleed` cases ▢ across the creature, ignoring armor,
+ * on the MOST-wounded intact block first (§ Hémorragie — saignée : concentre les
+ * pertes vers la destruction). A block filled this way is destroyed (capability
+ * lost). La plaie se referme d'UN cran par manche (−1 jeton) : un saignement
+ * récent continue de couler puis s'estompe si la créature n'est pas re-blessée.
  */
-export function addAdversaryFatigue(c: AdversaryCombatant, amount: number): AdversaryCombatant {
-  const absorbed  = Math.min(c.endurance, amount)
+export function bleedTick(c: AdversaryCombatant): AdversaryCombatant {
+  if (c.bleed <= 0) return c
+  const next = structuredClone(c)
+  const blocks = [...next.parts, ...next.weapons].flatMap(p => p.blocks)
+  for (let i = 0; i < next.bleed; i++) {
+    // Most-wounded intact block (highest damage, then most nearly full).
+    const target = blocks
+      .filter(b => !isBlockDestroyed(b))
+      .sort((a, b) => b.damage - a.damage || (b.cases - b.damage) - (a.cases - a.damage))[0]
+    if (!target) break   // no intact block left — the bleed has nowhere to land
+    target.damage += 1
+  }
+  next.bleed = Math.max(0, next.bleed - 1)   // la plaie se referme d'un cran par manche
+  return next
+}
+
+// ─── Fatigue ──────────────────────────────────────────────────────────────────
+
+/** Core: spend 🫁 first, then mark the clock; `minThrough` cases always land. */
+function applyFatigue(c: AdversaryCombatant, amount: number, minThrough: number): AdversaryCombatant {
+  if (amount <= 0) return c
+  const absorbed  = Math.min(c.endurance, amount - minThrough)
   const permanent = amount - absorbed
   return {
     ...c,
     endurance: c.endurance - absorbed,
     fatigue:   Math.min(c.sheet.fatigue, c.fatigue + permanent),
   }
+}
+
+/**
+ * Fatigue 💧 SUBIE (attaques). L'Endurance 🫁 absorbe d'abord, mais au moins
+ * 1💧 marque toujours l'horloge — le « tampon poreux », miroir du « minimum 1 »
+ * de l'armure : le harcèlement progresse toujours, le burst reste récompensé.
+ */
+export function addAdversaryFatigue(c: AdversaryCombatant, amount: number): AdversaryCombatant {
+  return applyFatigue(c, amount, 1)
+}
+
+/**
+ * Coût en 💧 d'une action de la créature (carte à fatigueCost). Absorbable
+ * INTÉGRALEMENT par les 🫁 : agir en étant frais est gratuit — mais le tampon
+ * brûlé n'absorbe plus les attaques de fatigue de la manche.
+ */
+export function spendAdversaryFatigueCost(c: AdversaryCombatant, amount: number): AdversaryCombatant {
+  return applyFatigue(c, amount, 0)
 }
 
 // ─── Mental track ──────────────────────────────────────────────────────────────
@@ -320,6 +423,12 @@ export interface AdversarySnapshot {
   evasion:     number
   stability:   number
   mentalState: AdversaryMental
+  /** Sonné 🫨 this round (Evasion 🍀 disabled). */
+  stunned:     boolean
+  /** Essoufflé 😮‍💨 : past half the fatigue clock (−1 ⚫). */
+  winded:      boolean
+  /** 🩸 Jetons d'hémorragie cumulés (cases cochées en fin de manche). */
+  bleed:       number
   /** Per-part damage: marked cases / total cases, and destroyed flag. */
   parts: Array<{ type: string; marked: number; total: number; destroyed: boolean }>
 }
@@ -334,6 +443,9 @@ export function toAdversarySnapshot(c: AdversaryCombatant): AdversarySnapshot {
     evasion:     c.evasion,
     stability:   c.stability,
     mentalState: c.mentalState,
+    stunned:     c.stunned,
+    winded:      isAdversaryWinded(c),
+    bleed:       c.bleed,
     parts: [...c.parts, ...c.weapons].map(p => ({
       type:      p.type,
       marked:    p.blocks.reduce((s, b) => s + b.damage, 0),

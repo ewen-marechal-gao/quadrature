@@ -245,6 +245,6 @@ describe('resolveRound — damage delivery', () => {
     // Winded is always removed by respiration
     expect(states.get('A')!.status).not.toContain('winded')
     // B is completely untouched
-    expect(states.get('B')).toEqual(expect.objectContaining({ lightWounds: 0, fatigue: 0 }))
+    expect(states.get('B')).toEqual(expect.objectContaining({ lightWounds: 0, fatigue: 1 }))
   })
 })

@@ -16,10 +16,44 @@
  * Tout est scopé sous les classes `.adv-*` pour ne pas fuiter dans le site.
  */
 
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Adversary, AdversaryDie, AdversaryTrait, BodyPart } from "@/lib/bestiary";
 import { adversaryCardToPlayerCard } from "@/lib/adversary-card";
 import { ActionCard } from "@/components/ActionCard";
 import "@/app/adversaries.css";
+
+// useLayoutEffect côté client (mesure avant peinture), useEffect au rendu serveur.
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+/**
+ * Scale-to-fit : compare le contenu naturel de la fiche au cadre A5 fixe et
+ * renvoie un facteur ≤ 1 pour que TOUT tienne (aucun clipping), quelle que soit
+ * la densité de la créature. En mode fluide (étroit, aspect auto) le cadre suit
+ * le contenu → facteur 1 (pas de mise à l'échelle).
+ */
+function useFitScale() {
+  const frameRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useIsoLayoutEffect(() => {
+    const frame = frameRef.current;
+    const content = contentRef.current;
+    if (!frame || !content) return;
+    const measure = () => {
+      const cw = content.scrollWidth;
+      const ch = content.scrollHeight; // taille NATURELLE (le transform n'affecte pas le layout)
+      if (!cw || !ch) return;
+      const s = Math.min(1, frame.clientWidth / cw, frame.clientHeight / ch);
+      setScale((prev) => (Math.abs(prev - s) > 0.004 ? s : prev));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(frame);
+    ro.observe(content);
+    return () => ro.disconnect();
+  }, []);
+  return { frameRef, contentRef, scale };
+}
 
 /** Glyphe d'un dé d'adversaire. */
 const DIE_GLYPH: Record<AdversaryDie, string> = {
@@ -79,7 +113,10 @@ function PartCard({ part }: { part: BodyPart }) {
         {part.blocks.map((block, i) => (
           <li key={i} className="adv-bloc">
             <Boxes count={block.cases} />
-            <span className="adv-bloc-confere">{block.grants}</span>
+            <span className="adv-bloc-confere">
+              {block.name && <strong className="adv-bloc-name">{block.name} — </strong>}
+              {block.grants}
+            </span>
           </li>
         ))}
       </ul>
@@ -90,8 +127,14 @@ function PartCard({ part }: { part: BodyPart }) {
 /** Recto : feuille A5 paysage (stats + parties du corps). */
 export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
   const a = adversary;
+  const { frameRef, contentRef, scale } = useFitScale();
   return (
-    <article className="adv-sheet" aria-label={`Fiche : ${a.name}`}>
+    <article className="adv-sheet" ref={frameRef} aria-label={`Fiche : ${a.name}`}>
+      <div
+        className="adv-sheet-fit"
+        ref={contentRef}
+        style={scale < 1 ? { transform: `scale(${scale})` } : undefined}
+      >
       <header className="adv-header">
         <div className="adv-title">
           <h1 className="adv-name">{a.name}</h1>
@@ -115,24 +158,6 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
       {a.description && <p className="adv-desc">{a.description}</p>}
 
       <div className="adv-body">
-        <aside className="adv-left">
-          <FatigueTrack total={a.fatigue} />
-
-          {a.traits.length > 0 && (
-            <div className="adv-traits">
-              <div className="adv-section-label">Traits</div>
-              <ul>
-                {a.traits.map((t) => (
-                  <li key={t.name} className="adv-trait">
-                    <span className="adv-trait-type">{KIND_GLYPH[t.kind]}</span>{" "}
-                    <strong>{t.name} :</strong> {t.effect}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </aside>
-
         <section className="adv-parts">
           <div className="adv-section-label">Parties du corps</div>
           <div className="adv-parts-grid">
@@ -152,6 +177,26 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
             </>
           )}
         </section>
+
+        <aside className="adv-aside">
+          <FatigueTrack total={a.fatigue} />
+
+          {a.traits.length > 0 && (
+            <div className="adv-traits">
+              <div className="adv-section-label">Traits</div>
+              <ul>
+                {a.traits.map((t) => (
+                  <li key={`${t.name}-${t.source ?? ""}`} className="adv-trait">
+                    <span className="adv-trait-type">{KIND_GLYPH[t.kind]}</span>{" "}
+                    <strong>{t.name} :</strong> {t.effect}
+                    {t.source && <em className="adv-trait-source"> ({t.source})</em>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+      </div>
       </div>
     </article>
   );

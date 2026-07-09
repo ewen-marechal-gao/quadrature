@@ -73,7 +73,8 @@ export function makeResolve(outcomes: ActionOutcomes) {
       effects.push(...opsToCombatEffects(o.effect, target.id, actor.id))
       if (o.text) notes.push(`${prefix} ${o.text}`)
     }
-    apply(hit ? outcomes.onSuccess : outcomes.onFailure, hit ? '✅' : '❌')
+    // Une action n'échoue jamais : total ≥ DC = succès (✅), sinon succès partiel (◐).
+    apply(hit ? outcomes.onSuccess : outcomes.onFailure, hit ? '✅' : '◐')
     if (flaw)     apply(outcomes.onFlaw, '⚠️')
     if (critical) apply(outcomes.onCritical, '✴️')
     return { effects, notes }

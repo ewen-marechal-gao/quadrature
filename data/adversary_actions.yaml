@@ -7,6 +7,11 @@
 # EMBARQUE la def complète dans data/bestiary/cards/<id>.card.yaml (fiche
 # auto-suffisante ; cette bibliothèque n'est qu'un mécanisme DRY côté source).
 #
+# `fatigueCost: N` (optionnel) : coût en 💧 payé au moment de jouer la carte,
+# absorbable INTÉGRALEMENT par les 🫁 (contrairement à la fatigue subie, dont
+# au moins 1💧 traverse le tampon). Réservé aux actions puissantes : la créature
+# qui se dépense brûle son tampon et s'ouvre aux attaques de fatigue.
+#
 # Chaque issue fusionne prose + effet : { text: <Locale | "auto">, effect: [ops] }.
 # `onFives` ajoute `count` (⭐ Repérez N 5). Grammaire d'ops :
 #   { wound: N }  💢   { fatigue: N } 💧   { heavyWound: N } 💔
@@ -44,17 +49,41 @@ actions:
     onFailure: { text: { fr: "Déplacement [4]" },                   effect: [{ move: 4 }] }
     onFives:   { text: { fr: "Repérez deux 5 : la cible est Entravée 🕸️." }, count: 2, effect: [{ status: entrapped }] }
 
+  # Morsure DE BASE conférée par les Mâchoires (jaws) — hémorragie seulement sur un 5.
   bite:
     name: { fr: "Morsure", en: "Bite" }
     cost: 1
     initiative: 3
     tags: [offensive, melee, physical, physicalDamage]
-    onSuccess: { text: { fr: "Inflige 💢💢 et une hémorragie 🩸" }, effect: [{ wound: 2 }, { status: hemorrhage }] }
-    onFailure: { text: { fr: "Inflige 💢" },                        effect: [{ wound: 1 }] }
+    onSuccess: { text: { fr: "Inflige 💢💢" }, effect: [{ wound: 2 }] }
+    onFailure: { text: { fr: "Inflige 💢" },  effect: [{ wound: 1 }] }
+    onFives:   { text: { fr: "Repérez un 5 : la cible subit une hémorragie 🩸." }, count: 1, effect: [{ status: hemorrhage }] }
+
+  # Cri acoustique DE BASE conféré par les Poumons (lungs) — pression morale légère.
+  # La version « sidérante » (zone + Sonné) reste réservée à la Télépathie (cf. shriek).
+  cry:
+    name: { fr: "Cri", en: "Cry" }
+    cost: 1
+    fatigueCost: 1
+    initiative: 2
+    tags: [offensive, mental, mentalDamage]
+    onSuccess: { text: { fr: "La créature la plus proche subit 🔻" }, effect: [{ mental: -1 }] }
+    onFailure: { text: { fr: "Aucun effet" },                        effect: [] }
+
+  # Morsure DÉCHIRANTE — version améliorée réservée (mutation predatoryBite).
+  rendingBite:
+    name: { fr: "Morsure déchirante", en: "Rending Bite" }
+    cost: 2
+    initiative: 3
+    tags: [offensive, melee, physical, physicalDamage]
+    onSuccess: { text: { fr: "Inflige 💢💢💢 et une hémorragie 🩸" }, effect: [{ wound: 3 }, { status: hemorrhage }] }
+    onFailure: { text: { fr: "Inflige 💢💢" },                        effect: [{ wound: 2 }] }
+    onFives:   { text: { fr: "Repérez un 5 : hémorragie 🩸 supplémentaire." }, count: 1, effect: [{ status: hemorrhage }] }
 
   shriek:
     name: { fr: "Cri terrifiant", en: "Terrifying Shriek" }
     cost: 2
+    fatigueCost: 2
     initiative: 5
     tags: [offensive, mental, mentalDamage]
     onSuccess: { text: { fr: "Toutes les créatures de la zone subissent 🔻" }, effect: [{ mental: -1 }] }
@@ -65,11 +94,22 @@ actions:
   tailSweep:
     name: { fr: "Balayage caudal", en: "Tail Sweep" }
     cost: 1
+    fatigueCost: 1
     initiative: 4
     tags: [offensive, melee, physical, fatigueDamage]
     onSuccess: { text: { fr: "La cible est À terre 🙏" },   effect: [{ status: knockdown }] }
     onFailure: { text: { fr: "La cible est À genoux 🧎" },  effect: [{ status: kneeling }] }
     onFives:   { text: { fr: "Repérez un 5 : inflige 💧💧." }, count: 1, effect: [{ fatigue: 2 }] }
+
+  # Piétinement d'une créature massive (pattes antérieures) — attaque lourde.
+  trample:
+    name: { fr: "Piétiner", en: "Trample" }
+    cost: 2
+    initiative: 5
+    tags: [offensive, melee, physical, physicalDamage]
+    onSuccess: { text: { fr: "Inflige 💢💢💢" }, effect: [{ wound: 3 }] }
+    onFailure: { text: { fr: "Inflige 💢" },     effect: [{ wound: 1 }] }
+    onFives:   { text: { fr: "Repérez un 5 : la cible est À terre 🙏." }, count: 1, effect: [{ status: knockdown }] }
 
   laceration:
     name: { fr: "Lacération", en: "Laceration" }

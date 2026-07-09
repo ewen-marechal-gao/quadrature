@@ -16,15 +16,7 @@ import type {
   AdversaryEffectOp,
 } from './types'
 import type { AdversaryDie, PowerTier } from './dice'
-
-// ─── Locale helper ────────────────────────────────────────────────────────────
-
-type LocalizedString = { fr: string; en?: string }
-
-/** Resolve a Locale string to the requested locale, falling back to fr then en. */
-function localize(s: LocalizedString, locale: string): string {
-  return (s as Record<string, string>)[locale] ?? s.fr ?? s.en ?? ''
-}
+import { localize, type LocalizedString } from '../locale'
 
 // ─── Raw YAML shapes (English keys, Locale strings) ───────────────────────────
 
@@ -35,8 +27,9 @@ interface RawGrant {
   resource?: AdversaryBlockGrant['resource']
   amount?: number
   immunity?: string
+  armorAll?: number
 }
-interface RawBlock { cases: number; grants: RawGrant }
+interface RawBlock { cases: number; name?: LocalizedString; grants: RawGrant }
 interface RawPart {
   type: string
   name: LocalizedString
@@ -52,6 +45,7 @@ interface RawCard {
   id: string
   name: LocalizedString
   cost: number
+  fatigueCost?: number
   initiative: number
   tags?: import('./types').CardTag[]
   ranged?: boolean
@@ -91,6 +85,7 @@ function resolveGrant(g: RawGrant, locale: string): AdversaryBlockGrant {
     ...(g.resource   && { resource:   g.resource }),
     ...(g.amount != null && { amount:  g.amount }),
     ...(g.immunity   && { immunity:   g.immunity }),
+    ...(g.armorAll != null && { armorAll: g.armorAll }),
   }
 }
 
@@ -105,7 +100,7 @@ function resolvePart(p: RawPart, locale: string): AdversaryPart {
     ...(p.description && { description: localize(p.description, locale) }),
     ...(p.tag && { tag: p.tag }),
     armor:       p.armor,
-    blocks:      p.blocks.map(b => ({ cases: b.cases, grants: resolveGrant(b.grants, locale) })),
+    blocks:      p.blocks.map(b => ({ cases: b.cases, ...(b.name && { name: localize(b.name, locale) }), grants: resolveGrant(b.grants, locale) })),
   }
 }
 
@@ -117,6 +112,7 @@ function resolveCard(c: RawCard, locale: string): AdversaryCardDef {
     id:         c.id,
     name:       localize(c.name, locale),
     cost:       c.cost,
+    ...(c.fatigueCost != null && { fatigueCost: c.fatigueCost }),
     initiative: c.initiative,
     tags:       c.tags ?? [],
     ...(c.ranged && { ranged: true }),

@@ -2,27 +2,32 @@
  * Body-part health model tests, exercised against the real Faucheur fiche.
  *
  * Faucheur parts (armor · blocks):
- *   head    🛡️0  |▢▢| |▢▢| |▢▢|  → +1 ◇ · grants bite · grants shriek
- *   body    🛡️1  |▢▢▢|           → +1 🫁
+ *   head    🛡️1  |▢▢| |▢▢| |▢▢|  → grants bite · grants cry · +1 ◇
+ *   body    🛡️1  |▢▢▢|           → +2 🫁
  *   sickles 🛡️1  |▢▢▢| |▢▢▢|     → cost override sickleStrike · grants sickleStrike
  *   rearLeg 🛡️1  |▢▢| |▢▢▢|      → +1 action Charge (grants charge) · move · Évasion 1
  *   tail    🛡️0  |▢▢| |▢▢|       → immunity knockdown · grants tailSweep
- * fatigue 9 · dice 4×threat · guard Esquive 10.
+ * fatigue 10 · dice 4×threat · guard Esquive 10.
  */
 import { loadAdversary } from '../../src/adversary/io'
 import {
   initAdversary, damagePart, addAdversaryFatigue, shiftAdversaryMental, startRound,
   activeDeck, cardCost, hasImmunity, grantedResource,
   canPlayCard, spendCardCost, baseActions,
-  isBlockDestroyed, isPartDestroyed, isAdversaryDefeated,
+  spendAdversaryFatigueCost, cardFatigueCost,
+  addBleed, bleedTick,
+  isBlockDestroyed, isPartDestroyed, isAdversaryDefeated, isAdversaryWinded,
   type AdversaryCombatant,
 } from '../../src/adversary/combatant'
+import { applyEffectToActor, actorEndRound } from '../../src/adversary/actor'
 
 async function faucheur(): Promise<AdversaryCombatant> {
   return initAdversary(await loadAdversary('faucheur'))
 }
 const part = (c: AdversaryCombatant, type: string) =>
   [...c.parts, ...c.weapons].find(p => p.type === type)!
+const totalMarks = (c: AdversaryCombatant) =>
+  [...c.parts, ...c.weapons].flatMap(p => p.blocks).reduce((s, b) => s + b.damage, 0)
 
 // ─── Initialisation & resources ───────────────────────────────────────────────
 
@@ -31,7 +36,7 @@ describe('initAdversary', () => {
     const c = await faucheur()
     expect(c.fatigue).toBe(0)
     expect(c.stability).toBe(1)   // head
-    expect(c.endurance).toBe(1)   // body
+    expect(c.endurance).toBe(2)   // body
     expect(c.evasion).toBe(1)     // rearLeg
     expect(c.mentalState).toBe('focused')
     expect(c.parts.some(isPartDestroyed)).toBe(false)
@@ -78,7 +83,7 @@ describe('damagePart — light wounds', () => {
 describe('damagePart — heavy wounds & evasion', () => {
   it('a heavy wound is first converted by an Evasion token into 3💢', async () => {
     const c = await faucheur()  // evasion 1
-    // Target head (armor 0, |▢▢|): 1💔 → evasion spends → 3💢 armor-reduced (3) → block full.
+    // Target head (armor 1, |▢▢|): 1💔 → evasion spends → 3💢 armor-reduced to 2 → block full.
     const d = damagePart(c, 'head', { heavy: 1 })
     expect(d.evasion).toBe(0)
     expect(isBlockDestroyed(part(d, 'head').blocks[0])).toBe(true)
@@ -92,6 +97,23 @@ describe('damagePart — heavy wounds & evasion', () => {
     expect(isBlockDestroyed(s.blocks[0])).toBe(true)   // top block destroyed
     expect(isBlockDestroyed(s.blocks[1])).toBe(false)  // lower block intact
   })
+
+  it('Sonné 🫨 disables Evasion — a heavy wound lands in full', async () => {
+    const c = await faucheur()  // evasion 1
+    // Without stun: 1💔 on head (armor 1, |▢▢|) is converted by evasion → block full.
+    const evaded = damagePart(c, 'head', { heavy: 1 })
+    expect(evaded.evasion).toBe(0)
+    expect(isBlockDestroyed(part(evaded, 'head').blocks[0])).toBe(true)
+    // Stunned: evasion is NOT spent; the heavy wound destroys the top block directly.
+    const stunned = damagePart({ ...c, stunned: true }, 'head', { heavy: 1 })
+    expect(stunned.evasion).toBe(1)  // untouched
+    expect(isBlockDestroyed(part(stunned, 'head').blocks[0])).toBe(true)
+  })
+
+  it('Sonné is cleared at round start', async () => {
+    const c = { ...(await faucheur()), stunned: true }
+    expect(startRound(c).stunned).toBe(false)
+  })
 })
 
 // ─── Dynamic deck & cost ──────────────────────────────────────────────────────
@@ -100,7 +122,7 @@ describe('capability derivation', () => {
   it('the deck lists every card whose granting block is intact', async () => {
     const c = await faucheur()
     expect(activeDeck(c).map(k => k.id).sort())
-      .toEqual(['bite', 'charge', 'shriek', 'sickleStrike', 'tailSweep'])
+      .toEqual(['bite', 'charge', 'cry', 'sickleStrike', 'tailSweep'])
   })
 
   it('destroying the granting block drops the card from the deck', async () => {
@@ -110,7 +132,7 @@ describe('capability derivation', () => {
     c = damagePart(c, 'sickles', { heavy: 1 })
     c = damagePart(c, 'sickles', { heavy: 1 })
     expect(activeDeck(c).map(k => k.id).sort())
-      .toEqual(['bite', 'charge', 'shriek', 'tailSweep'])
+      .toEqual(['bite', 'charge', 'cry', 'tailSweep'])
   })
 
   it('the sickles upper block overrides sickleStrike cost to ⚫ while intact', async () => {
@@ -140,30 +162,91 @@ describe('capability derivation', () => {
   })
 })
 
+// ─── armorAll (carapace) ────────────────────────────────────────────────────────
+
+describe('armorAll — the carapace shields the other parts', () => {
+  const cuirassard = async () => initAdversary(await loadAdversary('cuirassard'))
+
+  it('an intact carapace adds its bonus to other parts; cracking it exposes them', async () => {
+    let c = await cuirassard()
+    c = { ...c, evasion: 0 }
+    // Body base armor 0 + carapace +2 = effective 2. 4💢 → max(1, 4-2) = 2 marks.
+    expect(part(damagePart(c, 'body', { light: 4 }), 'body').blocks[0].damage).toBe(2)
+    // Crack the carapace (armor 3, one 5-case block) with a heavy wound (evasion off).
+    c = damagePart(c, 'carapace', { heavy: 1 })
+    expect(isPartDestroyed(part(c, 'carapace'))).toBe(true)
+    // Body now on its own armor 0: 4💢 → max(1, 4-0) = 4 marks (fills |▢▢▢|, spills 1).
+    expect(part(damagePart(c, 'body', { light: 4 }), 'body').blocks[0].damage).toBe(3)
+  })
+})
+
 // ─── Fatigue & endurance ───────────────────────────────────────────────────────
 
 describe('addAdversaryFatigue', () => {
-  it('endurance absorbs fatigue before the permanent clock', async () => {
-    const c = await faucheur()  // endurance 1, fatigue clock 9
+  it('endurance absorbs fatigue, but at least 1💧 marks the clock (tampon poreux)', async () => {
+    const c = await faucheur()  // endurance 2, fatigue clock 10
+    // Above the buffer: 2 absorbed, remainder marks the clock.
     const d = addAdversaryFatigue(c, 3)
     expect(d.endurance).toBe(0)
-    expect(d.fatigue).toBe(2)   // 3 − 1 buffered
+    expect(d.fatigue).toBe(1)
+    // Within the buffer: min 1 gets through anyway — chip damage always progresses.
+    const e = addAdversaryFatigue(c, 2)
+    expect(e.endurance).toBe(1)   // only 1 absorbed
+    expect(e.fatigue).toBe(1)
   })
 
   it('defeat triggers when the fatigue clock fills', async () => {
     let c = await faucheur()
     c = { ...c, endurance: 0 }
     expect(isAdversaryDefeated(c)).toBe(false)
-    c = addAdversaryFatigue(c, 9)
+    c = addAdversaryFatigue(c, 10)   // clock size 10
     expect(isAdversaryDefeated(c)).toBe(true)
+  })
+
+  it('card fatigue costs 💧 are fully absorbable by 🫁 (no porous minimum)', async () => {
+    const c = await faucheur()          // endurance 2
+    const d = spendAdversaryFatigueCost(c, 2)
+    expect(d.endurance).toBe(0)
+    expect(d.fatigue).toBe(0)           // fully buffered — acting fresh is free
+    const e = spendAdversaryFatigueCost({ ...c, endurance: 0 }, 2)
+    expect(e.fatigue).toBe(2)           // buffer burnt → the cost marks the clock
+  })
+
+  it('spendCardCost spends the ⚫ AND the 💧 cost (cry: ⚫ + 1💧)', async () => {
+    const c = await faucheur()          // actions 2, endurance 2
+    expect(cardFatigueCost(c, 'cry')).toBe(1)
+    const d = spendCardCost(c, 'cry')
+    expect(d.actions).toBe(1)
+    expect(d.endurance).toBe(1)         // 💧 cost absorbed by the buffer
+    expect(d.fatigue).toBe(0)
+  })
+
+  it('canPlayCard refuses a card whose 💧 cost would fill the clock', async () => {
+    const c = await faucheur()          // clock 10
+    const exhausted = { ...c, endurance: 0, fatigue: 9 }
+    expect(canPlayCard(exhausted, 'cry')).toBe(false)   // 9 + 1 ≥ 10
+    expect(canPlayCard(exhausted, 'bite')).toBe(true)   // no 💧 cost
+    // With a 🫁 left, the cost is absorbed → playable again.
+    expect(canPlayCard({ ...exhausted, endurance: 1 }, 'cry')).toBe(true)
+  })
+
+  it('Essoufflé past half the clock ⇒ −1 ⚫ (min 1)', async () => {
+    const c = await faucheur()   // clock 10, base 2 ⚫
+    expect(baseActions(c)).toBe(2)
+    expect(isAdversaryWinded(c)).toBe(false)
+    const tired = { ...c, endurance: 0, fatigue: 6 }   // 6 > 5 = moitié de 10
+    expect(isAdversaryWinded(tired)).toBe(true)
+    expect(baseActions(tired)).toBe(1)                 // 2 − 1
+    // startRound applique la pénalité au pool d'actions
+    expect(startRound(tired).actions).toBe(1)
   })
 
   it('defeat triggers when every body part is destroyed (weapons excluded)', async () => {
     let c = await faucheur()
     c = { ...c, evasion: 0 }
-    // Destroy every block of every part: head 3, body 1, sickles 2, rearLeg 2, tail 2
+    // Destroy every block of every part: head 2 (bite, ◇), body 2 (🫁, cri), sickles 2, rearLeg 2, tail 2
     const blows: Array<[string, number]> = [
-      ['head', 3], ['body', 1], ['sickles', 2], ['rearLeg', 2], ['tail', 2],
+      ['head', 2], ['body', 2], ['sickles', 2], ['rearLeg', 2], ['tail', 2],
     ]
     for (const [part, n] of blows) {
       for (let i = 0; i < n; i++) {
@@ -173,6 +256,81 @@ describe('addAdversaryFatigue', () => {
     }
     expect(isAdversaryDefeated(c)).toBe(true)
     expect(c.fatigue).toBe(0)  // defeat came from the parts, not the clock
+  })
+})
+
+// ─── Hémorragie 🩸 ──────────────────────────────────────────────────────────────
+
+describe('bleed 🩸 (cumulative)', () => {
+  it('a hemorrhage status adds one cumulative bleed token', async () => {
+    let c = await faucheur()
+    c = applyEffectToActor(c, { targetId: c.id, kind: 'add-status', status: 'hemorrhage' }) as AdversaryCombatant
+    c = applyEffectToActor(c, { targetId: c.id, kind: 'add-status', status: 'hemorrhage' }) as AdversaryCombatant
+    expect(c.bleed).toBe(2)
+  })
+
+  it('bleedTick with no tokens is identity', async () => {
+    const c = await faucheur()
+    expect(bleedTick(c)).toEqual(c)
+  })
+
+  it('marks the most-wounded block first, ignoring armor', async () => {
+    let c = await faucheur()
+    c = { ...c, evasion: 0 }
+    // head |▢▢| armed to 1/2; every other block still 0. One 🩸 → head (most wounded).
+    c = damagePart(c, 'head', { light: 1 })
+    expect(part(c, 'head').blocks[0].damage).toBe(1)
+    c = bleedTick(addBleed(c, 1))
+    expect(part(c, 'head').blocks[0].damage).toBe(2)     // marked directly, no armor reduction
+    expect(isBlockDestroyed(part(c, 'head').blocks[0])).toBe(true)
+  })
+
+  it('marks as many cases as there are tokens (cumulative)', async () => {
+    let c = await faucheur()
+    c = { ...c, evasion: 0 }
+    const before = totalMarks(c)
+    c = bleedTick(addBleed(c, 3))
+    expect(totalMarks(c) - before).toBe(3)
+  })
+
+  it('the wound closes by one step per round (−1 jeton), fading without re-injury', async () => {
+    let c = await faucheur()
+    c = addBleed(c, 2)
+    const r1 = bleedTick(c)
+    expect(totalMarks(r1)).toBe(2)   // 2 jetons → 2 cases
+    expect(r1.bleed).toBe(1)         // la plaie se referme d'un cran
+    const r2 = bleedTick(r1)
+    expect(totalMarks(r2) - totalMarks(r1)).toBe(1)  // 1 jeton restant → 1 case
+    expect(r2.bleed).toBe(0)
+    expect(bleedTick(r2)).toEqual(r2)                // refermée : plus de saignée
+  })
+
+  it('a burst of N tokens deals triangular total damage N(N+1)/2 (combo design)', async () => {
+    // Appliquer N saignements dans UNE manche puis laisser la plaie se refermer
+    // seule inflige N + (N-1) + … + 1 cases : le burst est récompensé, l'étalement
+    // (1 jeton/manche) resterait linéaire. Récompense précision/kit qui empilent.
+    for (const N of [2, 3, 4]) {
+      let c = await faucheur()
+      c = addBleed(c, N)
+      let total = 0
+      let before = totalMarks(c)
+      while (c.bleed > 0) {
+        c = bleedTick(c)
+        total += totalMarks(c) - before
+        before = totalMarks(c)
+      }
+      expect(total).toBe((N * (N + 1)) / 2)
+    }
+  })
+
+  it('actorEndRound applies the bleed to an adversary', async () => {
+    let c = await faucheur()
+    c = { ...c, evasion: 0 }
+    c = damagePart(c, 'tail', { light: 1 })             // tail 🛡️0 → 1/2
+    c = addBleed(c, 1)
+    const after = actorEndRound(c) as AdversaryCombatant
+    expect(part(after, 'tail').blocks[0].damage).toBe(2)
+    expect(isBlockDestroyed(part(after, 'tail').blocks[0])).toBe(true)
   })
 })
 

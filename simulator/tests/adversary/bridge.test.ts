@@ -32,11 +32,11 @@ describe('applyPcEffectsToAdversary', () => {
   })
 
   it('fatigue feeds the death clock, buffered by endurance', async () => {
-    const c = await faucheur()  // endurance 1
+    const c = await faucheur()  // endurance 2
     const fx: CombatEffect[] = [{ targetId: c.id, kind: 'add-fatigue', amount: 3 }]
     const { state } = applyPcEffectsToAdversary(c, fx, 'body')
     expect(state.endurance).toBe(0)
-    expect(state.fatigue).toBe(2)
+    expect(state.fatigue).toBe(1)   // 3 − 2 buffered
   })
 
   it('a mental shift toward Peur moves the 3-state track once stability is gone', async () => {
@@ -53,5 +53,13 @@ describe('applyPcEffectsToAdversary', () => {
     const { state, unhandledStatuses } = applyPcEffectsToAdversary(c, fx, 'head')
     expect(unhandledStatuses).toEqual(['knockdown'])
     expect(state).toEqual(c)  // nothing changed
+  })
+
+  it('Sonné 🫨 IS wired — it sets the stunned flag (Evasion disabled)', async () => {
+    const c = await faucheur()
+    const fx: CombatEffect[] = [{ targetId: c.id, kind: 'add-status', status: 'stunned' }]
+    const { state, unhandledStatuses } = applyPcEffectsToAdversary(c, fx, 'head')
+    expect(state.stunned).toBe(true)
+    expect(unhandledStatuses).toEqual([])  // handled, not collected
   })
 })

@@ -9,7 +9,7 @@
 
 import type { CombatEffect } from '../combat/types'
 import {
-  damagePart, addAdversaryFatigue, shiftAdversaryMental,
+  damagePart, addAdversaryFatigue, shiftAdversaryMental, addBleed,
   type AdversaryCombatant,
 } from './combatant'
 
@@ -48,7 +48,13 @@ export function applyPcEffectsToAdversary(
       case 'shift-mental':
         c = shiftAdversaryMental(c, fx.direction === 'toward-terror' ? -1 : fx.direction === 'toward-rage' ? 1 : 0)
         break
-      case 'add-status': unhandledStatuses.push(fx.status); break
+      case 'add-status':
+        // Sonné 🫨 désactive l'Évasion 🍀 ; Hémorragie 🩸 ajoute un jeton de
+        // saignée (coché en fin de manche) ; les autres restent non modélisés.
+        if (fx.status === 'stunned')         c = { ...c, stunned: true }
+        else if (fx.status === 'hemorrhage') c = addBleed(c, 1)
+        else unhandledStatuses.push(fx.status)
+        break
       default: break  // heal/remove-fatigue/reactions/protection: not produced by attacks on adversaries
     }
   }

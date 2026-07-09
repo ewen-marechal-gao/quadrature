@@ -62,6 +62,10 @@ export interface AdversaryBlockGrant {
   amount?:     number
   /** Status this block confers immunity to while intact (e.g. knockdown). */
   immunity?:   string
+  /** Bonus armor 🛡️ conferred to all OTHER parts while intact (e.g. a carapace). */
+  armorAll?:   number
+  /** A passive trait this block confers (surfaced in the traits list, conditional on the block's integrity). */
+  trait?:      { name: string; effect: string }
 }
 
 /**
@@ -73,6 +77,8 @@ export interface AdversaryBlockGrant {
 export interface AdversaryBlock {
   /** Number of ▢ cases in this block. */
   cases:  number
+  /** Optional display name of the block (e.g. "Plastron", "Pattes antérieures"). */
+  name?:  string
   grants: AdversaryBlockGrant
 }
 
@@ -108,6 +114,8 @@ export interface AdversaryTraitDef {
   name:   string
   kind:   'passive' | 'active'
   effect: string
+  /** Part that confers this trait (conditional on its block); absent for innate traits. */
+  source?: string
 }
 
 /**
@@ -139,6 +147,8 @@ export interface AdversaryCardDef {
   name:       string
   /** Base cost in action points ⚫ (integer); a block may override it (AdversaryBlockGrant.cardCost). */
   cost:       number
+  /** Fatigue cost 💧 paid when playing the card — fully absorbable by 🫁 (§ coûts de fatigue). */
+  fatigueCost?: number
   initiative: number
   /**
    * Card typing (shared CardTag vocabulary, same as player actions). Read by

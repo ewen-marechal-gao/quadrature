@@ -34,7 +34,7 @@ export type PowerTier =
  * (grantsCard, cardCost, resource…). Le web n'affiche que la prose.
  */
 interface RawGrant { text: LocalizedString | "auto"; [k: string]: unknown; }
-interface RawBlock { cases: number; grants: RawGrant; }
+interface RawBlock { cases: number; name?: LocalizedString; grants: RawGrant; }
 interface RawPart {
   /** Slug d'identification stable (head, body, tail, frontLeg, sickles…). */
   type: string;
@@ -43,7 +43,7 @@ interface RawPart {
   armor: number;
   blocks: RawBlock[];
 }
-interface RawTrait { id?: string; name: LocalizedString; kind: "passive" | "active"; effect: LocalizedString; }
+interface RawTrait { id?: string; name: LocalizedString; kind: "passive" | "active"; effect: LocalizedString; source?: LocalizedString; }
 /** Issue de carte : prose d'affichage + effets structurés (ces derniers ignorés côté web). */
 interface RawOutcome { text: LocalizedString | "auto"; [k: string]: unknown; }
 interface RawCard {
@@ -77,11 +77,11 @@ interface RawAdversary {
 // ─── Types résolus (clés anglaises, chaînes dans la locale) ─────────────────────
 
 /** Un bloc de cases d'une partie : confère une capacité tant qu'il est intact. */
-export interface BodyBlock { cases: number; grants: string; }
+export interface BodyBlock { cases: number; name?: string; grants: string; }
 /** Une partie du corps (identifiée par `type`, affichée via `name`). */
 export interface BodyPart { type: string; name: string; description?: string; armor: number; blocks: BodyBlock[]; }
 /** Un trait d'adversaire (♾️ passif / ⚒️ actif). */
-export interface AdversaryTrait { name: string; kind: "passive" | "active"; effect: string; }
+export interface AdversaryTrait { name: string; kind: "passive" | "active"; effect: string; source?: string; }
 /** Une carte d'action du deck (pas de Défaut ⚠️). */
 export interface AdversaryCard {
   id: string;
@@ -147,7 +147,7 @@ function resolvePart(p: RawPart, locale: string): BodyPart {
     name: localize(p.name, locale),
     description: p.description ? localize(p.description, locale) : undefined,
     armor: p.armor,
-    blocks: p.blocks.map((b) => ({ cases: b.cases, grants: localizeText(b.grants.text, locale) })),
+    blocks: p.blocks.map((b) => ({ cases: b.cases, ...(b.name && { name: localize(b.name, locale) }), grants: localizeText(b.grants.text, locale) })),
   };
 }
 
@@ -165,7 +165,7 @@ function resolveAdversary(raw: RawAdversary, locale: string): Adversary {
     fatigue: raw.fatigue,
     parts: raw.parts.map((p) => resolvePart(p, locale)),
     weapons: (raw.weapons ?? []).map((p) => resolvePart(p, locale)),
-    traits: (raw.traits ?? []).map((t) => ({ name: localize(t.name, locale), kind: t.kind, effect: localize(t.effect, locale) })),
+    traits: (raw.traits ?? []).map((t) => ({ name: localize(t.name, locale), kind: t.kind, effect: localize(t.effect, locale), ...(t.source && { source: localize(t.source, locale) }) })),
     cards: raw.cards.map((c) => ({
       id: c.id,
       name: localize(c.name, locale),

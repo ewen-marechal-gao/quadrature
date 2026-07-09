@@ -41,8 +41,8 @@ describe('hasCardTag', () => {
     const c = await faucheur()
     expect(hasCardTag(card(c, 'sickleStrike'), 'offensive')).toBe(true)
     expect(hasCardTag(card(c, 'sickleStrike'), 'physicalDamage')).toBe(true)
-    expect(hasCardTag(card(c, 'shriek'), 'mental')).toBe(true)
-    expect(hasCardTag(card(c, 'shriek'), 'physicalDamage')).toBe(false)
+    expect(hasCardTag(card(c, 'cry'), 'mental')).toBe(true)
+    expect(hasCardTag(card(c, 'cry'), 'physicalDamage')).toBe(false)
     expect(hasCardTag(card(c, 'tailSweep'), 'fatigueDamage')).toBe(true)
     expect(hasCardTag(card(c, 'charge'), 'movement')).toBe(true)
   })
@@ -56,9 +56,9 @@ describe('attackAdvantages — Sanguinaire', () => {
     expect(r.notes).toHaveLength(1)
   })
 
-  it('does not apply to cards without physicalDamage (mental shriek, fatigue sweep)', async () => {
+  it('does not apply to cards without physicalDamage (mental cry, fatigue sweep)', async () => {
     const c = await faucheur()
-    expect(attackAdvantages(c, card(c, 'shriek'),    pcWith(['hemorrhage'])).advantages).toBe(0)
+    expect(attackAdvantages(c, card(c, 'cry'),       pcWith(['hemorrhage'])).advantages).toBe(0)
     expect(attackAdvantages(c, card(c, 'tailSweep'), pcWith(['hemorrhage'])).advantages).toBe(0)
   })
 

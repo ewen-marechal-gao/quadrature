@@ -62,8 +62,9 @@ describe('adversary loader — Faucheur', () => {
 
   it('carries the Sanguinaire passive trait', async () => {
     const a = await loadAdversary('faucheur')
-    expect(a.traits).toHaveLength(1)
-    expect(a.traits[0]).toMatchObject({ name: 'Sanguinaire', kind: 'passive' })
+    // Innate Sanguinaire + the Stabilité trait surfaced from the intact tail block.
+    const sanguinaire = a.traits.find(t => t.name === 'Sanguinaire')
+    expect(sanguinaire).toMatchObject({ kind: 'passive' })
   })
 
   it('has no weapons (attacks are conferred by mutated parts)', async () => {
@@ -85,7 +86,7 @@ describe('adversary loader — collection', () => {
   it('loads every fiche in the bestiary, ordered by filename', async () => {
     const all = await loadAllAdversaries()
     const ids = all.map(a => a.id)
-    expect(ids).toEqual(['bandit-cimes', 'faucheur', 'lacerateur'])
+    expect(ids).toEqual(['bandit-cimes', 'cuirassard', 'faucheur', 'lacerateur'])
   })
 
   it('resolves the requested locale for display strings', async () => {

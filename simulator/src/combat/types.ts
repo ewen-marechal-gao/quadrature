@@ -108,6 +108,11 @@ export type ActionId =
   | 'sharp-strike'   // Frappe vive      — initiative 3, 1 PA + 1💧
   | 'respiration'    // Respiration      — initiative 1, 1 PA (🟢 — must be first action)
   | 'stabilize'      // Stabiliser       — initiative 1, 1 PA (🟢 — must be first action)
+  // Consolidation mentale (🟢 première action ; DD = 8 + degré d'état mental)
+  | 'preservation'   // Préservation — Discipline+Volonté ; 🔻 vers Prudent + ◇
+  | 'focalisation'   // Focalisation — Logique+Intelligence ; recentre vers Concentré + ◇
+  | 'resolution'     // Résolution   — Conviction+Ténacité ; 🔺 vers Agressif + ◇
+  | 'meditation'     // Méditation   — Résilience+Ténacité ; +◇ par Résilience
 
 export type GuardId =
   | 'absorb' // Encaisser — Récupération + Vigueur    (always available)
@@ -194,8 +199,9 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
   | { kind: 'add-reaction';   amount: number }
   | { kind: 'spend-reaction' }                  // defender uses a guard (costs 1 ⚡)
   | { kind: 'shift-mental';        direction: 'toward-terror' | 'toward-rage' | 'toward-focused' }
+  | { kind: 'set-mental';          state: MentalState }  // décalage VOLONTAIRE (consolidation) — ne passe pas par le ◇
   | { kind: 'add-temp-protection'; amount: number }
-  | { kind: 'add-stability';       amount: number }  // ◇ adversaire (op de carte auto-ciblée) ; sans effet sur un PJ
+  | { kind: 'add-stability';       amount: number }  // ◇ : PJ (consolidation, plafonné au pool) ou adversaire (op de carte)
 )
 
 // ─── Resolution records ───────────────────────────────────────────────────────

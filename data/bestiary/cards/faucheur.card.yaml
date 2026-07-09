@@ -18,34 +18,33 @@ guard:
 speed:
   walk: 4
   run: 8
-fatigue: 9
+fatigue: 10
 appearance:
-  fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · un crâne bombé abritant un gros cerveau · une station bipède au dos incliné, les antérieurs libérés · un port à demi dressé, la queue faisant office de balancier · deux longues serpes recourbées au bout des avant-bras
+  fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · un squelette pleinement ossifié · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · un crâne bombé abritant un gros cerveau · une station bipède au dos incliné, les antérieurs libérés · un port à demi dressé, la queue faisant office de balancier · deux longues serpes recourbées au bout des avant-bras
 parts:
   - type: head
     tag: support
     name:
       fr: Tête
     description:
-      fr: Crâne allongé à léger museau, portant les sens et les centres nerveux.
-    armor: 0
+      fr: Crâne allongé à léger museau, portant les sens et les centres nerveux. Crâne ossifié (protection accrue).
+    armor: 1
     blocks:
       - cases: 2
-        grants:
-          text:
-            fr: +1 ◇ au début de la manche
-          resource: stability
-          amount: 1
-      - cases: 2
+        name:
+          fr: Mâchoires
         grants:
           text:
             fr: Confère l'action Morsure
           grantsCard: bite
       - cases: 2
+        name:
+          fr: Cerveau
         grants:
           text:
-            fr: Confère l'action Cri terrifiant
-          grantsCard: shriek
+            fr: +1 ◇ au début de la manche
+          resource: stability
+          amount: 1
   - type: body
     tag: support
     name:
@@ -55,11 +54,20 @@ parts:
     armor: 1
     blocks:
       - cases: 3
+        name:
+          fr: Cœur
         grants:
           text:
-            fr: +1 🫁 au début de la manche
+            fr: +2 🫁 au début de la manche
           resource: endurance
-          amount: 1
+          amount: 2
+      - cases: 2
+        name:
+          fr: Poumons
+        grants:
+          text:
+            fr: Confère l'action Cri
+          grantsCard: cry
   - type: sickles
     tag: offensive
     name:
@@ -69,6 +77,8 @@ parts:
     armor: 1
     blocks:
       - cases: 3
+        name:
+          fr: Fil
         grants:
           text:
             fr: Frappe faucheuse coûte ⚫ (au lieu de ⚫⚫)
@@ -76,6 +86,8 @@ parts:
             card: sickleStrike
             cost: 1
       - cases: 3
+        name:
+          fr: Serpes
         grants:
           text:
             fr: Confère l'action Frappe faucheuse
@@ -89,14 +101,18 @@ parts:
     armor: 1
     blocks:
       - cases: 2
+        name:
+          fr: Charge
         grants:
           text:
             fr: +1 action Charge
           grantsCard: charge
       - cases: 3
+        name:
+          fr: Pattes postérieures
         grants:
           text:
-            fr: Déplacement normal · Évasion 1
+            fr: +1 🍀 Évasion
           resource: evasion
           amount: 1
   - type: tail
@@ -108,11 +124,20 @@ parts:
     armor: 0
     blocks:
       - cases: 2
+        name:
+          fr: Balancier
         grants:
           text:
-            fr: "Queue-balancier : insensible au renversement (mise à terre)"
+            fr: Confère Stabilité
           immunity: knockdown
+          trait:
+            name:
+              fr: Stabilité
+            effect:
+              fr: Insensible au renversement (mise à terre)
       - cases: 2
+        name:
+          fr: Fouet caudal
         grants:
           text:
             fr: Confère l'action Balayage caudal
@@ -124,7 +149,34 @@ traits:
     kind: passive
     effect:
       fr: Si la cible souffre d'au moins une hémorragie 🩸, gagne 🟩 sur ses actions infligeant des dégâts physiques.
+  - name:
+      fr: Stabilité
+    kind: passive
+    effect:
+      fr: Insensible au renversement (mise à terre)
+    source:
+      fr: Queue
 cards:
+  - id: cry
+    name:
+      fr: Cri
+      en: Cry
+    cost: 1
+    fatigueCost: 1
+    initiative: 2
+    tags:
+      - offensive
+      - mental
+      - mentalDamage
+    onSuccess:
+      text:
+        fr: La créature la plus proche subit 🔻
+      effect:
+        - mental: -1
+    onFailure:
+      text:
+        fr: Aucun effet
+      effect: []
   - id: bite
     name:
       fr: Morsure
@@ -138,15 +190,20 @@ cards:
       - physicalDamage
     onSuccess:
       text:
-        fr: Inflige 💢💢 et une hémorragie 🩸
+        fr: Inflige 💢💢
       effect:
         - wound: 2
-        - status: hemorrhage
     onFailure:
       text:
         fr: Inflige 💢
       effect:
         - wound: 1
+    onFives:
+      text:
+        fr: "Repérez un 5 : la cible subit une hémorragie 🩸."
+      count: 1
+      effect:
+        - status: hemorrhage
   - id: sickleStrike
     name:
       fr: Frappe faucheuse
@@ -182,6 +239,7 @@ cards:
       fr: Balayage caudal
       en: Tail Sweep
     cost: 1
+    fatigueCost: 1
     initiative: 4
     tags:
       - offensive
@@ -204,34 +262,6 @@ cards:
       count: 1
       effect:
         - fatigue: 2
-  - id: shriek
-    name:
-      fr: Cri terrifiant
-      en: Terrifying Shriek
-    cost: 2
-    initiative: 5
-    tags:
-      - offensive
-      - mental
-      - mentalDamage
-    onSuccess:
-      text:
-        fr: Toutes les créatures de la zone subissent 🔻
-      effect:
-        - mental: -1
-    onFailure:
-      text:
-        fr: La créature la plus proche subit 🔻
-      effect:
-        - mental: -1
-    onFives:
-      text:
-        fr: "Repérez un 5 : la cible est Sonnée 🫨."
-      count: 1
-      effect:
-        - status: stunned
-    note:
-      fr: "Cri de zone : sans modèle spatial, le simulateur l'applique à la cible unique."
   - id: charge
     name:
       fr: Charge

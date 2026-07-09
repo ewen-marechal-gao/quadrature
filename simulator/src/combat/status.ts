@@ -136,11 +136,12 @@ export const STATUS_DEFS: Record<StatusEffect, StatusDef> = {
   stunned: {
     id: 'stunned', label: 'Sonné', icon: '🫨',
     description:
-      'Le personnage perd immédiatement toutes ses réactions ⚡ et une ⚫ d\'action (manche en cours). ' +
-      'Le statut est retiré en début de manche suivante sans pénalité supplémentaire. ' +
-      'Infligé par un Critique d\'Attaque à mains nues, Frappe brutale ou Bousculade.',
+      'Le personnage perd immédiatement toutes ses réactions ⚡ — il ne peut plus effectuer de ' +
+      'garde active (Esquive/Parade/Blocage), seul Encaisser reste. ' +
+      'Le statut est retiré en début de manche suivante. ' +
+      'Infligé par un Critique d\'Attaque à mains nues, Frappe brutale ou Bousculade. ' +
+      '(Contrairement à Essoufflé qui coûte des actions ⚫, Sonné ne touche que la défense ⚡.)',
     drainReactions: true,
-    drainActions: 1,
     onTokenReset: () => ({ actionPenalty: 0, clear: true }),
   },
 
@@ -185,15 +186,11 @@ export const STATUS_DEFS: Record<StatusEffect, StatusDef> = {
   winded: {
     id: 'winded', label: 'Essoufflé', icon: '😮‍💨',
     description:
-      'Le personnage subit 🟥 (désavantage) à tous ses jets. ' +
+      'Le personnage perd 1 Point d\'Action ⚫ au début de chaque manche (il agit moins). ' +
       'Il ne peut pas effectuer l\'action Course. ' +
-      'Retiré immédiatement par l\'action Respiration (indépendamment du résultat du jet).',
-    rollDisadvantage: 1,
-    onTokenReset: (state) => {
-      const actionPenalty = 0
-      const clear = state.fatigue < 10
-      return { actionPenalty, clear }
-    },
+      'Retiré par l\'action Respiration, ou dès que la fatigue redescend sous la moitié de l\'horloge. ' +
+      '(Contrairement à Sonné qui touche la défense ⚡, Essoufflé touche l\'action ⚫.)',
+    onTokenReset: (state) => ({ actionPenalty: 1, clear: state.fatigue < 10 }),
   },
 
   // ── Entravé 🕸️ ─────────────────────────────────────────────────────────────

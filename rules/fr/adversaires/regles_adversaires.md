@@ -83,9 +83,11 @@ La créature reste en jeu tant que toutes ses parties ne sont pas détruites ; s
 
 ### Fatigue 💧 et Endurance 🫁
 
-💧 **Fatigue.** Chaque case ▢ représente un point de fatigue. Si toutes les cases sont cochées, la créature **perd conscience** et tombe hors de combat.
+💧 **Fatigue.** Chaque case ▢ représente un point de fatigue. Si toutes les cases sont cochées, la créature est **Épuisée** : brisée, elle s'effondre, se soumet ou prend la fuite — elle est **hors de combat, mais pas morte**. Tuer une créature passe par ses blessures ; l'épuiser permet de la capturer ou de la chasser.
 
-🫁 **Endurance X.** Au début de chaque tour de la créature, prendre **X jetons fatigue**. Ces jetons sont **dépensés avant** de cocher les cases de fatigue permanente ▢. L'Endurance est généralement conférée par le **Corps** : détruire le Corps coupe ce tampon, et la fatigue s'accumule alors directement.
+🫁 **Endurance X.** Au début de chaque tour de la créature, prendre **X jetons fatigue**. Ces jetons sont **dépensés avant** de cocher les cases de fatigue permanente ▢ — mais une attaque qui inflige de la fatigue coche **toujours au moins 1 case ▢**, quel que soit le tampon restant (même principe que le « minimum 1 » de l'armure). L'Endurance est généralement conférée par le **Corps** : détruire le Corps coupe ce tampon, et la fatigue s'accumule alors directement.
+
+💧 **Coût de fatigue des actions.** Certaines actions puissantes portent un coût en fatigue (ex. `Cri 💧`) payé au moment de les jouer. Contrairement à la fatigue subie, ce coût est absorbable **intégralement** par les jetons 🫁 : agir en étant frais est gratuit. Mais le tampon brûlé n'absorbe plus les attaques — une créature qui se dépense s'ouvre aux dégâts de fatigue. Une créature **ne peut pas jouer** une action dont le coût remplirait sa piste de fatigue.
 
 ### Défenses : Évasion et Armure
 
@@ -94,6 +96,10 @@ La créature reste en jeu tant que toutes ses parties ne sont pas détruites ; s
 🍀 **Évasion X** — défense **globale** de la créature. Au début de chaque manche, elle gagne X jetons d'Évasion. Chaque jeton transforme **une blessure grave 💔** reçue dans la manche en **3 blessures légères 💢** (elles-mêmes réduites par l'armure de la partie). L'Évasion est conférée par les **Pattes** : pattes détruites → **Évasion 0** et plus aucun déplacement possible.
 
 Par défaut, la **Garde** d'un adversaire est l'**Esquive**. Certaines créatures **bloquent** ou **parent** à la place, généralement avec une valeur plus haute. ⚔️
+
+### Hémorragie 🩸
+
+Les jetons d'**Hémorragie 🩸** sont **cumulatifs**. À la **fin de chaque manche**, la créature coche autant de cases ▢ qu'elle possède de jetons, en **ignorant toute armure ou réduction** — le sang ne connaît ni le souffle (🫁) ni la cuirasse. Les cases sont cochées en **priorité sur les blocs les plus entamés** : le saignement concentre les pertes et précipite la destruction des capacités déjà fragilisées. Puis la **plaie se referme d'un cran** (retirez **1 jeton**) : un saignement récent continue de couler mais **s'estompe** si la créature n'est pas blessée à nouveau.
 
 ### États mentaux simplifiés
 

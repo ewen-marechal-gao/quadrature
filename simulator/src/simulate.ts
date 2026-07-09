@@ -547,11 +547,12 @@ function printRoundEnd(snapshots: CombatantSnapshot[], advSnapshots: AdversarySn
       .filter(p => p.marked > 0)
       .map(p => `${p.type} ${p.marked}/${p.total}${p.destroyed ? '✖' : ''}`)
       .join(' · ')
+    const flags = `${snap.winded ? ' 😮‍💨' : ''}${snap.stunned ? ' 🫨' : ''}${snap.bleed > 0 ? ` 🩸${snap.bleed}` : ''}`
     console.log(
       `  ${snap.id.padEnd(18)}` +
       `  💧 ${String(snap.fatigue).padStart(2)}/${snap.fatigueMax}` +
       `  ◇${snap.stability} 🫁${snap.endurance} 🍀${snap.evasion}` +
-      `  ${ADVERSARY_MENTAL_ICONS[snap.mentalState]}` +
+      `  ${ADVERSARY_MENTAL_ICONS[snap.mentalState]}${flags}` +
       (parts ? `  ⟨${parts}⟩` : '')
     )
   }
@@ -573,7 +574,8 @@ function printAction(e: ActionLogEntry): void {
                 : e.adversaryRoll ? formatAdversaryRoll(e.adversaryRoll)
                 : ''
   const dc      = `  DD:${e.threshold}`
-  const outcome = e.hit ? '  ✅' : '  ❌'
+  // Une action n'échoue jamais : succès ✅ ou succès partiel ◐.
+  const outcome = e.hit ? '  ✅' : '  ◐'
 
   let line: string
   if (e.targetId) {

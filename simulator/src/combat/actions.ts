@@ -21,7 +21,7 @@
 import type { CharacteristicName, SkillName } from '../character/types'
 import type { RollParams, RollResult } from '../types'
 import type {
-  ActionId, GuardId, ActionCost, CardTag,
+  ActionId, GuardId, ActionCost, CardTag, MentalState,
   CombatantState, CombatEffect, ResolvedAction,
 } from './types'
 import type { AdversaryCombatant } from '../adversary/combatant'
@@ -62,6 +62,12 @@ export interface ActionDef {
   /** Card typing (shared CardTag vocabulary, same as adversary cards). */
   tags:          CardTag[]
   prerequisite?: { skill: SkillName; minValue: number }
+  /**
+   * Mental states in which this action may be used (consolidation actions gate
+   * on them — e.g. Résolution needs Concentré or a fear state). An EMPTY array
+   * means no mental constraint. Always present.
+   */
+  mentalConditions: MentalState[]
   /** True for Respiration / Stabiliser: must be the first action of the round (🟢) */
   requiresFirstAction: boolean
   rollChar:      CharacteristicName
@@ -384,6 +390,7 @@ export function canUseAction(state: CombatantState, actionId: ActionId): boolean
   if (isDefeated(state)) return false
   const def = ACTION_DEFS[actionId]
   if (def.prerequisite && state.skills[def.prerequisite.skill] < def.prerequisite.minValue) return false
+  if (def.mentalConditions.length > 0 && !def.mentalConditions.includes(state.mentalState)) return false
   if (def.requiresFirstAction && state.firstActionPlayed) return false
   return true
 }

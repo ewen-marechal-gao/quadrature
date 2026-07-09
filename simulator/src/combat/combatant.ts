@@ -33,7 +33,7 @@ export function initCombatant(char: Character): CombatantState {
     skills:            structuredClone(char.skills),
     lightWounds:       0,
     heavyWounds:       0,
-    fatigue:           0,
+    fatigue:           1,   // § Fatigue : débute à 1, jamais sous 1
     mentalState:       'focused',
     stability:         0,   // set below via stabilityPool (needs the built state)
     status:            [],
@@ -81,7 +81,7 @@ export function resetRoundTokens(state: CombatantState): CombatantState {
     if (clear) newStatus = newStatus.filter(s => s !== statusId)
   }
 
-  const focusedBonus = state.mentalState === 'focused' ? 1 : 0
+  const focusedBonus = MENTAL_STATE_EFFECTS[state.mentalState].bonusReactions
 
   let s: CombatantState = {
     ...state,
@@ -142,7 +142,7 @@ export function resetRoundTokensWithLog(
     if (clear) newStatus = newStatus.filter(s => s !== statusId)
   }
 
-  const focusedBonus = state.mentalState === 'focused' ? 1 : 0
+  const focusedBonus = MENTAL_STATE_EFFECTS[state.mentalState].bonusReactions
 
   let s: CombatantState = {
     ...state,
@@ -236,8 +236,8 @@ export function spendActionCost(state: CombatantState, cost: ActionCost): Combat
   if (cost.endPlayerRound) s = { ...s, lastActionPlayed: true }
   if (cost.reactions > 0)  s = { ...s, reactions: Math.max(0, s.reactions - cost.reactions) }
   // Enragé : +1 fatigue 💧 supplémentaire à chaque action (§ Piste des États Mentaux)
-  const enragedFatigue = state.mentalState === 'enraged' ? 1 : 0
-  const totalFatigue = (cost.fatigue ?? 0) + enragedFatigue
+  const mentalFatigue = MENTAL_STATE_EFFECTS[state.mentalState].fatiguePerAction
+  const totalFatigue = (cost.fatigue ?? 0) + mentalFatigue
   if (totalFatigue > 0) s = addFatigue(s, totalFatigue)
   return s
 }
@@ -378,9 +378,9 @@ export function addFatigue(state: CombatantState, amount: number): CombatantStat
   return s
 }
 
-/** Remove fatigue (floor 0) */
+/** Remove fatigue — § Fatigue : ne descend jamais sous 1. */
 export function removeFatigue(state: CombatantState, amount: number): CombatantState {
-  return { ...state, fatigue: Math.max(0, state.fatigue - amount) }
+  return { ...state, fatigue: Math.max(1, state.fatigue - amount) }
 }
 
 // ─── Mental state ─────────────────────────────────────────────────────────────
@@ -419,37 +419,68 @@ export function shiftMentalState(
   return { ...state, mentalState: MENTAL_STATES[next] }
 }
 
+/** Mechanical consequences of one mental state (§ Piste des États Mentaux). */
+export interface MentalStateEffects {
+  /** ⟳ relances par contexte de jet */
+  rerolls:          { offensive: number; defensive: number }
+  /** 🟥 désavantages par contexte de jet */
+  disadvantages:    { offensive: number; defensive: number }
+  /** Réactions ⚡ autorisées (gardes actives) */
+  canReact:         boolean
+  /** 💧 supplémentaire dépensée à chaque action */
+  fatiguePerAction: number
+  /** ⚡ bonus au début de chaque manche */
+  bonusReactions:   number
+}
+
 /**
- * Roll modifiers from the mental track (§ Piste des États Mentaux), cumulative
- * by threshold. MENTAL_STATES: enraged(0) … focused(3) … terrified(6).
- *
- *  Fear side  — Prudent(4)+  : +1 relance ⟳ on DEFENSIVE rolls
- *               Paniqué(5)+  : 🟥 on OFFENSIVE rolls
- *  Rage side  — Agressif(2)- : +1 relance ⟳ on OFFENSIVE rolls
- *               Furieux(1)-  : 🟥 on DEFENSIVE rolls
- *
- * Concentré's +1 reaction, Terrifié's no-reaction and Enragé's +1 fatigue are
- * handled at their own sites (resetRoundTokens / canUseGuard / spendActionCost).
+ * SOURCE UNIQUE des effets de la piste mentale, un état = une ligne.
+ * Les seuils cumulatifs de la règle (Prudent+ : ⟳ défensif ; Paniqué+ : 🟥
+ * offensif ; Agressif- : ⟳ offensif ; Furieux- : 🟥 défensif) sont dépliés en
+ * valeurs effectives par état. Tous les sites (jets, réactions, coût d'action,
+ * reset de manche) lisent cette table — ne rien coder en dur ailleurs.
  */
+export const MENTAL_STATE_EFFECTS: Record<MentalState, MentalStateEffects> = {
+  //             ⟳ off  ⟳ déf           🟥 off  🟥 déf              ⚡ réactions      💧/action           ⚡ bonus
+  enraged:    { rerolls: { offensive: 1, defensive: 0 }, disadvantages: { offensive: 0, defensive: 1 }, canReact: true,  fatiguePerAction: 1, bonusReactions: 0 },
+  furious:    { rerolls: { offensive: 1, defensive: 0 }, disadvantages: { offensive: 0, defensive: 1 }, canReact: true,  fatiguePerAction: 0, bonusReactions: 0 },
+  aggressive: { rerolls: { offensive: 1, defensive: 0 }, disadvantages: { offensive: 0, defensive: 0 }, canReact: true,  fatiguePerAction: 0, bonusReactions: 0 },
+  focused:    { rerolls: { offensive: 0, defensive: 0 }, disadvantages: { offensive: 0, defensive: 0 }, canReact: true,  fatiguePerAction: 0, bonusReactions: 1 },
+  cautious:   { rerolls: { offensive: 0, defensive: 1 }, disadvantages: { offensive: 0, defensive: 0 }, canReact: true,  fatiguePerAction: 0, bonusReactions: 0 },
+  panicked:   { rerolls: { offensive: 0, defensive: 1 }, disadvantages: { offensive: 1, defensive: 0 }, canReact: true,  fatiguePerAction: 0, bonusReactions: 0 },
+  terrified:  { rerolls: { offensive: 0, defensive: 1 }, disadvantages: { offensive: 1, defensive: 0 }, canReact: false, fatiguePerAction: 0, bonusReactions: 0 },
+}
+
+/** Roll modifiers (⟳ relances / 🟥 désavantages) for one roll context. */
 export function mentalRollModifiers(
   state:   MentalState,
   context: 'offensive' | 'defensive',
 ): { rerolls: number; disadvantages: number } {
-  const idx = MENTAL_STATES.indexOf(state)
-  let rerolls = 0, disadvantages = 0
-  if (context === 'defensive') {
-    if (idx >= 4) rerolls += 1        // Prudent ou plus vers la Peur
-    if (idx <= 1) disadvantages += 1  // Furieux ou plus vers la Colère
-  } else {
-    if (idx <= 2) rerolls += 1        // Agressif ou plus vers la Colère
-    if (idx >= 5) disadvantages += 1  // Paniqué ou plus vers la Peur
-  }
-  return { rerolls, disadvantages }
+  const fx = MENTAL_STATE_EFFECTS[state]
+  return { rerolls: fx.rerolls[context], disadvantages: fx.disadvantages[context] }
 }
 
 /** Terrifié : « Impossible d'effectuer des réactions ⚡ » — gate for active guards. */
 export function canReact(state: CombatantState): boolean {
-  return state.mentalState !== 'terrified'
+  return MENTAL_STATE_EFFECTS[state.mentalState].canReact
+}
+
+/** Degré d'état mental = distance à Concentré (0 = concentré, 3 = enragé/terrifié). Sert au DD des consolidations. */
+export function mentalDegree(state: MentalState): number {
+  return Math.abs(MENTAL_STATES.indexOf(state) - 3)
+}
+
+/**
+ * Voluntary mental step toward a target index, by `steps`, without ◇ absorption
+ * (the character CHOOSES to move — a consolidation action, not a shock).
+ * Returns the resulting MentalState.
+ */
+export function stepMentalToward(from: MentalState, targetIdx: number, steps: number): MentalState {
+  const idx = MENTAL_STATES.indexOf(from)
+  const next = idx < targetIdx ? Math.min(idx + steps, targetIdx)
+             : idx > targetIdx ? Math.max(idx - steps, targetIdx)
+             : idx
+  return MENTAL_STATES[next]
 }
 
 // ─── Status effects ───────────────────────────────────────────────────────────
@@ -525,8 +556,10 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'add-reaction':        return addReaction(s, effect.amount)
     case 'spend-reaction':      return spendReaction(s)
     case 'shift-mental':        return shiftMentalState(s, effect.direction)
+    case 'set-mental':          return { ...s, mentalState: effect.state }
     case 'add-temp-protection': return { ...s, tempProtection: s.tempProtection + effect.amount }
-    case 'add-stability':       return { ...s, stability: s.stability + effect.amount }
+    // ◇ regagné (consolidation) — plafonné à la réserve Ténacité + Discipline.
+    case 'add-stability':       return { ...s, stability: Math.min(stabilityPool(s), s.stability + effect.amount) }
   }
 }
 

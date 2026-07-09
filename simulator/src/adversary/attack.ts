@@ -55,7 +55,7 @@ export function scoreAdversaryAttack(
   const effects = adversaryEffectToCombatEffects(base.effect, targetId, selfId)
   const notes   = [hit
     ? `✅ ${roll.total} ≥ garde ${guardScore} — ${base.text || 'succès'}`
-    : `❌ ${roll.total} < garde ${guardScore} — ${base.text || 'échec'}`]
+    : `◐ ${roll.total} < garde ${guardScore} — ${base.text || 'succès partiel'}`]
 
   let fivesTriggered = false
   if (card.onFives && roll.fives >= card.onFives.count) {

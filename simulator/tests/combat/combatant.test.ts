@@ -17,7 +17,7 @@ describe('initCombatant', () => {
   it('sets id to the character name', () => expect(s.id).toBe('Hero'))
   it('starts with 0 light wounds',     () => expect(s.lightWounds).toBe(0))
   it('starts with 0 heavy wounds',     () => expect(s.heavyWounds).toBe(0))
-  it('starts with 0 fatigue',          () => expect(s.fatigue).toBe(0))
+  it('starts with 1 fatigue (§ Fatigue : débute à 1)', () => expect(s.fatigue).toBe(1))
   it('starts in focused mental state', () => expect(s.mentalState).toBe('focused'))
   it('starts with no status effects',  () => expect(s.status).toHaveLength(0))
   it('starts with 0 protection (no armor on sheet)', () => expect(s.protection).toBe(0))
@@ -63,10 +63,10 @@ describe('resetRoundTokens', () => {
     expect(r.actions).toBe(2)
   })
 
-  it('stun drains 1 PA immediately; knockdown deducts 1 PA at round start', () => {
-    let s = addStatus(makeCombatant(), 'stunned')   // actions: 3 → 2 immediately
-    s     = addStatus(s, 'knockdown')               // actions unchanged (knockdown deferred)
-    expect(s.actions).toBe(2)                       // immediate effect visible now
+  it('stun only drains reactions (not actions); knockdown deducts 1 PA at round start', () => {
+    let s = addStatus(makeCombatant(), 'stunned')   // reactions → 0, actions untouched
+    s     = addStatus(s, 'knockdown')               // knockdown deferred to round start
+    expect(s.actions).toBe(3)                       // Sonné ne touche plus l'action ⚫
     expect(resetRoundTokens(s).actions).toBe(2)     // 3 fresh − 1 knockdown; stun clears free
   })
 
@@ -80,6 +80,15 @@ describe('resetRoundTokens', () => {
     let s = addFatigue(makeCombatant(), 10)
     s = addStatus(s, 'winded')
     expect(resetRoundTokens(s).status).toContain('winded')
+  })
+
+  it('winded costs −1 PA at round start (Essoufflé ⇒ action seulement)', () => {
+    // Essoufflé conservé (fatigue ≥ 10) → 3 PA − 1 = 2 au début de la manche
+    let s = addFatigue(makeCombatant(), 10)
+    s = addStatus(s, 'winded')
+    const r = resetRoundTokens(s)
+    expect(r.status).toContain('winded')
+    expect(r.actions).toBe(2)
   })
 
   it('grants +1 reaction when focused', () => {
@@ -318,7 +327,7 @@ describe('processRoundEnd', () => {
 
 describe('resetRoundTokens — endurance test', () => {
   it('no endurance test when fatigue < 10', () => {
-    let s = addFatigue(makeCombatant(), 9)  // just under the threshold
+    let s = addFatigue(makeCombatant(), 8)  // 1 + 8 = 9, just under the threshold
     s = { ...s, firstActionPlayed: true, lastActionPlayed: true }
     const r = resetRoundTokens(s)
     // No winded, fatigue unchanged (only the PA/flags reset happened)
@@ -327,7 +336,7 @@ describe('resetRoundTokens — endurance test', () => {
   })
 
   it('fatigue exactly 10 triggers the test: outcome is winded OR fatigue decreased', () => {
-    const s = addFatigue(makeCombatant(), 10)
+    const s = addFatigue(makeCombatant(), 9)  // 1 + 9 = 10
     const r = resetRoundTokens(s)
     const windedAdded     = r.status.includes('winded')
     const fatigueRecovered = r.fatigue < 10
@@ -345,9 +354,9 @@ describe('resetRoundTokens — endurance test', () => {
 })
 
 describe('addFatigue', () => {
-  it('adds fatigue normally', () => {
+  it('adds fatigue normally (base 1)', () => {
     const s = addFatigue(makeCombatant(), 5)
-    expect(s.fatigue).toBe(5)
+    expect(s.fatigue).toBe(6)   // 1 de départ + 5
   })
 
   it('caps fatigue at 20', () => {
@@ -369,15 +378,15 @@ describe('addFatigue', () => {
 
 describe('removeFatigue', () => {
   it('reduces fatigue by the given amount', () => {
-    let s = addFatigue(makeCombatant(), 10)
+    let s = addFatigue(makeCombatant(), 10)   // 1 + 10 = 11
     s = removeFatigue(s, 4)
-    expect(s.fatigue).toBe(6)
+    expect(s.fatigue).toBe(7)
   })
 
-  it('never reduces fatigue below 0', () => {
+  it('never reduces fatigue below 1 (§ Fatigue)', () => {
     let s = addFatigue(makeCombatant(), 3)
     s = removeFatigue(s, 10)
-    expect(s.fatigue).toBe(0)
+    expect(s.fatigue).toBe(1)
   })
 })
 
@@ -488,11 +497,12 @@ describe('addStatus / removeStatus', () => {
     expect(s.reactions).toBe(0)
   })
 
-  it('applying stunned immediately drains 1 action from current round', () => {
+  it('applying stunned drains reactions but NOT actions (Sonné ⇒ défense seulement)', () => {
     const base = makeCombatant()  // starts with 3 actions after resetRoundTokens
     expect(base.actions).toBe(3)
     const s = addStatus(base, 'stunned')
-    expect(s.actions).toBe(2)
+    expect(s.reactions).toBe(0)
+    expect(s.actions).toBe(3)
   })
 
   it('second addStatus(stunned) call does not drain reactions again', () => {
@@ -500,12 +510,6 @@ describe('addStatus / removeStatus', () => {
     s = addReaction(s, 3)  // restore some reactions manually
     s = addStatus(s, 'stunned')  // noop — already present, no drain
     expect(s.reactions).toBe(3)
-  })
-
-  it('second addStatus(stunned) call does not drain actions again', () => {
-    let s = addStatus(makeCombatant(), 'stunned')  // actions: 3 → 2
-    s = addStatus(s, 'stunned')                    // noop — already present
-    expect(s.actions).toBe(2)
   })
 
   it('removes a status effect', () => {
@@ -571,7 +575,7 @@ describe('applyEffects', () => {
       { targetId: 'A', kind: 'add-status',   status: 'stunned' },
     ])
     const updated = result.get('A')!
-    expect(updated.fatigue).toBe(5)
+    expect(updated.fatigue).toBe(6)   // 1 de départ + 5
     expect(updated.status).toContain('stunned')
   })
 

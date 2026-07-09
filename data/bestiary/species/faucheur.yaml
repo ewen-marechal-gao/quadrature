@@ -16,9 +16,11 @@ description:
 guard: { type: dodge, value: 10 }
 # speed & fatigue : dérivés des mutations (membres / corps) ; ajouter ici pour surcharger.
 
-# Mutations supplémentaires (hors ascendance) à appliquer.
-# Attaques naturelles du prédateur — candidates à une future intégration au cladogramme.
-extraMutations: [predatoryBite, terrorShriek, sweepingTail]
+# Mutations supplémentaires (hors ascendance) : désormais VIDE. Morsure (jaws),
+# Cri (lungs) et Balayage caudal (fur) sont conférés par l'ascendance. Le Cri
+# « sidérant » (terrorShriek) attend la passe Télépathie ; la Morsure déchirante
+# (predatoryBite) est réservée à un futur clade de prédateurs.
+extraMutations: []
 
 # Traits propres à l'espèce (non conférés par une mutation partagée).
 # `id` : clé stable branchée dans le simulateur (adversary/traits.ts) — la prose reste l'affichage MJ.

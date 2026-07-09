@@ -14,6 +14,10 @@ description:
 guard: { type: parry, value: 11 }
 # speed & fatigue : dérivés des mutations (membres / corps).
 
+# Retraits : sapient armé qui coordonne EN SILENCE — pas de morsure ni de cri
+# naturels (il frappe à l'épée et à l'arc, cf. weapons).
+removeCards: [bite, cry]
+
 # Armes / équipement (mécaniquement comme des parties : armure + blocs qui confèrent).
 weapons:
   - type: sword
@@ -22,14 +26,14 @@ weapons:
     description: { fr: "Lame d'acier ferrique." }
     armor: 1
     blocks:
-      - { cases: 2, grants: { text: { fr: "Confère l'action Coup d'épée" }, grantsCard: swordStrike } }
+      - { cases: 2, name: { fr: "Lame" }, grants: { text: { fr: "Confère l'action Coup d'épée" }, grantsCard: swordStrike } }
   - type: bow
     tag: offensive
     name: { fr: "Arc" }
     description: { fr: "Arc de chasse et carquois." }
     armor: 0
     blocks:
-      - { cases: 1, grants: { text: { fr: "Confère l'action Tir" }, grantsCard: bowShot } }
+      - { cases: 1, name: { fr: "Corde" }, grants: { text: { fr: "Confère l'action Tir" }, grantsCard: bowShot } }
 
 extraTraits:
   - name: { fr: "Grimpeur des Cimes" }

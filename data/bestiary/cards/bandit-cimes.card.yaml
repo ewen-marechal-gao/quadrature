@@ -18,19 +18,21 @@ guard:
 speed:
   walk: 4
   run: 8
-fatigue: 9
+fatigue: 10
 appearance:
-  fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · un crâne bombé abritant un gros cerveau · une station bipède au dos incliné, les antérieurs libérés · un port à demi dressé, la queue faisant office de balancier · entièrement dressé (sans queue), les mains préhensiles pour l'outil et l'arme
+  fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · un squelette pleinement ossifié · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · un crâne bombé abritant un gros cerveau · une station bipède au dos incliné, les antérieurs libérés · un port à demi dressé, la queue faisant office de balancier · entièrement dressé (sans queue), les mains préhensiles pour l'outil et l'arme
 parts:
   - type: head
     tag: support
     name:
       fr: Tête
     description:
-      fr: Crâne allongé à léger museau, portant les sens et les centres nerveux.
-    armor: 0
+      fr: Crâne allongé à léger museau, portant les sens et les centres nerveux. Crâne ossifié (protection accrue).
+    armor: 1
     blocks:
       - cases: 2
+        name:
+          fr: Cerveau
         grants:
           text:
             fr: +1 ◇ au début de la manche
@@ -45,11 +47,13 @@ parts:
     armor: 1
     blocks:
       - cases: 3
+        name:
+          fr: Cœur
         grants:
           text:
-            fr: +1 🫁 au début de la manche
+            fr: +2 🫁 au début de la manche
           resource: endurance
-          amount: 1
+          amount: 2
   - type: frontLeg
     tag: offensive
     name:
@@ -59,6 +63,8 @@ parts:
     armor: 0
     blocks:
       - cases: 2
+        name:
+          fr: Mains
         grants:
           text:
             fr: Manie armes et outils (équipement)
@@ -71,14 +77,18 @@ parts:
     armor: 1
     blocks:
       - cases: 2
+        name:
+          fr: Charge
         grants:
           text:
             fr: +1 action Charge
           grantsCard: charge
       - cases: 3
+        name:
+          fr: Pattes postérieures
         grants:
           text:
-            fr: Déplacement normal · Évasion 1
+            fr: +1 🍀 Évasion
           resource: evasion
           amount: 1
 weapons:
@@ -91,6 +101,8 @@ weapons:
     armor: 1
     blocks:
       - cases: 2
+        name:
+          fr: Lame
         grants:
           text:
             fr: Confère l'action Coup d'épée
@@ -104,6 +116,8 @@ weapons:
     armor: 0
     blocks:
       - cases: 1
+        name:
+          fr: Corde
         grants:
           text:
             fr: Confère l'action Tir

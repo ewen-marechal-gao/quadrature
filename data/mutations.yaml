@@ -46,6 +46,67 @@ mutations:
       fr: Carapace chitino-ferrique
     description:
       fr: "Armure dermique externe sur un corps déjà marcheur : blindé, lent, endurant."
+    kit:
+      body:
+        fr: une lourde carapace dermique chitino-ferrique couvrant le dos et les flancs
+      addParts:
+        - type: carapace
+          tag: defensive
+          name:
+            fr: Carapace
+          description:
+            fr: "Bouclier dermique chitino-ferrique sur le dos et les flancs : fait ricocher les coups légers."
+          armor: 3
+          blocks:
+            - cases: 5
+              name:
+                fr: Plastron
+              grants:
+                text:
+                  fr: Confère Blindage lourd
+                armorAll: 2
+                trait:
+                  name:
+                    fr: Blindage lourd
+                  effect:
+                    fr: "+2 🛡️ à toutes les autres parties (perdu si la carapace cède)"
+      # Pattes massives du tank : les antérieures PIÉTINENT (2 blocs, plus d'évasion) ;
+      # les médianes gagnent un 2e bloc d'évasion. Appliqué avant la fusion « Membres ».
+      modifyParts:
+        - type: frontLeg
+          blocksRemove:
+            - 0
+          blocksAdd:
+            - cases: 2
+              name:
+                fr: Sabots
+              grants:
+                text:
+                  fr: Piétiner coûte ⚫ (au lieu de ⚫⚫)
+                cardCost:
+                  card: trample
+                  cost: 1
+            - cases: 3
+              name:
+                fr: Pattes antérieures
+              grants:
+                text:
+                  fr: Confère l'action Piétiner
+                grantsCard: trample
+        - type: middleLeg
+          blocksAdd:
+            - cases: 2
+              name:
+                fr: Appui
+              grants:
+                text:
+                  fr: +1 🍀 Évasion
+                resource: evasion
+                amount: 1
+      speed:
+        walk: 3
+        run: 5
+      fatigue: 2
   threeFinPairs:
     label:
       fr: Trois paires de nageoires (plan hexapode)
@@ -107,12 +168,14 @@ mutations:
           armor: 0
           blocks:
             - cases: 3
+              name:
+                fr: Cœur
               grants:
                 text:
-                  fr: +1 🫁 au début de la manche
+                  fr: +2 🫁 au début de la manche
                 resource: endurance
-                amount: 1
-      fatigue: 8
+                amount: 2
+      fatigue: 9
   jaws:
     label:
       fr: Mâchoires
@@ -121,11 +184,21 @@ mutations:
     kit:
       body:
         fr: des mâchoires dentées
+      modifyPart:
+        type: head
+        blocksAdd:
+          - cases: 2
+            name:
+              fr: Mâchoires
+            grants:
+              text:
+                fr: Confère l'action Morsure
+              grantsCard: bite
   predatoryBite:
     label:
       fr: Morsure prédatrice
     description:
-      fr: "Mâchoires devenues arme de chasse : morsure déchirante qui fait saigner la proie. (Espèce — hors cladogramme pour l'instant, via extraMutations.)"
+      fr: "Mâchoires devenues arme de chasse : morsure déchirante qui fait saigner la proie. (RÉSERVÉE : version améliorée de la Morsure de base des Mâchoires — à poser sur un clade de prédateurs dédié.)"
     kit:
       modifyPart:
         type: head
@@ -133,8 +206,8 @@ mutations:
           - cases: 2
             grants:
               text:
-                fr: Confère l'action Morsure
-              grantsCard: bite
+                fr: Confère l'action Morsure déchirante
+              grantsCard: rendingBite
   fleshyFins:
     label:
       fr: Nageoires charnues
@@ -148,25 +221,47 @@ mutations:
     kit:
       body:
         fr: trois paires de membres porteurs (plan hexapode)
+      # Trois paires de pattes, même `group: limbs` → fusionnées en « Membres »
+      # (blocs nommés) chez un hexapode ; chaque paire confère +1 🍀 Évasion.
+      # Un membre repurposé (Serpes/Mains/Pattes griffues) quitte le groupe.
       addParts:
         - type: frontLeg
           tag: mobility
+          group: limbs
           name:
             fr: Membres antérieurs
           description:
             fr: Paire de membres avant.
           armor: 0
-          blocks: []
+          blocks:
+            - cases: 2
+              name:
+                fr: Pattes antérieures
+              grants:
+                text:
+                  fr: +1 🍀 Évasion
+                resource: evasion
+                amount: 1
         - type: middleLeg
           tag: mobility
+          group: limbs
           name:
             fr: Membres médians
           description:
             fr: Paire de membres médians.
           armor: 0
-          blocks: []
+          blocks:
+            - cases: 2
+              name:
+                fr: Pattes médianes
+              grants:
+                text:
+                  fr: +1 🍀 Évasion
+                resource: evasion
+                amount: 1
         - type: rearLeg
           tag: mobility
+          group: limbs
           name:
             fr: Membres postérieurs
           description:
@@ -174,9 +269,11 @@ mutations:
           armor: 0
           blocks:
             - cases: 3
+              name:
+                fr: Pattes postérieures
               grants:
                 text:
-                  fr: Déplacement normal · Évasion 1
+                  fr: +1 🍀 Évasion
                 resource: evasion
                 amount: 1
       speed:
@@ -187,6 +284,30 @@ mutations:
       fr: Œuf amniote
     description:
       fr: "Œuf clos : reproduction hors de l'eau, conquête de la terre ferme."
+    kit:
+      # Pleinement terrestre : la queue-rame aquatique (posée aux Caudés) devient
+      # un balancier terrestre. Grade ancestral commun mammifères + sauropsides
+      # (avant `fur`), pour que les reptiles héritent aussi d'une queue terrestre.
+      modifyPart:
+        type: tail
+        tag: defensive
+        descriptionAppend:
+          fr: " Queue devenue balancier terrestre."
+        blocksRemove:
+          - 0
+        blocksAdd:
+          - cases: 2
+            name:
+              fr: Balancier
+            grants:
+              text:
+                fr: Confère Stabilité
+              immunity: knockdown
+              trait:
+                name:
+                  fr: Stabilité
+                effect:
+                  fr: "Insensible au renversement (mise à terre)"
   vision:
     label:
       fr: Vision (yeux)
@@ -224,12 +345,30 @@ mutations:
     label:
       fr: Cursorialité
     description:
-      fr: Corps léger et longues pattes pour la course en troupeau. (OBSOLÈTE — à reprendre lors du développement des sauropsides)
+      fr: "Corps léger et longues pattes : course rapide et soutenue en troupeau."
+    kit:
+      body:
+        fr: un corps léger et de longues pattes cursoriales
+      speed:
+        walk: 5
+        run: 12
   lungs:
     label:
       fr: Poumons + peau respirante
     description:
       fr: "Respiration aérienne (poumons) et cutanée : double vie amphibie."
+    kit:
+      # Le cri est produit par les poumons / le cou → conféré par le CORPS (pas la Tête).
+      modifyPart:
+        type: body
+        blocksAdd:
+          - cases: 2
+            name:
+              fr: Poumons
+            grants:
+              text:
+                fr: Confère l'action Cri
+              grantsCard: cry
   migratoryMetamorphosis:
     label:
       fr: Métamorphose migratoire (seuil thermique)
@@ -269,32 +408,15 @@ mutations:
           descriptionAppend:
             fr: " Couvert d'une fourrure dense et isolante."
         - type: tail
-          tag: defensive
-          descriptionAppend:
-            fr: " Queue devenue balancier terrestre."
-          blocksRemove:
-            - 0
           blocksAdd:
             - cases: 2
+              name:
+                fr: Fouet caudal
               grants:
                 text:
-                  fr: "Queue-balancier : insensible au renversement (mise à terre)"
-                immunity: knockdown
+                  fr: Confère l'action Balayage caudal
+                grantsCard: tailSweep
       fatigue: 1
-  sweepingTail:
-    label:
-      fr: Queue balayeuse
-    description:
-      fr: "La queue-balancier devient une arme de fauchage : un balayage bas qui jette la proie au sol. (Espèce — hors cladogramme pour l'instant, via extraMutations.)"
-    kit:
-      modifyPart:
-        type: tail
-        blocksAdd:
-          - cases: 2
-            grants:
-              text:
-                fr: Confère l'action Balayage caudal
-              grantsCard: tailSweep
   viviparity:
     label:
       fr: Viviparité
@@ -305,6 +427,10 @@ mutations:
       fr: Poches de graisse
     description:
       fr: "Réserves adipeuses : gros herbivores lents (bétail du Sud)."
+    kit:
+      body:
+        fr: d'épaisses poches de graisse
+      fatigue: 3
   frontalVision:
     label:
       fr: Vision frontale (binoculaire)
@@ -341,6 +467,8 @@ mutations:
         type: head
         blocksAdd:
           - cases: 2
+            name:
+              fr: Cerveau
             grants:
               text:
                 fr: +1 ◇ au début de la manche
@@ -348,9 +476,9 @@ mutations:
               amount: 1
   terrorShriek:
     label:
-      fr: Cri terrifiant
+      fr: Cri sidérant (neural)
     description:
-      fr: "Vocalisation de chasse : un cri strident qui glace les proies de la zone. (Espèce — hors cladogramme pour l'instant, via extraMutations.)"
+      fr: "Cri neural sidérant : un hurlement télépathique qui glace les proies de la zone. (RÉSERVÉE : version « sidérante » du Cri de base des Poumons — foyer = lignée Télépathe/emEmitter, passe Télépathie.)"
     kit:
       modifyPart:
         type: head
@@ -377,15 +505,22 @@ mutations:
             fr: " Postérieurs puissants et ramassés, porteurs de la station bipède."
           blocksPrepend:
             - cases: 2
+              name:
+                fr: Charge
               grants:
                 text:
                   fr: +1 action Charge
                 grantsCard: charge
+        # Les antérieurs quittent la locomotion (sortent du groupe « Membres »,
+        # perdent leur bloc d'Évasion) → libres pour Serpes / Mains / etc.
         - type: frontLeg
+          group: null
           name:
             fr: Bras
           descriptionAppend:
             fr: " Membres antérieurs libérés de la marche."
+          blocksRemove:
+            - 0
       speed:
         walk: 4
         run: 8
@@ -407,6 +542,8 @@ mutations:
         fr: entièrement dressé (sans queue), les mains préhensiles pour l'outil et l'arme
       removeParts:
         - tail
+      # Les antérieurs (Bras) ont déjà quitté le groupe via `bipedalism` : ici on
+      # les termine en Mains préhensiles.
       modifyPart:
         type: frontLeg
         tag: offensive
@@ -416,8 +553,11 @@ mutations:
           fr: "Mains préhensiles : manient armes et outils."
         blocksAdd:
           - cases: 2
+            name:
+              fr: Mains
             grants:
-              fr: Manie armes et outils (équipement)
+              text:
+                fr: Manie armes et outils (équipement)
   trueTissues:
     label:
       fr: Tissus vrais (gastrula)
@@ -443,6 +583,14 @@ mutations:
       fr: Ossification (os porteur)
     description:
       fr: "Os vrai porteur : la gravité hors de l'eau impose un squelette ossifié (les aquatiques restent ferro-cartilagineux)."
+    kit:
+      body:
+        fr: un squelette pleinement ossifié
+      modifyPart:
+        type: head
+        armor_add: 1
+        descriptionAppend:
+          fr: " Crâne ossifié (protection accrue)."
   lactation:
     label:
       fr: Allaitement (lactation)
@@ -468,6 +616,8 @@ mutations:
           armor: 1
           blocks:
             - cases: 3
+              name:
+                fr: Fil
               grants:
                 text:
                   fr: Frappe faucheuse coûte ⚫ (au lieu de ⚫⚫)
@@ -475,6 +625,8 @@ mutations:
                   card: sickleStrike
                   cost: 1
             - cases: 3
+              name:
+                fr: Serpes
               grants:
                 text:
                   fr: Confère l'action Frappe faucheuse
@@ -491,6 +643,8 @@ mutations:
         type: head
         blocksAdd:
           - cases: 2
+            name:
+              fr: Pool mental
             grants:
               text:
                 fr: +1 ◇ au début de la manche (pool partagé de la meute)
@@ -553,6 +707,15 @@ mutations:
       fr: Graisse & fourrure polaires
     description:
       fr: "Lard isolant et pelage dense et pâle : permet de tenir au pôle Sud froid, en complément de la chaleur du terrier."
+    kit:
+      body:
+        fr: un lard isolant et un pelage polaire dense et pâle
+      modifyParts:
+        - type: body
+          armor_add: 1
+          descriptionAppend:
+            fr: " Épaisse couche de lard isolant."
+      fatigue: 2
   oilyFur:
     label:
       fr: Fourrure huileuse (étanche)
@@ -571,15 +734,22 @@ mutations:
     kit:
       body:
         fr: de longues griffes tranchantes aux pattes avant
+      # Les antérieurs deviennent l'arme : ils quittent le groupe « Membres » et
+      # perdent leur bloc d'Évasion (pas de bipédie chez les quadrupèdes griffus).
       modifyPart:
         type: frontLeg
         tag: offensive
+        group: null
         name:
           fr: Pattes griffues
         descriptionAppend:
           fr: " Griffes ferro-renforcées : l'arme principale."
+        blocksRemove:
+          - 0
         blocksAdd:
           - cases: 3
+            name:
+              fr: Griffes
             grants:
               text:
                 fr: Confère l'action Lacération
