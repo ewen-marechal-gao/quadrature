@@ -17,7 +17,7 @@ import { resistanceMax, stabilityMax } from "@/lib/character/derive";
 import { SHEET_LABELS } from "../labels";
 import { useSheet } from "../SheetContext";
 
-/** Résistance ♥ = Vigueur + ✫ Robustesse. */
+/** Résistance ♥ = Vigueur. */
 export function ResistanceBlock() {
   const { c, update, t } = useSheet();
   const max = resistanceMax(c); // cases actives (au-delà → grisé/désactivé)

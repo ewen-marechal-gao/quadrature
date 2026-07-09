@@ -12,11 +12,15 @@
 
 L'hémorragie est un état cumulable, suivi par des jetons **🩸**. Cet état est infligé par certaines armes ou actions ; il ne se déclenche pas automatiquement.
 
-**Effet :** tant que le personnage possède au moins un jeton **🩸**, les **blessures graves 💔** issues de la conversion de **blessures légères 💢** ne peuvent pas être prévenues par la **Protection 🛡️**.
+**Effet — à la fin de chaque manche :**
 
-**Décrémentation :** chaque fois qu'une telle conversion produit une **blessure grave 💔**, retirer un jeton **🩸**.
+1. **Refermeture (résistance passive).** Retirez d'abord un nombre de jetons **🩸** égal à votre **Récupération ✫** : votre corps referme les plaies. Une Récupération élevée est donc une résistance passive au saignement ; un personnage sans Récupération **ne referme rien seul** et devra agir ou se soigner.
+2. **Saignement.** Pour **chaque jeton 🩸 restant**, subissez **1 blessure légère 💢**.
+3. **Percée d'armure.** Tant que vous avez saigné cette manche, les **blessures graves 💔** produites par la conversion (voir [ressources.md](ressources.md)) **ignorent la Protection 🛡️** — le sang passe sous l'armure.
 
-**Suppression :** l'action **Stabiliser**, certains sorts et équipements peuvent retirer un ou plusieurs jetons **🩸**.
+Les jetons restants **persistent** : ils saigneront de nouveau la manche suivante (et décroîtront encore de votre Récupération). Accumuler plusieurs jetons d'un coup fait donc bien plus de dégâts qu'un seul étalé dans le temps.
+
+**Suppression :** l'action **Stabiliser** retire **tous** les jetons **🩸** ; un **bandage** (consommable) en retire jusqu'à **3** et reste utilisable même sans Récupération ; certains sorts et équipements peuvent aussi en retirer.
 
 ---
 

@@ -12,9 +12,11 @@ L'état physique d'un personnage est représenté par sa **Santé** ♥️ et sa
 
 La survie d'un personnage ne repose pas sur une réserve de Points de Vie classique.
 
-**La Résistance ♥️** = Vigueur ✪ + Robustesse ✫
+**La Résistance ♥️** = Vigueur ✪
 
-Les **blessures légères 💢** peuvent s'accumuler. Lorsqu'elles dépassent la **Résistance**, toutes les blessures légères dépassant ce seuil sont supprimées et le personnage subit une **blessure grave 💔**. En combat, cette conversion a lieu à la **fin de chaque manche** — il est donc possible de soigner des blessures légères avant qu'elles ne s'aggravent.
+*(La Robustesse ✫ ne pèse plus la Résistance : elle reste la voie défensive « équipée » via la capacité de charge et l'armure.)*
+
+Les **blessures légères 💢** peuvent s'accumuler. À la **fin de chaque manche**, l'excédent au-dessus de la **Résistance** se convertit au taux de **3 💢 → 1 blessure grave 💔** : le personnage subit autant de 💔 que de tranches complètes de 3 dans cet excédent, et le **reste est reporté** à la manche suivante (report honnête, pas de remise à zéro). Il est donc possible de soigner des blessures légères avant qu'elles ne s'aggravent, et un pic massif de 💢 se traduit par plusieurs 💔 d'un coup plutôt qu'une seule.
 
 Chaque **blessure grave 💔** entraîne la perte temporaire d'un point de **caractéristique physique** ✪.
 
@@ -38,7 +40,7 @@ La fatigue représente l'état de stress physique d'un personnage.
 
 Une créature avec Fatigue = 20 devient **Inconsciente** (voir [etats.md](etats.md)).
 
-*Exemple : fraîchement créés, Lena comme Kévin n'ont que 1✪ en Vigueur et 0✫ en Robustesse — Résistance 1 : deux blessures légères 💢 suffisent à déclencher une blessure grave 💔. La différence se joue sur la durée : les caractéristiques corporelles de Lena totalisent 7 points (son Agilité 3 en tête), celles de Kévin 5 — il atteindra les portes de la Mort deux blessures graves avant elle.*
+*Exemple : fraîchement créés, Lena comme Kévin n'ont que 1✪ en Vigueur — Résistance 1. Il leur faut donc **4 blessures légères 💢** (3 au-dessus du seuil) pour subir une première blessure grave 💔. La différence se joue sur la durée : les caractéristiques corporelles de Lena totalisent 7 points (son Agilité 3 en tête), celles de Kévin 5 — il atteindra les portes de la Mort deux blessures graves avant elle.*
 
 ---
 

@@ -55,9 +55,9 @@ export function allCharacteristicValues(c: Character): Record<CharId, number> {
   return out;
 }
 
-/** Résistance active = Vigueur + ✫ Robustesse (max 10). */
+/** Résistance active = Vigueur (Robustesse retirée du seuil ; elle ne pèse plus que la charge/armure). */
 export function resistanceMax(c: Character): number {
-  return Math.min(RESISTANCE_BOXES, characteristicValue(c, "vigor") + skillRank(c, "toughness"));
+  return Math.min(RESISTANCE_BOXES, characteristicValue(c, "vigor"));
 }
 
 /** Stabilité active = Ténacité + ✫ Discipline (max 10). */

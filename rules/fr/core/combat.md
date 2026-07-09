@@ -49,9 +49,9 @@ La phase d'action se poursuit tant qu'au moins un joueur ou adversaire dispose d
 
 ### c) Phase de nettoyage
 
-À la fin de la manche, chaque personnage compare ses **blessures légères 💢** à sa **Résistance** (Vigueur + Robustesse) :
+À la fin de la manche, dans l'ordre :
 
-- Si le nombre de 💢 est **strictement supérieur** à la Résistance → le personnage subit **1 Blessure grave 💔** et tous les marqueurs 💢 sont supprimés. Cette blessure peut être prévenue par la Protection, sauf en cas d'**Hémorragie 🩸**.
-- Ensuite, retirer un nombre de marqueurs **blessure légère 💢** égal à la valeur de **Récupération** (minimum 1).
+1. **Saignement 🩸** — si le personnage porte des jetons d'**Hémorragie**, retirer d'abord **Récupération ✫** jetons (le corps referme), puis subir **1 💢 par jeton restant** ; les jetons restants persistent (voir [etats.md](etats.md)).
+2. **Conversion 💢 → 💔** — comparer les **blessures légères 💢** à la **Résistance** (Vigueur). L'excédent au-dessus de la Résistance se convertit au taux **3 💢 → 1 blessure grave 💔** (par tranches entières de 3) ; le **reste est reporté** à la manche suivante. Chaque 💔 est absorbée par la **Protection 🛡️** — **sauf** si le personnage a saigné cette manche (le sang passe sous l'armure).
 
-*Exemple : Lena (Vigueur 1, Robustesse 0 — Résistance 1 ; Récupération 0) termine la manche avec 2 marqueurs 💢. Comme 2 > 1, elle subit 1 💔 et tous les marqueurs sont supprimés. La manche suivante, elle ne reçoit qu'une blessure légère : 1 > 1 est faux, pas de conversion — et elle retire 1 💢 en fin de manche (le minimum, malgré sa Récupération 0) : elle repart indemne.*
+*Exemple : Lena (Vigueur 1 → Résistance 1 ; Récupération 0) termine la manche avec 4 marqueurs 💢. L'excédent vaut 3 (4 − 1), soit une tranche de 3 → elle subit 1 💔, et il lui reste 1 💢 (reporté). Sans Récupération et sans bandage, une hémorragie non soignée continuerait de la faire saigner chaque manche.*

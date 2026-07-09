@@ -37,7 +37,7 @@ export const SHEET_LABELS = {
 
   // Pistes
   resistanceTitle: { fr: "♥️ Résistance" },
-  resistanceFormula: { fr: "(Vigueur + ✫ Robustesse)" },
+  resistanceFormula: { fr: "(Vigueur)" },
   stabilityTitle: { fr: "◇ Stabilité" },
   stabilityFormula: { fr: "(Ténacité + ✫ Discipline)" },
   fatigueTitle: { fr: "💧 Fatigue" },
