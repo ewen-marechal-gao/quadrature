@@ -153,30 +153,28 @@ describe('resolveRound — guard persistence (§Système de Garde)', () => {
 // ─── End-of-round processing ──────────────────────────────────────────────────
 
 describe('resolveRound — end-of-round processing', () => {
-  it('hemorrhage token is consumed when wound conversion occurs at round end', () => {
-    // Correct rule: one 🩸 token removed per light→heavy conversion.
-    let a = addStatus(makeCombatant('A'), 'hemorrhage')
-    const threshold = resistanceThreshold(a)
-    a = applyLightWounds(a, threshold + 1)  // enough to trigger conversion
+  it('bleed 🩸 deposits light wounds at round end (recovery 0 → no decay)', () => {
+    const base = makeCombatant('A')
+    const a = { ...base, bleed: 2, skills: { ...base.skills, recovery: 0 } }
     const { states } = resolveRound(new Map([[a.id, a]]), [], 1, alwaysAbsorb)
-    expect(states.get('A')!.heavyWounds).toBe(1)
-    expect(states.get('A')!.status).not.toContain('hemorrhage')
+    expect(states.get('A')!.bleed).toBe(2)         // persiste (Récup 0)
+    expect(states.get('A')!.lightWounds).toBe(2)   // 2💢 déposées
   })
 
-  it('hemorrhage persists when light wounds do not trigger conversion', () => {
-    const a = addStatus(makeCombatant('A'), 'hemorrhage')  // no wounds → no conversion
+  it('recovery reduces the bleed 🩸 tokens at round end', () => {
+    const base = makeCombatant('A')
+    const a = { ...base, bleed: 5, skills: { ...base.skills, recovery: 2 } }
     const { states } = resolveRound(new Map([[a.id, a]]), [], 1, alwaysAbsorb)
-    expect(states.get('A')!.status).toContain('hemorrhage')
+    expect(states.get('A')!.bleed).toBe(3)         // 5 − 2
   })
 
-  it('light wounds above the resistance threshold convert to 1 heavy wound', () => {
+  it('light wounds convert to a heavy wound at 3:1 above the resistance threshold', () => {
     let a = makeCombatant('A')
     const threshold = resistanceThreshold(a)
-    a = applyLightWounds(a, threshold + 1)  // one above the limit
+    a = applyLightWounds(a, threshold + 3)  // excédent 3 → 1 grave
     const { states } = resolveRound(new Map([[a.id, a]]), [], 1, alwaysAbsorb)
     expect(states.get('A')!.heavyWounds).toBe(1)
-    // Only the excess is removed; wounds up to the threshold carry over
-    expect(states.get('A')!.lightWounds).toBe(threshold)
+    expect(states.get('A')!.lightWounds).toBe(threshold)  // reste reporté
   })
 
   it('light wounds exactly at the resistance threshold do NOT convert', () => {

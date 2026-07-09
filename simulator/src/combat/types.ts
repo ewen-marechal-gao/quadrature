@@ -148,6 +148,12 @@ export interface CombatantState {
    * intact body-part blocks.
    */
   stability: number
+  /**
+   * 🩸 Hémorragie : jetons cumulatifs (prototype — miroir du modèle adversaire).
+   * En fin de manche, décroissent d'abord de la Récupération ✫ (résistance au
+   * saignement), puis le reste s'ajoute aux blessures légères en perçant l'armure.
+   */
+  bleed: number
   /** Active status effects */
   status: StatusEffect[]
 
@@ -254,6 +260,8 @@ export interface CombatantSnapshot {
   mentalState:    MentalState
   /** Stability tokens ◇ remaining at this moment (mental-shock buffer) */
   stability:      number
+  /** 🩸 Hémorragie : jetons cumulés à cet instant */
+  bleed:          number
   status:         StatusEffect[]
   /** Only characteristics that have at least 1 wound (saves space) */
   charWounds:     Partial<Record<CharacteristicName, number>>

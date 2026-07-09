@@ -300,7 +300,7 @@
 }
 
 /* ── Responsive ────────────────────────────────────────────────────────── */
-@media (max-width: 720px) {
+@media (max-width: 860px) {
   .adv-main {
     padding: 1.2rem 0.9rem 3rem;
   }
@@ -531,7 +531,7 @@
 }
 
 /* ── Responsive (écran) ────────────────────────────────────────────────── */
-@media (max-width: 720px) {
+@media (max-width: 860px) {
   .adv-main {
     padding: 1.2rem 0.9rem 3rem;
   }

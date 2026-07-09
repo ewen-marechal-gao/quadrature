@@ -138,10 +138,9 @@ describe('effChar', () => {
 // ─── resistanceThreshold ──────────────────────────────────────────────────────
 
 describe('resistanceThreshold', () => {
-  it('equals effChar(vigor) + robustness skill', () => {
+  it('equals effChar(vigor) — Robustesse retirée du seuil (prototype)', () => {
     const s = makeCombatant()
-    const expected = effChar(s, 'vigor') + s.skills.robustness
-    expect(resistanceThreshold(s)).toBe(expected)
+    expect(resistanceThreshold(s)).toBe(effChar(s, 'vigor'))
   })
 })
 
@@ -238,86 +237,106 @@ describe('healLightWounds', () => {
 
 // ─── processRoundEnd ──────────────────────────────────────────────────────────
 
-describe('processRoundEnd', () => {
-  it('converts light wounds to a heavy wound when over the threshold', () => {
-    let s    = makeCombatant()
-    const threshold = resistanceThreshold(s)
-    // Exceed by 1: only the 1 excess wound is removed; threshold wounds remain
-    s = applyLightWounds(s, threshold + 1)
+describe('processRoundEnd — conversion 3:1 (§ Résistance)', () => {
+  it('converts at 3:1 on the excess above the resistance threshold', () => {
+    let s = makeCombatant()                 // seuil = Vigueur = 3
+    const T = resistanceThreshold(s)
+    s = applyLightWounds(s, T + 3)          // excédent 3 → 1 grave
     s = processRoundEnd(s)
     expect(s.heavyWounds).toBe(1)
-    expect(s.lightWounds).toBe(threshold)  // threshold wounds carry over
+    expect(s.lightWounds).toBe(T)           // reste reporté : T+3 − 3
+  })
+
+  it('does not convert when the excess is below 3', () => {
+    let s = makeCombatant()
+    const T = resistanceThreshold(s)
+    s = applyLightWounds(s, T + 2)          // excédent 2 < 3
+    s = processRoundEnd(s)
+    expect(s.heavyWounds).toBe(0)
+    expect(s.lightWounds).toBe(T + 2)       // rien converti, tout reporté
   })
 
   it('does NOT convert when light wounds equal the threshold', () => {
-    let s    = makeCombatant()
-    const threshold = resistanceThreshold(s)
-    s = applyLightWounds(s, threshold)
+    let s = makeCombatant()
+    const T = resistanceThreshold(s)
+    s = applyLightWounds(s, T)
     s = processRoundEnd(s)
     expect(s.heavyWounds).toBe(0)
-    expect(s.lightWounds).toBe(threshold)
+    expect(s.lightWounds).toBe(T)
   })
 
-  it('carryover — a single extra wound the next round triggers conversion again', () => {
-    // After the first conversion, threshold wounds remain. Adding just 1 more
-    // brings total to threshold+1 → triggers a second conversion immediately.
-    // Note: the heavy wound from round 1 may reduce VIG effective value, lowering
-    // the round-2 threshold — so we recapture it between rounds.
-    let s        = makeCombatant()
-    const thr1   = resistanceThreshold(s)
-    s = applyLightWounds(s, thr1 + 1)
-    s = processRoundEnd(s)                 // round 1: 1 heavy wound, thr1 wounds remain
-    expect(s.heavyWounds).toBe(1)
-    expect(s.lightWounds).toBe(thr1)
-    const thr2 = resistanceThreshold(s)    // may be ≤ thr1 if VIG was wounded
-    s = applyLightWounds(s, 1)             // thr1+1 ≥ thr2+1 > thr2 → conversion guaranteed
+  it('multiple heavies when the excess spans several 3💢 chunks; remainder carries', () => {
+    let s = makeCombatant()
+    const T = resistanceThreshold(s)
+    s = applyLightWounds(s, T + 8)          // excédent 8 → ⌊8/3⌋ = 2 graves
     s = processRoundEnd(s)
-    expect(s.heavyWounds).toBe(2)          // second conversion triggered
-    expect(s.lightWounds).toBe(thr2)       // wounds up to round-2 threshold carry over
-  })
-
-  it('hemorrhage token is consumed when a wound conversion occurs', () => {
-    // Hemorrhage bypasses protection AND consumes the 🩸 token on conversion.
-    let s = addStatus(makeCombatant(), 'hemorrhage')
-    const threshold = resistanceThreshold(s)
-    s = applyLightWounds(s, threshold + 1)  // trigger conversion
-    s = processRoundEnd(s)
-    expect(s.heavyWounds).toBe(1)                 // conversion happened
-    expect(s.status).not.toContain('hemorrhage')  // token consumed
-  })
-
-  it('hemorrhage persists when no wound conversion occurs', () => {
-    let s = addStatus(makeCombatant(), 'hemorrhage')
-    // No light wounds → no conversion → 🩸 token not removed
-    s = processRoundEnd(s)
-    expect(s.lightWounds).toBe(0)
-    expect(s.status).toContain('hemorrhage')
+    expect(s.heavyWounds).toBe(2)
+    expect(s.lightWounds).toBe(T + 2)       // T+8 − 6 : report honnête
   })
 
   it('protection absorbs the conversion wound when protection > 0', () => {
-    const base      = makeCombatant()
-    const threshold = resistanceThreshold(base)
-    const s         = applyLightWounds({ ...base, protection: 1 }, threshold + 1)
-    const r         = processRoundEnd(s)
-    expect(r.heavyWounds).toBe(0)         // wound absorbed by protection
-    expect(r.protection).toBe(0)          // one point consumed
-    expect(r.lightWounds).toBe(threshold) // carry-over unchanged
-  })
-
-  it('hemorrhage bypasses protection during conversion', () => {
-    const base      = addStatus(makeCombatant(), 'hemorrhage')
-    const threshold = resistanceThreshold(base)
-    const s         = applyLightWounds({ ...base, protection: 2 }, threshold + 1)
-    const r         = processRoundEnd(s)
-    expect(r.heavyWounds).toBe(1)                 // wound landed despite protection
-    expect(r.protection).toBe(2)                  // protection NOT consumed
-    expect(r.status).not.toContain('hemorrhage')  // 🩸 token consumed
+    const base = makeCombatant()
+    const T    = resistanceThreshold(base)
+    const s    = applyLightWounds({ ...base, protection: 1 }, T + 3)
+    const r    = processRoundEnd(s)
+    expect(r.heavyWounds).toBe(0)           // absorbée par la protection
+    expect(r.protection).toBe(0)            // un point consommé
+    expect(r.lightWounds).toBe(T)           // reste reporté
   })
 
   it('tempProtection is cleared at round end whether used or not', () => {
     const s = { ...makeCombatant(), tempProtection: 3 }
     const r = processRoundEnd(s)
     expect(r.tempProtection).toBe(0)
+  })
+})
+
+// ─── Hémorragie 🩸 (PJ) ─────────────────────────────────────────────────────────
+
+describe('processRoundEnd — hémorragie 🩸 (PJ)', () => {
+  /** makeCombatant avec une Récupération contrôlée. */
+  const bleeder = (bleed: number, recovery: number): CombatantState => {
+    const base = makeCombatant()
+    return { ...base, bleed, skills: { ...base.skills, recovery } }
+  }
+
+  it('recovery reduces the tokens before they mark (résistance passive)', () => {
+    const s = processRoundEnd(bleeder(5, 2))   // 5 − 2
+    expect(s.bleed).toBe(3)
+  })
+
+  it('recovery 0 → tokens persist (bleeds until Stabilised)', () => {
+    const s = processRoundEnd(bleeder(2, 0))
+    expect(s.bleed).toBe(2)                    // aucune décroissance
+    expect(s.lightWounds).toBe(2)              // 2💢 déposées (excédent 2 < 3 : pas de conversion)
+  })
+
+  it('bleeding wounds pierce protection on conversion', () => {
+    const base = makeCombatant()
+    const T = resistanceThreshold(base)        // 3
+    const s = processRoundEnd({
+      ...base, bleed: 3, protection: 5, lightWounds: T,
+      skills: { ...base.skills, recovery: 0 },
+    })
+    // dépôt 3 → 💢 = T+3, excédent 3 → 1 grave, perce l'armure (saignée active)
+    expect(s.heavyWounds).toBe(1)
+    expect(s.protection).toBe(5)               // NON consommée (percée)
+    expect(s.lightWounds).toBe(T)
+  })
+
+  it('add-status hemorrhage increments the bleed counter, not the status array', () => {
+    const s0 = makeCombatant()
+    const s  = applyEffects(new Map([[s0.id, s0]]),
+      [{ targetId: s0.id, kind: 'add-status', status: 'hemorrhage' }]).get(s0.id)!
+    expect(s.bleed).toBe(1)
+    expect(s.status).not.toContain('hemorrhage')
+  })
+
+  it('Stabiliser (remove-status hemorrhage) clears all bleed tokens', () => {
+    const s0 = { ...makeCombatant(), bleed: 4 }
+    const s  = applyEffects(new Map([[s0.id, s0]]),
+      [{ targetId: s0.id, kind: 'remove-status', status: 'hemorrhage' }]).get(s0.id)!
+    expect(s.bleed).toBe(0)
   })
 })
 

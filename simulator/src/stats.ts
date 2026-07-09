@@ -104,6 +104,8 @@ interface VitalAcc {
   protection:  Acc
   /** Stability ◇ remaining at end of round */
   stability:   Acc
+  /** 🩸 Hémorragie : jetons cumulés en fin de manche */
+  bleed:       Acc
 }
 
 /** End-of-round vitals accumulator for an adversary (§ Progression adversaire). */
@@ -173,7 +175,7 @@ function mkGuardStat(): GuardStat {
 }
 
 function mkVitalAcc(): VitalAcc {
-  return { fatigue: mkAcc(), lightWounds: mkAcc(), heavyWounds: mkAcc(), protection: mkAcc(), stability: mkAcc() }
+  return { fatigue: mkAcc(), lightWounds: mkAcc(), heavyWounds: mkAcc(), protection: mkAcc(), stability: mkAcc(), bleed: mkAcc() }
 }
 
 function mkAdvVitalAcc(fatigueMax: number): AdvVitalAcc {
@@ -262,6 +264,7 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
         pushAcc(vr.heavyWounds, snap.heavyWounds)
         pushAcc(vr.protection,  snap.protection)
         pushAcc(vr.stability,   snap.stability)
+        pushAcc(vr.bleed,       snap.bleed)
 
         // Mental-state distribution for this round
         const mbr = mentalByRound[snap.id]!
@@ -488,7 +491,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
       const mentalHdr = MENTAL_COLUMN_ORDER.map(s => padv(MENTAL_ICONS[s], 2)).join(' ')
       console.log(
         `  ${padv('Rd', 3)}  ${padv('💧 moy', 8)}  ${padv('💢 moy', 7)}  ` +
-        `${padv('💔 moy', 7)}  ${padv('🛡️ moy', 7)}  ${padv('◇ moy', 6)}  ` +
+        `${padv('💔 moy', 7)}  ${padv('🛡️ moy', 7)}  ${padv('◇ moy', 6)}  ${padv('🩸 moy', 6)}  ` +
         `${mentalHdr}  ${padv('n runs', 6)}`,
       )
       for (const r of rdNums) {
@@ -505,6 +508,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
           `  ${padv(accAvg(v.heavyWounds).toFixed(2), 7)}` +
           `  ${padv(accAvg(v.protection).toFixed(2), 7)}` +
           `  ${padv(accAvg(v.stability).toFixed(1), 6)}` +
+          `  ${padv(accAvg(v.bleed).toFixed(1), 6)}` +
           `  ${mentalCells}` +
           `  ${padv(String(nRound), 6)}`,
         )
@@ -512,7 +516,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
     } else {
       console.log(
         `  ${padv('Rd', 3)}  ${padv('💧', 8)}  ${padv('💢', 7)}  ${padv('💔', 7)}  ` +
-        `${padv('🛡️', 5)}  ${padv('◇', 3)}  🧠`,
+        `${padv('🛡️', 5)}  ${padv('◇', 3)}  ${padv('🩸', 3)}  🧠`,
       )
       for (const r of rdNums) {
         const v     = vbr[r]!
@@ -526,6 +530,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
           `  ${padv(accAvg(v.heavyWounds).toFixed(0), 7)}` +
           `  ${padv(accAvg(v.protection).toFixed(0), 5)}` +
           `  ${padv(accAvg(v.stability).toFixed(0), 3)}` +
+          `  ${padv(accAvg(v.bleed).toFixed(0), 3)}` +
           `  ${icon}`,
         )
       }

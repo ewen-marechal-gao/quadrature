@@ -19,9 +19,9 @@ async function faucheur(): Promise<AdversaryCombatant> {
   return initAdversary(await loadAdversary('faucheur'))
 }
 
-/** Minimal PC stand-in: attackAdvantages only reads `status`. */
-const pcWith = (status: StatusEffect[]): CombatantState =>
-  ({ status } as unknown as CombatantState)
+/** Minimal PC stand-in: attackAdvantages only reads `bleed` (jetons 🩸). */
+const pcBleeding = (bleed: number): CombatantState =>
+  ({ bleed } as unknown as CombatantState)
 
 const card = (c: AdversaryCombatant, id: string) =>
   c.sheet.cards.find(k => k.id === id)!
@@ -51,20 +51,20 @@ describe('hasCardTag', () => {
 describe('attackAdvantages — Sanguinaire', () => {
   it('grants 🟩 on an offensive card when the target bleeds', async () => {
     const c = await faucheur()
-    const r = attackAdvantages(c, card(c, 'sickleStrike'), pcWith(['hemorrhage']))
+    const r = attackAdvantages(c, card(c, 'sickleStrike'), pcBleeding(1))
     expect(r.advantages).toBe(1)
     expect(r.notes).toHaveLength(1)
   })
 
   it('does not apply to cards without physicalDamage (mental cry, fatigue sweep)', async () => {
     const c = await faucheur()
-    expect(attackAdvantages(c, card(c, 'cry'),       pcWith(['hemorrhage'])).advantages).toBe(0)
-    expect(attackAdvantages(c, card(c, 'tailSweep'), pcWith(['hemorrhage'])).advantages).toBe(0)
+    expect(attackAdvantages(c, card(c, 'cry'),       pcBleeding(1)).advantages).toBe(0)
+    expect(attackAdvantages(c, card(c, 'tailSweep'), pcBleeding(1)).advantages).toBe(0)
   })
 
   it('grants nothing when the target does not bleed', async () => {
     const c = await faucheur()
-    const r = attackAdvantages(c, card(c, 'sickleStrike'), pcWith([]))
+    const r = attackAdvantages(c, card(c, 'sickleStrike'), pcBleeding(0))
     expect(r.advantages).toBe(0)
   })
 
@@ -75,7 +75,7 @@ describe('attackAdvantages — Sanguinaire', () => {
       tags: ['support', 'healing'],
       onSuccess: { text: '', effect: [] }, onFailure: { text: '', effect: [] },
     }
-    const r = attackAdvantages(c, heal, pcWith(['hemorrhage']))
+    const r = attackAdvantages(c, heal, pcBleeding(1))
     expect(r.advantages).toBe(0)
   })
 })

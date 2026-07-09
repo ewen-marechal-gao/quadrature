@@ -491,7 +491,7 @@ function selectSelfAction(
 
   // Stabiliser: clears hemorrhage or heals light wounds
   const wantStabilize =
-    state.status.includes('hemorrhage') ||
+    state.bleed > 0 ||
     state.heavyWounds >= heavyWoundThreshold[persona]
 
   if (wantStabilize
@@ -584,7 +584,7 @@ function shouldGamble(opponent: Actor): boolean {
         || opponent.fatigue * 2 >= opponent.sheet.fatigue
   }
   return opponent.heavyWounds >= 2
-      || opponent.status.includes('hemorrhage')
+      || opponent.bleed > 0
       || opponent.status.includes('stunned')
       || opponent.status.includes('knockdown')
 }

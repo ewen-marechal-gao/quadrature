@@ -70,22 +70,14 @@ mutations:
                     fr: Blindage lourd
                   effect:
                     fr: "+2 🛡️ à toutes les autres parties (perdu si la carapace cède)"
-      # Pattes massives du tank : les antérieures PIÉTINENT (2 blocs, plus d'évasion) ;
-      # les médianes gagnent un 2e bloc d'évasion. Appliqué avant la fusion « Membres ».
+      # Pattes massives du tank : les antérieures PIÉTINENT (bloc unique, plus d'évasion).
+      # Après la fusion « Membres » → 3 blocs à 3 PV : Piétiner + Évasion (médianes) +
+      # Évasion (postérieures) = +2 🍀. (Les 3 PV des médianes viennent de weightBearingLimbs.)
       modifyParts:
         - type: frontLeg
           blocksRemove:
             - 0
           blocksAdd:
-            - cases: 2
-              name:
-                fr: Sabots
-              grants:
-                text:
-                  fr: Piétiner coûte ⚫ (au lieu de ⚫⚫)
-                cardCost:
-                  card: trample
-                  cost: 1
             - cases: 3
               name:
                 fr: Pattes antérieures
@@ -93,16 +85,6 @@ mutations:
                 text:
                   fr: Confère l'action Piétiner
                 grantsCard: trample
-        - type: middleLeg
-          blocksAdd:
-            - cases: 2
-              name:
-                fr: Appui
-              grants:
-                text:
-                  fr: +1 🍀 Évasion
-                resource: evasion
-                amount: 1
       speed:
         walk: 3
         run: 5
@@ -251,7 +233,7 @@ mutations:
             fr: Paire de membres médians.
           armor: 0
           blocks:
-            - cases: 2
+            - cases: 3
               name:
                 fr: Pattes médianes
               grants:
@@ -362,7 +344,7 @@ mutations:
       modifyPart:
         type: body
         blocksAdd:
-          - cases: 2
+          - cases: 3
             name:
               fr: Poumons
             grants:

@@ -61,7 +61,7 @@ parts:
             fr: +2 🫁 au début de la manche
           resource: endurance
           amount: 2
-      - cases: 2
+      - cases: 3
         name:
           fr: Poumons
         grants:

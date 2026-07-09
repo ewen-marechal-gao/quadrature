@@ -12,7 +12,7 @@
  * révélé par window.print() — sur le modèle de la rubrique /cartes.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Adversary } from "@/lib/bestiary";
 import { type Locale } from "@/lib/nav";
@@ -22,6 +22,22 @@ import { BestiaryPrint } from "@/components/adversary/BestiaryPrint";
 import "@/app/adversaries.css";
 
 const MAX_PER_CARD = 8;
+
+/** Seuil « affichage étroit » (px) : sous ce point, fiche en 1 colonne + impression bloquée. */
+const NARROW_BREAKPOINT = 860;
+
+/** True quand la fenêtre est trop étroite pour la mise en page A5 2 colonnes. */
+function useIsNarrow(maxWidth = NARROW_BREAKPOINT): boolean {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${maxWidth}px)`);
+    const update = () => setNarrow(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [maxWidth]);
+  return narrow;
+}
 
 /** Texte agrégé d'une créature pour la recherche plein texte. */
 function searchableText(a: Adversary): string {
@@ -41,6 +57,7 @@ export function BestiaryBrowser({
   const [collapsed, setCollapsed] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(adversaries[0]?.id ?? "");
+  const narrow = useIsNarrow();
 
   // ── Configuration d'impression ───────────────────────────────────────────
   const [sheetCopies, setSheetCopies] = useState(2);
@@ -220,14 +237,23 @@ export function BestiaryBrowser({
 
                   <div className="adv-print-actions">
                     <span className="adv-print-summary">
-                      {totalPages} page{totalPages > 1 ? "s" : ""} A4
-                      {sheetPages > 0 && ` · fiche ${sheetPages}`}
-                      {deckPages > 0 && ` · deck ${deckPages}`}
+                      {narrow ? (
+                        <em className="adv-print-narrow">
+                          Fenêtre trop étroite — élargissez pour imprimer.
+                        </em>
+                      ) : (
+                        <>
+                          {totalPages} page{totalPages > 1 ? "s" : ""} A4
+                          {sheetPages > 0 && ` · fiche ${sheetPages}`}
+                          {deckPages > 0 && ` · deck ${deckPages}`}
+                        </>
+                      )}
                     </span>
                     <button
                       className="adv-print-btn"
                       onClick={() => window.print()}
-                      disabled={totalPages === 0}
+                      disabled={totalPages === 0 || narrow}
+                      title={narrow ? "Impression indisponible sur écran étroit" : undefined}
                     >
                       🖨 Imprimer
                     </button>

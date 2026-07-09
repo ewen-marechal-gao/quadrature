@@ -36,6 +36,7 @@ export function initCombatant(char: Character): CombatantState {
     fatigue:           1,   // § Fatigue : débute à 1, jamais sous 1
     mentalState:       'focused',
     stability:         0,   // set below via stabilityPool (needs the built state)
+    bleed:             0,
     status:            [],
     protection:        char.protection ?? 0,
     tempProtection:    0,
@@ -215,9 +216,15 @@ export function effChar(state: CombatantState, name: CharacteristicName): number
   return Math.max(0, c.value - c.wounds)
 }
 
-/** Resistance threshold: eff(vigor) + robustness skill */
+/**
+ * Resistance threshold (§ Résistance — prototype).
+ * = Vigueur effective seule. Robustesse a été RETIRÉE du seuil : elle restait
+ * doublement défensive (seuil + capacité d'armure). Elle ne pèse plus la défense
+ * que via l'armure équipée. La conversion 💢→💔 se fait à 3:1 sur l'excédent
+ * au-dessus de ce seuil (voir processRoundEnd).
+ */
 export function resistanceThreshold(state: CombatantState): number {
-  return effChar(state, 'vigor') + state.skills.robustness
+  return effChar(state, 'vigor')
 }
 
 // ─── Action economy ───────────────────────────────────────────────────────────
@@ -309,36 +316,42 @@ export function applyHeavyWound(state: CombatantState, bypassProtection = false)
 }
 
 /**
- * End-of-round processing:
- *  1. Wound overflow: if lightWounds > resistanceThreshold → 1 heavy wound
- *     - Hemorrhage active   → bypasses Protection (§Hémorragie ignores armor)
- *     - No hemorrhage       → heavy wound is absorbed by tempProtection / protection
- *     - Either way, only the excess above the threshold is removed (carry-over rule)
- *  2. Temporary protection expires: any remaining tempProtection cleared to 0
- *  3. Status end-of-round hooks
- *
- * Status hooks are called on the state snapshot from the start of this function
- * so they do not see each other's effects within the same tick.
+ * End-of-round processing (prototype — modèle blessures unifié) :
+ *  1. Saignée 🩸 : les jetons décroissent d'abord de la Récupération ✫ (résistance
+ *     passive), puis le reste s'ajoute aux blessures légères — ces 💢 percent
+ *     l'armure lors de la conversion. Les jetons persistent (décroissent chaque
+ *     manche) ; Stabiliser les vide.
+ *  2. Conversion 💢→💔 à 3:1 sur l'excédent au-dessus de la Résistance (= Vigueur) :
+ *     autant de graves que ⌊excédent / 3⌋, le reste est REPORTÉ (vrai carry-over).
+ *     Une conversion alimentée par le saignement perce la Protection 🛡️.
+ *  3. Protection temporaire expirée ; hooks de fin de manche.
  */
 export function processRoundEnd(state: CombatantState): CombatantState {
   let s = state
 
-  // 1. Wound overflow
-  const threshold = resistanceThreshold(s)
-  if (s.lightWounds > threshold) {
-    // Hémorragie bypasses protection; normal overflow respects it.
-    const hasHemorrhage = s.status.includes('hemorrhage')
-    s = applyHeavyWound(s, /* bypassProtection = */ hasHemorrhage)
-    s = { ...s, lightWounds: threshold }  // only the excess is removed (carry-over)
-    if (hasHemorrhage) {
-      s = removeStatus(s, 'hemorrhage')   // one 🩸 token consumed per conversion
-    }
+  // 1. Saignée 🩸 — décroissance (Récupération) AVANT marquage, puis dépôt en 💢.
+  let bledThisRound = 0
+  if (s.bleed > 0) {
+    const remaining = Math.max(0, s.bleed - s.skills.recovery)
+    bledThisRound = remaining
+    s = { ...s, bleed: remaining, lightWounds: s.lightWounds + remaining }
   }
 
-  // 2. Temporary protection expires at round end
+  // 2. Conversion 💢→💔 à 3:1 sur l'excédent (§ Résistance).
+  const threshold = resistanceThreshold(s)
+  const excess = s.lightWounds - threshold
+  if (excess >= 3) {
+    const heavies = Math.floor(excess / 3)
+    // Une saignée active fait percer l'armure aux graves qu'elle engendre.
+    const bypass = bledThisRound > 0
+    for (let i = 0; i < heavies; i++) s = applyHeavyWound(s, /* bypassProtection = */ bypass)
+    s = { ...s, lightWounds: s.lightWounds - heavies * 3 }  // reste reporté
+  }
+
+  // 3. Temporary protection expires at round end
   s = { ...s, tempProtection: 0 }
 
-  // 3. Status end-of-round hooks (iterate over original status list to avoid
+  // 4. Status end-of-round hooks (iterate over original status list to avoid
   //    re-triggering statuses added by hooks within the same tick)
   for (const statusId of state.status) {
     const hook = STATUS_DEFS[statusId]?.onRoundEnd
@@ -350,6 +363,18 @@ export function processRoundEnd(state: CombatantState): CombatantState {
   }
 
   return s
+}
+
+// ─── Hémorragie 🩸 (PJ) ─────────────────────────────────────────────────────────
+
+/** Add N cumulative bleed 🩸 tokens. */
+export function addBleedPc(state: CombatantState, amount = 1): CombatantState {
+  return { ...state, bleed: state.bleed + amount }
+}
+
+/** Clear all bleed 🩸 tokens (Stabiliser — soin actif). */
+export function clearBleedPc(state: CombatantState): CombatantState {
+  return { ...state, bleed: 0 }
 }
 
 /** Heal n light wounds (floor 0) */
@@ -550,8 +575,9 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'heal-wounds':    return healLightWounds(s, effect.amount)
     case 'add-fatigue':    return addFatigue(s, effect.amount)
     case 'remove-fatigue': return removeFatigue(s, effect.amount)
-    case 'add-status':     return addStatus(s, effect.status)
-    case 'remove-status':  return removeStatus(s, effect.status)
+    // Hémorragie 🩸 : compteur de jetons (prototype), pas un statut binaire.
+    case 'add-status':     return effect.status === 'hemorrhage' ? addBleedPc(s, 1)  : addStatus(s, effect.status)
+    case 'remove-status':  return effect.status === 'hemorrhage' ? clearBleedPc(s)   : removeStatus(s, effect.status)
     case 'spend-actions':  return { ...s, actions: Math.max(0, s.actions - effect.amount) }
     case 'add-reaction':        return addReaction(s, effect.amount)
     case 'spend-reaction':      return spendReaction(s)
@@ -596,6 +622,7 @@ export function toCombatantSnapshot(state: CombatantState): CombatantSnapshot {
     fatigue:        state.fatigue,
     mentalState:    state.mentalState,
     stability:      state.stability,
+    bleed:          state.bleed,
     status:         [...state.status],
     charWounds,
     protection:     state.protection,

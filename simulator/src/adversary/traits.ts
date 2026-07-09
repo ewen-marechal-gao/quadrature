@@ -38,7 +38,7 @@ export function attackAdvantages(
   let advantages = 0
   const notes: string[] = []
 
-  if (hasTrait(a, 'sanguinaire') && hasCardTag(card, 'physicalDamage') && target.status.includes('hemorrhage')) {
+  if (hasTrait(a, 'sanguinaire') && hasCardTag(card, 'physicalDamage') && target.bleed > 0) {
     advantages += 1
     notes.push('🟩 Sanguinaire — la cible saigne 🩸')
   }

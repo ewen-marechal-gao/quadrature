@@ -39,15 +39,14 @@ describe('planRound — self-action triggers', () => {
     }
   })
 
-  it('hemorrhage → stabilize planned as first action (cautious persona)', () => {
-    const s = addStatus(makeCombatant('A'), 'hemorrhage')
+  it('hemorrhage (bleed 🩸) → stabilize planned as first action (cautious persona)', () => {
+    const s = { ...makeCombatant('A'), bleed: 1 }
     const plans = planRound(s, opponent, cfgCautious)
     expect(plans.some(p => p.action === 'stabilize')).toBe(true)
   })
 
   it('respiration takes priority over stabilize when both conditions are met', () => {
-    let s = addStatus(makeCombatant('A'), 'winded')
-    s     = addStatus(s, 'hemorrhage')
+    const s = { ...addStatus(makeCombatant('A'), 'winded'), bleed: 1 }
     const plans = planRound(s, opponent, cfgCautious)
     // respiration must be the first planned action
     expect(plans[0]?.action).toBe('respiration')
