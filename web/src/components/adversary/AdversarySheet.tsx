@@ -22,7 +22,7 @@ import { adversaryCardToPlayerCard } from "@/lib/adversary-card";
 import { ActionCard } from "@/components/ActionCard";
 import "@/app/adversaries.css";
 
-// useLayoutEffect côté client (mesure avant peinture), useEffect au rendu serveur.
+// useLayoutEffect côté client (mesure avant peinture) ; useEffect au rendu serveur.
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /**
@@ -128,13 +128,10 @@ function PartCard({ part }: { part: BodyPart }) {
 export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
   const a = adversary;
   const { frameRef, contentRef, scale } = useFitScale();
+  const fitStyle = scale < 1 ? { transform: `scale(${scale})` } : undefined;
   return (
     <article className="adv-sheet" ref={frameRef} aria-label={`Fiche : ${a.name}`}>
-      <div
-        className="adv-sheet-fit"
-        ref={contentRef}
-        style={scale < 1 ? { transform: `scale(${scale})` } : undefined}
-      >
+      <div className="adv-sheet-fit" ref={contentRef} style={fitStyle}>
       <header className="adv-header">
         <div className="adv-title">
           <h1 className="adv-name">{a.name}</h1>
