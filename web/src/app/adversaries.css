@@ -88,7 +88,9 @@
    l'échelle ≤ 1 par le hook useFitScale pour tenir dans le cadre sans clipping. */
 .adv-sheet-fit {
   width: 100%;
-  padding: clamp(0.7rem, 2.6cqw, 1.2rem);
+  /* marge haute réduite (au-dessus du nom) vs latérales/basse */
+  padding: clamp(0.4rem, 1.5cqw, 0.7rem) clamp(0.7rem, 2.6cqw, 1.2rem)
+    clamp(0.7rem, 2.6cqw, 1.2rem);
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -190,10 +192,77 @@
   background: rgba(255, 255, 255, 0.35);
 }
 
-.adv-fatigue-rows {
+/* Fatigue : une seule ligne, deux groupes (la césure marque le seuil Essoufflé). */
+.adv-fatigue-groups {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* État mental (encadré) --------------------------------------------------- */
+.adv-mental {
+  border: 1.5px solid var(--adv-rule-soft);
+  border-radius: 5px;
+  padding: 0.4rem 0.55rem 0.45rem;
+}
+
+.adv-mental-track {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.adv-mental-state {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: clamp(0.7rem, 1.35cqw, 0.8rem);
+  line-height: 1.2;
+}
+
+/* Slot ~8×8 mm pour un jeton cubique (1cqw ≈ 2,1 mm sur l'A5 → 3.8cqw ≈ 8 mm). */
+.adv-mental-slot {
+  width: 3.8cqw;
+  height: 3.8cqw;
+  min-width: 15px;
+  min-height: 15px;
+  border: 1.5px solid var(--adv-box);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.adv-mental-icon {
+  font-size: 1.05em;
+}
+
+.adv-mental-name {
+  font-weight: 700;
+}
+
+.adv-mental-effect {
+  color: var(--adv-muted);
+  justify-self: end;
+  text-align: right;
+}
+
+/* Ténacité en tête de l'encadré mental (séparateur en dessous, avant les états). */
+.adv-mental-tenacity {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--adv-rule-soft);
+  font-size: clamp(0.68rem, 1.3cqw, 0.78rem);
+}
+
+.adv-mental-tenacity-label {
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* Traits ------------------------------------------------------------------ */
@@ -215,9 +284,36 @@
   font-size: 0.9em;
 }
 
-/* ── Parties du corps ──────────────────────────────────────────────────── */
+/* ── État physique (encadré gauche, symétrique de l'état mental) ─────────── */
 .adv-parts {
   min-width: 0;
+}
+
+.adv-physical {
+  border: 1.5px solid var(--adv-rule-soft);
+  border-radius: 5px;
+  padding: 0.4rem 0.55rem 0.5rem;
+}
+
+/* Fatigue : même format que la Ténacité (étiquette + cases), séparateur dessous. */
+.adv-fatigue {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.35rem 0 0.45rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--adv-rule-soft);
+  font-size: clamp(0.68rem, 1.3cqw, 0.78rem);
+}
+
+.adv-fatigue-label {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Fatigue directement suivie des parties (titre « Parties du corps » retiré). */
+.adv-physical .adv-parts-grid {
+  margin-top: 0.1rem;
 }
 
 .adv-parts-grid {
@@ -246,11 +342,11 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-size: clamp(0.74rem, 1.5cqw, 0.88rem);
+  font-size: clamp(0.66rem, 1.3cqw, 0.78rem);
 }
 
 .adv-part-armor {
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   color: var(--adv-muted);
 }
 
@@ -270,7 +366,7 @@
 }
 
 .adv-bloc-confere {
-  font-size: clamp(0.68rem, 1.35cqw, 0.8rem);
+  font-size: clamp(0.6rem, 1.2cqw, 0.72rem);
   line-height: 1.25;
 }
 

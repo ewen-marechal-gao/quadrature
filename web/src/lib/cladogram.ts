@@ -26,19 +26,28 @@ import { localize, type LocalizedString } from "@/lib/nav";
 
 // ─── Types bruts (forme YAML) ─────────────────────────────────────────────────
 
-/** Lettre de biome : N Nord · L Levant · C Couchant · S Sud. */
-export type BiomeLetter = "N" | "L" | "C" | "S";
-export type NodeStatus = "done" | "todo";
+// Vocabulaire d'écologie : dans `cladogram-eco.ts` (pur), car ce module lit `fs`
+// et ne doit rien exporter de VALEUR vers les composants clients.
+import { applyEco, BIOME_ORDER, type Biome, type Habitat } from "@/lib/cladogram-eco";
+
+export type { Biome, BiomeLetter, Habitat } from "@/lib/cladogram-eco";
 
 interface RawMutation {
   label?: LocalizedString;
   description?: LocalizedString;
+  /** Transitions d'écologie repliées racine→feuille (remove puis add). */
+  addBiome?: Biome[];
+  removeBiome?: Biome[];
+  addHabitat?: Habitat[];
+  removeHabitat?: Habitat[];
   /** Brique de fiche d'adversaire — ignorée par le visualiseur. */
   kit?: unknown;
 }
 
 /** Nœud tel qu'écrit dans le YAML (clade interne ou feuille). */
 interface RawNode {
+  /** Slug stable, cible du champ `from` des fiches d'adversaires. */
+  uid?: string;
   name?: string;
   ref?: string;
   tip?: string;
@@ -46,9 +55,6 @@ interface RawNode {
   branchNote?: string;
   /** Clé d'une mutation du dictionnaire `mutations`. */
   mut?: string;
-  /** Sous-ensemble de "NLCS". */
-  biome?: string;
-  status?: NodeStatus;
   star?: boolean;
   children?: RawNode[];
 }
@@ -57,6 +63,9 @@ interface RawCladogram {
   title?: string;
   rootNote?: string;
   backlog?: string[];
+  /** Graine d'écologie de la racine (cf. data/cladogram.yaml). */
+  rootBiome?: Biome[];
+  rootHabitat?: Habitat[];
   mutations?: Record<string, RawMutation>;
   root: { children: RawNode[] };
 }
@@ -75,6 +84,8 @@ export interface CladoNode {
   /** true si le nœud n'a pas d'enfants. */
   isLeaf: boolean;
 
+  /** Slug stable du YAML (≠ `id`, qui est un chemin) ; cible du `from` des fiches. */
+  uid?: string;
   name?: string;
   ref?: string;
   tip?: string;
@@ -82,8 +93,10 @@ export interface CladoNode {
   branchNote?: string;
   /** Clé de la mutation portée par ce nœud (cf. mutationByKey). */
   mut?: string;
-  biome?: string;
-  status?: NodeStatus;
+  /** Biomes DÉRIVÉS (graine de la racine + transitions de l'ascendance). */
+  biomes: Biome[];
+  /** Milieux DÉRIVÉS (idem). */
+  habitats: Habitat[];
   star?: boolean;
 
   children: CladoNode[];
@@ -122,28 +135,37 @@ export function normalizeCladogram(raw: RawCladogram, locale = "fr"): CladogramD
   // Clés de mutation dans l'ordre de première apparition (parcours pré-ordre).
   const appearance: string[] = [];
   const seen = new Set<string>();
+  const rawMutations = raw.mutations ?? {};
 
   function build(
     src: RawNode,
     id: string,
     depth: number,
     kingdom: number,
-    parentId: string | undefined
+    parentId: string | undefined,
+    parentBiomes: ReadonlySet<Biome>,
+    parentHabitats: ReadonlySet<Habitat>
   ): CladoNode {
+    // Écologie dérivée : la mutation portée par CE nœud déplace l'ensemble hérité.
+    const m = src.mut ? rawMutations[src.mut] : undefined;
+    const biomes = applyEco(parentBiomes, m?.addBiome, m?.removeBiome);
+    const habitats = applyEco(parentHabitats, m?.addHabitat, m?.removeHabitat);
+
     const node: CladoNode = {
       id,
       depth,
       kingdom,
       parentId,
       isLeaf: !(src.children && src.children.length > 0),
+      uid: src.uid,
       name: src.name,
       ref: src.ref,
       tip: src.tip,
       cd: src.cd,
       branchNote: src.branchNote,
       mut: src.mut,
-      biome: src.biome,
-      status: src.status,
+      biomes: BIOME_ORDER.filter((b) => biomes.has(b)),
+      habitats: [...habitats],
       star: src.star,
       children: [],
     };
@@ -154,22 +176,28 @@ export function normalizeCladogram(raw: RawCladogram, locale = "fr"): CladogramD
     }
     if (src.children) {
       node.children = src.children.map((child, i) =>
-        build(child, `${id}.${i}`, depth + 1, kingdom, id)
+        build(child, `${id}.${i}`, depth + 1, kingdom, id, biomes, habitats)
       );
     }
     return node;
   }
+
+  // Graine d'écologie : ce dont hérite tout l'arbre (cf. rootBiome/rootHabitat du YAML).
+  const seedBiomes = new Set<Biome>(raw.rootBiome ?? []);
+  const seedHabitats = new Set<Habitat>(raw.rootHabitat ?? []);
 
   const root: CladoNode = {
     id: "root",
     depth: 0,
     kingdom: -1,
     isLeaf: false,
+    biomes: BIOME_ORDER.filter((b) => seedBiomes.has(b)),
+    habitats: [...seedHabitats],
     children: [],
   };
   nodeIndex.root = root;
   root.children = (raw.root?.children ?? []).map((child, i) =>
-    build(child, `root.${i}`, 1, i, "root")
+    build(child, `root.${i}`, 1, i, "root", seedBiomes, seedHabitats)
   );
 
   // Numérotation = ordre d'apparition dans l'arbre.

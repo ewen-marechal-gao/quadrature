@@ -2,10 +2,10 @@
  * src/components/cladogram/shared.ts
  *
  * Constantes et petits utilitaires partagés par les sous-composants du
- * cladogramme (libellés de biome/statut, bornes de zoom, placement de carte).
+ * cladogramme (libellés de biome, bornes de zoom, placement de carte).
  */
 
-import type { BiomeLetter, NodeStatus } from "@/lib/cladogram";
+import { BIOME_TO_LETTER, type Biome, type BiomeLetter, type Habitat } from "@/lib/cladogram-eco";
 
 export const BIOME_LETTERS: BiomeLetter[] = ["N", "L", "C", "S"];
 export const BIOME_NAMES: Record<BiomeLetter, string> = {
@@ -14,10 +14,15 @@ export const BIOME_NAMES: Record<BiomeLetter, string> = {
   C: "Couchant",
   S: "Sud",
 };
-export const STATUS_LABEL: Record<NodeStatus, string> = {
-  done: "peuplé",
-  todo: "à venir",
+export const HABITAT_NAMES: Record<Habitat, string> = {
+  terrestrial: "Terrestre",
+  aquatic: "Aquatique",
+  aerial: "Aérien",
 };
+
+/** Lettres allumées pour un ensemble de biomes DÉRIVÉ. */
+export const lettersOf = (biomes: Biome[]): Set<BiomeLetter> =>
+  new Set(biomes.map((b) => BIOME_TO_LETTER[b]));
 
 export const ZOOM_MIN = 0.2;
 export const ZOOM_MAX = 2.5;

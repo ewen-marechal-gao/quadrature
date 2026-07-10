@@ -15,6 +15,9 @@ description:
 
 guard: { type: block, value: 12 }
 # speed & fatigue : dérivés des mutations (carapace lente, corps massif).
+# 🧠 Ténacité élevée : sans ◇ (pas d'encéphalisation) mais « presque inébranlable » — la longue
+# barre ▢ compense l'absence de tampon mental. Explicite (A) ; dérivera du cladogramme (B).
+tenacity: 5
 
 extraMutations: []
 extraTraits: []

@@ -4,8 +4,7 @@
  * Moteur de disposition du cladogramme — *pur et isomorphe* (aucun fs / DOM),
  * rejoué côté client à chaque changement de l'état de repli.
  *
- * Port de l'algorithme « cladogramme à pointes alignées » de
- * tools/gen-faune-arbre.mjs, rendu réactif au repli :
+ * Algorithme « cladogramme à pointes alignées », rendu réactif au repli :
  *   1. parcours des nœuds visibles → liste des « terminaux » (feuilles + clades
  *      repliés), chacun aligné sur la colonne des pointes (profondeur max visible) ;
  *   2. y des terminaux empilés, avec un interstice entre règnes (kingdom) ;

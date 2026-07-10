@@ -79,22 +79,55 @@ function Boxes({ count }: { count: number }) {
   );
 }
 
-/** Fatigue : rangées de 5 cases. */
+/**
+ * Fatigue : ligne étiquetée (même format que la Ténacité) — toutes les cases sur
+ * UNE ligne, coupée en deux groupes. La césure (floor/ceil) tombe sur le seuil
+ * Essoufflé : entrer dans le 2ᵉ groupe = past half the clock (−1 ⚫).
+ */
 function FatigueTrack({ total }: { total: number }) {
-  const rows: number[] = [];
-  let left = total;
-  while (left > 0) {
-    rows.push(Math.min(5, left));
-    left -= 5;
-  }
+  const first = Math.floor(total / 2);
+  const second = total - first;
   return (
     <div className="adv-fatigue">
-      <div className="adv-section-label">💧 Fatigue</div>
-      <div className="adv-fatigue-rows">
-        {rows.map((n, i) => (
-          <Boxes key={i} count={n} />
-        ))}
+      <span className="adv-fatigue-label">💧 Fatigue</span>
+      <div className="adv-fatigue-groups">
+        <Boxes count={first} />
+        <Boxes count={second} />
       </div>
+    </div>
+  );
+}
+
+/** Les trois états de la piste mentale simplifiée (universels, § règles adversaires). */
+const MENTAL_STATES: { icon: string; name: string; effect: string }[] = [
+  { icon: "😠", name: "Enragé", effect: "+1 💀 att · −1 💀 déf" },
+  { icon: "😐", name: "Concentré", effect: "amélioration ciblée" },
+  { icon: "😬", name: "Paniqué", effect: "+1 💀 déf · −1 💀 att" },
+];
+
+/**
+ * Encadré « État mental » : les 3 états, chacun avec un slot ~8×8 mm où poser un
+ * jeton cubique (l'état bouge en jeu), + la barre 🧠 Ténacité (▢, tampon final).
+ * Ordre du tampon (§ règles) : 🔺🔻 → retire ◇ → déplace l'état → coche ▢.
+ */
+function MentalPanel({ tenacity }: { tenacity: number }) {
+  return (
+    <div className="adv-mental">
+      <div className="adv-section-label">État mental</div>
+      <div className="adv-mental-tenacity">
+        <span className="adv-mental-tenacity-label">🧠 Ténacité</span>
+        <Boxes count={tenacity} />
+      </div>
+      <ul className="adv-mental-track">
+        {MENTAL_STATES.map((s) => (
+          <li key={s.name} className="adv-mental-state">
+            <span className="adv-mental-slot" aria-hidden />
+            <span className="adv-mental-icon">{s.icon}</span>
+            <span className="adv-mental-name">{s.name}</span>
+            <span className="adv-mental-effect">{s.effect}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -155,8 +188,10 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
       {a.description && <p className="adv-desc">{a.description}</p>}
 
       <div className="adv-body">
-        <section className="adv-parts">
-          <div className="adv-section-label">Parties du corps</div>
+        <section className="adv-parts adv-physical">
+          <div className="adv-section-label">État physique</div>
+          <FatigueTrack total={a.fatigue} />
+
           <div className="adv-parts-grid">
             {a.parts.map((p) => (
               <PartCard key={p.type} part={p} />
@@ -176,7 +211,7 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
         </section>
 
         <aside className="adv-aside">
-          <FatigueTrack total={a.fatigue} />
+          {a.tenacity != null && <MentalPanel tenacity={a.tenacity} />}
 
           {a.traits.length > 0 && (
             <div className="adv-traits">

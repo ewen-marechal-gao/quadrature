@@ -201,6 +201,7 @@ function consolidate(source, map, mutations) {
   const appearanceFr = state.appearance.map((b) => b.fr).filter(Boolean).join(" · ");
   return {
     id: source.id,
+    from: source.from, // uid du nœud du cladogramme → lien fiche ↔ arbre (page /evolution)
     name: source.name,
     power: source.power,
     dice: source.dice,
@@ -208,6 +209,8 @@ function consolidate(source, map, mutations) {
     guard: source.guard,
     speed: source.speed ?? state.speed ?? { walk: 0, run: 0 }, // source surcharge sinon dérivé
     fatigue: source.fatigue ?? state.fatigue,
+    ...(source.tenacity != null ? { tenacity: source.tenacity } : {}), // 🧠 (A) explicite ; (B) dérivera du cladogramme
+
     ...(appearanceFr ? { appearance: { fr: appearanceFr } } : {}),
     parts: state.parts.map(normalizePartBlocks),
     ...(weapons ? { weapons: weapons.map(normalizePartBlocks) } : {}),

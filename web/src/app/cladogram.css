@@ -240,8 +240,16 @@
   max-width: 340px;
 }
 .clado-star { color: #d8a72a; }
-.clado-mark { color: var(--panel-muted); font-size: 0.7rem; }
-.clado-mark--done { color: var(--card-guerison); }
+/* Feuille possédant une fiche d'adversaire : son nom est un lien vers la fiche. */
+.clado-tip--linked { text-decoration: none; cursor: pointer; }
+.clado-tip--linked .clado-tip-name {
+  text-decoration: underline dotted var(--brass);
+  text-underline-offset: 2px;
+}
+.clado-tip--linked:hover .clado-tip-name,
+.clado-tip--linked:focus-visible .clado-tip-name {
+  text-decoration-style: solid;
+}
 .clado-count {
   font-size: 0.62rem;
   color: var(--on-brass);

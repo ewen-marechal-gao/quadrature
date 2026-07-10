@@ -15,6 +15,7 @@ description:
 
 guard: { type: dodge, value: 10 }
 # speed & fatigue : dérivés des mutations (membres / corps) ; ajouter ici pour surcharger.
+tenacity: 4 # 🧠 barre mentale (▢) ; explicite pour l'instant — dérivera du cladogramme (encéphalisation).
 
 # Mutations supplémentaires (hors ascendance) : désormais VIDE. Morsure (jaws),
 # Cri (lungs) et Balayage caudal (fur) sont conférés par l'ascendance. Le Cri

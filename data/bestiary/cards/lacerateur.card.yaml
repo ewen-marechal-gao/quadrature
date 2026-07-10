@@ -1,6 +1,7 @@
 # GÉNÉRÉ par tools/consolidate-bestiary.mjs — NE PAS ÉDITER À LA MAIN.
 # Source : data/bestiary/species/<id>.yaml ; parties/cartes/traits dérivés du cladogramme (via `from`).
 id: lacerateur
+from: lacerateurs
 name:
   fr: Lacérateur
   en: Lacerator
@@ -19,6 +20,7 @@ speed:
   walk: 5
   run: 10
 fatigue: 10
+tenacity: 3
 appearance:
   fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · un squelette pleinement ossifié · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · des épines EM le long de la colonne (esprits synchronisés) · de longues griffes tranchantes aux pattes avant
 parts:

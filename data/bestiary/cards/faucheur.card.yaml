@@ -1,6 +1,7 @@
 # GÉNÉRÉ par tools/consolidate-bestiary.mjs — NE PAS ÉDITER À LA MAIN.
 # Source : data/bestiary/species/<id>.yaml ; parties/cartes/traits dérivés du cladogramme (via `from`).
 id: faucheur
+from: faucheurs
 name:
   fr: Faucheur
   en: Reaper
@@ -19,6 +20,7 @@ speed:
   walk: 4
   run: 8
 fatigue: 10
+tenacity: 4
 appearance:
   fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · un squelette pleinement ossifié · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · un crâne bombé abritant un gros cerveau · une station bipède au dos incliné, les antérieurs libérés · un port à demi dressé, la queue faisant office de balancier · deux longues serpes recourbées au bout des avant-bras
 parts:

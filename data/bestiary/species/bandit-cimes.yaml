@@ -13,6 +13,7 @@ description:
 
 guard: { type: parry, value: 11 }
 # speed & fatigue : dérivés des mutations (membres / corps).
+tenacity: 4 # 🧠 barre mentale (▢) ; explicite pour l'instant — dérivera du cladogramme (encéphalisation).
 
 # Retraits : sapient armé qui coordonne EN SILENCE — pas de morsure ni de cri
 # naturels (il frappe à l'épée et à l'arc, cf. weapons).

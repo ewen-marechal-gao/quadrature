@@ -59,6 +59,8 @@ interface RawCard {
 }
 interface RawAdversary {
   id: string;
+  /** uid du nœud du cladogramme dont la fiche dérive. */
+  from?: string;
   name: LocalizedString;
   power: PowerTier;
   dice: AdversaryDie[];
@@ -66,6 +68,8 @@ interface RawAdversary {
   guard: { type: GuardType; value: number };
   speed: { walk: number; run: number };
   fatigue: number;
+  /** 🧠 Ténacité : longueur de la barre mentale (▢), tampon final avant fuite/reddition. */
+  tenacity?: number;
   parts: RawPart[];
   /** Armes/équipement (mécaniquement comme des parties, affichées à part). */
   weapons?: RawPart[];
@@ -97,6 +101,8 @@ export interface AdversaryCard {
 /** Fiche complète, chaînes résolues dans la locale. */
 export interface Adversary {
   id: string;
+  /** uid du nœud du cladogramme dont la fiche dérive (lien depuis /evolution). */
+  from?: string;
   name: string;
   power: PowerTier;
   /** Libellé du palier dans la locale (ex. « Initié »). */
@@ -106,6 +112,8 @@ export interface Adversary {
   guard: { type: GuardType; label: string; value: number };
   speed: { walk: number; run: number };
   fatigue: number;
+  /** 🧠 Ténacité : longueur de la barre mentale (▢). Absent = créature sans piste mentale. */
+  tenacity?: number;
   parts: BodyPart[];
   /** Armes/équipement (affichées dans une section dédiée sous les parties). */
   weapons: BodyPart[];
@@ -155,6 +163,7 @@ function resolveAdversary(raw: RawAdversary, locale: string): Adversary {
   const opt = (s?: LocalizedString) => (s ? localize(s, locale) : undefined);
   return {
     id: raw.id,
+    ...(raw.from ? { from: raw.from } : {}),
     name: localize(raw.name, locale),
     power: raw.power,
     powerLabel: localize(POWER_LABELS[raw.power], locale),
@@ -163,6 +172,7 @@ function resolveAdversary(raw: RawAdversary, locale: string): Adversary {
     guard: { type: raw.guard.type, label: localize(GUARD_LABELS[raw.guard.type], locale), value: raw.guard.value },
     speed: raw.speed,
     fatigue: raw.fatigue,
+    ...(raw.tenacity != null ? { tenacity: raw.tenacity } : {}),
     parts: raw.parts.map((p) => resolvePart(p, locale)),
     weapons: (raw.weapons ?? []).map((p) => resolvePart(p, locale)),
     traits: (raw.traits ?? []).map((t) => ({ name: localize(t.name, locale), kind: t.kind, effect: localize(t.effect, locale), ...(t.source && { source: localize(t.source, locale) }) })),

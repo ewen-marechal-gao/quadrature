@@ -1,20 +1,18 @@
 "use client";
 
 /**
- * Toolbar — barre d'outils du cladogramme : retour, filtres biome/statut,
+ * Toolbar — barre d'outils du cladogramme : retour, filtre biome,
  * bascule du registre des mutations, contrôles de zoom.
  */
 
 import Link from "next/link";
-import type { BiomeLetter, NodeStatus } from "@/lib/cladogram";
+import type { BiomeLetter } from "@/lib/cladogram";
 import { BIOME_LETTERS, BIOME_NAMES } from "./shared";
 
 export interface ToolbarProps {
   locale: string;
   biomeFilter: ReadonlySet<BiomeLetter>;
   onToggleBiome: (l: BiomeLetter) => void;
-  statusFilter: NodeStatus | null;
-  onSetStatus: (s: NodeStatus | null) => void;
   showMut: boolean;
   onToggleMut: () => void;
   zoom: number;
@@ -27,8 +25,6 @@ export function Toolbar({
   locale,
   biomeFilter,
   onToggleBiome,
-  statusFilter,
-  onSetStatus,
   showMut,
   onToggleMut,
   zoom,
@@ -57,21 +53,6 @@ export function Toolbar({
             {L}
           </button>
         ))}
-      </div>
-
-      <div className="clado-group" role="group" aria-label="Filtre statut">
-        <button
-          className={`clado-chip ${statusFilter === "done" ? "clado-chip--on" : ""}`}
-          onClick={() => onSetStatus(statusFilter === "done" ? null : "done")}
-        >
-          ✓ Peuplé
-        </button>
-        <button
-          className={`clado-chip ${statusFilter === "todo" ? "clado-chip--on" : ""}`}
-          onClick={() => onSetStatus(statusFilter === "todo" ? null : "todo")}
-        >
-          ☐ À venir
-        </button>
       </div>
 
       <div className="clado-group">

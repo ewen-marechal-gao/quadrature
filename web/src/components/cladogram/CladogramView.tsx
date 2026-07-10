@@ -14,9 +14,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@/app/cladogram.css";
-import type { BiomeLetter, CladoNode, CladogramData, NodeStatus } from "@/lib/cladogram";
+import type { BiomeLetter, CladoNode, CladogramData } from "@/lib/cladogram";
 import { ancestryOf, computeLayout } from "@/lib/cladogram-layout";
-import { type Anchor } from "./shared";
+import { type Anchor, lettersOf } from "./shared";
 import { usePanZoom, type StageSize } from "./usePanZoom";
 import { Toolbar } from "./Toolbar";
 import { NodeView } from "./NodeView";
@@ -25,13 +25,21 @@ import { HoverCard } from "./HoverCard";
 import { MutationsPanel } from "./MutationsPanel";
 import { Legend } from "./Legend";
 
-export function CladogramView({ data, locale }: { data: CladogramData; locale: string }) {
+export function CladogramView({
+  data,
+  locale,
+  adversaryByUid,
+}: {
+  data: CladogramData;
+  locale: string;
+  /** uid du nœud → id de la fiche d'adversaire qui en dérive. */
+  adversaryByUid: Record<string, string>;
+}) {
   // ── État ──────────────────────────────────────────────────────────────────
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
   const [hovered, setHovered] = useState<{ id: string; anchor: Anchor } | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [biomeFilter, setBiomeFilter] = useState<ReadonlySet<BiomeLetter>>(() => new Set());
-  const [statusFilter, setStatusFilter] = useState<NodeStatus | null>(null);
   const [showMut, setShowMut] = useState(false);
   const [focusMut, setFocusMut] = useState<string | null>(null);
 
@@ -50,14 +58,12 @@ export function CladogramView({ data, locale }: { data: CladogramData; locale: s
 
   // ── Filtres → ensemble actif (null = aucun filtre) ──────────────────────────
   const activeIds = useMemo(() => {
-    if (biomeFilter.size === 0 && !statusFilter) return null;
+    if (biomeFilter.size === 0) return null;
     const set = new Set<string>();
     const rec = (n: CladoNode): boolean => {
       if (n.isLeaf || n.children.length === 0) {
-        const b = (n.biome ?? "").toUpperCase();
-        const okBiome = biomeFilter.size === 0 || [...biomeFilter].some((L) => b.includes(L));
-        const okStatus = !statusFilter || n.status === statusFilter;
-        const active = okBiome && okStatus;
+        const letters = lettersOf(n.biomes);
+        const active = [...biomeFilter].some((L) => letters.has(L));
         if (active) set.add(n.id);
         return active;
       }
@@ -68,7 +74,7 @@ export function CladogramView({ data, locale }: { data: CladogramData; locale: s
     };
     data.root.children.forEach(rec);
     return set;
-  }, [data, biomeFilter, statusFilter]);
+  }, [data, biomeFilter]);
 
   // clé de mutation → ids de TOUS les nœuds porteurs (ordre pré-fixe) ; counts dérivé.
   const mutToIds = useMemo(() => {
@@ -147,8 +153,6 @@ export function CladogramView({ data, locale }: { data: CladogramData; locale: s
         locale={locale}
         biomeFilter={biomeFilter}
         onToggleBiome={toggleBiome}
-        statusFilter={statusFilter}
-        onSetStatus={setStatusFilter}
         showMut={showMut}
         onToggleMut={() => setShowMut((s) => !s)}
         zoom={view.zoom}
@@ -197,11 +201,13 @@ export function CladogramView({ data, locale }: { data: CladogramData; locale: s
           {layout.nodes.map((p) => {
             const lit = litIds?.has(p.node.id);
             const dimmed = activeIds !== null && !activeIds.has(p.node.id) && !lit;
+            const advId = p.node.uid ? adversaryByUid[p.node.uid] : undefined;
             return (
               <NodeView
                 key={p.node.id}
                 p={p}
                 dimmed={dimmed}
+                href={advId ? `/${locale}/adversaires/#${advId}` : undefined}
                 onEnter={onEnter}
                 onLeave={onLeave}
                 onToggleCollapse={toggleCollapse}

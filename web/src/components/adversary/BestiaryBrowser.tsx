@@ -59,6 +59,17 @@ export function BestiaryBrowser({
   const [selectedId, setSelectedId] = useState(adversaries[0]?.id ?? "");
   const narrow = useIsNarrow();
 
+  // Lien profond depuis le cladogramme (/evolution) : `/fr/adversaires/#faucheur`.
+  useEffect(() => {
+    const applyHash = () => {
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      if (id && adversaries.some((a) => a.id === id)) setSelectedId(id);
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, [adversaries]);
+
   // ── Configuration d'impression ───────────────────────────────────────────
   const [sheetCopies, setSheetCopies] = useState(2);
   /** Copies par carte de deck (id → n). Défaut implicite : 1 (cf. getDeck). */

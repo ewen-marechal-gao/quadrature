@@ -12,6 +12,7 @@ description:
 
 guard: { type: dodge, value: 9 }
 # speed & fatigue : dérivés des mutations (membres / corps).
+tenacity: 3 # 🧠 barre mentale (▢) ; explicite pour l'instant — dérivera du cladogramme (encéphalisation / esprit de meute).
 
 extraMutations: []
 extraTraits: []

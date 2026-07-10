@@ -7,8 +7,8 @@
 >
 > **Source de vérité du cladogramme : [`data/cladogram.yaml`](../../../data/cladogram.yaml)** (l'arbre)
 > et [`data/mutations.yaml`](../../../data/mutations.yaml) (les mutations : label, description, kit).
-> Édition via `tools/cladogram.mjs`. Le SVG `faune_arbre.svg` est **déprécié** (remplacé par la
-> visualisation web) — ne plus le régénérer.
+> Édition via `tools/cladogram.mjs`. L'arbre se visualise sur la page web `/evolution`, qui lit
+> le YAML directement — il n'y a plus d'étape de génération statique.
 
 ---
 

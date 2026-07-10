@@ -1,18 +1,27 @@
-# Mutations d'Aeonir — clé -> { label{Locale}, description{Locale}, kit? }.
+# Mutations d'Aeonir — clé -> { label{Locale}, description{Locale}, addBiome?, removeBiome?, addHabitat?, removeHabitat?, kit? }.
 # label/description = lore (i18n) ; kit = brique de fiche d'adversaire (cf. rules/fr/adversaires/regles_adversaires.md, connexion III).
+# ÉCOLOGIE : add/removeBiome (north|dawn|dusk|south — dawn=Levant, dusk=Couchant) et add/removeHabitat
+# (terrestrial|aquatic|aerial) sont repliés racine→feuille depuis la graine rootBiome/rootHabitat de
+# data/cladogram.yaml. Ordre : remove PUIS add. Seules les mutations bougent l'écologie (héritage pur) —
+# un clade porte donc l'aire POTENTIELLE de sa lignée. Rapport : node tools/cladogram.mjs ecology
 # Référencées par l'arbre (data/cladogram.yaml, champ `mut`) et par les fiches de bestiaire.
-# Édition via tools/cladogram.mjs.
+# ⚠️ Éditer À LA MAIN : les commandes `mut-*` de tools/cladogram.mjs réémettent via yaml.dump et
+# détruiraient les commentaires ci-dessous.
 mutations:
   purpleEndosymbiosis:
     label:
       fr: Endosymbiose pourpre
     description:
       fr: "Capture et conservation d'un phototrophe au rétinal (microbe pourpre) : autotrophie dérivée ; définit les Pourpres, colore le vivant en bordeaux."
+    # Se nourrir de lumière = suivre le terminateur ; la fixation gagne la terre ferme.
+    addBiome: [dawn, dusk]
+    addHabitat: [terrestrial]
   hydrogenSacs:
     label:
       fr: Sacs d'hydrogène
     description:
       fr: "Vésicules de flottaison : dispersion et flotteurs aériens portés par les vents."
+    addHabitat: [aerial]
   crystallization:
     label:
       fr: Cristallisation (l'Arche)
@@ -33,6 +42,8 @@ mutations:
       fr: Néoténie (vie & repro aquatiques)
     description:
       fr: "Maturité sexuelle conservée à l'état larvaire : vit et se reproduit comme un poisson (pédomorphose)."
+    # Retour pleinement aquatique : la néoténie annule la conquête terrestre des Membrés.
+    removeHabitat: [terrestrial]
   emEmitter:
     label:
       fr: Émetteur EM (télépathie active)
@@ -124,6 +135,9 @@ mutations:
       fr: Exosquelette à mue
     description:
       fr: "Cuticule rigide articulée renouvelée par mues : arthropodes tagmatisés."
+    # La cuticule retient l'eau : première sortie de l'eau, très en amont des vertébrés.
+    addBiome: [dawn, dusk]
+    addHabitat: [terrestrial]
   axialSkeleton:
     label:
       fr: Squelette axial + tête
@@ -200,6 +214,8 @@ mutations:
       fr: Membres porteurs (sortie de l'eau)
     description:
       fr: "Nageoires charnues devenues pattes portantes : tétrapode-souche encore aquatique."
+    # Amphibie : gagne la terre SANS quitter l'eau (aquatic conservé).
+    addHabitat: [terrestrial]
     kit:
       body:
         fr: trois paires de membres porteurs (plan hexapode)
@@ -266,6 +282,9 @@ mutations:
       fr: Œuf amniote
     description:
       fr: "Œuf clos : reproduction hors de l'eau, conquête de la terre ferme."
+    # L'affranchissement de l'eau : les amniotes quittent les marais du Nord pour le terminateur.
+    addBiome: [dawn, dusk]
+    removeHabitat: [aquatic]
     kit:
       # Pleinement terrestre : la queue-rame aquatique (posée aux Caudés) devient
       # un balancier terrestre. Grade ancestral commun mammifères + sauropsides
@@ -300,6 +319,7 @@ mutations:
       fr: Ailes dorsales (draconides)
     description:
       fr: "Paire dorsale devenue ailes : prédateurs aveugles volants, les « dragons »."
+    addHabitat: [aerial]
   quadrupedalism:
     label:
       fr: Quadrupédie (6→4 membres)
@@ -361,16 +381,19 @@ mutations:
       fr: "Levant : seuil chaud-sec"
     description:
       fr: Métamorphose et migre quand il fait trop chaud et sec (versant Levant).
+    addBiome: [dawn]
   couchantThreshold:
     label:
       fr: "Couchant : seuil froid-humide"
     description:
       fr: Métamorphose et migre quand il fait froid et humide (versant Couchant).
+    addBiome: [dusk]
   firstWingPair:
     label:
       fr: Première paire d'ailes
     description:
       fr: "Une paire de membres devient des ailes (lézards ailés : 4 pattes + 2 ailes)."
+    addHabitat: [aerial]
   secondWingPair:
     label:
       fr: Seconde paire d'ailes
@@ -381,6 +404,8 @@ mutations:
       fr: Fourrure (isolation dense)
     description:
       fr: Pelage dense isolant, apparu au pôle Sud froid.
+    # LE CREUSET AUSTRAL : la fourrure est ce qui ouvre le pôle Sud (l'endothermie seule ne suffit pas).
+    addBiome: [south]
     kit:
       body:
         fr: une fourrure dense
@@ -674,6 +699,8 @@ mutations:
       fr: Voilure (membrane planante)
     description:
       fr: "Une membrane tendue entre les membres antérieurs et les flancs : le bond se prolonge en vol plané d'arbre en arbre ; perche haut, fuit vers le bas, malhabile au sol."
+    # Vol plané : 3ᵉ conquête convergente de l'air (avec hydrogenSacs et les ailes vraies).
+    addHabitat: [aerial]
   eusociality:
     label:
       fr: Eusocialité (castes)
@@ -689,6 +716,8 @@ mutations:
       fr: Graisse & fourrure polaires
     description:
       fr: "Lard isolant et pelage dense et pâle : permet de tenir au pôle Sud froid, en complément de la chaleur du terrier."
+    # Spécialisation polaire : se replie sur le Sud et abandonne le reste de l'aire du clade.
+    removeBiome: [north, dawn, dusk]
     kit:
       body:
         fr: un lard isolant et un pelage polaire dense et pâle
@@ -703,11 +732,14 @@ mutations:
       fr: Fourrure huileuse (étanche)
     description:
       fr: "Pelage dense et huileux, imperméable : permet la vie semi-aquatique dans les lacs et marais du Nord tempéré et pluvieux."
+    # Retour à l'eau, très loin après l'œuf amniote qui l'en avait affranchi.
+    addHabitat: [aquatic]
   harpoonFangs:
     label:
       fr: Crocs harponneurs (pattes nageuses)
     description:
       fr: "Longs crocs recourbés qui harponnent le poisson et membres devenus rames : prédateur pleinement aquatique."
+    removeHabitat: [terrestrial]
   clawHunting:
     label:
       fr: Griffes de chasse
