@@ -5,8 +5,8 @@
 # data/cladogram.yaml. Ordre : remove PUIS add. Seules les mutations bougent l'écologie (héritage pur) —
 # un clade porte donc l'aire POTENTIELLE de sa lignée. Rapport : node tools/cladogram.mjs ecology
 # Référencées par l'arbre (data/cladogram.yaml, champ `mut`) et par les fiches de bestiaire.
-# ⚠️ Éditer À LA MAIN : les commandes `mut-*` de tools/cladogram.mjs réémettent via yaml.dump et
-# détruiraient les commentaires ci-dessous.
+# Édition : `mut-*` (tools/cladogram.mjs) fait un PATCH TEXTUEL chirurgical — SÛR, il préserve ces
+# commentaires ET la mise en forme. Pour un kit riche (parties/blocs/grants), éditer à la main.
 mutations:
   purpleEndosymbiosis:
     label:
@@ -99,7 +99,6 @@ mutations:
       speed:
         walk: 3
         run: 5
-      fatigue: 2
   threeFinPairs:
     label:
       fr: Trois paires de nageoires (plan hexapode)
@@ -125,53 +124,362 @@ mutations:
       fr: Symétrie bilatérale
     description:
       fr: "Symétrie gauche/droite, appendices pairs : corps orienté à mobilité dirigée."
-  metamerism:
-    label:
-      fr: Métamérie (segmentation)
-    description:
-      fr: "Corps répété en segments : modularité, allongement, spécialisation régionale."
-  moltingExoskeleton:
-    label:
-      fr: Exosquelette à mue
-    description:
-      fr: "Cuticule rigide articulée renouvelée par mues : arthropodes tagmatisés."
-    # La cuticule retient l'eau : première sortie de l'eau, très en amont des vertébrés.
-    addBiome: [dawn, dusk]
-    addHabitat: [terrestrial]
-  axialSkeleton:
-    label:
-      fr: Squelette axial + tête
-    description:
-      fr: "Vertèbres ferro-cartilagineuses et crâne : nageur ondulant céphalisé."
+    # La TÊTE (extrémité antérieure distincte, ciblable) apparaît ici → héritée par Vers ronds,
+    # Exoferres ET Endoferres. axialSkeleton y ajoutera plus tard le système nerveux central.
     kit:
       body:
-        fr: un corps vertébré à tête distincte
+        fr: une tête distincte à l'avant
       addParts:
         - type: head
           tag: support
           name:
             fr: Tête
           description:
-            fr: Crâne allongé à léger museau, portant les sens et les centres nerveux.
+            fr: Extrémité antérieure distincte, portant les sens et la concentration nerveuse.
           armor: 0
           blocks: []
-        - type: body
+  metamerism:
+    label:
+      fr: Métamérie (segmentation)
+    description:
+      fr: "Le corps se répète en SEGMENTS spécialisés (avant / intermédiaire / arrière), chacun destructible séparément ; une chaîne nerveuse segmentaire les relie."
+    kit:
+      body:
+        fr: un corps segmenté (avant · intermédiaire · arrière)
+      # Le Corps hérité devient le SEGMENT AVANT (garde le Cœur ; type `body` conservé pour ne pas
+      # casser les mutations aval qui le ciblent). On ajoute le segment intermédiaire (chaîne nerveuse
+      # → ◇, le système nerveux non-cérébré) et le segment arrière (musculeux : agrippement/étreinte posés
+      # plus tard par crawlingMuscles / raptorialLimbs).
+      modifyPart:
+        type: body
+        name:
+          fr: Segment avant
+        descriptionAppend:
+          fr: " Segment antérieur, portant le cœur."
+      addParts:
+        - type: segMedian
           tag: support
           name:
-            fr: Corps
+            fr: Segment intermédiaire
           description:
-            fr: Tronc musculeux logeant les viscères.
+            fr: Segment médian, siège de la chaîne nerveuse segmentaire.
           armor: 0
           blocks:
-            - cases: 3
+            - cases: 2
               name:
-                fr: Cœur
+                fr: Chaîne nerveuse
               grants:
                 text:
-                  fr: +2 🫁 au début de la manche
-                resource: endurance
-                amount: 2
-      fatigue: 9
+                  fr: +1 ◇ au début de la manche (système nerveux non-cérébré)
+                resource: stability
+                amount: 1
+        - type: segArriere
+          tag: support
+          name:
+            fr: Segment arrière
+          description:
+            fr: Segment postérieur musculeux.
+          armor: 0
+          blocks: []
+  # ── Montée Exoferre (aquatique → terrestre), chaîne causale : ailerons → mue → mandibules → trachées.
+  #    Grade ③ (exosquelette sclérifié tagmatisé) DIFFÉRÉ : voir mineralizedExoskeleton plus bas.
+  rigidFinlets:
+    label:
+      fr: Ailerons rigides
+    description:
+      fr: "Une paire d'ailerons rigides raidis au fer PAR SEGMENT : rames pour une nage rapide et manœuvrante — excellent nageur, dur à blesser gravement dans l'eau (Évasion élevée)."
+    kit:
+      body:
+        fr: des ailerons rigides raidis au fer, un par segment
+      # Un Aileron (+1 🍀 Évasion) sur CHAQUE segment → un corps à 3 segments nage à +3 Évasion ; perdre
+      # un segment retire son aileron. À terre les ailerons ne portent plus (mécanique : cf. trait d'espèce).
+      modifyParts:
+        - type: body
+          blocksAdd:
+            - cases: 2
+              name:
+                fr: Aileron
+              grants:
+                text:
+                  fr: "+1 🍀 Évasion (nage)"
+                resource: evasion
+                amount: 1
+        - type: segMedian
+          blocksAdd:
+            - cases: 2
+              name:
+                fr: Aileron
+              grants:
+                text:
+                  fr: "+1 🍀 Évasion (nage)"
+                resource: evasion
+                amount: 1
+        - type: segArriere
+          blocksAdd:
+            - cases: 2
+              name:
+                fr: Aileron
+              grants:
+                text:
+                  fr: "+1 🍀 Évasion (nage)"
+                resource: evasion
+                amount: 1
+  molting:
+    label:
+      fr: Mue
+    description:
+      fr: "Abandon et régénération périodique des pièces rigides pour croître : conséquence directe des ailerons rigides, qui ne grandissent pas avec le corps."
+    kit:
+      body:
+        fr: une cuticule renouvelée par mues successives
+      traits:
+        - name:
+            fr: Mue
+          kind: passive
+          effect:
+            fr: "Régénère ses pièces rigides en muant ; juste après une mue, son armure est réduite et il fuit le combat."
+  mandibles:
+    label:
+      fr: Mandibules
+    description:
+      fr: "La tête arme des mandibules durcies : préhension et broyage — première prédation active de la lignée."
+    kit:
+      body:
+        fr: des mandibules durcies
+      modifyPart:
+        type: head
+        blocksAdd:
+          - cases: 2
+            name:
+              fr: Mandibules
+            grants:
+              text:
+                fr: Confère l'action Morsure
+              grantsCard: bite
+  airBreathing:
+    label:
+      fr: Respiration aérienne (trachées)
+    description:
+      fr: "Trachées : respire l'air. Se hisse brièvement sur la rive pour MUER à l'abri des prédateurs aquatiques ; incapable encore de se mouvoir à terre (masse trop lourde). Reste marine."
+    # Respirer l'air ≠ sortir de l'eau : AUCUNE transition d'écologie (reste N aquatique). L'amphibie
+    # vient après (crawlingMuscles), le terminateur plus tard encore (affranchissement de la ponte).
+    kit:
+      body:
+        fr: une cuticule imperméable percée de stigmates trachéens
+  crawlingMuscles:
+    label:
+      fr: Musculature reptante
+    description:
+      fr: "Musculature terrestre : le corps ondule et rampe hors de l'eau (reptation) → devient AMPHIBIE. Lente hors de l'eau ; encore liée aux marais du Nord pour pondre (repro inféodée à l'eau)."
+    # AMPHIBIE : gagne terrestrial (garde aquatic), reste N (pas de terminateur tant que la ponte n'est pas affranchie).
+    addHabitat: [terrestrial]
+    kit:
+      body:
+        fr: une musculature reptante ondulante
+      # Bloc « Étreinte » posé sur le SEGMENT ARRIÈRE musculeux (après l'Aileron → index 1) ; lateralBlades le remplace.
+      modifyPart:
+        type: segArriere
+        blocksAdd:
+          - cases: 3
+            name:
+              fr: Étreinte
+            grants:
+              text:
+                fr: Confère l'action Constriction
+              grantsCard: constriction
+      speed:
+        walk: 2
+        run: 4
+  lateralBlades:
+    label:
+      fr: Lames latérales
+    description:
+      fr: "Les scutes latéraux (ex-ailerons ferriques) s'affûtent en lames : l'étreinte ne broie plus, elle CISAILLE — la proie saigne (hémorragie) au lieu de s'épuiser (fatigue)."
+    kit:
+      body:
+        fr: des scutes latéraux affûtés en lames tranchantes
+      # Remplace le bloc « Étreinte » (constriction/fatigue, segment arrière, index 1 après l'Aileron)
+      # par « Étreinte tranchante » (bladeConstriction/hémorragie). blocksAdd s'applique AVANT blocksRemove
+      # (cf. applyKit) → l'add est poussé en fin, l'index 1 vise donc toujours l'Étreinte de base.
+      modifyPart:
+        type: segArriere
+        blocksAdd:
+          - cases: 3
+            name:
+              fr: Étreinte tranchante
+            grants:
+              text:
+                fr: Confère l'action Constriction tranchante
+              grantsCard: bladeConstriction
+        blocksRemove:
+          - 1
+  broodMolt:
+    label:
+      fr: Nid de mue (poches amniotiques)
+    description:
+      fr: "Les œufs sont couvés dans des poches amniotiques ménagées dans la PEAU MUÉE, qui forme un nid clos et humide : la ponte s'affranchit de l'eau libre. La lignée peut alors essaimer le long du terminateur."
+    # Affranchit la reproduction de l'eau — CONVERGENT de l'œuf amniote (Annulus) mais par la route
+    # de la MUE (peau muée → nid) → ouvre le terminateur (dawn/dusk) au-delà des marais du Nord.
+    addBiome: [dawn, dusk]
+  # ── Lignée MARINE des Mandibulés (apex du Grand Marais, N aquatique) : chaîne causale
+  #    benthique → ravisseur → cuirassé → colosse. Aucune transition d'écologie (reste N aquatique).
+  benthicShift:
+    label:
+      fr: Bascule benthique
+    description:
+      fr: "Quitte le banc pélagique pour le fond vaseux : corps aplati, cryptique, tapi dans le limon. Embusqueur — c'est LE prédateur qui pousse les Trachéés à se hisser pour muer à l'abri."
+    kit:
+      body:
+        fr: un corps aplati et cryptique, tapi dans le limon
+      traits:
+        - name:
+            fr: Embuscade
+          kind: passive
+          effect:
+            fr: "Enfoui dans la vase, indétectable tant qu'il n'a pas frappé : sa PREMIÈRE attaque du combat vise une cible surprise (garde ignorée)."
+  raptorialLimbs:
+    label:
+      fr: Musculature ravisseuse
+    description:
+      fr: "Le SEGMENT ARRIÈRE se muscle en organe préhensile : le corps happe la proie à portée et l'enserre — de quoi la traîner au fond (pas de bras postiches : c'est le corps qui saisit)."
+    kit:
+      body:
+        fr: un segment arrière musculeux et préhensile
+      # L'agrippement vient des MUSCLES du segment arrière (après l'Aileron → index 1).
+      modifyPart:
+        type: segArriere
+        blocksAdd:
+          - cases: 3
+            name:
+              fr: Muscles ravisseurs
+            grants:
+              text:
+                fr: Confère l'action Agrippement
+              grantsCard: seize
+      # La noyade utilise le poids du corps → action INNÉE (usable sur une cible déjà Entravée).
+      grant_action: [dragUnder]
+  sclerotizedPlates:
+    label:
+      fr: Plaques sclérifiées (cuirasse marine)
+    description:
+      fr: "Le sidérotropisme centrifuge paie enfin : des plaques dorsales chitino-ferriques cuirassent le grand embusqueur. Expression MARINE du fer (distincte de la tagmose terrestre différée)."
+    kit:
+      body:
+        fr: des plaques dorsales chitino-ferriques
+      # Le grand embusqueur cuirassé est de taille GRANDE (+1 case/bloc). Le colossal (engloutir,
+      # briser, blessures graves) est un AUTRE registre → réservé à une créature dédiée, plus tard.
+      size: grand
+      modifyParts:
+        - type: body
+          armor_add: 2
+          descriptionAppend:
+            fr: " Cuirassé de plaques ferriques superposées."
+        - type: segMedian
+          armor_add: 2
+        - type: segArriere
+          armor_add: 2
+        - type: head
+          armor_add: 1
+          descriptionAppend:
+            fr: " Bouclier céphalique blindé."
+  indeterminateGrowth:
+    label:
+      fr: Croissance indéfinie
+    description:
+      fr: "La mue autorise à grandir à chaque cycle ; devenu apex, plus rien ne l'arrête → gigantisme. La masse se traduit par l'ENCAISSEMENT (cases), pas par la puissance."
+    kit:
+      body:
+        fr: une masse colossale, grandie mue après mue
+      # Taille COLOSSALE → +3 cases par bloc (endurance à la blessure). Ni fatigue ni puissance :
+      # l'expertise reste un levier d'équilibrage INDÉPENDANT de la taille (fixé sur la fiche).
+      size: colossal
+  # DIFFÉRÉE (hors arbre) : spécialisation TERRESTRE tardive — l'exosquelette sclérifié TAGMATISÉ
+  # (Céphalon / Thorax / Abdomen). Se placera dans la radiation terrestre après la sortie de l'eau.
+  # Les mandibules viennent de `mandibles`, la mobilité des Ailerons (à réconcilier en Pattes plus tard).
+  mineralizedExoskeleton:
+    label:
+      fr: Exosquelette sclérifié (tagmose)
+    description:
+      fr: "Sclérification complète de la cuticule et tagmose : le corps se régionalise en Céphalon / Thorax / Abdomen cuirassés."
+    kit:
+      body:
+        fr: un exosquelette sclérifié articulé en trois tagmes
+      modifyParts:
+        - type: head
+          name:
+            fr: Céphalon
+          descriptionAppend:
+            fr: " Capsule céphalique cuticulaire."
+          blocksPrepend:
+            - cases: 2
+              name:
+                fr: Carapace céphalique
+              grants:
+                text:
+                  fr: "Cuticule ferrique à percer avant d'atteindre les organes du Céphalon."
+        - type: body
+          name:
+            fr: Thorax
+          descriptionAppend:
+            fr: " Segment locomoteur cuirassé."
+          blocksPrepend:
+            - cases: 2
+              name:
+                fr: Carapace thoracique
+              grants:
+                text:
+                  fr: "Cuticule ferrique à percer avant d'atteindre le cœur."
+      addParts:
+        - type: abdomen
+          tag: support
+          name:
+            fr: Abdomen
+          description:
+            fr: Segment postérieur cuirassé, logeant viscères et stigmates respiratoires.
+          armor: 0
+          blocks:
+            - cases: 2
+              name:
+                fr: Carapace abdominale
+              grants:
+                text:
+                  fr: "Cuticule ferrique à percer avant d'atteindre les viscères."
+            - cases: 3
+              name:
+                fr: Stigmates
+              grants:
+                text:
+                  fr: "Organe respiratoire (stigmates trachéens)."
+      speed:
+        walk: 4
+        run: 8
+  axialSkeleton:
+    label:
+      fr: Squelette axial + système nerveux central
+    description:
+      fr: "Vertèbres ferro-cartilagineuses et cordon nerveux centralisé : coordination accrue (nageur ondulant céphalisé)."
+    # Le Corps (cephalization) et la Tête (bilateralSymmetry) sont désormais hérités : cette mutation
+    # ne les crée plus. Elle CENTRALISE le système nerveux (bloc sur la Tête → +1 ◇/manche) et durcit
+    # l'axe. Fatigue 0 (l'endurance est portée par Corps + Cœur en amont).
+    kit:
+      body:
+        fr: un axe nerveux et squelettique interne
+      modifyParts:
+        - type: head
+          descriptionAppend:
+            fr: " Crâne ferro-cartilagineux, cordon nerveux centralisé."
+          blocksAdd:
+            - cases: 2
+              name:
+                fr: Système nerveux central
+              grants:
+                text:
+                  fr: +1 ◇ au début de la manche
+                resource: stability
+                amount: 1
+        - type: body
+          descriptionAppend:
+            fr: " Charpenté par un axe ferro-cartilagineux interne."
   jaws:
     label:
       fr: Mâchoires
@@ -371,6 +679,8 @@ mutations:
               text:
                 fr: Confère l'action Cri
               grantsCard: cry
+      # Organe respiratoire → endurance +2 (principe : endurance = circulatoire/respiratoire/musculaire).
+      fatigue: 2
   migratoryMetamorphosis:
     label:
       fr: Métamorphose migratoire (seuil thermique)
@@ -423,7 +733,6 @@ mutations:
                 text:
                   fr: Confère l'action Balayage caudal
                 grantsCard: tailSweep
-      fatigue: 1
   viviparity:
     label:
       fr: Viviparité
@@ -437,7 +746,13 @@ mutations:
     kit:
       body:
         fr: d'épaisses poches de graisse
-      fatigue: 3
+      # Pas d'endurance brute (la graisse n'est pas un organe d'endurance) → trait de qualité.
+      traits:
+        - name:
+            fr: Réserves adipeuses
+          kind: passive
+          effect:
+            fr: "Ignore le premier palier d'essoufflement : les réserves de graisse tamponnent la fatigue."
   frontalVision:
     label:
       fr: Vision frontale (binoculaire)
@@ -575,6 +890,22 @@ mutations:
       fr: "Céphalisation : un AVANT + photoception"
     description:
       fr: Un AVANT nerveux portant des taches photosensibles (polarité antéro-postérieure).
+    # Le TRONC apparaît ici (partie Corps nue, sans organe). Le Cœur viendra avec ferricCirculation,
+    # la Tête avec bilateralSymmetry. Endurance +2 (musculature de base ; principe : endurance =
+    # organe circulatoire / respiratoire / musculaire).
+    kit:
+      body:
+        fr: un tronc musculeux
+      addParts:
+        - type: body
+          tag: support
+          name:
+            fr: Corps
+          description:
+            fr: Tronc musculeux logeant les viscères.
+          armor: 0
+          blocks: []
+      fatigue: 2
   throughGut:
     label:
       fr: Tube digestif complet
@@ -585,6 +916,23 @@ mutations:
       fr: Circulation (sang ferrique)
     description:
       fr: "Cœur, vaisseaux et pigment respiratoire au fer : métabolisme accru ; fournit le fer routé par le Sidérotropisme."
+    # Le CŒUR (organe circulatoire) est posé ici, sur le Corps hérité → donné aux Exoferres ET aux
+    # Endoferres (ancêtre commun). Endurance +4. Les Vers ronds, qui bifurquent avant, en sont privés.
+    kit:
+      body:
+        fr: un sang ferrique battu par un cœur
+      modifyPart:
+        type: body
+        blocksAdd:
+          - cases: 3
+            name:
+              fr: Cœur
+            grants:
+              text:
+                fr: +2 🫁 au début de la manche
+              resource: endurance
+              amount: 2
+      fatigue: 4
   ossification:
     label:
       fr: Ossification (os porteur)
@@ -726,7 +1074,13 @@ mutations:
           armor_add: 1
           descriptionAppend:
             fr: " Épaisse couche de lard isolant."
-      fatigue: 2
+      # Le lard isole (pas d'endurance brute) → trait de qualité.
+      traits:
+        - name:
+            fr: Isolation polaire
+          kind: passive
+          effect:
+            fr: "Insensible au froid : aucun malus en climat glacial (lard et pelage dense isolent)."
   oilyFur:
     label:
       fr: Fourrure huileuse (étanche)

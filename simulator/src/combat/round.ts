@@ -54,6 +54,7 @@ import {
 } from '../adversary/actor'
 import {
   spendCardCost, toAdversarySnapshot, type AdversarySnapshot,
+  mentalDieRank, mentalGuardMod,
 } from '../adversary/combatant'
 import { resolveAdversaryAttack } from '../adversary/attack'
 import { attackAdvantages } from '../adversary/traits'
@@ -217,11 +218,17 @@ function resolveWave(
           plan.actorId,  plan.card, card.initiative,
           getGuard, guardCache,
         )
-        // Structured traits (e.g. Sanguinaire) may upgrade dice quality 🟩
+        // Structured traits (e.g. Sanguinaire) may upgrade dice quality 🟩 ;
+        // l'état mental de la créature ⬆/⬇ le RANG de ses dés de menace (empilé).
         const traits = attackAdvantages(actorSnap, card, targetSnap)
+        const rank   = mentalDieRank(actorSnap.mentalState)
         const result = resolveAdversaryAttack(
           actorSnap.sheet.dice, card, guardRoll.total, plan.targetId,
-          { advantages: traits.advantages, selfId: plan.actorId },
+          {
+            advantages:    traits.advantages + Math.max(0, rank),
+            disadvantages: Math.max(0, -rank),
+            selfId:        plan.actorId,
+          },
         )
         const effects = [...reaction.effects, ...result.effects]
         phaseEffects.push(...effects)
@@ -272,7 +279,8 @@ function resolveWave(
       if (isAdversaryActor(targetSnap)) {
         const targetPart = plan.targetPart ?? selectTargetPart(targetSnap, 'melee')?.type
         const ctx: ActionContext = {
-          dc:            targetSnap.sheet.guard.value,
+          // Garde fixe de la créature ± modificateur de son état mental.
+          dc:            Math.max(1, targetSnap.sheet.guard.value + mentalGuardMod(targetSnap.mentalState)),
           guardReaction: { effects: [], notes: [] },
           target:        targetSnap,
         }

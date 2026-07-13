@@ -540,7 +540,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
   // ─ 3 ter. Progression des adversaires par round ────────────────────────────
   // Colonnes : 💧 (horloge /max), ◇/🫁/🍀 ressources, ✖ parties détruites (moy),
   // et distribution mentale 3 états (peur → rage : 😬 😐 😠).
-  const ADV_MENTAL_COLUMN_ORDER: AdversaryMental[] = ['panicked', 'focused', 'enraged']
+  const ADV_MENTAL_COLUMN_ORDER: AdversaryMental[] = ['panicked', 'cautious', 'aggressive', 'enraged']
   for (const advId of Object.keys(stats.advVitalsByRound)) {
     const vbr = stats.advVitalsByRound[advId]!
     const rdNums = Object.keys(vbr).map(Number).sort((a, b) => a - b)

@@ -13,25 +13,34 @@ dice:
   - threat
 description:
   fr: "Prédateur télépathe semi-dressé, cousin bestial des Peuples : il sent l'activité nerveuse de ses proies par ses aiguilles EM, puis lacère de ses deux longues serpes. Chasse en groupe, coordonné en silence."
+art: faucheur.png
 guard:
   type: dodge
   value: 10
 speed:
   walk: 4
   run: 8
-fatigue: 10
+fatigue: 8
 tenacity: 4
 appearance:
-  fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · un squelette pleinement ossifié · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · un crâne bombé abritant un gros cerveau · une station bipède au dos incliné, les antérieurs libérés · un port à demi dressé, la queue faisant office de balancier · deux longues serpes recourbées au bout des avant-bras
+  fr: un tronc musculeux · une tête distincte à l'avant · un sang ferrique battu par un cœur · une longue queue · un axe nerveux et squelettique interne · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · un squelette pleinement ossifié · une fourrure dense · une silhouette quadrupède (deux paires de pattes) · des yeux frontaux au regard perçant · des pieds modulables adaptés au terrain · de longues aiguilles électromagnétiques dressées sur la nuque et le dos · un organe émetteur électromagnétique (télépathie) · un crâne bombé abritant un gros cerveau · une station bipède au dos incliné, les antérieurs libérés · un port à demi dressé, la queue faisant office de balancier · deux longues serpes recourbées au bout des avant-bras
 parts:
   - type: head
     tag: support
     name:
       fr: Tête
     description:
-      fr: Crâne allongé à léger museau, portant les sens et les centres nerveux. Crâne ossifié (protection accrue).
+      fr: Extrémité antérieure distincte, portant les sens et la concentration nerveuse. Crâne ferro-cartilagineux, cordon nerveux centralisé. Crâne ossifié (protection accrue).
     armor: 1
     blocks:
+      - cases: 2
+        name:
+          fr: Système nerveux central
+        grants:
+          text:
+            fr: +1 ◇ au début de la manche
+          resource: stability
+          amount: 1
       - cases: 2
         name:
           fr: Mâchoires
@@ -52,7 +61,7 @@ parts:
     name:
       fr: Corps
     description:
-      fr: Tronc musculeux logeant les viscères. Couvert d'une fourrure dense et isolante.
+      fr: Tronc musculeux logeant les viscères. Charpenté par un axe ferro-cartilagineux interne. Couvert d'une fourrure dense et isolante.
     armor: 1
     blocks:
       - cases: 3

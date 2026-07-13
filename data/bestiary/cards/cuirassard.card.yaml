@@ -19,19 +19,27 @@ guard:
 speed:
   walk: 3
   run: 5
-fatigue: 11
+fatigue: 8
 tenacity: 5
 appearance:
-  fr: une longue queue · un corps vertébré à tête distincte · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · un squelette pleinement ossifié · une lourde carapace dermique chitino-ferrique couvrant le dos et les flancs
+  fr: un tronc musculeux · une tête distincte à l'avant · un sang ferrique battu par un cœur · une longue queue · un axe nerveux et squelettique interne · des mâchoires dentées · trois paires de membres porteurs (plan hexapode) · un squelette pleinement ossifié · une lourde carapace dermique chitino-ferrique couvrant le dos et les flancs
 parts:
   - type: head
     tag: support
     name:
       fr: Tête
     description:
-      fr: Crâne allongé à léger museau, portant les sens et les centres nerveux. Crâne ossifié (protection accrue).
+      fr: Extrémité antérieure distincte, portant les sens et la concentration nerveuse. Crâne ferro-cartilagineux, cordon nerveux centralisé. Crâne ossifié (protection accrue).
     armor: 1
     blocks:
+      - cases: 2
+        name:
+          fr: Système nerveux central
+        grants:
+          text:
+            fr: +1 ◇ au début de la manche
+          resource: stability
+          amount: 1
       - cases: 2
         name:
           fr: Mâchoires
@@ -44,7 +52,7 @@ parts:
     name:
       fr: Corps
     description:
-      fr: Tronc musculeux logeant les viscères.
+      fr: Tronc musculeux logeant les viscères. Charpenté par un axe ferro-cartilagineux interne.
     armor: 0
     blocks:
       - cases: 3

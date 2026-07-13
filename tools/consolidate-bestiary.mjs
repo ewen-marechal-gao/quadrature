@@ -9,6 +9,7 @@
 //
 // Usage : node tools/consolidate-bestiary.mjs
 import { loadRaw, flatten } from "./cladogram.mjs";
+import { applyKit, ancestryMutations, applySize } from "./derive.mjs"; // noyau de dérivation PARTAGÉ
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,8 +29,8 @@ const ACTIONS_FILE = path.join(REPO, "data/adversary_actions.yaml");
 const ACTION_LIBRARY = yaml.load(fs.readFileSync(ACTIONS_FILE, "utf8")).actions || {};
 
 // Ordre anatomique canonique d'affichage des parties.
-const PART_ORDER = ["head", "body", "jaws", "carapace", "emSpines", "sickles",
-  "huntingClaws", "glidingMembrane", "limbs", "frontLeg", "middleLeg", "rearLeg", "tail"];
+const PART_ORDER = ["head", "body", "segMedian", "segArriere", "abdomen", "jaws", "carapace", "emSpines", "sickles",
+  "huntingClaws", "raptorial", "glidingMembrane", "finlets", "limbs", "frontLeg", "middleLeg", "rearLeg", "tail"];
 const partRank = (t) => { const i = PART_ORDER.indexOf(t); return i === -1 ? 99 : i; };
 
 // Noms des parties issues de la fusion de membres similaires (par `group`).
@@ -97,62 +98,11 @@ function resolveDeck(ids) {
   return cards.sort((a, b) => a.initiative - b.initiative);
 }
 
-// Remonte l'ascendance (racine -> espèce) et retourne les clés de mutation, dans l'ordre.
-function ancestryMutations(map, fromUid) {
-  let entry = map.get(fromUid);
-  if (!entry) throw new Error(`from: uid introuvable dans le cladogramme : ${fromUid}`);
-  const keys = [];
-  while (entry) {
-    if (entry.node.mut) keys.push(entry.node.mut);
-    entry = entry.parent ? map.get(entry.parent) : null;
-  }
-  return keys.reverse();
-}
-
-function appendDescription(part, add) {
-  part.description = part.description || {};
-  for (const [loc, val] of Object.entries(add)) part.description[loc] = (part.description[loc] || "") + val;
-}
-
-function applyKit(state, key, kit) {
-  if (!kit) return;
-  if (kit.body) state.appearance.push(kit.body);
-  if (kit.fatigue) state.fatigue += kit.fatigue; // corps → s'additionne
-  if (kit.speed) state.speed = structuredClone(kit.speed); // membres → la plus dérivée fixe
-  for (const p of kit.addParts || []) {
-    if (state.parts.some((x) => x.type === p.type)) throw new Error(`${key}: partie déjà présente : ${p.type}`);
-    state.parts.push(structuredClone(p));
-  }
-  const mods = [...(kit.modifyPart ? [kit.modifyPart] : []), ...(kit.modifyParts || [])];
-  for (const m of mods) {
-    const part = state.parts.find((x) => x.type === m.type);
-    if (!part) throw new Error(`${key}: modifyPart d'une partie absente : ${m.type}`);
-    if (m.armor_set !== undefined) part.armor = m.armor_set;
-    if (m.armor_add !== undefined) part.armor = (part.armor ?? 0) + m.armor_add;
-    if (m.tag) part.tag = m.tag;
-    if ("group" in m) part.group = m.group || undefined; // group:null → sort du groupe (membre repurposé)
-    if (m.name) part.name = structuredClone(m.name);
-    if (m.description) part.description = structuredClone(m.description);
-    if (m.descriptionAppend) appendDescription(part, m.descriptionAppend);
-    if (m.blocksAdd) part.blocks.push(...structuredClone(m.blocksAdd));
-    if (m.blocksPrepend) part.blocks.unshift(...structuredClone(m.blocksPrepend));
-    if (m.blocksRemove) for (const i of [...m.blocksRemove].sort((a, b) => b - a)) part.blocks.splice(i, 1);
-  }
-  for (const t of kit.removeParts || []) {
-    const i = state.parts.findIndex((x) => x.type === t);
-    if (i === -1) throw new Error(`${key}: removeParts d'une partie absente : ${t}`);
-    state.parts.splice(i, 1);
-  }
-  if (kit.grant_action) {
-    const ids = Array.isArray(kit.grant_action) ? kit.grant_action : [kit.grant_action];
-    state.grantActions.push(...ids); // actions innées (non liées à un bloc destructible)
-  }
-  if (kit.traits) state.traits.push(...structuredClone(kit.traits));
-}
+// `applyKit` et `ancestryMutations` vivent désormais dans ./derive.mjs (source unique).
 
 function consolidate(source, map, mutations) {
   const keys = [...ancestryMutations(map, source.from), ...(source.extraMutations || [])];
-  const state = { parts: [], traits: [], appearance: [], fatigue: 0, speed: null, grantActions: [] };
+  const state = { parts: [], traits: [], appearance: [], fatigue: 0, speed: null, grantActions: [], size: null };
   for (const key of keys) applyKit(state, key, mutations[key]?.kit);
 
   for (const p of source.extraParts || []) {
@@ -172,6 +122,11 @@ function consolidate(source, map, mutations) {
   // Deck : actions conférées par les blocs (grantsCard) + innées (grant_action),
   // résolues depuis la bibliothèque partagée. Les armes confèrent via leurs blocs.
   const weapons = source.weapons ? structuredClone(source.weapons) : null;
+  // Taille : décale UNIQUEMENT le nombre de cases de chaque bloc (encaissement à la blessure).
+  // L'impact offensif n'est PAS un bonus générique : il tient aux CARTES propres de la créature —
+  // un petit ne mord pas comme un géant, et un colosse a d'AUTRES cartes (engloutir, briser, 💔).
+  const size = source.size ?? state.size ?? "normal";
+  applySize([...state.parts, ...(weapons || [])], size);
   const removeCards = new Set(source.removeCards || []);
   // removeCards retire la carte ET le bloc qui la conférait : un bloc = une
   // capacité, un bloc conférant une carte retirée serait un « bloc mort ».
@@ -206,7 +161,9 @@ function consolidate(source, map, mutations) {
     power: source.power,
     dice: source.dice,
     ...(source.description ? { description: source.description } : {}),
+    ...(source.art ? { art: source.art } : {}), // illustration du verso (data/bestiary/art/)
     guard: source.guard,
+    ...(size !== "normal" ? { size } : {}),
     speed: source.speed ?? state.speed ?? { walk: 0, run: 0 }, // source surcharge sinon dérivé
     fatigue: source.fatigue ?? state.fatigue,
     ...(source.tenacity != null ? { tenacity: source.tenacity } : {}), // 🧠 (A) explicite ; (B) dérivera du cladogramme
@@ -219,19 +176,21 @@ function consolidate(source, map, mutations) {
   };
 }
 
-// ---- exécution ----
-const { data } = loadRaw();
-const map = flatten(data.root);
-const HEADER = `# GÉNÉRÉ par tools/consolidate-bestiary.mjs — NE PAS ÉDITER À LA MAIN.
+// ---- exécution (uniquement lancé en script, pas à l'import) ----
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { data } = loadRaw();
+  const map = flatten(data.root);
+  const HEADER = `# GÉNÉRÉ par tools/consolidate-bestiary.mjs — NE PAS ÉDITER À LA MAIN.
 # Source : data/bestiary/species/<id>.yaml ; parties/cartes/traits dérivés du cladogramme (via \`from\`).
 `;
 
-const sources = fs.readdirSync(SPECIES_DIR).filter((f) => f.endsWith(".yaml")).sort();
-for (const file of sources) {
-  const source = yaml.load(fs.readFileSync(path.join(SPECIES_DIR, file), "utf8"));
-  const card = consolidate(source, map, data.mutations);
-  fs.writeFileSync(path.join(CARDS_DIR, `${source.id}.card.yaml`),
-    HEADER + yaml.dump(card, { lineWidth: -1, noRefs: true, quotingType: '"' }));
-  console.log(`✓ ${source.id} : ${card.parts.length} parties · ${card.cards.length} cartes · ${card.traits?.length || 0} traits`);
+  const sources = fs.readdirSync(SPECIES_DIR).filter((f) => f.endsWith(".yaml")).sort();
+  for (const file of sources) {
+    const source = yaml.load(fs.readFileSync(path.join(SPECIES_DIR, file), "utf8"));
+    const card = consolidate(source, map, data.mutations);
+    fs.writeFileSync(path.join(CARDS_DIR, `${source.id}.card.yaml`),
+      HEADER + yaml.dump(card, { lineWidth: -1, noRefs: true, quotingType: '"' }));
+    console.log(`✓ ${source.id} : ${card.parts.length} parties · ${card.cards.length} cartes · ${card.traits?.length || 0} traits`);
+  }
+  console.log(`${sources.length} fiche(s) générée(s).`);
 }
-console.log(`${sources.length} fiche(s) générée(s).`);

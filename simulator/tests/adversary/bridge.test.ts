@@ -39,12 +39,12 @@ describe('applyPcEffectsToAdversary', () => {
     expect(state.fatigue).toBe(1)   // 3 − 2 buffered
   })
 
-  it('a mental shift toward Peur moves the 3-state track once stability is gone', async () => {
+  it('a mental shift toward Peur moves the track once stability is gone (aggressive → cautious)', async () => {
     let c = await faucheur()
     c = { ...c, stability: 0 }
     const fx: CombatEffect[] = [{ targetId: c.id, kind: 'shift-mental', direction: 'toward-terror' }]
     const { state } = applyPcEffectsToAdversary(c, fx, 'head')
-    expect(state.mentalState).toBe('panicked')
+    expect(state.mentalState).toBe('cautious')
   })
 
   it('collects statuses the adversary model does not represent (not applied)', async () => {

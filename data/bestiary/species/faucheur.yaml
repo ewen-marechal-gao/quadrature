@@ -7,6 +7,7 @@ from: faucheurs # uid du tip dans data/cladogram.yaml
 name: { fr: "Faucheur", en: "Reaper" }
 power: initiate
 dice: [threat, threat, threat, threat]
+art: faucheur.png # illustration du verso (data/bestiary/art/faucheur.png)
 description:
   fr: >-
     Prédateur télépathe semi-dressé, cousin bestial des Peuples : il sent

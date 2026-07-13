@@ -1,0 +1,223 @@
+# GÉNÉRÉ par tools/consolidate-bestiary.mjs — NE PAS ÉDITER À LA MAIN.
+# Source : data/bestiary/species/<id>.yaml ; parties/cartes/traits dérivés du cladogramme (via `from`).
+id: happe-fond
+from: cuirasses
+name:
+  fr: Happe-fond
+  en: Deepgrasper
+power: competent
+dice:
+  - danger
+  - danger
+  - threat
+  - threat
+description:
+  fr: L'apex des eaux noires du Nord — un euryptéride géant, cuirassé de fer et segmenté, tapi dans le limon. Il happe la proie de son corps musculeux et l'entraîne au fond pour la noyer. Immunisé à l'EM (ni peur ni contrôle), mais impuissant hors de l'eau, et le sang perce sa cuirasse. C'est lui qui, jadis, a chassé le vivant sur la terre.
+guard:
+  type: block
+  value: 13
+size: grand
+speed:
+  walk: 0
+  run: 0
+fatigue: 6
+tenacity: 4
+appearance:
+  fr: un tronc musculeux · une tête distincte à l'avant · un sang ferrique battu par un cœur · un corps segmenté (avant · intermédiaire · arrière) · des ailerons rigides raidis au fer, un par segment · une cuticule renouvelée par mues successives · des mandibules durcies · un corps aplati et cryptique, tapi dans le limon · un segment arrière musculeux et préhensile · des plaques dorsales chitino-ferriques
+parts:
+  - type: head
+    tag: support
+    name:
+      fr: Tête
+    description:
+      fr: Extrémité antérieure distincte, portant les sens et la concentration nerveuse. Bouclier céphalique blindé.
+    armor: 1
+    blocks:
+      - cases: 3
+        name:
+          fr: Mandibules
+        grants:
+          text:
+            fr: Confère l'action Morsure
+          grantsCard: bite
+  - type: body
+    tag: support
+    name:
+      fr: Segment avant
+    description:
+      fr: Tronc musculeux logeant les viscères. Segment antérieur, portant le cœur. Cuirassé de plaques ferriques superposées.
+    armor: 2
+    blocks:
+      - cases: 4
+        name:
+          fr: Cœur
+        grants:
+          text:
+            fr: +2 🫁 au début de la manche
+          resource: endurance
+          amount: 2
+      - cases: 3
+        name:
+          fr: Aileron
+        grants:
+          text:
+            fr: +1 🍀 Évasion (nage)
+          resource: evasion
+          amount: 1
+  - type: segMedian
+    tag: support
+    name:
+      fr: Segment intermédiaire
+    description:
+      fr: Segment médian, siège de la chaîne nerveuse segmentaire.
+    armor: 2
+    blocks:
+      - cases: 3
+        name:
+          fr: Chaîne nerveuse
+        grants:
+          text:
+            fr: +1 ◇ au début de la manche (système nerveux non-cérébré)
+          resource: stability
+          amount: 1
+      - cases: 3
+        name:
+          fr: Aileron
+        grants:
+          text:
+            fr: +1 🍀 Évasion (nage)
+          resource: evasion
+          amount: 1
+  - type: segArriere
+    tag: support
+    name:
+      fr: Segment arrière
+    description:
+      fr: Segment postérieur musculeux.
+    armor: 2
+    blocks:
+      - cases: 3
+        name:
+          fr: Aileron
+        grants:
+          text:
+            fr: +1 🍀 Évasion (nage)
+          resource: evasion
+          amount: 1
+      - cases: 4
+        name:
+          fr: Muscles ravisseurs
+        grants:
+          text:
+            fr: Confère l'action Agrippement
+          grantsCard: seize
+traits:
+  - name:
+      fr: Mue
+    kind: passive
+    effect:
+      fr: Régénère ses pièces rigides en muant ; juste après une mue, son armure est réduite et il fuit le combat.
+  - name:
+      fr: Embuscade
+    kind: passive
+    effect:
+      fr: "Enfoui dans la vase, indétectable tant qu'il n'a pas frappé : sa PREMIÈRE attaque du combat vise une cible surprise (garde ignorée)."
+  - name:
+      fr: Sourd à l'EM
+    kind: passive
+    effect:
+      fr: "Cuirasse ferrique écrantante : immunisé aux effets mentaux d'origine EM/télépathique (ni peur ni contrôle imposés). Il garde néanmoins un état mental propre (chaîne nerveuse → ◇)."
+  - name:
+      fr: Chasse à l'électroception
+    kind: passive
+    effect:
+      fr: "Sent le frétillement nerveux de ses proies dans l'eau noire : une cible qui bouge ne peut se dissimuler ; seul le calme absolu l'y soustrait."
+  - name:
+      fr: Inféodé à l'eau
+    kind: passive
+    effect:
+      fr: "Hors de l'eau, ses ailerons ne portent plus : Évasion 0 et déplacement effondré — l'attirer sur la berge le condamne."
+cards:
+  - id: bite
+    name:
+      fr: Morsure
+      en: Bite
+    cost: 1
+    initiative: 3
+    tags:
+      - offensive
+      - melee
+      - physical
+      - physicalDamage
+    onSuccess:
+      text:
+        fr: Inflige 💢💢
+      effect:
+        - wound: 2
+    onFailure:
+      text:
+        fr: Inflige 💢
+      effect:
+        - wound: 1
+    onFives:
+      text:
+        fr: "Repérez un 5 : la cible subit une hémorragie 🩸."
+      count: 1
+      effect:
+        - status: hemorrhage
+  - id: seize
+    name:
+      fr: Agrippement
+      en: Seize
+    cost: 1
+    initiative: 4
+    tags:
+      - offensive
+      - melee
+      - physical
+    onSuccess:
+      text:
+        fr: La cible est Entravée 🕸️
+      effect:
+        - status: entrapped
+    onFailure:
+      text:
+        fr: Aucun effet
+      effect: []
+    onFives:
+      text:
+        fr: "Repérez un 5 : les serres entaillent — 💢."
+      count: 1
+      effect:
+        - wound: 1
+  - id: dragUnder
+    name:
+      fr: Traîner au fond
+      en: Drag Under
+    cost: 2
+    fatigueCost: 1
+    initiative: 6
+    tags:
+      - offensive
+      - melee
+      - physical
+      - fatigueDamage
+    onSuccess:
+      text:
+        fr: "Entraîne la cible Entravée sous l'eau : 💧💧💧 (noyade), reste Entravée 🕸️"
+      effect:
+        - fatigue: 3
+        - status: entrapped
+    onFailure:
+      text:
+        fr: La cible subit 💧
+      effect:
+        - fatigue: 1
+    onFives:
+      text:
+        fr: "Repérez un 5 : plus d'air — 💧 supplémentaire."
+      count: 1
+      effect:
+        - fatigue: 1
+    note:
+      fr: N'a d'effet que sur une cible Entravée, en milieu aquatique (règle de scène).

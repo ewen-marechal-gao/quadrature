@@ -17,7 +17,7 @@ import Link from "next/link";
 import type { Adversary } from "@/lib/bestiary";
 import { type Locale } from "@/lib/nav";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
-import { AdversarySheet } from "@/components/adversary/AdversarySheet";
+import { AdversarySheet, DIE_GLYPH } from "@/components/adversary/AdversarySheet";
 import { BestiaryPrint } from "@/components/adversary/BestiaryPrint";
 import "@/app/adversaries.css";
 
@@ -41,7 +41,7 @@ function useIsNarrow(maxWidth = NARROW_BREAKPOINT): boolean {
 
 /** Texte agrégé d'une créature pour la recherche plein texte. */
 function searchableText(a: Adversary): string {
-  return [a.name, a.powerLabel, a.description, ...a.parts.map((p) => p.name)]
+  return [a.name, a.description, ...a.parts.map((p) => p.name)]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
@@ -169,7 +169,11 @@ export function BestiaryBrowser({
                         }`}
                       >
                         <span className="sidebar-link-title">{a.name}</span>
-                        <span className="sidebar-link-pages">{a.powerLabel}</span>
+                        <span className="sidebar-link-pages adv-sidebar-dice" title="Dés de menace">
+                          {a.dice.map((d, i) => (
+                            <span key={i}>{DIE_GLYPH[d]}</span>
+                          ))}
+                        </span>
                       </button>
                     </li>
                   ))}

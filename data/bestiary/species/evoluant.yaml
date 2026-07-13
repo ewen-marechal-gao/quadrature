@@ -1,0 +1,16 @@
+# Fiche de créature TEST — l'Évoluant.
+# SONDE de développement : repointer `from` sur le nœud en cours de travail pour visualiser
+# la fiche DÉRIVÉE (parties / blocs / actions / traits) au fil de la construction de l'arbre.
+id: evoluant
+from: nicheurs # nœud testé — à repointer librement selon l'avancement
+name: { fr: "Évoluant", en: "Evolving" }
+power: novice
+dice: [threat, threat, nuisance, nuisance]
+description:
+  fr: >-
+    Créature de test : visualise la fiche dérivée du nœud ciblé par `from` au cours
+    du développement du cladogramme. À repointer à volonté.
+guard: { type: dodge, value: 6 }
+tenacity: 3
+extraMutations: []
+extraTraits: []

@@ -38,7 +38,7 @@ describe('initAdversary', () => {
     expect(c.stability).toBe(1)   // head
     expect(c.endurance).toBe(2)   // body
     expect(c.evasion).toBe(1)     // rearLeg
-    expect(c.mentalState).toBe('focused')
+    expect(c.mentalState).toBe('aggressive')   // disposition de départ par défaut
     expect(c.parts.some(isPartDestroyed)).toBe(false)
   })
 })
@@ -384,16 +384,19 @@ describe('action economy', () => {
 
 describe('shiftAdversaryMental', () => {
   it('stability absorbs a shift before the track moves (§ Ténacité)', async () => {
-    const c = await faucheur()  // stability 1, focused
-    const d = shiftAdversaryMental(c, -1)  // 🔻 vers Peur, absorbed
+    const c = await faucheur()  // stability 1, aggressive (disposition de départ)
+    const d = shiftAdversaryMental(c, -1)  // 🔻 vers Peur, absorbé par le ◇
     expect(d.stability).toBe(0)
-    expect(d.mentalState).toBe('focused')
+    expect(d.mentalState).toBe('aggressive')
   })
 
-  it('moves toward Paniqué once stability is exhausted', async () => {
-    let c = await faucheur()
-    c = { ...c, stability: 0 }
-    expect(shiftAdversaryMental(c, -1).mentalState).toBe('panicked')
-    expect(shiftAdversaryMental({ ...c, stability: 0 }, +1).mentalState).toBe('enraged')
+  it('moves along the 4-state track once stability is exhausted', async () => {
+    const c = { ...(await faucheur()), stability: 0 }
+    // 🔻 vers Peur : aggressive → cautious → panicked
+    const cautious = shiftAdversaryMental(c, -1)
+    expect(cautious.mentalState).toBe('cautious')
+    expect(shiftAdversaryMental(cautious, -1).mentalState).toBe('panicked')
+    // 🔺 vers Colère : aggressive → enraged
+    expect(shiftAdversaryMental(c, +1).mentalState).toBe('enraged')
   })
 })

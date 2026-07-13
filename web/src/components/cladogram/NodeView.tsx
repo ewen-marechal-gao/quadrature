@@ -81,7 +81,8 @@ export function NodeView({ p, dimmed, href, onEnter, onLeave, onToggleCollapse }
         </span>
         {n.star && <span className="clado-star">★</span>}
         <span className="clado-tip-body">
-          <span className="clado-tip-name">{n.tip}</span>
+          {/* Feuille-espèce : `tip`. Clade non peuplé rendu comme feuille : repli sur `name`. */}
+          <span className={n.tip ? "clado-tip-name" : "clado-tip-name clado-clade-name"}>{n.tip ?? n.name}</span>
           {n.cd && <span className="clado-tip-cd">{n.cd}</span>}
         </span>
       </>
@@ -94,7 +95,7 @@ export function NodeView({ p, dimmed, href, onEnter, onLeave, onToggleCollapse }
         className={`${cls} clado-tip clado-tip--linked`}
         style={{ left: p.x, top: p.y }}
         href={href}
-        title={`Voir la fiche : ${n.tip}`}
+        title={`Voir la fiche : ${n.tip ?? n.name}`}
         {...hover}
       >
         {leafBody}

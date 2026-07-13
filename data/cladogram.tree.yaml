@@ -1,0 +1,264 @@
+# GÉNÉRÉ depuis data/cladogram.yaml — structure minimale (uid, mut). NE PAS ÉDITER.
+# Vue arborescente de lecture ; la source de vérité est le fichier plat.
+- uid: zoides
+  children:
+    - uid: filtreurs
+    - uid: eumetazoides
+      mut: trueTissues
+      children:
+        - uid: radies
+          children:
+            - uid: radies-2
+            - uid: trilateriens
+              mut: triradialSymmetry
+        - uid: vermiformes
+          mut: cephalization
+          children:
+            - uid: plats
+            - uid: enteriens
+              mut: throughGut
+              children:
+                - uid: les-vers
+                - uid: bilateriens
+                  mut: bilateralSymmetry
+                  children:
+                    - uid: vers-ronds
+                    - uid: hemoferriques
+                      mut: ferricCirculation
+                      children:
+                        - uid: exoferres
+                          mut: centrifugalSiderotropism
+                          children:
+                            - uid: non-segmentes
+                            - uid: segmentes
+                              mut: metamerism
+                              children:
+                                - uid: annelides
+                                - uid: pterygeres
+                                  mut: rigidFinlets
+                                  children:
+                                    - uid: nageurs-anneles
+                                    - uid: ecdysiens
+                                      mut: molting
+                                      children:
+                                        - uid: mueurs
+                                        - uid: mandibules
+                                          mut: mandibles
+                                          children:
+                                            - uid: predateurs-mandibules
+                                            - uid: benthiques
+                                              mut: benthicShift
+                                              children:
+                                                - uid: ravisseurs
+                                                  mut: raptorialLimbs
+                                                  children:
+                                                    - uid: cuirasses
+                                                      mut: sclerotizedPlates
+                                            - uid: tracheens
+                                              mut: airBreathing
+                                              children:
+                                                - uid: echoues
+                                                - uid: reptants
+                                                  mut: crawlingMuscles
+                                                  children:
+                                                    - uid: etrangleurs
+                                                    - uid: nidiferes
+                                                      mut: broodMolt
+                                                      children:
+                                                        - uid: nicheurs
+                                                        - uid: lameferes
+                                                          mut: lateralBlades
+                        - uid: endoferres
+                          mut: centripetalSiderotropism
+                          children:
+                            - uid: siderocordes
+                            - uid: caudes
+                              mut: tail
+                              children:
+                                - uid: couteaux-ferriques
+                                - uid: endosquelette
+                                  mut: axialSkeleton
+                                  children:
+                                    - uid: agnathes
+                                    - uid: hexapinnes
+                                      mut: threeFinPairs
+                                      children:
+                                        - uid: cuirasses-sans-machoire
+                                        - uid: gnathostomes
+                                          mut: jaws
+                                          children:
+                                            - uid: machus
+                                            - uid: sarcopterygiens
+                                              mut: fleshyFins
+                                              children:
+                                                - uid: lobes-aquatiques
+                                                - uid: membres
+                                                  mut: weightBearingLimbs
+                                                  children:
+                                                    - uid: tetrapodes-aquatiques
+                                                    - uid: osteides
+                                                      mut: ossification
+                                                      children:
+                                                        - uid: rampants-des-hauts-fonds
+                                                        - uid: amphibiens
+                                                          mut: lungs
+                                                          children:
+                                                            - uid: muants
+                                                              mut: neoteny
+                                                              children:
+                                                                - uid: sedentaires
+                                                                - uid: migrateurs
+                                                                  mut: migratoryMetamorphosis
+                                                                  children:
+                                                                    - uid: levant
+                                                                      mut: levantThreshold
+                                                                    - uid: couchant
+                                                                      mut: couchantThreshold
+                                                            - uid: annulus
+                                                              mut: amnioticEgg
+                                                              children:
+                                                                - uid: aveugles
+                                                                  children:
+                                                                    - uid: terrestres-aveugles
+                                                                    - uid: draconides
+                                                                      mut: dorsalWings
+                                                                - uid: visuels
+                                                                  mut: vision
+                                                                  children:
+                                                                    - uid: sauropsides
+                                                                      mut: ectothermy
+                                                                      children:
+                                                                        - uid: hexapodes-terrestres
+                                                                          children:
+                                                                            - uid: carapaconnes
+                                                                              mut: chitinoFerricCarapace
+                                                                            - uid: coureurs-de-troupeaux
+                                                                              mut: cursoriality
+                                                                        - uid: ailes
+                                                                          mut: firstWingPair
+                                                                          children:
+                                                                            - uid: lezards-ailes
+                                                                            - uid: oiseaux
+                                                                              mut: secondWingPair
+                                                                    - uid: synapsides
+                                                                      mut: endothermy
+                                                                      children:
+                                                                        - uid: pondeurs-temperes
+                                                                        - uid: fourres
+                                                                          mut: fur
+                                                                          children:
+                                                                            - uid: pondeurs-australs
+                                                                            - uid: mammiferes
+                                                                              mut: lactation
+                                                                              children:
+                                                                                - uid: pondeurs-laitiers
+                                                                                - uid: vivipares
+                                                                                  mut: viviparity
+                                                                                  children:
+                                                                                    - uid: betail
+                                                                                      mut: fatPouches
+                                                                                    - uid: quadrupedes
+                                                                                      mut: quadrupedalism
+                                                                                      children:
+                                                                                        - uid: predateurs-de-meute
+                                                                                        - uid: stereopes
+                                                                                          mut: frontalVision
+                                                                                          children:
+                                                                                            - uid: guetteurs
+                                                                                            - uid: versipedes
+                                                                                              mut: footPlasticity
+                                                                                              children:
+                                                                                                - uid: coureurs-adaptables
+                                                                                                - uid: sideroceres
+                                                                                                  mut: externalEmReceptor
+                                                                                                  children:
+                                                                                                    - uid: epineux-sylvestres
+                                                                                                    - uid: noopathes
+                                                                                                      mut: emEmitter
+                                                                                                      children:
+                                                                                                        - uid: syntones
+                                                                                                          mut: packMind
+                                                                                                          children:
+                                                                                                            - uid: meute-chasseresse
+                                                                                                            - uid: lutriens
+                                                                                                              mut: oilyFur
+                                                                                                              children:
+                                                                                                                - uid: meute-boreale
+                                                                                                                - uid: pecheurs
+                                                                                                                  mut: harpoonFangs
+                                                                                                            - uid: sideronyches
+                                                                                                              mut: clawHunting
+                                                                                                              children:
+                                                                                                                - uid: lacerateurs
+                                                                                                                - uid: talpides
+                                                                                                                  mut: diggingClaws
+                                                                                                                  children:
+                                                                                                                    - uid: meute-fouisseuse
+                                                                                                                    - uid: meute-australe
+                                                                                                                      mut: polarCoat
+                                                                                                        - uid: cerebres
+                                                                                                          mut: encephalization
+                                                                                                          children:
+                                                                                                            - uid: ruses
+                                                                                                              children:
+                                                                                                                - uid: larrons
+                                                                                                                - uid: tapinois
+                                                                                                                  mut: crypticCoat
+                                                                                                                  children:
+                                                                                                                    - uid: maraudeurs
+                                                                                                                    - uid: fureteurs
+                                                                                                                      mut: insectivory
+                                                                                                                - uid: ecorceurs
+                                                                                                                  mut: climbingClaws
+                                                                                                                  children:
+                                                                                                                    - uid: lestes
+                                                                                                                    - uid: cueilleurs
+                                                                                                                      mut: frugivory
+                                                                                                                      children:
+                                                                                                                        - uid: pendards
+                                                                                                                          mut: prehensileTail
+                                                                                                                        - uid: voltigeurs
+                                                                                                                          mut: patagium
+                                                                                                                          children:
+                                                                                                                            - uid: voiliers
+                                                                                                                            - uid: froleurs
+                                                                                                                              mut: whiskers
+                                                                                                            - uid: bipedes
+                                                                                                              mut: bipedalism
+                                                                                                              children:
+                                                                                                                - uid: bondisseurs
+                                                                                                                  mut: springLeap
+                                                                                                                  children:
+                                                                                                                    - uid: coureurs
+                                                                                                                    - uid: planeurs
+                                                                                                                      mut: patagium
+                                                                                                                    - uid: detaleurs
+                                                                                                                      mut: pouch
+                                                                                                                - uid: orthostates
+                                                                                                                  mut: uprighting
+                                                                                                                  children:
+                                                                                                                    - uid: faucheurs
+                                                                                                                      mut: sickleClaws
+                                                                                                                    - uid: aeonis-sapiens
+                                                                                                                      mut: handsAndFullUprighting
+                                                                                                                      children:
+                                                                                                                        - uid: cimes
+                                                                                                                        - uid: vents
+                                                                                                                        - uid: neiges
+                                                                                                                        - uid: pluies
+- uid: pourpres
+  mut: purpleEndosymbiosis
+  children:
+    - uid: sessiles-a-dispersion
+      children:
+        - uid: pionniers-anemochores
+        - uid: aeroplanctes
+          mut: hydrogenSacs
+        - uid: arbre-anneau
+          mut: crystallization
+    - uid: refugiaux-polaires
+      children:
+        - uid: endemiques-nord-marais
+        - uid: endemiques-sud-toundra
+    - uid: phyterrants
+      mut: mobileFlora

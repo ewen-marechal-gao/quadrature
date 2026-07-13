@@ -48,6 +48,8 @@ interface RawMutation {
 interface RawNode {
   /** Slug stable, cible du champ `from` des fiches d'adversaires. */
   uid?: string;
+  /** uid du parent dans la liste plate (ou "root" pour un nœud de premier niveau). */
+  parent?: string;
   name?: string;
   ref?: string;
   tip?: string;
@@ -56,6 +58,7 @@ interface RawNode {
   /** Clé d'une mutation du dictionnaire `mutations`. */
   mut?: string;
   star?: boolean;
+  /** Reconstruit depuis la liste plate (absent du YAML). */
   children?: RawNode[];
 }
 
@@ -67,7 +70,28 @@ interface RawCladogram {
   rootBiome?: Biome[];
   rootHabitat?: Habitat[];
   mutations?: Record<string, RawMutation>;
-  root: { children: RawNode[] };
+  /** Liste PLATE des nœuds : la structure de l'arbre est portée par `parent`. */
+  nodes?: RawNode[];
+}
+
+/**
+ * Reconstruit l'arbre à partir de la liste plate : rattache à chaque nœud ses enfants
+ * selon `parent`, dans l'ordre du fichier (= ordre des frères). Retourne les nœuds de
+ * premier niveau (parent === "root").
+ */
+function buildTreeFromFlat(nodes: RawNode[]): RawNode[] {
+  const byUid = new Map<string, RawNode>();
+  for (const n of nodes) { n.children = []; if (n.uid) byUid.set(n.uid, n); }
+  const top: RawNode[] = [];
+  for (const n of nodes) {
+    if (n.parent === "root" || n.parent == null) top.push(n);
+    else byUid.get(n.parent)?.children!.push(n);
+  }
+  // La branche BASALE (sans `mut`) passe en premier, avant les nœuds issus de mutations (tri stable).
+  const basalFirst = (a: RawNode, b: RawNode) => (a.mut ? 1 : 0) - (b.mut ? 1 : 0);
+  top.sort(basalFirst);
+  for (const n of nodes) n.children?.sort(basalFirst);
+  return top;
 }
 
 // ─── Types normalisés (sérialisables) ─────────────────────────────────────────
@@ -196,7 +220,9 @@ export function normalizeCladogram(raw: RawCladogram, locale = "fr"): CladogramD
     children: [],
   };
   nodeIndex.root = root;
-  root.children = (raw.root?.children ?? []).map((child, i) =>
+  // La source est une liste PLATE : on reconstruit l'arbre avant de le normaliser.
+  const topLevel = buildTreeFromFlat(raw.nodes ?? []);
+  root.children = topLevel.map((child, i) =>
     build(child, `root.${i}`, 1, i, "root", seedBiomes, seedHabitats)
   );
 

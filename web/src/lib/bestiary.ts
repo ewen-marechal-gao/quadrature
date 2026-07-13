@@ -33,8 +33,14 @@ export type PowerTier =
  * Ce que confère un bloc : prose d'affichage (`text`) + ops mécaniques
  * (grantsCard, cardCost, resource…). Le web n'affiche que la prose.
  */
-interface RawGrant { text: LocalizedString | "auto"; [k: string]: unknown; }
-interface RawBlock { cases: number; name?: LocalizedString; grants: RawGrant; }
+interface RawGrant {
+  text: LocalizedString | "auto";
+  resource?: BlockResource;
+  amount?: number;
+  grantsCard?: string;
+  [k: string]: unknown;
+}
+interface RawBlock { cases: number; name?: LocalizedString; grants?: RawGrant; }
 interface RawPart {
   /** Slug d'identification stable (head, body, tail, frontLeg, sickles…). */
   type: string;
@@ -76,12 +82,27 @@ interface RawAdversary {
   traits?: RawTrait[];
   cards: RawCard[];
   image?: string;
+  /** Nom de fichier d'illustration dans data/bestiary/art/ (résolu en chemin web). */
+  art?: string;
 }
 
 // ─── Types résolus (clés anglaises, chaînes dans la locale) ─────────────────────
 
-/** Un bloc de cases d'une partie : confère une capacité tant qu'il est intact. */
-export interface BodyBlock { cases: number; name?: string; grants: string; }
+/** Ressource conférée au début de chaque manche par un bloc intact. */
+export type BlockResource = "endurance" | "evasion" | "stability";
+/**
+ * Un bloc de cases d'une partie : confère une capacité tant qu'il est intact.
+ * `grants` = prose complète (repli) ; les ops structurées (`resource`/`amount`,
+ * `grantsCard`) permettent un rendu COMPACT et l'agrégation « début de manche ».
+ */
+export interface BodyBlock {
+  cases: number;
+  name?: string;
+  grants: string;
+  resource?: BlockResource;
+  amount?: number;
+  grantsCard?: string;
+}
 /** Une partie du corps (identifiée par `type`, affichée via `name`). */
 export interface BodyPart { type: string; name: string; description?: string; armor: number; blocks: BodyBlock[]; }
 /** Un trait d'adversaire (♾️ passif / ⚒️ actif). */
@@ -104,9 +125,6 @@ export interface Adversary {
   /** uid du nœud du cladogramme dont la fiche dérive (lien depuis /evolution). */
   from?: string;
   name: string;
-  power: PowerTier;
-  /** Libellé du palier dans la locale (ex. « Initié »). */
-  powerLabel: string;
   dice: AdversaryDie[];
   description?: string;
   guard: { type: GuardType; label: string; value: number };
@@ -125,17 +143,6 @@ export interface Adversary {
 
 // ─── Libellés localisés des énumérations d'affichage ────────────────────────────
 
-const POWER_LABELS: Record<PowerTier, LocalizedString> = {
-  insignificant: { fr: "Insignifiant", en: "Insignificant" },
-  harmful: { fr: "Nuisible", en: "Harmful" },
-  weak: { fr: "Faible", en: "Weak" },
-  novice: { fr: "Novice", en: "Novice" },
-  initiate: { fr: "Initié", en: "Initiate" },
-  competent: { fr: "Compétent", en: "Competent" },
-  veteran: { fr: "Vétéran", en: "Veteran" },
-  expert: { fr: "Expert", en: "Expert" },
-  elite: { fr: "Élite", en: "Elite" },
-};
 const GUARD_LABELS: Record<GuardType, LocalizedString> = {
   dodge: { fr: "Esquive", en: "Dodge" },
   block: { fr: "Blocage", en: "Block" },
@@ -155,7 +162,14 @@ function resolvePart(p: RawPart, locale: string): BodyPart {
     name: localize(p.name, locale),
     description: p.description ? localize(p.description, locale) : undefined,
     armor: p.armor,
-    blocks: p.blocks.map((b) => ({ cases: b.cases, ...(b.name && { name: localize(b.name, locale) }), grants: localizeText(b.grants.text, locale) })),
+    blocks: p.blocks.map((b) => ({
+      cases: b.cases,
+      ...(b.name && { name: localize(b.name, locale) }),
+      grants: b.grants ? localizeText(b.grants.text, locale) : "",
+      ...(b.grants?.resource && { resource: b.grants.resource }),
+      ...(b.grants?.amount != null && { amount: b.grants.amount }),
+      ...(b.grants?.grantsCard && { grantsCard: b.grants.grantsCard }),
+    })),
   };
 }
 
@@ -165,8 +179,6 @@ function resolveAdversary(raw: RawAdversary, locale: string): Adversary {
     id: raw.id,
     ...(raw.from ? { from: raw.from } : {}),
     name: localize(raw.name, locale),
-    power: raw.power,
-    powerLabel: localize(POWER_LABELS[raw.power], locale),
     dice: raw.dice,
     description: opt(raw.description),
     guard: { type: raw.guard.type, label: localize(GUARD_LABELS[raw.guard.type], locale), value: raw.guard.value },
@@ -186,7 +198,7 @@ function resolveAdversary(raw: RawAdversary, locale: string): Adversary {
       onFailure: localizeText(c.onFailure.text, locale),
       note: opt(c.note),
     })),
-    image: raw.image,
+    image: raw.art ? `/bestiary/art/${raw.art}` : raw.image,
   };
 }
 

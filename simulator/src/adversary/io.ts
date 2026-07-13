@@ -61,6 +61,7 @@ interface RawAdversary {
   dice: AdversaryDie[]
   description?: LocalizedString
   guard: { type: AdversaryGuardType; value: number }
+  disposition?: import('./combatant').AdversaryDisposition
   speed: { walk: number; run: number }
   fatigue: number
   actions?: number
@@ -140,6 +141,7 @@ export function resolveAdversary(raw: RawAdversary, locale = 'fr'): AdversaryShe
     dice:        raw.dice,
     ...(raw.description && { description: localize(raw.description, locale) }),
     guard:       { type: raw.guard.type, value: raw.guard.value },
+    ...(raw.disposition && { disposition: raw.disposition }),
     speed:       raw.speed,
     fatigue:     raw.fatigue,
     ...(raw.actions != null && { actions: raw.actions }),

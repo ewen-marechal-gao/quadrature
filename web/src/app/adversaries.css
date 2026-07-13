@@ -121,12 +121,6 @@
   color: var(--adv-ink);
 }
 
-.adv-power {
-  font-size: 0.85rem;
-  font-style: italic;
-  color: var(--adv-muted);
-}
-
 .adv-header-stats {
   display: flex;
   align-items: center;
@@ -142,14 +136,6 @@
 
 .adv-guard strong {
   font-size: 1.15em;
-}
-
-.adv-desc {
-  margin: 0;
-  font-size: clamp(0.74rem, 1.4cqw, 0.86rem);
-  font-style: italic;
-  color: var(--adv-muted);
-  line-height: 1.35;
 }
 
 /* ── Corps : colonne gauche (fatigue, traits) + parties ─────────────────── */
@@ -370,6 +356,122 @@
   line-height: 1.25;
 }
 
+/* ── Stage : fiche + bascule recto/verso (écran) ────────────────────────── */
+.adv-stage {
+  position: relative;
+  width: 100%;
+  max-width: 920px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.adv-face-tabs {
+  display: inline-flex;
+  align-self: flex-end;
+  border: 1px solid var(--brass-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.adv-face-tab {
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--brass-faint);
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  padding: 5px 15px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.adv-face-tab:first-child {
+  border-left: none;
+}
+.adv-face-tab--on {
+  background: var(--brass);
+  color: var(--on-brass);
+}
+
+/* Verso à l'écran : même cadre A5 que le recto, contenu bord à bord. */
+.adv-sheet--verso {
+  padding: 0;
+}
+
+/* ── Encadré « Phase d'entretien » : ressources régénérées en début de tour ──
+   Pleine largeur, en tête (avant État physique / État mental). Chaque point est
+   un jeton adossé à son bloc source : le total se LIT comme une somme de
+   contributions qui tombent quand le bloc est détruit (pas une valeur figée). */
+.adv-maintenance {
+  border: 1.5px solid var(--adv-rule-soft);
+  border-radius: 5px;
+  padding: 0.4rem 0.55rem 0.5rem;
+}
+.adv-maintenance-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.9rem;
+}
+.adv-roundstart-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.adv-res {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: clamp(0.66rem, 1.3cqw, 0.78rem);
+}
+.adv-res-icon {
+  font-size: 1.05em;
+}
+.adv-res-pips {
+  display: inline-flex;
+  gap: 2px;
+}
+.adv-res-pip {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--adv-box);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+}
+.adv-res-name {
+  font-weight: 700;
+  color: var(--adv-ink);
+}
+.adv-res-note {
+  font-size: clamp(0.56rem, 1.1cqw, 0.66rem);
+  font-style: italic;
+  color: var(--adv-muted);
+  margin-left: auto;
+}
+
+/* ── Grants compacts des blocs (rendu depuis les ops structurées) ───────── */
+.adv-grant-chip {
+  color: var(--adv-muted);
+  white-space: nowrap;
+}
+.adv-bloc-name + .adv-grant-chip,
+.adv-bloc-name + .adv-bloc-text {
+  margin-left: 0.35rem;
+}
+.adv-bloc-text {
+  color: var(--adv-muted);
+}
+
+/* ── Dés de menace dans la sidebar (remplace le palier) ─────────────────── */
+.adv-sidebar-dice {
+  letter-spacing: 0.06em;
+}
+
 /* ── Deck d'actions (composant ActionCard partagé) ─────────────────────── */
 .adv-deck {
   width: 100%;
@@ -405,6 +507,11 @@
     aspect-ratio: auto;
     container-type: inline-size;
     overflow: visible;
+  }
+  /* Le verso garde un cadre A5 défini (contenu en surimpression absolue → il lui
+     faut une hauteur, sinon il s'effondre à 0). */
+  .adv-sheet--verso {
+    aspect-ratio: 210 / 148;
   }
   .adv-body {
     grid-template-columns: 1fr;
@@ -610,6 +717,48 @@
   letter-spacing: 0.02em;
 }
 
+/* Cartouche nom + description (déplacée du recto). Sur une illustration, il
+   s'affiche en surimpression bas ; sans illustration, sous le placeholder. */
+.adv-verso--illustrated {
+  display: block;
+  position: relative;
+}
+.adv-verso--illustrated .adv-verso-img {
+  position: absolute;
+  inset: 0;
+}
+.adv-verso--illustrated .adv-verso-caption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 6% 7% 5%;
+  background: linear-gradient(
+    to top,
+    rgba(20, 16, 10, 0.94) 0%,
+    rgba(20, 16, 10, 0.72) 55%,
+    rgba(20, 16, 10, 0) 100%
+  );
+  color: #f3ead6;
+}
+.adv-verso-caption-name {
+  display: block;
+  font-size: clamp(1rem, 3.2cqw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.3rem;
+}
+.adv-verso-desc {
+  margin: 0;
+  font-size: clamp(0.72rem, 1.5cqw, 0.92rem);
+  font-style: italic;
+  line-height: 1.42;
+}
+.adv-verso:not(.adv-verso--illustrated) .adv-verso-caption {
+  max-width: 82%;
+  margin-top: 5mm;
+  text-align: center;
+  color: #5d4e37;
+}
+
 /* ── DOM d'impression ──────────────────────────────────────────────────── */
 /* Caché à l'écran ; révélé par window.print() (modèle de /cartes). */
 .adv-print {
@@ -636,6 +785,11 @@
     aspect-ratio: auto;
     container-type: inline-size;
     overflow: visible;
+  }
+  /* Le verso garde un cadre A5 défini (contenu en surimpression absolue → il lui
+     faut une hauteur, sinon il s'effondre à 0). */
+  .adv-sheet--verso {
+    aspect-ratio: 210 / 148;
   }
   .adv-body {
     grid-template-columns: 1fr;

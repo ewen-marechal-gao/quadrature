@@ -1,0 +1,30 @@
+# Source d'une fiche d'adversaire — le Happe-fond (apex marin du Grand Marais du Nord).
+# Parties/cartes/traits dérivés du cladogramme via `from` ; cf. tools/consolidate-bestiary.mjs.
+id: happe-fond
+from: cuirasses                # uid du grade CUIRASSÉS (grand embusqueur cuirassé ; taille GRANDE dérivée)
+name: { fr: "Happe-fond", en: "Deepgrasper" }
+power: competent               # expertise = levier d'ÉQUILIBRAGE, décorrélé de la taille (colossal)
+dice: [danger, danger, threat, threat]   # gros coups à forte variance, espérance modeste
+description:
+  fr: >-
+    L'apex des eaux noires du Nord — un euryptéride géant, cuirassé de fer et segmenté,
+    tapi dans le limon. Il happe la proie de son corps musculeux et l'entraîne au fond
+    pour la noyer. Immunisé à l'EM (ni peur ni contrôle), mais impuissant hors de l'eau,
+    et le sang perce sa cuirasse. C'est lui qui, jadis, a chassé le vivant sur la terre.
+guard: { type: block, value: 13 }
+tenacity: 4                    # a bien un état mental (chaîne nerveuse → ◇), même non-cérébré
+# speed & fatigue : dérivés (aquatique, sans vitesse terrestre).
+extraTraits:
+  - name: { fr: "Sourd à l'EM" }
+    kind: passive
+    effect:
+      fr: "Cuirasse ferrique écrantante : immunisé aux effets mentaux d'origine EM/télépathique (ni peur ni contrôle imposés). Il garde néanmoins un état mental propre (chaîne nerveuse → ◇)."
+  - name: { fr: "Chasse à l'électroception" }
+    kind: passive
+    effect:
+      fr: "Sent le frétillement nerveux de ses proies dans l'eau noire : une cible qui bouge ne peut se dissimuler ; seul le calme absolu l'y soustrait."
+  - name: { fr: "Inféodé à l'eau" }
+    kind: passive
+    effect:
+      fr: "Hors de l'eau, ses ailerons ne portent plus : Évasion 0 et déplacement effondré — l'attirer sur la berge le condamne."
+extraMutations: []

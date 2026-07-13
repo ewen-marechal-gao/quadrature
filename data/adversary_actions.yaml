@@ -119,6 +119,50 @@ actions:
     onFailure: { text: { fr: "Inflige 💢" },     effect: [{ wound: 1 }] }
     onFives:   { text: { fr: "Repérez un 5 : la cible subit une hémorragie 🩸 et le prédateur gagne +1 ◇." }, count: 1, effect: [{ status: hemorrhage }, { gainStability: 1 }] }
 
+  # Étreinte du corps reptant : immobilise (Entravé) et épuise. Version tranchante = bladeConstriction (mut lateralBlades).
+  constriction:
+    name: { fr: "Constriction", en: "Constriction" }
+    cost: 2
+    fatigueCost: 1
+    initiative: 5
+    tags: [offensive, melee, physical, fatigueDamage]
+    onSuccess: { text: { fr: "La cible est Entravée 🕸️ et subit 💧💧" }, effect: [{ status: entrapped }, { fatigue: 2 }] }
+    onFailure: { text: { fr: "La cible subit 💧" },                        effect: [{ fatigue: 1 }] }
+    onFives:   { text: { fr: "Repérez un 5 : 💧 supplémentaire." }, count: 1, effect: [{ fatigue: 1 }] }
+
+  # Étreinte affûtée (lames latérales) : immobilise et SAIGNE au lieu d'épuiser (l'hémorragie perce l'armure).
+  bladeConstriction:
+    name: { fr: "Constriction tranchante", en: "Blade Coil" }
+    cost: 2
+    fatigueCost: 1
+    initiative: 5
+    tags: [offensive, melee, physical, physicalDamage]
+    onSuccess: { text: { fr: "La cible est Entravée 🕸️ et subit une hémorragie 🩸" }, effect: [{ status: entrapped }, { status: hemorrhage }] }
+    onFailure: { text: { fr: "Inflige 💢" },                                            effect: [{ wound: 1 }] }
+    onFives:   { text: { fr: "Repérez un 5 : hémorragie 🩸 supplémentaire." }, count: 1, effect: [{ status: hemorrhage }] }
+
+  # Agrippement des bras ravisseurs — immobilise (prélude à la noyade).
+  seize:
+    name: { fr: "Agrippement", en: "Seize" }
+    cost: 1
+    initiative: 4
+    tags: [offensive, melee, physical]
+    onSuccess: { text: { fr: "La cible est Entravée 🕸️" }, effect: [{ status: entrapped }] }
+    onFailure: { text: { fr: "Aucun effet" },              effect: [] }
+    onFives:   { text: { fr: "Repérez un 5 : les serres entaillent — 💢." }, count: 1, effect: [{ wound: 1 }] }
+
+  # Traîner au fond : sur une cible DÉJÀ Entravée, la noyade — épuisement lourd (💧) qu'on ne pare pas.
+  dragUnder:
+    name: { fr: "Traîner au fond", en: "Drag Under" }
+    cost: 2
+    fatigueCost: 1
+    initiative: 6
+    tags: [offensive, melee, physical, fatigueDamage]
+    onSuccess: { text: { fr: "Entraîne la cible Entravée sous l'eau : 💧💧💧 (noyade), reste Entravée 🕸️" }, effect: [{ fatigue: 3 }, { status: entrapped }] }
+    onFailure: { text: { fr: "La cible subit 💧" },                                                        effect: [{ fatigue: 1 }] }
+    onFives:   { text: { fr: "Repérez un 5 : plus d'air — 💧 supplémentaire." }, count: 1, effect: [{ fatigue: 1 }] }
+    note:      { fr: "N'a d'effet que sur une cible Entravée, en milieu aquatique (règle de scène)." }
+
   swordStrike:
     name: { fr: "Coup d'épée", en: "Sword Strike" }
     cost: 1

@@ -175,6 +175,8 @@ export interface AdversarySheet {
   dice:         AdversaryDie[]
   description?: string
   guard:        AdversaryGuard
+  /** Disposition mentale de départ posée par le meneur (défaut « aggressive »). */
+  disposition?: import('./combatant').AdversaryDisposition
   speed:        { walk: number; run: number }
   /** Fatigue 💧 death-clock size (all cases checked → unconscious). */
   fatigue:      number

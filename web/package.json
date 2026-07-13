@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs fr",
+    "predev": "node scripts/copy-pagedjs.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-content-index.mjs fr",
     "dev": "next dev",
-    "prebuild": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs fr",
+    "prebuild": "node scripts/copy-pagedjs.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-content-index.mjs fr",
     "build": "next build",
     "start": "next start",
     "refresh-content": "node scripts/generate-content-index.mjs fr",

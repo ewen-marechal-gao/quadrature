@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { Adversary, AdversaryDie, AdversaryTrait, BodyPart } from "@/lib/bestiary";
+import type { Adversary, AdversaryDie, AdversaryTrait, BlockResource, BodyPart } from "@/lib/bestiary";
 import { adversaryCardToPlayerCard } from "@/lib/adversary-card";
 import { ActionCard } from "@/components/ActionCard";
 import "@/app/adversaries.css";
@@ -56,11 +56,73 @@ function useFitScale() {
 }
 
 /** Glyphe d'un dé d'adversaire. */
-const DIE_GLYPH: Record<AdversaryDie, string> = {
+export const DIE_GLYPH: Record<AdversaryDie, string> = {
   nuisance: "🟧",
   threat: "⬜",
   danger: "🟫",
 };
+
+/** Ressources conférées « au début de la manche » : icône + libellé + ordre. */
+const RES_META: Record<BlockResource, { icon: string; label: string }> = {
+  endurance: { icon: "🫁", label: "Respiration" },
+  evasion: { icon: "🍀", label: "Évasion" },
+  stability: { icon: "◇", label: "Stabilité" },
+};
+const RES_ORDER: BlockResource[] = ["endurance", "evasion", "stability"];
+
+/** Une contribution de ressource, adossée à son bloc source (destructible). */
+interface ResSource { label: string; amount: number }
+interface ResGroup { resource: BlockResource; sources: ResSource[] }
+
+/**
+ * Agrège, par ressource, les points conférés au début de chaque manche par les
+ * blocs intacts (parties + armes). CHAQUE contribution garde son bloc source :
+ * le rendu affiche un jeton par point, de sorte que le total se lise comme la
+ * SOMME de contributions destructibles (détruire le bloc en retire d'autant).
+ */
+function summarizeResources(parts: BodyPart[]): ResGroup[] {
+  const groups = new Map<BlockResource, ResSource[]>();
+  for (const p of parts) {
+    for (const b of p.blocks) {
+      if (!b.resource || !b.amount) continue;
+      const list = groups.get(b.resource) ?? [];
+      list.push({ label: b.name ? `${p.name} · ${b.name}` : p.name, amount: b.amount });
+      groups.set(b.resource, list);
+    }
+  }
+  return RES_ORDER.filter((r) => groups.has(r)).map((r) => ({ resource: r, sources: groups.get(r)! }));
+}
+
+/**
+ * Encadré « Phase d'entretien » (pleine largeur, en tête) : ressources régénérées
+ * au début du tour. Chaque point est un jeton adossé à son bloc source — le total
+ * se lit comme une somme de contributions destructibles, pas une valeur figée.
+ */
+function MaintenancePanel({ groups }: { groups: ResGroup[] }) {
+  return (
+    <section className="adv-maintenance">
+      <div className="adv-section-label">Phase d'entretien</div>
+      <div className="adv-maintenance-body">
+        <ul className="adv-roundstart-list">
+          {groups.map((g) => (
+            <li key={g.resource} className="adv-res">
+              <span className="adv-res-icon" aria-hidden>{RES_META[g.resource].icon}</span>
+              <span className="adv-res-pips">
+                {g.sources.flatMap((s, si) =>
+                  Array.from({ length: s.amount }, (_, k) => (
+                    <span key={`${si}-${k}`} className="adv-res-pip" title={s.label} />
+                  ))
+                )}
+              </span>
+              <span className="adv-res-name">{RES_META[g.resource].label}</span>
+            </li>
+          ))}
+        </ul>
+        <span className="adv-res-note">↓ si le bloc source est détruit</span>
+      </div>
+    </section>
+  );
+}
 
 /** Glyphe d'un type de trait (♾️ passif / ⚒️ actif). */
 const KIND_GLYPH: Record<AdversaryTrait["kind"], string> = {
@@ -132,8 +194,32 @@ function MentalPanel({ tenacity }: { tenacity: number }) {
   );
 }
 
+/**
+ * Rendu COMPACT de ce que confère un bloc, depuis les ops structurées :
+ *   - ressource → « 🫁 +2 » (jeton régénéré chaque manche)
+ *   - carte     → « → Morsure » (sauf si le nom de carte double le nom du bloc)
+ *   - sinon     → prose courte de repli (grants).
+ * La prose longue « au début de la manche » est portée par le bandeau Chaque manche.
+ */
+function BlockGrant({ block, cardNames }: { block: BodyPart["blocks"][number]; cardNames: Record<string, string> }) {
+  if (block.resource && block.amount != null) {
+    return (
+      <span className="adv-grant-chip">
+        {RES_META[block.resource].icon} +{block.amount}
+      </span>
+    );
+  }
+  if (block.grantsCard) {
+    const cardName = cardNames[block.grantsCard];
+    if (cardName && cardName !== block.name) return <span className="adv-grant-chip">→ {cardName}</span>;
+    if (!cardName) return <span className="adv-grant-chip">→ {block.grants}</span>;
+    return null; // le nom du bloc dit déjà tout (ex. bloc « Charge » → carte Charge)
+  }
+  return <span className="adv-bloc-text">{block.grants}</span>;
+}
+
 /** Une partie du corps : nom, armure, blocs (cases + capacité conférée). */
-function PartCard({ part }: { part: BodyPart }) {
+function PartCard({ part, cardNames }: { part: BodyPart; cardNames: Record<string, string> }) {
   return (
     <div className="adv-part">
       <div className="adv-part-head">
@@ -147,8 +233,8 @@ function PartCard({ part }: { part: BodyPart }) {
           <li key={i} className="adv-bloc">
             <Boxes count={block.cases} />
             <span className="adv-bloc-confere">
-              {block.name && <strong className="adv-bloc-name">{block.name} — </strong>}
-              {block.grants}
+              {block.name && <strong className="adv-bloc-name">{block.name}</strong>}
+              <BlockGrant block={block} cardNames={cardNames} />
             </span>
           </li>
         ))}
@@ -162,13 +248,14 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
   const a = adversary;
   const { frameRef, contentRef, scale } = useFitScale();
   const fitStyle = scale < 1 ? { transform: `scale(${scale})` } : undefined;
+  const cardNames = Object.fromEntries(a.cards.map((c) => [c.id, c.name]));
+  const resources = summarizeResources([...a.parts, ...a.weapons]);
   return (
     <article className="adv-sheet" ref={frameRef} aria-label={`Fiche : ${a.name}`}>
       <div className="adv-sheet-fit" ref={contentRef} style={fitStyle}>
       <header className="adv-header">
         <div className="adv-title">
           <h1 className="adv-name">{a.name}</h1>
-          <span className="adv-power">{a.powerLabel}</span>
         </div>
         <div className="adv-header-stats">
           <span className="adv-dice" title="Dés d'adversaire">
@@ -185,7 +272,7 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
         </div>
       </header>
 
-      {a.description && <p className="adv-desc">{a.description}</p>}
+      {resources.length > 0 && <MaintenancePanel groups={resources} />}
 
       <div className="adv-body">
         <section className="adv-parts adv-physical">
@@ -194,7 +281,7 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
 
           <div className="adv-parts-grid">
             {a.parts.map((p) => (
-              <PartCard key={p.type} part={p} />
+              <PartCard key={p.type} part={p} cardNames={cardNames} />
             ))}
           </div>
 
@@ -203,7 +290,7 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
               <div className="adv-section-label adv-weapons-label">Armes et Outils</div>
               <div className="adv-parts-grid">
                 {a.weapons.map((w) => (
-                  <PartCard key={w.type} part={w} />
+                  <PartCard key={w.type} part={w} cardNames={cardNames} />
                 ))}
               </div>
             </>
@@ -234,11 +321,14 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
   );
 }
 
-/** Verso : illustration de la créature, ou placeholder texte si absente. */
+/**
+ * Verso : illustration de la créature (ou placeholder), surmontée d'un cartouche
+ * nom + description (déplacée depuis le recto pour libérer l'espace mécanique).
+ */
 export function AdversaryVerso({ adversary }: { adversary: Adversary }) {
   const a = adversary;
   return (
-    <div className="adv-verso" aria-label={`Verso : ${a.name}`}>
+    <div className={`adv-verso${a.image ? " adv-verso--illustrated" : ""}`} aria-label={`Verso : ${a.name}`}>
       {a.image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={a.image} alt={a.name} className="adv-verso-img" />
@@ -248,7 +338,22 @@ export function AdversaryVerso({ adversary }: { adversary: Adversary }) {
           <span className="adv-verso-name">{a.name}</span>
         </div>
       )}
+      {a.description && (
+        <div className="adv-verso-caption">
+          {a.image && <span className="adv-verso-caption-name">{a.name}</span>}
+          <p className="adv-verso-desc">{a.description}</p>
+        </div>
+      )}
     </div>
+  );
+}
+
+/** Verso à l'écran : même cadre A5 que le recto (pour un swap en place net). */
+function AdversaryScreenVerso({ adversary }: { adversary: Adversary }) {
+  return (
+    <article className="adv-sheet adv-sheet--verso" aria-label={`Verso : ${adversary.name}`}>
+      <AdversaryVerso adversary={adversary} />
+    </article>
   );
 }
 
@@ -266,11 +371,33 @@ export function AdversaryDeck({ adversary }: { adversary: Adversary }) {
   );
 }
 
-/** Composition écran : recto + deck. */
+/** Composition écran : fiche (bascule recto ⇄ verso, comme /personnage) + deck. */
 export function AdversarySheet({ adversary }: { adversary: Adversary }) {
+  const [face, setFace] = useState<"recto" | "verso">("recto");
+  // Retour au recto quand on change de créature (sinon on resterait bloqué au verso).
+  useEffect(() => setFace("recto"), [adversary.id]);
   return (
     <div className="adv-content">
-      <AdversaryStatBlock adversary={adversary} />
+      <div className="adv-stage">
+        <div className="adv-face-tabs" role="group" aria-label="Face de la fiche">
+          {(["recto", "verso"] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              className={`adv-face-tab${face === f ? " adv-face-tab--on" : ""}`}
+              aria-pressed={face === f}
+              onClick={() => setFace(f)}
+            >
+              {f === "recto" ? "Recto" : "Verso"}
+            </button>
+          ))}
+        </div>
+        {face === "recto" ? (
+          <AdversaryStatBlock adversary={adversary} />
+        ) : (
+          <AdversaryScreenVerso adversary={adversary} />
+        )}
+      </div>
       <AdversaryDeck adversary={adversary} />
     </div>
   );

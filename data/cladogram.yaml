@@ -1,6 +1,8 @@
 # Cladogramme de la faune d'Aeonir — l'ARBRE (nœuds).
 # Les mutations (label, description, kit de combat) vivent dans data/mutations.yaml, référencées par CLÉ (champ `mut`).
-# Champs d'un nœud : uid ; name+ref (clade interne) | tip+cd (feuille) ; mut (clé) ; star ; branchNote ; children.
+# LISTE PLATE (style bloc) : une entrée par nœud, structure portée par `parent` (uid du parent, ou `root`).
+# Champs : uid ; parent ; name+ref (clade) | tip+cd (feuille) ; mut ; star ; branchNote.
+# Vue arborescente minimale (uid/mut/children) GÉNÉRÉE dans data/cladogram.tree.yaml (ne pas éditer).
 # Pas de champ « status » : une feuille est « peuplée » ssi une fiche d'adversaire la cible (data/bestiary/species/*.yaml, champ `from`).
 # Pas de champ « biome » : biome et habitat sont DÉRIVÉS (graine ci-dessous + transitions des mutations).
 # Édition via tools/cladogram.mjs.
@@ -22,317 +24,587 @@ backlog:
   - "COUCHANT : une branche subit une ATROPHIE DES MEMBRES → convergence vers l'équivalent du Serpent (apode secondaire)."
   - "Hétérodontie (dents différenciées : incisives / canines / molaires) — grade mammifère, à poser vers les Synapsides."
 
-root:
-  children:
-    - uid: pourpres
-      name: "POURPRES"
-      ref: "autotrophes — algues, plantes"
-      mut: purpleEndosymbiosis
-      children:
-        - uid: sessiles-a-dispersion
-          branchNote: "sessiles à dispersion"
-          children:
-            - { uid: pionniers-anemochores, tip: "Pionniers anémochores", cd: "herbe pourpre" }
-            - { uid: aeroplanctes, tip: "Aéroplanctes", cd: "flotteurs aériens", mut: hydrogenSacs }
-            - { uid: arbre-anneau, tip: "Arbre-Anneau", cd: "l'Arche — franchit la Nuit · réf. Pando", star: true, mut: crystallization }
-        - uid: refugiaux-polaires
-          branchNote: "réfugiaux polaires"
-          children:
-            - { uid: endemiques-nord-marais, tip: "Endémiques Nord — marais" }
-            - { uid: endemiques-sud-toundra, tip: "Endémiques Sud — toundra" }
-        - { uid: phyterrants, tip: "Phyterrants", cd: "flore mobile · réf. Dionée, Euglène", mut: mobileFlora }
-    - uid: zoides
-      name: "ZOÏDES"
-      ref: "animaux — Metazoa"
-      children:
-        - { uid: filtreurs, tip: "Filtreurs", cd: "Métazoïdes · réf. éponge" }
-        - uid: eumetazoides
-          name: "EUMÉTAZOÏDES"
-          ref: "cnidaire, ver…"
-          mut: trueTissues
-          children:
-            - uid: radies
-              name: "RADIÉS"
-              ref: "méduse, hydre"
-              children:
-                - { uid: radies-2, tip: "Radiés", cd: "polypes & méduses" }
-                - { uid: trilateriens, tip: "Trilatériens", cd: "tri-radial · réf. Tribrachidium †", mut: triradialSymmetry }
-            - uid: vermiformes
-              name: "VERMIFORMES"
-              ref: "céphalisation : un AVANT nerveux + taches photosensibles (polarité A-P)"
-              mut: cephalization
-              children:
-                - { uid: plats, tip: "Plats", cd: "vers plats : un avant + cerveau, mais intestin aveugle · réf. planaire" }
-                - uid: enteriens
-                  name: "ENTÉRIENS"
-                  ref: "intestin traversant : bouche → broyage → absorption → anus ; alimentation continue et efficace"
-                  mut: throughGut
-                  children:
-                    - { uid: les-vers, tip: "les Vers", cd: "fouisseurs / brouteurs à tube digestif traversant (sens unique)" }
-                    - uid: bilateriens
-                      name: "BILATÉRIENS"
-                      ref: "symétrie L/R (gauche-droite, appendices pairs)"
-                      mut: bilateralSymmetry
-                      children:
-                        - { uid: vers-ronds, tip: "Vers ronds", cd: "tube digestif mais SANS circulation · réf. nématode" }
-                        - uid: hemoferriques
-                          name: "HÉMOFERRIQUES"
-                          ref: "sang ferrique : cœur + vaisseaux, pigment respiratoire au fer → métabolisme et taille accrus ; fournit le fer routé par le Sidérotropisme"
-                          mut: ferricCirculation
-                          children:
-                            - uid: exoferres
-                              name: "EXOFERRES"
-                              ref: "fer centrifuge → cortex/cuticule (cuirasse, coquille)"
-                              mut: centrifugalSiderotropism
-                              children:
-                                - { uid: non-segmentes, tip: "Non-segmentés", cd: "pied musculeux · réf. mollusque" }
-                                - uid: segmentes
-                                  name: "SEGMENTÉS"
-                                  ref: "segments répétés"
-                                  mut: metamerism
-                                  children:
-                                    - { uid: homonomes, tip: "Homonomes", cd: "mille-pattes · réf. Arthropleura †" }
-                                    - { uid: arthropodes, tip: "ARTHROPODES", cd: "arthropodes tagmatisés, à mue · réf. trilobite †, insecte", mut: moltingExoskeleton }
-                            - uid: endoferres
-                              name: "ENDOFERRES"
-                              ref: "fer centripète → axe interne (corde dorsale ferrique)"
-                              mut: centripetalSiderotropism
-                              children:
-                                - { uid: siderocordes, tip: "Sidérocordés", cd: "cordé mou basal : corde ferrique, fouisseur / nageur lent, sans queue propulsive · réf. amphioxus" }
-                                - uid: caudes
-                                  name: "CAUDÉS"
-                                  ref: "rame caudale post-anale → nage agile en eau (prérequis de l'endosquelette)"
-                                  mut: tail
-                                  children:
-                                    - { uid: couteaux-ferriques, tip: "Couteaux ferriques", cd: "nageur souple électrique à longue queue ondulante, sans squelette · réf. poisson-couteau électrique" }
-                                    - uid: endosquelette
-                                      name: "ENDOSQUELETTE"
-                                      ref: "petit nageur ondulant : vertèbres ferro-cartilagineuses + tête/crâne"
-                                      mut: axialSkeleton
-                                      children:
-                                        - { uid: agnathes, tip: "Agnathes", cd: "sans mâchoire, anguilliformes · réf. lamproie, myxine" }
-                                        - uid: hexapinnes
-                                          name: "HEXAPINNÉS"
-                                          ref: "3 paires de nageoires paires (= futurs membres)"
-                                          mut: threeFinPairs
-                                          children:
-                                            - { uid: cuirasses-sans-machoire, tip: "Cuirassés sans mâchoire", cd: "à nageoires mais agnathes · réf. ostracodermes †" }
-                                            - uid: gnathostomes
-                                              name: "Gnathostomes"
-                                              ref: "mâchoires + dents → préhension et mastication : prédation active"
-                                              mut: jaws
-                                              children:
-                                                - { uid: machus, tip: "Mâchus", cd: "prédateurs aquatiques à squelette cartilagineux · réf. requins" }
-                                                - uid: sarcopterygiens
-                                                  name: "SARCOPTÉRYGIENS"
-                                                  ref: "nageoires charnues / lobées → reptation des hauts-fonds"
-                                                  mut: fleshyFins
-                                                  children:
-                                                    - { uid: lobes-aquatiques, tip: "Lobés aquatiques", cd: "lobés restés en eau · réf. cœlacanthe, dipneuste" }
-                                                    - uid: membres
-                                                      name: "MEMBRÉS"
-                                                      ref: "membres porteurs : nageoires charnues → pattes ; tétrapode-souche encore aquatique · réf. Ichthyostega †"
-                                                      mut: weightBearingLimbs
-                                                      children:
-                                                        - { uid: tetrapodes-aquatiques, tip: "Tétrapodes aquatiques", cd: "branchies conservées, restés en eau · réf. Acanthostega †" }
-                                                        - uid: osteides
-                                                          name: "OSTÉIDES"
-                                                          ref: "os vrai porteur : la gravité hors de l'eau impose un squelette ossifié (les aquatiques restent ferro-cartilagineux)"
-                                                          mut: ossification
-                                                          children:
-                                                            - { uid: rampants-des-hauts-fonds, tip: "Rampants des hauts-fonds", cd: "os porteur mais branchies : rampent dans les vasières · réf. tétrapodes basaux †" }
-                                                            - uid: amphibiens
-                                                              name: "AMPHIBIENS"
-                                                              ref: "poumons + peau respirante ; double vie"
-                                                              mut: lungs
-                                                              children:
-                                                                - uid: muants
-                                                                  name: "MUANTS"
-                                                                  ref: "néoténie : vivent & se reproduisent comme des poissons"
-                                                                  mut: neoteny
-                                                                  children:
-                                                                    - { uid: sedentaires, tip: "Sédentaires", cd: "néoténiques permanents, ne métamorphosent jamais · réf. axolotl" }
-                                                                    - uid: migrateurs
-                                                                      name: "MIGRATEURS"
-                                                                      ref: "métamorphose migratoire : au seuil thermique, pattes + sortie d'eau → migration vers de nouvelles zones humides"
-                                                                      mut: migratoryMetamorphosis
-                                                                      children:
-                                                                        - { uid: levant, tip: "Levant", cd: "métamorphose & migre quand trop chaud & sec", mut: levantThreshold }
-                                                                        - { uid: couchant, tip: "Couchant", cd: "métamorphose & migre quand froid & humide", mut: couchantThreshold }
-                                                                - uid: annulus
-                                                                  name: "ANNULUS"
-                                                                  ref: "œuf amniote clos → reproduction hors de l'eau ; conquérants de l'anneau du terminateur"
-                                                                  mut: amnioticEgg
-                                                                  children:
-                                                                    - uid: aveugles
-                                                                      name: "AVEUGLES"
-                                                                      ref: "hexapodes aveugles (6 membres, électroception), antérieurs à la vision · prédateurs"
-                                                                      children:
-                                                                        - { uid: draconides, tip: "Draconides", cd: "aveugles ailés (paire dorsale → ailes) : « dragons » prédateurs", mut: dorsalWings }
-                                                                        - { uid: terrestres-aveugles, tip: "Terrestres aveugles", cd: "restent au sol ; radiation souterraine à venir" }
-                                                                    - uid: visuels
-                                                                      name: "VISUELS"
-                                                                      ref: "œil vrai (formation d'image) : upgrade des taches photosensibles ; exploite la lumière du terminateur"
-                                                                      mut: vision
-                                                                      children:
-                                                                        - uid: sauropsides
-                                                                          name: "SAUROPSIDES"
-                                                                          ref: "écailles · ectothermes héliothermes · 6 membres conservés"
-                                                                          mut: ectothermy
-                                                                          children:
-                                                                            - uid: hexapodes-terrestres
-                                                                              name: "Hexapodes terrestres"
-                                                                              ref: "0 paire d'ailes : « crocodiles à 6 pattes »"
-                                                                              children:
-                                                                                - { uid: carapaconnes, tip: "Carapaçonnés", cd: "armure dermique chitino-ferrique (convergente) · réf. tortue, ankylosaure †", mut: chitinoFerricCarapace }
-                                                                                - { uid: coureurs-de-troupeaux, tip: "Coureurs de troupeaux", cd: "cursoriaux · réf. dinosaures grégaires, sauropodes †", mut: cursoriality }
-                                                                            - uid: ailes
-                                                                              name: "Ailés"
-                                                                              ref: "≥ 1 paire de membres → ailes"
-                                                                              mut: firstWingPair
-                                                                              children:
-                                                                                - { uid: lezards-ailes, tip: "Lézards ailés", cd: "1 paire d'ailes : 4 pattes + 2 ailes" }
-                                                                                - { uid: oiseaux, tip: "Oiseaux", cd: "2 paires d'ailes : 2 pattes + 4 ailes ; endothermie convergente", mut: secondWingPair }
-                                                                        - uid: synapsides
-                                                                          name: "SYNAPSIDES"
-                                                                          ref: "endothermes (sang chaud) → lignée mammifère"
-                                                                          mut: endothermy
-                                                                          children:
-                                                                            - { uid: pondeurs-temperes, tip: "Pondeurs tempérés", cd: "monotrème-grade : ovipares électro-sensibles · réf. ornithorynque, échidné" }
-                                                                            - uid: fourres
-                                                                              name: "Fourrés"
-                                                                              ref: "pôle Sud : fourrure dense (isolation)"
-                                                                              mut: fur
-                                                                              children:
-                                                                                - { uid: pondeurs-australs, tip: "Pondeurs australs", cd: "poilus, ovipares, SANS lait : grade pré-lactation du Sud froid" }
-                                                                                - uid: mammiferes
-                                                                                  name: "MAMMIFÈRES"
-                                                                                  ref: "lactation : nourrit le petit au lait — apparaît AVANT la viviparité (grade monotrème : œuf + lait)"
-                                                                                  mut: lactation
-                                                                                  children:
-                                                                                    - { uid: pondeurs-laitiers, tip: "Pondeurs laitiers", cd: "poilus à 6 pattes : pondent ET allaitent (œufs + lait — omelettes & fromage) ; bétail nourricier austral · réf. ornithorynque, échidné" }
-                                                                                    - uid: vivipares
-                                                                                      name: "Vivipares"
-                                                                                      ref: "gestation interne → re-colonisent le Nord (mammifères vrais)"
-                                                                                      mut: viviparity
-                                                                                      children:
-                                                                                        - { uid: betail, tip: "Bétail", cd: "6 membres + poches de graisse : gros herbivores lents, troupeaux ; élevés au Sud", mut: fatPouches }
-                                                                                        - uid: quadrupedes
-                                                                                          name: "Quadrupèdes"
-                                                                                          ref: "6→4 membres ; prédateurs de meute — socle de la lignée sapiente"
-                                                                                          mut: quadrupedalism
-                                                                                          children:
-                                                                                            - { uid: predateurs-de-meute, tip: "Prédateurs de meute", cd: "carnassiers grégaires basaux · réf. loups, raptors de meute" }
-                                                                                            - uid: stereopes
-                                                                                              name: "STÉRÉOPES"
-                                                                                              ref: "yeux frontaux : vision binoculaire, relief (chasse de précision)"
-                                                                                              mut: frontalVision
-                                                                                              children:
-                                                                                                - { uid: guetteurs, tip: "Guetteurs", cd: "prédateurs à l'affût, vision stéréo · réf. félins, chouettes" }
-                                                                                                - uid: versipedes
-                                                                                                  name: "VERSIPÈDES"
-                                                                                                  ref: "pied modulable (kératine / posture / sole) → quitte le Sud, reconquiert tous les biomes"
-                                                                                                  mut: footPlasticity
-                                                                                                  children:
-                                                                                                    - { uid: coureurs-adaptables, tip: "Coureurs adaptables", cd: "généralistes répandus, pied passe-partout" }
-                                                                                                    - uid: sideroceres
-                                                                                                      name: "SIDÉROCÈRES"
-                                                                                                      ref: "fourrure → épines EM réceptrices : électrosensibilité polydirectionnelle ; dans les jungles"
-                                                                                                      mut: externalEmReceptor
-                                                                                                      children:
-                                                                                                        - { uid: epineux-sylvestres, tip: "Épineux sylvestres", cd: "hérissés d'épines EM, électrosensibles, petit cerveau" }
-                                                                                                        - uid: noopathes
-                                                                                                          name: "NOOPATHES"
-                                                                                                          ref: "organe émissif actif → télépathie (émission + réception) ; de là, deux voies : le COLLECTIF (Syntones) ou le gros cerveau INDIVIDUEL (Cérébrés)"
-                                                                                                          mut: emEmitter
-                                                                                                          children:
-                                                                                                            - uid: syntones
-                                                                                                              name: "Syntones"
-                                                                                                              ref: "quadrupèdes télépathes à esprits synchronisés : autonomie individuelle, mais actes et désirs calqués sur les pairs (contagion sociale intégrée) — l'intelligence est COLLECTIVE, pas individuellement encéphalisée ; lignées dressables (auxiliaires de chasse)"
-                                                                                                              mut: packMind
-                                                                                                              children:
-                                                                                                                - { uid: meute-chasseresse, tip: "Meute-chasseresse", cd: "meute télépathe des hautes herbes du Couchant, gabarit de hyène, épines EM le long du dos (réflexe collectif) ; rabat et encercle d'un même élan, en silence ; pool mental commun, indissimulable, esquive accrue tant qu'elle est groupée — vulnérable une fois isolée · réf. loup, lycaon, hyène" }
-                                                                                                                - uid: lutriens
-                                                                                                                  name: "Lutriens"
-                                                                                                                  ref: "meutes à fourrure huileuse imperméable : prédateurs semi-aquatiques des lacs et marais du Nord pluvieux"
-                                                                                                                  mut: oilyFur
-                                                                                                                  children:
-                                                                                                                    - { uid: meute-boreale, tip: "Meute boréale", cd: "fourrure huileuse étanche, semi-aquatique : vit au bord des lacs et marais du Nord tempéré, chasse sur terre — écho convergent des Pluies · réf. loutre, vison" }
-                                                                                                                    - { uid: pecheurs, tip: "Pêcheurs", cd: "pleinement aquatique : membres en rames, longs crocs harponneurs pour saisir le poisson ; rabat les bancs en meute · réf. loutre de mer, phoque", mut: harpoonFangs }
-                                                                                                                - uid: sideronyches
-                                                                                                                  name: "Sidéronyches"
-                                                                                                                  ref: "prédateurs dont les griffes antérieures ferro-renforcées sont l'arme principale : on lacère au lieu de mordre"
-                                                                                                                  mut: clawHunting
-                                                                                                                  children:
-                                                                                                                    - { uid: lacerateurs, tip: "Lacérateurs", cd: "tueurs à griffes des steppes : éventrent d'un coup de patte, meute synchronisée · réf. glouton, ursidés" }
-                                                                                                                    - uid: talpides
-                                                                                                                      name: "Talpidés"
-                                                                                                                      ref: "griffes élargies pour creuser : meutes terricoles, galeries communes (abri, garderie, chaleur)"
-                                                                                                                      mut: diggingClaws
-                                                                                                                      children:
-                                                                                                                        - { uid: meute-fouisseuse, tip: "Meute fouisseuse", cd: "meute des steppes vivant en galeries communes : abris partagés, petits gardés au terrier · réf. suricate, lycaon" }
-                                                                                                                        - { uid: meute-australe, tip: "Meute australe", cd: "meute fouisseuse du pôle Sud froid : lard isolant + pelage dense et pâle, chaleur du terrier ; chasse en surface, s'abrite sous terre · réf. loup arctique, blaireau", mut: polarCoat }
-                                                                                                            - uid: cerebres
-                                                                                                              name: "CÉRÉBRÉS"
-                                                                                                              ref: "gros cerveau individuel : exploite la richesse télépathique → ruse, puis (à terme) sapience — la voie individuelle, par contraste avec le collectif des Syntones"
-                                                                                                              mut: encephalization
-                                                                                                              children:
-                                                                                                                - uid: ruses
-                                                                                                                  name: "Rusés"
-                                                                                                                  ref: "petits opportunistes télépathes à cerveau individuel (≥ taille chat) ; survivent en échappant aux grands prédateurs (camouflage, fuite, alerte) · réf. corvidés, renard, ratons"
-                                                                                                                  children:
-                                                                                                                    - { uid: larrons, tip: "Larrons", cd: "le Rusé générique : petit opportuniste télépathe, malin et chapardeur, mains adroites, omnivore · réf. raton-laveur, corvidé" }
-                                                                                                                    - uid: tapinois
-                                                                                                                      name: "Tapinois"
-                                                                                                                      ref: "restent au sol : misent sur le camouflage visuel (et le silence EM) pour échapper aux traqueurs"
-                                                                                                                      mut: crypticCoat
-                                                                                                                      children:
-                                                                                                                        - { uid: maraudeurs, tip: "Maraudeurs", cd: "fureteurs omnivores au pelage disruptif lie-de-vin ; immobiles, ils se fondent dans la flore · réf. cabiai, agouti" }
-                                                                                                                        - { uid: fureteurs, tip: "Fureteurs", cd: "museau-sonde, dents fines : déterrent et percent les arthropodes Exoferres · réf. tenrec, tamandua", mut: insectivory }
-                                                                                                                    - uid: ecorceurs
-                                                                                                                      name: "Écorceurs"
-                                                                                                                      ref: "grimpeurs : se réfugient dans les grands arbres (N, L, C ; conifères au S), hors d'atteinte des prédateurs au sol"
-                                                                                                                      mut: climbingClaws
-                                                                                                                      children:
-                                                                                                                        - { uid: lestes, tip: "Lestes", cd: "grimpeur généraliste, agile sur troncs et branches · réf. écureuil, martre" }
-                                                                                                                        - uid: cueilleurs
-                                                                                                                          name: "Cueilleurs"
-                                                                                                                          ref: "frugivores de la canopée : fruits, graines et sève rétinienne des Pourpres"
-                                                                                                                          mut: frugivory
-                                                                                                                          children:
-                                                                                                                            - { uid: pendards, tip: "Pendards", cd: "se suspendent par une queue préhensile (5ᵉ membre) pour cueillir · réf. singe-araignée, kinkajou", mut: prehensileTail }
-                                                                                                                            - uid: voltigeurs
-                                                                                                                              name: "Voltigeurs"
-                                                                                                                              ref: "planeurs de canopée : membrane antérieurs↔flancs — convergence avec les Planeurs des Bondisseurs"
-                                                                                                                              mut: patagium
-                                                                                                                              children:
-                                                                                                                                - { uid: voiliers, tip: "Voiliers", cd: "planeur diurne d'arbre en arbre, fuite vers le bas · réf. polatouche, colugo" }
-                                                                                                                                - { uid: froleurs, tip: "Frôleurs", cd: "planeur nocturne à longues vibrisses : navigue branches et cavités dans le noir · réf. polatouche, loris", mut: whiskers }
-                                                                                                                - uid: bipedes
-                                                                                                                  name: "BIPÈDES"
-                                                                                                                  ref: "locomotion sur les membres postérieurs : antérieurs libérés ; dos encore incliné"
-                                                                                                                  mut: bipedalism
-                                                                                                                  children:
-                                                                                                                    - uid: bondisseurs
-                                                                                                                      name: "Bondisseurs"
-                                                                                                                      ref: "bipèdes à détente : proies sauteuses, dos horizontal, queue-balancier, fourrure, troupeau télépathe — fuite, jamais combat"
-                                                                                                                      mut: springLeap
-                                                                                                                      children:
-                                                                                                                        - { uid: coureurs, tip: "Coureurs", cd: "proie-coureuse au dos horizontal, longue queue-balancier, membres postérieurs à ressort (bonds explosifs + sprint) ; fourrure, troupeau télépathe ; survit par l'alerte EM et la fuite, jamais le combat · réf. ornithomimes, springbok" }
-                                                                                                                        - { uid: planeurs, tip: "Planeurs", cd: "membrane antérieurs↔flancs : le bond devient vol plané de canopée ; perchent haut, plongent pour fuir, malhabiles au sol · réf. colugo, Draco", mut: patagium }
-                                                                                                                        - { uid: detaleurs, tip: "Détaleurs", cd: "petite proie des fourrés : poche ventrale marsupiale où s'accroche la portée, emportée d'un bond dans la fuite — ne s'arrête jamais ; grands yeux · réf. wallaby, opossum", mut: pouch }
-                                                                                                                    - uid: orthostates
-                                                                                                                      name: "ORTHOSTATES"
-                                                                                                                      ref: "le dos se dresse mais la queue reste balancier (verticalisation incomplète) ; membres antérieurs libérés → mains (Aeonis sapiens) ou serpes (Faucheurs)"
-                                                                                                                      mut: uprighting
-                                                                                                                      children:
-                                                                                                                        - { uid: faucheurs, tip: "Faucheurs", cd: "prédateurs semi-dressés (queue-balancier), membres inférieurs puissants ; bras terminés par deux longues serpes (ongles mutés) ; fourrure dense, léger museau (visage presque humanoïde, troublant), organe EM en longues aiguilles (≈ Cimes) ; capacité : cri neural sidérant — l'anti-Aeonis sapiens", mut: sickleClaws }
-                                                                                                                        - uid: aeonis-sapiens
-                                                                                                                          name: "Aeonis sapiens"
-                                                                                                                          ref: "verticalisation complète (perte de la queue) + mains préhensiles : l'outil et la culture ; les Peuples — une espèce, 4 races interfécondes"
-                                                                                                                          mut: handsAndFullUprighting
-                                                                                                                          children:
-                                                                                                                            - { uid: cimes, tip: "Cimes", cd: "jungle : re-grimpeurs (mains + sole agrippante), épines EM polydirectionnelles, peau pâle" }
-                                                                                                                            - { uid: vents, tip: "Vents", cd: "steppes : sabots ungulés (cheville surélevée), longues cornes directionnelles, oreilles pointues" }
-                                                                                                                            - { uid: neiges, tip: "Neiges", cd: "pôle Sud : larges sabots, petite taille + pilosité, cornes luminescentes, peau sombre" }
-                                                                                                                            - { uid: pluies, tip: "Pluies", cd: "pôle Nord : griffes palmées (nage), longs membres, couronne de cornes discrète, oreilles-capuchon" }
+nodes:
+  - uid: zoides
+    parent: root
+    name: "ZOÏDES"
+    ref: "animaux : cellule ancestrale restée mobile et hétérotrophe (plancton nageur, phagocyte, électrosensible) — Metazoa"
+  - uid: filtreurs
+    parent: zoides
+    tip: "Filtreurs"
+    cd: "pluricellulaires filtreurs, sans tissus vrais ni nerfs · réf. éponge"
+  - uid: eumetazoides
+    parent: zoides
+    name: "EUMÉTAZOÏDES"
+    ref: "vrais tissus (gastrula) : cavité digestive + réseau nerveux diffus, poche à deux feuillets · cnidaire, ver"
+    mut: trueTissues
+  - uid: radies
+    parent: eumetazoides
+    name: "RADIÉS"
+    ref: "symétrie radiale, plan en sac : polypes & méduses à tentacules urticants, nerf diffus (sans cerveau)"
+  - uid: radies-2
+    parent: radies
+    tip: "Radiés"
+    cd: "polypes fixés & méduses dérivantes, tentacules urticants autour d'une bouche unique"
+  - uid: trilateriens
+    parent: radies
+    tip: "Trilatériens"
+    cd: "disque tri-radial sans avant, motilité omnidirectionnelle · réf. Tribrachidium †"
+    mut: triradialSymmetry
+  - uid: vermiformes
+    parent: eumetazoides
+    name: "VERMIFORMES"
+    ref: "céphalisation : un AVANT nerveux + taches photosensibles (polarité A-P) → premier vrai Corps, ver mou orienté"
+    mut: cephalization
+  - uid: plats
+    parent: vermiformes
+    tip: "Plats"
+    cd: "vers plats : un avant + cerveau, mais intestin aveugle · réf. planaire"
+  - uid: enteriens
+    parent: vermiformes
+    name: "ENTÉRIENS"
+    ref: "intestin traversant : bouche → broyage → absorption → anus ; alimentation continue et efficace"
+    mut: throughGut
+  - uid: les-vers
+    parent: enteriens
+    tip: "les Vers"
+    cd: "fouisseurs / brouteurs à tube digestif traversant (sens unique)"
+  - uid: bilateriens
+    parent: enteriens
+    name: "BILATÉRIENS"
+    ref: "symétrie L/R (appendices pairs), déplacement dirigé → la Tête devient une partie distincte"
+    mut: bilateralSymmetry
+  - uid: vers-ronds
+    parent: bilateriens
+    tip: "Vers ronds"
+    cd: "tube digestif mais SANS circulation : petit, vif, sans endurance · réf. nématode"
+  - uid: hemoferriques
+    parent: bilateriens
+    name: "HÉMOFERRIQUES"
+    ref: "sang ferrique (cœur + vaisseaux, pigment au fer) → métabolisme et taille accrus, premier endurant (ver charnu bordeaux) ; fournit le fer routé par le Sidérotropisme"
+    mut: ferricCirculation
+  - uid: exoferres
+    parent: hemoferriques
+    name: "EXOFERRES"
+    ref: "fer centrifuge → cortex/cuticule (cuirasse, coquille), écranté EM ; substrat arthropode/mollusque : ver à tête + cœur, aquatique, sans membres ni armes"
+    mut: centrifugalSiderotropism
+  - uid: non-segmentes
+    parent: exoferres
+    tip: "Non-segmentés"
+    cd: "pied musculeux + coquille naissante · réf. mollusque"
+  - uid: segmentes
+    parent: exoferres
+    name: "SEGMENTÉS"
+    ref: "corps annelé segmenté (métamérie) : ver marin à segments répétés, modulable et allongé"
+    mut: metamerism
+  - uid: annelides
+    parent: segmentes
+    tip: "Annélides"
+    cd: "ver annelé marin, segments uniformes, nageur/fouisseur sans appendices rigides · réf. polychète"
+  - uid: pterygeres
+    parent: segmentes
+    name: "PTÉRYGÈRES"
+    ref: "ailerons rigides raidis au fer, une paire par segment → nageur rapide et manœuvrant en bancs ; ces pièces rigides ne grandissent pas avec le corps"
+    mut: rigidFinlets
+  - uid: nageurs-anneles
+    parent: pterygeres
+    tip: "Nageurs annelés"
+    cd: "banc pélagique à rames rigides ferriques : ondule et vire vite, mais doit muer pour grandir"
+  - uid: ecdysiens
+    parent: pterygeres
+    name: "ECDYSIENS"
+    ref: "la mue : abandonne et régénère ses pièces rigides pour croître ; mou et vulnérable juste après la mue"
+    mut: molting
+  - uid: mueurs
+    parent: ecdysiens
+    tip: "Mueurs"
+    cd: "blindé de plaques rigides entre deux mues ; mou et fuyant juste après avoir mué · réf. arthropode en exuviation"
+  - uid: mandibules
+    parent: ecdysiens
+    name: "MANDIBULÉS"
+    ref: "des mandibules durcies sur la tête → préhension et broyage : premier prédateur actif de la lignée"
+    mut: mandibles
+  - uid: predateurs-mandibules
+    parent: mandibules
+    tip: "Prédateurs mandibulés"
+    cd: "chasseur marin à rames rigides et mandibules broyeuses : saisit et découpe ses proies · réf. euryptéride, scorpion de mer"
+  - uid: benthiques
+    parent: mandibules
+    name: "BENTHIQUES"
+    ref: "bascule benthique : quitte le banc pélagique pour le limon, s'y enfouit et embusque — le prédateur qui pousse les Trachéés à muer à l'abri"
+    mut: benthicShift
+  - uid: ravisseurs
+    parent: benthiques
+    name: "RAVISSEURS"
+    ref: "ailerons antérieurs → bras préhensiles : happe la proie et la retient (Agrippement → Entravé), de quoi la traîner au fond"
+    mut: raptorialLimbs
+  - uid: cuirasses
+    parent: ravisseurs
+    name: "CUIRASSÉS"
+    ref: "grand embusqueur cuirassé de fer : happe la proie de son corps musculeux et l'entraîne au fond pour la noyer (⇒ Happe-fond) ; taille grande"
+    mut: sclerotizedPlates
+  - uid: tracheens
+    parent: mandibules
+    name: "TRACHÉÉS"
+    ref: "trachées : respire l'air ; se hisse sur la rive pour muer à l'abri des prédateurs aquatiques ; encore marine (N aquatique), ne se meut pas à terre"
+    mut: airBreathing
+  - uid: echoues
+    parent: tracheens
+    tip: "Échoués"
+    cd: "s'échoue sur la rive pour muer à l'abri des prédateurs aquatiques, sinon pleinement marin (N aquatique)"
+  - uid: reptants
+    parent: tracheens
+    name: "REPTANTS"
+    ref: "musculature terrestre → rampe hors de l'eau (reptation) : AMPHIBIE ; étreinte broyeuse (Constriction) ; reste au Nord, pond dans les marais"
+    mut: crawlingMuscles
+  - uid: etrangleurs
+    parent: reptants
+    tip: "Étrangleurs"
+    cd: "garrote son corps affûté autour de la proie : l'étreinte saigne au lieu d'épuiser"
+  - uid: nidiferes
+    parent: reptants
+    name: "NIDIFÈRES"
+    ref: "nid de mue : couve ses œufs dans la peau muée (poches amniotiques) → ponte affranchie de l'eau ; essaime le long du terminateur (N→L→C)"
+    mut: broodMolt
+  - uid: nicheurs
+    parent: nidiferes
+    tip: "Nicheurs"
+    cd: "essaime le long du terminateur : pond hors de l'eau dans des nids de peau muée ; garde l'étreinte broyeuse · premier hors du Nord"
+  - uid: lameferes
+    parent: nidiferes
+    name: "LAMÉFÈRES"
+    ref: "prédateur amphibie apode des marais du Nord : corps ondulant à scutes ferriques, étreinte broyeuse ; pond dans l'eau · le pionnier terrestre"
+    mut: lateralBlades
+  - uid: endoferres
+    parent: hemoferriques
+    name: "ENDOFERRES"
+    ref: "fer centripète → axe interne (corde dorsale ferrique = antenne EM) ; substrat vertébré : ver à tête + cœur, aquatique"
+    mut: centripetalSiderotropism
+  - uid: siderocordes
+    parent: endoferres
+    tip: "Sidérocordés"
+    cd: "cordé mou basal : corde ferrique, fouisseur / nageur lent, sans queue propulsive · réf. amphioxus"
+  - uid: caudes
+    parent: endoferres
+    name: "CAUDÉS"
+    ref: "rame caudale post-anale → nage agile en eau (prérequis de l'endosquelette)"
+    mut: tail
+  - uid: couteaux-ferriques
+    parent: caudes
+    tip: "Couteaux ferriques"
+    cd: "nageur souple électrique à longue queue ondulante, sans squelette · réf. poisson-couteau électrique"
+  - uid: endosquelette
+    parent: caudes
+    name: "ENDOSQUELETTE"
+    ref: "petit nageur ondulant : vertèbres ferro-cartilagineuses + tête/crâne"
+    mut: axialSkeleton
+  - uid: agnathes
+    parent: endosquelette
+    tip: "Agnathes"
+    cd: "sans mâchoire, anguilliformes · réf. lamproie, myxine"
+  - uid: hexapinnes
+    parent: endosquelette
+    name: "HEXAPINNÉS"
+    ref: "3 paires de nageoires paires (= futurs membres)"
+    mut: threeFinPairs
+  - uid: cuirasses-sans-machoire
+    parent: hexapinnes
+    tip: "Cuirassés sans mâchoire"
+    cd: "à nageoires mais agnathes · réf. ostracodermes †"
+  - uid: gnathostomes
+    parent: hexapinnes
+    name: "Gnathostomes"
+    ref: "mâchoires + dents → préhension et mastication : prédation active"
+    mut: jaws
+  - uid: machus
+    parent: gnathostomes
+    tip: "Mâchus"
+    cd: "prédateurs aquatiques à squelette cartilagineux · réf. requins"
+  - uid: sarcopterygiens
+    parent: gnathostomes
+    name: "SARCOPTÉRYGIENS"
+    ref: "nageoires charnues / lobées → reptation des hauts-fonds"
+    mut: fleshyFins
+  - uid: lobes-aquatiques
+    parent: sarcopterygiens
+    tip: "Lobés aquatiques"
+    cd: "lobés restés en eau · réf. cœlacanthe, dipneuste"
+  - uid: membres
+    parent: sarcopterygiens
+    name: "MEMBRÉS"
+    ref: "membres porteurs : nageoires charnues → pattes ; tétrapode-souche encore aquatique · réf. Ichthyostega †"
+    mut: weightBearingLimbs
+  - uid: tetrapodes-aquatiques
+    parent: membres
+    tip: "Tétrapodes aquatiques"
+    cd: "branchies conservées, restés en eau · réf. Acanthostega †"
+  - uid: osteides
+    parent: membres
+    name: "OSTÉIDES"
+    ref: "os vrai porteur : la gravité hors de l'eau impose un squelette ossifié (les aquatiques restent ferro-cartilagineux)"
+    mut: ossification
+  - uid: rampants-des-hauts-fonds
+    parent: osteides
+    tip: "Rampants des hauts-fonds"
+    cd: "os porteur mais branchies : rampent dans les vasières · réf. tétrapodes basaux †"
+  - uid: amphibiens
+    parent: osteides
+    name: "AMPHIBIENS"
+    ref: "poumons + peau respirante ; double vie"
+    mut: lungs
+  - uid: muants
+    parent: amphibiens
+    name: "MUANTS"
+    ref: "néoténie : vivent & se reproduisent comme des poissons"
+    mut: neoteny
+  - uid: sedentaires
+    parent: muants
+    tip: "Sédentaires"
+    cd: "néoténiques permanents, ne métamorphosent jamais · réf. axolotl"
+  - uid: migrateurs
+    parent: muants
+    name: "MIGRATEURS"
+    ref: "métamorphose migratoire : au seuil thermique, pattes + sortie d'eau → migration vers de nouvelles zones humides"
+    mut: migratoryMetamorphosis
+  - uid: levant
+    parent: migrateurs
+    tip: "Levant"
+    cd: "métamorphose & migre quand trop chaud & sec"
+    mut: levantThreshold
+  - uid: couchant
+    parent: migrateurs
+    tip: "Couchant"
+    cd: "métamorphose & migre quand froid & humide"
+    mut: couchantThreshold
+  - uid: annulus
+    parent: amphibiens
+    name: "ANNULUS"
+    ref: "œuf amniote clos → reproduction hors de l'eau ; conquérants de l'anneau du terminateur"
+    mut: amnioticEgg
+  - uid: aveugles
+    parent: annulus
+    name: "AVEUGLES"
+    ref: "hexapodes aveugles (6 membres, électroception), antérieurs à la vision · prédateurs"
+  - uid: terrestres-aveugles
+    parent: aveugles
+    tip: "Terrestres aveugles"
+    cd: "restent au sol ; radiation souterraine à venir"
+  - uid: draconides
+    parent: aveugles
+    tip: "Draconides"
+    cd: "aveugles ailés (paire dorsale → ailes) : « dragons » prédateurs"
+    mut: dorsalWings
+  - uid: visuels
+    parent: annulus
+    name: "VISUELS"
+    ref: "œil vrai (formation d'image) : upgrade des taches photosensibles ; exploite la lumière du terminateur"
+    mut: vision
+  - uid: sauropsides
+    parent: visuels
+    name: "SAUROPSIDES"
+    ref: "écailles · ectothermes héliothermes · 6 membres conservés"
+    mut: ectothermy
+  - uid: hexapodes-terrestres
+    parent: sauropsides
+    name: "Hexapodes terrestres"
+    ref: "0 paire d'ailes : « crocodiles à 6 pattes »"
+  - uid: carapaconnes
+    parent: hexapodes-terrestres
+    tip: "Carapaçonnés"
+    cd: "armure dermique chitino-ferrique (convergente) · réf. tortue, ankylosaure †"
+    mut: chitinoFerricCarapace
+  - uid: coureurs-de-troupeaux
+    parent: hexapodes-terrestres
+    tip: "Coureurs de troupeaux"
+    cd: "cursoriaux · réf. dinosaures grégaires, sauropodes †"
+    mut: cursoriality
+  - uid: ailes
+    parent: sauropsides
+    name: "Ailés"
+    ref: "≥ 1 paire de membres → ailes"
+    mut: firstWingPair
+  - uid: lezards-ailes
+    parent: ailes
+    tip: "Lézards ailés"
+    cd: "1 paire d'ailes : 4 pattes + 2 ailes"
+  - uid: oiseaux
+    parent: ailes
+    tip: "Oiseaux"
+    cd: "2 paires d'ailes : 2 pattes + 4 ailes ; endothermie convergente"
+    mut: secondWingPair
+  - uid: synapsides
+    parent: visuels
+    name: "SYNAPSIDES"
+    ref: "endothermes (sang chaud) → lignée mammifère"
+    mut: endothermy
+  - uid: pondeurs-temperes
+    parent: synapsides
+    tip: "Pondeurs tempérés"
+    cd: "monotrème-grade : ovipares électro-sensibles · réf. ornithorynque, échidné"
+  - uid: fourres
+    parent: synapsides
+    name: "Fourrés"
+    ref: "pôle Sud : fourrure dense (isolation)"
+    mut: fur
+  - uid: pondeurs-australs
+    parent: fourres
+    tip: "Pondeurs australs"
+    cd: "poilus, ovipares, SANS lait : grade pré-lactation du Sud froid"
+  - uid: mammiferes
+    parent: fourres
+    name: "MAMMIFÈRES"
+    ref: "lactation : nourrit le petit au lait — apparaît AVANT la viviparité (grade monotrème : œuf + lait)"
+    mut: lactation
+  - uid: pondeurs-laitiers
+    parent: mammiferes
+    tip: "Pondeurs laitiers"
+    cd: "poilus à 6 pattes : pondent ET allaitent (œufs + lait — omelettes & fromage) ; bétail nourricier austral · réf. ornithorynque, échidné"
+  - uid: vivipares
+    parent: mammiferes
+    name: "Vivipares"
+    ref: "gestation interne → re-colonisent le Nord (mammifères vrais)"
+    mut: viviparity
+  - uid: betail
+    parent: vivipares
+    tip: "Bétail"
+    cd: "6 membres + poches de graisse : gros herbivores lents, troupeaux ; élevés au Sud"
+    mut: fatPouches
+  - uid: quadrupedes
+    parent: vivipares
+    name: "Quadrupèdes"
+    ref: "6→4 membres ; prédateurs de meute — socle de la lignée sapiente"
+    mut: quadrupedalism
+  - uid: predateurs-de-meute
+    parent: quadrupedes
+    tip: "Prédateurs de meute"
+    cd: "carnassiers grégaires basaux · réf. loups, raptors de meute"
+  - uid: stereopes
+    parent: quadrupedes
+    name: "STÉRÉOPES"
+    ref: "yeux frontaux : vision binoculaire, relief (chasse de précision)"
+    mut: frontalVision
+  - uid: guetteurs
+    parent: stereopes
+    tip: "Guetteurs"
+    cd: "prédateurs à l'affût, vision stéréo · réf. félins, chouettes"
+  - uid: versipedes
+    parent: stereopes
+    name: "VERSIPÈDES"
+    ref: "pied modulable (kératine / posture / sole) → quitte le Sud, reconquiert tous les biomes"
+    mut: footPlasticity
+  - uid: coureurs-adaptables
+    parent: versipedes
+    tip: "Coureurs adaptables"
+    cd: "généralistes répandus, pied passe-partout"
+  - uid: sideroceres
+    parent: versipedes
+    name: "SIDÉROCÈRES"
+    ref: "fourrure → épines EM réceptrices : électrosensibilité polydirectionnelle ; dans les jungles"
+    mut: externalEmReceptor
+  - uid: epineux-sylvestres
+    parent: sideroceres
+    tip: "Épineux sylvestres"
+    cd: "hérissés d'épines EM, électrosensibles, petit cerveau"
+  - uid: noopathes
+    parent: sideroceres
+    name: "NOOPATHES"
+    ref: "organe émissif actif → télépathie (émission + réception) ; de là, deux voies : le COLLECTIF (Syntones) ou le gros cerveau INDIVIDUEL (Cérébrés)"
+    mut: emEmitter
+  - uid: syntones
+    parent: noopathes
+    name: "Syntones"
+    ref: "quadrupèdes télépathes à esprits synchronisés : autonomie individuelle, mais actes et désirs calqués sur les pairs (contagion sociale intégrée) — l'intelligence est COLLECTIVE, pas individuellement encéphalisée ; lignées dressables (auxiliaires de chasse)"
+    mut: packMind
+  - uid: meute-chasseresse
+    parent: syntones
+    tip: "Meute-chasseresse"
+    cd: "meute télépathe des hautes herbes du Couchant, gabarit de hyène, épines EM le long du dos (réflexe collectif) ; rabat et encercle d'un même élan, en silence ; pool mental commun, indissimulable, esquive accrue tant qu'elle est groupée — vulnérable une fois isolée · réf. loup, lycaon, hyène"
+  - uid: lutriens
+    parent: syntones
+    name: "Lutriens"
+    ref: "meutes à fourrure huileuse imperméable : prédateurs semi-aquatiques des lacs et marais du Nord pluvieux"
+    mut: oilyFur
+  - uid: meute-boreale
+    parent: lutriens
+    tip: "Meute boréale"
+    cd: "fourrure huileuse étanche, semi-aquatique : vit au bord des lacs et marais du Nord tempéré, chasse sur terre — écho convergent des Pluies · réf. loutre, vison"
+  - uid: pecheurs
+    parent: lutriens
+    tip: "Pêcheurs"
+    cd: "pleinement aquatique : membres en rames, longs crocs harponneurs pour saisir le poisson ; rabat les bancs en meute · réf. loutre de mer, phoque"
+    mut: harpoonFangs
+  - uid: sideronyches
+    parent: syntones
+    name: "Sidéronyches"
+    ref: "prédateurs dont les griffes antérieures ferro-renforcées sont l'arme principale : on lacère au lieu de mordre"
+    mut: clawHunting
+  - uid: lacerateurs
+    parent: sideronyches
+    tip: "Lacérateurs"
+    cd: "tueurs à griffes des steppes : éventrent d'un coup de patte, meute synchronisée · réf. glouton, ursidés"
+  - uid: talpides
+    parent: sideronyches
+    name: "Talpidés"
+    ref: "griffes élargies pour creuser : meutes terricoles, galeries communes (abri, garderie, chaleur)"
+    mut: diggingClaws
+  - uid: meute-fouisseuse
+    parent: talpides
+    tip: "Meute fouisseuse"
+    cd: "meute des steppes vivant en galeries communes : abris partagés, petits gardés au terrier · réf. suricate, lycaon"
+  - uid: meute-australe
+    parent: talpides
+    tip: "Meute australe"
+    cd: "meute fouisseuse du pôle Sud froid : lard isolant + pelage dense et pâle, chaleur du terrier ; chasse en surface, s'abrite sous terre · réf. loup arctique, blaireau"
+    mut: polarCoat
+  - uid: cerebres
+    parent: noopathes
+    name: "CÉRÉBRÉS"
+    ref: "gros cerveau individuel : exploite la richesse télépathique → ruse, puis (à terme) sapience — la voie individuelle, par contraste avec le collectif des Syntones"
+    mut: encephalization
+  - uid: ruses
+    parent: cerebres
+    name: "Rusés"
+    ref: "petits opportunistes télépathes à cerveau individuel (≥ taille chat) ; survivent en échappant aux grands prédateurs (camouflage, fuite, alerte) · réf. corvidés, renard, ratons"
+  - uid: larrons
+    parent: ruses
+    tip: "Larrons"
+    cd: "le Rusé générique : petit opportuniste télépathe, malin et chapardeur, mains adroites, omnivore · réf. raton-laveur, corvidé"
+  - uid: tapinois
+    parent: ruses
+    name: "Tapinois"
+    ref: "restent au sol : misent sur le camouflage visuel (et le silence EM) pour échapper aux traqueurs"
+    mut: crypticCoat
+  - uid: maraudeurs
+    parent: tapinois
+    tip: "Maraudeurs"
+    cd: "fureteurs omnivores au pelage disruptif lie-de-vin ; immobiles, ils se fondent dans la flore · réf. cabiai, agouti"
+  - uid: fureteurs
+    parent: tapinois
+    tip: "Fureteurs"
+    cd: "museau-sonde, dents fines : déterrent et percent les arthropodes Exoferres · réf. tenrec, tamandua"
+    mut: insectivory
+  - uid: ecorceurs
+    parent: ruses
+    name: "Écorceurs"
+    ref: "grimpeurs : se réfugient dans les grands arbres (N, L, C ; conifères au S), hors d'atteinte des prédateurs au sol"
+    mut: climbingClaws
+  - uid: lestes
+    parent: ecorceurs
+    tip: "Lestes"
+    cd: "grimpeur généraliste, agile sur troncs et branches · réf. écureuil, martre"
+  - uid: cueilleurs
+    parent: ecorceurs
+    name: "Cueilleurs"
+    ref: "frugivores de la canopée : fruits, graines et sève rétinienne des Pourpres"
+    mut: frugivory
+  - uid: pendards
+    parent: cueilleurs
+    tip: "Pendards"
+    cd: "se suspendent par une queue préhensile (5ᵉ membre) pour cueillir · réf. singe-araignée, kinkajou"
+    mut: prehensileTail
+  - uid: voltigeurs
+    parent: cueilleurs
+    name: "Voltigeurs"
+    ref: "planeurs de canopée : membrane antérieurs↔flancs — convergence avec les Planeurs des Bondisseurs"
+    mut: patagium
+  - uid: voiliers
+    parent: voltigeurs
+    tip: "Voiliers"
+    cd: "planeur diurne d'arbre en arbre, fuite vers le bas · réf. polatouche, colugo"
+  - uid: froleurs
+    parent: voltigeurs
+    tip: "Frôleurs"
+    cd: "planeur nocturne à longues vibrisses : navigue branches et cavités dans le noir · réf. polatouche, loris"
+    mut: whiskers
+  - uid: bipedes
+    parent: cerebres
+    name: "BIPÈDES"
+    ref: "locomotion sur les membres postérieurs : antérieurs libérés ; dos encore incliné"
+    mut: bipedalism
+  - uid: bondisseurs
+    parent: bipedes
+    name: "Bondisseurs"
+    ref: "bipèdes à détente : proies sauteuses, dos horizontal, queue-balancier, fourrure, troupeau télépathe — fuite, jamais combat"
+    mut: springLeap
+  - uid: coureurs
+    parent: bondisseurs
+    tip: "Coureurs"
+    cd: "proie-coureuse au dos horizontal, longue queue-balancier, membres postérieurs à ressort (bonds explosifs + sprint) ; fourrure, troupeau télépathe ; survit par l'alerte EM et la fuite, jamais le combat · réf. ornithomimes, springbok"
+  - uid: planeurs
+    parent: bondisseurs
+    tip: "Planeurs"
+    cd: "membrane antérieurs↔flancs : le bond devient vol plané de canopée ; perchent haut, plongent pour fuir, malhabiles au sol · réf. colugo, Draco"
+    mut: patagium
+  - uid: detaleurs
+    parent: bondisseurs
+    tip: "Détaleurs"
+    cd: "petite proie des fourrés : poche ventrale marsupiale où s'accroche la portée, emportée d'un bond dans la fuite — ne s'arrête jamais ; grands yeux · réf. wallaby, opossum"
+    mut: pouch
+  - uid: orthostates
+    parent: bipedes
+    name: "ORTHOSTATES"
+    ref: "le dos se dresse mais la queue reste balancier (verticalisation incomplète) ; membres antérieurs libérés → mains (Aeonis sapiens) ou serpes (Faucheurs)"
+    mut: uprighting
+  - uid: faucheurs
+    parent: orthostates
+    tip: "Faucheurs"
+    cd: "prédateurs semi-dressés (queue-balancier), membres inférieurs puissants ; bras terminés par deux longues serpes (ongles mutés) ; fourrure dense, léger museau (visage presque humanoïde, troublant), organe EM en longues aiguilles (≈ Cimes) ; capacité : cri neural sidérant — l'anti-Aeonis sapiens"
+    mut: sickleClaws
+  - uid: aeonis-sapiens
+    parent: orthostates
+    name: "Aeonis sapiens"
+    ref: "verticalisation complète (perte de la queue) + mains préhensiles : l'outil et la culture ; les Peuples — une espèce, 4 races interfécondes"
+    mut: handsAndFullUprighting
+  - uid: cimes
+    parent: aeonis-sapiens
+    tip: "Cimes"
+    cd: "jungle : re-grimpeurs (mains + sole agrippante), épines EM polydirectionnelles, peau pâle"
+  - uid: vents
+    parent: aeonis-sapiens
+    tip: "Vents"
+    cd: "steppes : sabots ungulés (cheville surélevée), longues cornes directionnelles, oreilles pointues"
+  - uid: neiges
+    parent: aeonis-sapiens
+    tip: "Neiges"
+    cd: "pôle Sud : larges sabots, petite taille + pilosité, cornes luminescentes, peau sombre"
+  - uid: pluies
+    parent: aeonis-sapiens
+    tip: "Pluies"
+    cd: "pôle Nord : griffes palmées (nage), longs membres, couronne de cornes discrète, oreilles-capuchon"
+  - uid: pourpres
+    parent: root
+    name: "POURPRES"
+    ref: "autotrophes — algues, plantes"
+    mut: purpleEndosymbiosis
+  - uid: sessiles-a-dispersion
+    parent: pourpres
+    branchNote: "sessiles à dispersion"
+  - uid: pionniers-anemochores
+    parent: sessiles-a-dispersion
+    tip: "Pionniers anémochores"
+    cd: "herbe pourpre"
+  - uid: aeroplanctes
+    parent: sessiles-a-dispersion
+    tip: "Aéroplanctes"
+    cd: "flotteurs aériens"
+    mut: hydrogenSacs
+  - uid: arbre-anneau
+    parent: sessiles-a-dispersion
+    tip: "Arbre-Anneau"
+    cd: "l'Arche — franchit la Nuit · réf. Pando"
+    mut: crystallization
+    star: true
+  - uid: refugiaux-polaires
+    parent: pourpres
+    branchNote: "réfugiaux polaires"
+  - uid: endemiques-nord-marais
+    parent: refugiaux-polaires
+    tip: "Endémiques Nord — marais"
+  - uid: endemiques-sud-toundra
+    parent: refugiaux-polaires
+    tip: "Endémiques Sud — toundra"
+  - uid: phyterrants
+    parent: pourpres
+    tip: "Phyterrants"
+    cd: "flore mobile · réf. Dionée, Euglène"
+    mut: mobileFlora

@@ -24,17 +24,51 @@
 
 import type { AdversarySheet, AdversaryPart, AdversaryCardDef, AdversaryResource, PartTag } from './types'
 
-// ─── Mental track (3-state, simplified vs the player's 7) ─────────────────────
+// ─── Mental track (4-state, simplified vs the player's 7) ─────────────────────
 
-/** Simplified mental track: 😠 Enragé · 😐 Concentré · 😬 Paniqué. */
-export type AdversaryMental = 'enraged' | 'focused' | 'panicked'
-const MENTAL_TRACK: AdversaryMental[] = ['enraged', 'focused', 'panicked']
+/**
+ * Piste mentale simplifiée SANS centre neutre : deux dispositions douces
+ * (Agressif / Prudent, choisies par le meneur en début de combat) encadrées par
+ * les deux extrêmes (Enragé / Paniqué). Ordre colère→peur : enraged(0),
+ * aggressive(1), cautious(2), panicked(3). Franchir la frontière Agressif|Prudent
+ * bascule la disposition ; 🔺 remonte vers la colère, 🔻 descend vers la peur.
+ */
+export type AdversaryMental = 'enraged' | 'aggressive' | 'cautious' | 'panicked'
+const MENTAL_TRACK: AdversaryMental[] = ['enraged', 'aggressive', 'cautious', 'panicked']
+
+/** Disposition de départ (états doux) — le meneur pose « agressive » ou « prudente ». */
+export type AdversaryDisposition = 'aggressive' | 'cautious'
 
 /** Display icon per adversary mental state (shared by simulate.ts and stats.ts). */
 export const ADVERSARY_MENTAL_ICONS: Record<AdversaryMental, string> = {
-  panicked: '😬',
-  focused:  '😐',
-  enraged:  '😠',
+  enraged:    '😡',
+  aggressive: '😠',
+  cautious:   '😟',
+  panicked:   '😱',
+}
+
+/**
+ * Effets mécaniques par état mental (§ Piste mentale des créatures).
+ * - `dieRank` : décalage du RANG des dés de menace (⬆ renforce / ⬇ dégrade),
+ *   empilé avec les 🟩/🟥 de matchup — le rang plafonne (🟧→⬜→🟫).
+ * - `guard`   : modificateur PLAT du seuil de garde (la garde est un nombre fixe).
+ * Les états doux sont un pur bonus ; seuls les extrêmes portent la contrepartie.
+ */
+export const ADVERSARY_MENTAL_EFFECTS: Record<AdversaryMental, { dieRank: number; guard: number }> = {
+  enraged:    { dieRank: +1, guard: -2 },
+  aggressive: { dieRank: +1, guard:  0 },
+  cautious:   { dieRank:  0, guard: +1 },
+  panicked:   { dieRank: -2, guard: +1 },
+}
+
+/** ⬆/⬇ décalage de rang des dés de menace pour cet état mental. */
+export function mentalDieRank(state: AdversaryMental): number {
+  return ADVERSARY_MENTAL_EFFECTS[state].dieRank
+}
+
+/** ± modificateur plat du seuil de garde pour cet état mental. */
+export function mentalGuardMod(state: AdversaryMental): number {
+  return ADVERSARY_MENTAL_EFFECTS[state].guard
 }
 
 /** Default action points ⚫ per round when the sheet does not specify (kit not yet modelled). */
@@ -124,7 +158,7 @@ function initPart(p: AdversaryPart): PartState {
 
 /**
  * Build a fresh combatant from a sheet: all blocks intact, no fatigue, resources
- * filled to what the intact blocks grant, mental state Concentré.
+ * filled to what the intact blocks grant, mental state = disposition de départ.
  */
 export function initAdversary(sheet: AdversarySheet): AdversaryCombatant {
   const base: AdversaryCombatant = {
@@ -136,7 +170,7 @@ export function initAdversary(sheet: AdversarySheet): AdversaryCombatant {
     endurance:   0,
     evasion:     0,
     stability:   0,
-    mentalState: 'focused',
+    mentalState: sheet.disposition ?? 'aggressive',
     actions:     0,
     stunned:     false,
     bleed:       0,
