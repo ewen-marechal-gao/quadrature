@@ -2,12 +2,12 @@
  * Body-part health model tests, exercised against the real Faucheur fiche.
  *
  * Faucheur parts (armor · blocks):
- *   head    🛡️1  |▢▢| |▢▢| |▢▢|  → grants bite · grants cry · +1 ◇
- *   body    🛡️1  |▢▢▢|           → +2 🫁
+ *   head    🛡️1  |▢▢| |▢▢| |▢▢|  → +1 ◇ · grants bite · +1 ◇
+ *   body    🛡️1  |▢▢▢| |▢▢▢|     → +2 🫁 · grants cry
  *   sickles 🛡️1  |▢▢▢| |▢▢▢|     → cost override sickleStrike · grants sickleStrike
- *   rearLeg 🛡️1  |▢▢| |▢▢▢|      → +1 action Charge (grants charge) · move · Évasion 1
+ *   rearLeg 🛡️1  |▢▢| |▢▢▢|      → +1 action Charge (grants charge) · Évasion 1
  *   tail    🛡️0  |▢▢| |▢▢|       → immunity knockdown · grants tailSweep
- * fatigue 10 · dice 4×threat · guard Esquive 10.
+ * fatigue 8 · tenacity 4 · dice 4×threat · guard Esquive 10 · ◇ 2 (Tête).
  */
 import { loadAdversary } from '../../src/adversary/io'
 import {
@@ -35,7 +35,7 @@ describe('initAdversary', () => {
   it('starts intact with resources granted by intact blocks', async () => {
     const c = await faucheur()
     expect(c.fatigue).toBe(0)
-    expect(c.stability).toBe(1)   // head
+    expect(c.stability).toBe(2)   // head : 2 blocs ◇ (nerveux + cerveau)
     expect(c.endurance).toBe(2)   // body
     expect(c.evasion).toBe(1)     // rearLeg
     expect(c.mentalState).toBe('aggressive')   // disposition de départ par défaut
@@ -222,19 +222,19 @@ describe('addAdversaryFatigue', () => {
   })
 
   it('canPlayCard refuses a card whose 💧 cost would fill the clock', async () => {
-    const c = await faucheur()          // clock 10
-    const exhausted = { ...c, endurance: 0, fatigue: 9 }
-    expect(canPlayCard(exhausted, 'cry')).toBe(false)   // 9 + 1 ≥ 10
+    const c = await faucheur()          // clock 8
+    const exhausted = { ...c, endurance: 0, fatigue: 7 }
+    expect(canPlayCard(exhausted, 'cry')).toBe(false)   // 7 + 1 ≥ 8
     expect(canPlayCard(exhausted, 'bite')).toBe(true)   // no 💧 cost
     // With a 🫁 left, the cost is absorbed → playable again.
     expect(canPlayCard({ ...exhausted, endurance: 1 }, 'cry')).toBe(true)
   })
 
   it('Essoufflé past half the clock ⇒ −1 ⚫ (min 1)', async () => {
-    const c = await faucheur()   // clock 10, base 2 ⚫
+    const c = await faucheur()   // clock 8, base 2 ⚫
     expect(baseActions(c)).toBe(2)
     expect(isAdversaryWinded(c)).toBe(false)
-    const tired = { ...c, endurance: 0, fatigue: 6 }   // 6 > 5 = moitié de 10
+    const tired = { ...c, endurance: 0, fatigue: 5 }   // 5 > 4 = moitié de 8
     expect(isAdversaryWinded(tired)).toBe(true)
     expect(baseActions(tired)).toBe(1)                 // 2 − 1
     // startRound applique la pénalité au pool d'actions
@@ -244,9 +244,9 @@ describe('addAdversaryFatigue', () => {
   it('defeat triggers when every body part is destroyed (weapons excluded)', async () => {
     let c = await faucheur()
     c = { ...c, evasion: 0 }
-    // Destroy every block of every part: head 2 (bite, ◇), body 2 (🫁, cri), sickles 2, rearLeg 2, tail 2
+    // Destroy every block of every part: head 3 (◇·bite·◇), body 2 (🫁·cri), sickles 2, rearLeg 2, tail 2
     const blows: Array<[string, number]> = [
-      ['head', 2], ['body', 2], ['sickles', 2], ['rearLeg', 2], ['tail', 2],
+      ['head', 3], ['body', 2], ['sickles', 2], ['rearLeg', 2], ['tail', 2],
     ]
     for (const [part, n] of blows) {
       for (let i = 0; i < n; i++) {
@@ -386,7 +386,7 @@ describe('shiftAdversaryMental', () => {
   it('stability absorbs a shift before the track moves (§ Ténacité)', async () => {
     const c = await faucheur()  // stability 1, aggressive (disposition de départ)
     const d = shiftAdversaryMental(c, -1)  // 🔻 vers Peur, absorbé par le ◇
-    expect(d.stability).toBe(0)
+    expect(d.stability).toBe(1)            // ◇ 2 − 1 absorbé
     expect(d.mentalState).toBe('aggressive')
   })
 

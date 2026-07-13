@@ -74,12 +74,14 @@ describe('planAdversaryCard', () => {
     let c = await faucheur()
     c = { ...c, evasion: 0 }
     // Destroy every physicalDamage source: Serpes (2 → sickleStrike), the Pattes
-    // top block (→ charge) and the head's top block (→ bite), keeping the head's
-    // Cri block intact (destruction is top → bottom; head order = bite · cry · ◇).
+    // top block (→ charge) and the head's Mâchoires block (→ bite). Cri est conféré
+    // par le Corps (Poumons), laissé intact. Destruction top → bottom ; ordre de la
+    // Tête = ◇ (nerveux) · bite (mâchoires) · ◇ (cerveau) → 2 coups atteignent bite.
     c = damagePart(c, 'sickles', { heavy: 1 })
     c = damagePart(c, 'sickles', { heavy: 1 })
     c = damagePart(c, 'rearLeg', { heavy: 1 })
-    c = damagePart(c, 'head', { heavy: 1 })
+    c = damagePart(c, 'head', { heavy: 1 })   // ◇ Système nerveux central
+    c = damagePart(c, 'head', { heavy: 1 })   // bite (Mâchoires) → hors deck
     // Remaining offensive cards: cry (mental, init 2) and tailSweep (fatigue, init 4)
     // → deck order picks the Cri.
     expect(planAdversaryCard(c, 'pc')!.card).toBe('cry')

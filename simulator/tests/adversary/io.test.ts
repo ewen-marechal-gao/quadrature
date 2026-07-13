@@ -86,7 +86,7 @@ describe('adversary loader — collection', () => {
   it('loads every fiche in the bestiary, ordered by filename', async () => {
     const all = await loadAllAdversaries()
     const ids = all.map(a => a.id)
-    expect(ids).toEqual(['bandit-cimes', 'cuirassard', 'faucheur', 'lacerateur'])
+    expect(ids).toEqual(['bandit-cimes', 'cuirassard', 'evoluant', 'faucheur', 'happe-fond', 'lacerateur'])
   })
 
   it('resolves the requested locale for display strings', async () => {
