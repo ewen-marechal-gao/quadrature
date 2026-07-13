@@ -214,3 +214,32 @@ actions:
     roll: { characteristic: tenacity, skill: resilience }
     selfTargeted: true
     resolver: meditation
+
+  # ── Actions sociales (poussent l'état mental de la CIBLE) ────────────────────
+  # Contestent la garde de la créature ; l'effet 🔺/🔻 est ensuite tamponné par
+  # son ◇ (Ténacité). Leviers pour rechercher les états extrêmes d'une créature
+  # (Provocation → Enragé : garde −2 ; Intimidation → Paniqué : menace −2⬇).
+
+  provocation:
+    vaultCard: provocation
+    name: { fr: "Provocation" }
+    description: { fr: "Vous raillez la cible pour l'enrager. Succès : la cible subit 🔺 (vers la Colère). Coûte 2 PA." }
+    initiative: 7
+    cost: { actions: 2 }
+    tags: [offensive, social, mental, mentalDamage]
+    prerequisite: { skill: manipulation, minValue: 1 }
+    roll: { characteristic: charisma, skill: manipulation }
+    onSuccess: { text: { fr: "🔺 — la cible s'échauffe" }, effect: [{ mental: 1 }] }
+    onFailure: { text: { fr: "Aucun effet" },              effect: [] }
+
+  intimidation:
+    vaultCard: intimidation
+    name: { fr: "Intimidation" }
+    description: { fr: "Vous menacez la cible pour l'effrayer. Succès : la cible subit 🔻 (vers la Peur). Coûte 2 PA." }
+    initiative: 5
+    cost: { actions: 2 }
+    tags: [offensive, social, mental, mentalDamage]
+    prerequisite: { skill: authority, minValue: 1 }
+    roll: { characteristic: willpower, skill: authority }
+    onSuccess: { text: { fr: "🔻 — la cible hésite" }, effect: [{ mental: -1 }] }
+    onFailure: { text: { fr: "Aucun effet" },          effect: [] }

@@ -1,0 +1,19 @@
+name: "Le Meneur et la Lame — Intimidation"
+description: >
+  Un meneur social intimide le Faucheur (🔻 vers Paniqué → sa menace se dégrade
+  ⬇⬇) pendant qu'une lame précise le troue. Sonde l'impact de la piste mentale
+  des créatures. La whitelist partagée est routée par prérequis : le Meneur
+  (Autorité) intimide, la Lame (Précision) frappe.
+maxRounds: 30
+factions:
+  - name: "Aventuriers"
+    characters:
+      - sheet: characterSheets/Leader_social.yaml
+        persona: cautious
+      - sheet: characterSheets/Duelist_precise.yaml
+        persona: opportunist
+    allowedActions: [intimidation, sharp-strike, respiration]
+
+  - name: "Faune d'Aeonir"
+    characters:
+      - adversary: faucheur

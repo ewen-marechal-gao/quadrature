@@ -566,6 +566,16 @@ function selectOffensiveAction(
       return actionId
     }
   }
+
+  // Repli social : aucune attaque du persona n'est jouable (ex. un « meneur »
+  // dont l'encounter n'autorise que les actions sociales). Pousse l'état mental
+  // de la cible — Intimidation (🔻) avant Provocation (🔺) par défaut ; la
+  // whitelist de l'encounter choisit laquelle est réellement disponible.
+  for (const social of ['intimidation', 'provocation'] as ActionId[]) {
+    if (isActionAllowed(social, config) && canUseAction(state, social) && canAffordAction(state, social)) {
+      return social
+    }
+  }
   return null
 }
 

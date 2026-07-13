@@ -113,6 +113,9 @@ export type ActionId =
   | 'focalisation'   // Focalisation — Logique+Intelligence ; recentre vers Concentré + ◇
   | 'resolution'     // Résolution   — Conviction+Ténacité ; 🔺 vers Agressif + ◇
   | 'meditation'     // Méditation   — Résilience+Ténacité ; +◇ par Résilience
+  // Actions sociales — poussent l'état mental de la CIBLE (créatures)
+  | 'provocation'    // Provocation  — Manipulation+Charisme ; inflige 🔺 (vers Colère)
+  | 'intimidation'   // Intimidation — Autorité+Volonté ; inflige 🔻 (vers Peur)
 
 export type GuardId =
   | 'absorb' // Encaisser — Récupération + Vigueur    (always available)

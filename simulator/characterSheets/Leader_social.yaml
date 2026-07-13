@@ -1,0 +1,71 @@
+name: "Social Leader"
+inventory:
+  protection: 1
+people:
+  name: Humain
+  caracs: []
+  skills: []
+origin:
+  caracs:
+    - charisma
+  skills:
+    - manipulation
+    - authority
+training:
+  skills:
+    - discipline
+    - conviction
+# Meneur « bien construit » (horizontal) : leviers sociaux (Manipulation +
+# Autorité) pour pousser l'état mental des créatures, adossés à une défense
+# mentale honnête (Ténacité 2 + Discipline/Conviction 1). Combat modeste.
+characteristics:
+  strength:
+    value: 1
+    wounds: 0
+    power: 0
+    robustness: 1
+  agility:
+    value: 2
+    wounds: 0
+    precision: 0
+    mobility: 1
+  vigor:
+    value: 2
+    wounds: 0
+    endurance: 1
+    recovery: 1
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 1
+    wounds: 0
+    observation: 0
+    vigilance: 1
+  willpower:
+    value: 2
+    wounds: 0
+    authority: 1
+    discipline: 1
+  intelligence:
+    value: 1
+    wounds: 0
+    logic: 0
+    reactivity: 1
+  tenacity:
+    value: 2
+    wounds: 0
+    conviction: 1
+    resilience: 0
+  charisma:
+    value: 2
+    wounds: 0
+    eloquence: 0
+    manipulation: 1
+  lucidity:
+    value: 1
+    wounds: 0
+    foresight: 0
+    intuition: 0
