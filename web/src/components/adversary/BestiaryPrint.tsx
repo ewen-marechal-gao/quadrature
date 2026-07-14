@@ -17,7 +17,7 @@
  */
 
 import type { Adversary } from "@/lib/bestiary";
-import { adversaryCardToPlayerCard } from "@/lib/adversary-card";
+import { adversaryCardToPlayerCard, conferringBlocks } from "@/lib/adversary-card";
 import { ActionCard } from "@/components/ActionCard";
 import {
   AdversaryStatBlock,
@@ -54,6 +54,7 @@ export function BestiaryPrint({
     Array.from({ length: Math.max(0, config.deckCopies[c.id] ?? 0) }, () => c)
   );
   const deckPlanches = chunk(flatDeck, DECK_PER_PAGE);
+  const conferredBy = conferringBlocks(adversary);
 
   const copies = Array.from({ length: sheetCopies }, (_, i) => i);
 
@@ -85,7 +86,7 @@ export function BestiaryPrint({
       {deckPlanches.map((cards, i) => (
         <div key={i} className="adv-print-page adv-print-page--deck">
           {cards.map((c, j) => (
-            <ActionCard key={`${c.id}-${j}`} card={adversaryCardToPlayerCard(c)} />
+            <ActionCard key={`${c.id}-${j}`} card={adversaryCardToPlayerCard(c, conferredBy[c.id])} />
           ))}
         </div>
       ))}

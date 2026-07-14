@@ -18,7 +18,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Adversary, AdversaryDie, AdversaryTrait, BlockResource, BodyPart } from "@/lib/bestiary";
-import { adversaryCardToPlayerCard } from "@/lib/adversary-card";
+import { adversaryCardToPlayerCard, conferringBlocks } from "@/lib/adversary-card";
 import { ActionCard } from "@/components/ActionCard";
 import "@/app/adversaries.css";
 
@@ -160,17 +160,20 @@ function FatigueTrack({ total }: { total: number }) {
   );
 }
 
-/** Les trois états de la piste mentale simplifiée (universels, § règles adversaires). */
+/** Les quatre états de la piste mentale (colère → peur), § règles adversaires. */
 const MENTAL_STATES: { icon: string; name: string; effect: string }[] = [
-  { icon: "😠", name: "Enragé", effect: "+1 💀 att · −1 💀 déf" },
-  { icon: "😐", name: "Concentré", effect: "amélioration ciblée" },
-  { icon: "😬", name: "Paniqué", effect: "+1 💀 déf · −1 💀 att" },
+  { icon: "😡", name: "Enragé", effect: "⬆ menace · garde −2" },
+  { icon: "😠", name: "Agressif", effect: "⬆ menace" },
+  { icon: "😟", name: "Prudent", effect: "garde +1" },
+  { icon: "😱", name: "Paniqué", effect: "⬇⬇ menace · garde +1" },
 ];
 
 /**
- * Encadré « État mental » : les 3 états, chacun avec un slot ~8×8 mm où poser un
- * jeton cubique (l'état bouge en jeu), + la barre 🧠 Ténacité (▢, tampon final).
- * Ordre du tampon (§ règles) : 🔺🔻 → retire ◇ → déplace l'état → coche ▢.
+ * Encadré « État mental » : les 4 états (sans centre neutre — le meneur pose la
+ * disposition de départ Agressif/Prudent), chacun avec un slot où poser le jeton
+ * (l'état bouge en jeu), + la barre 🧠 Ténacité (◇, régénérée chaque manche).
+ * Chaque 🔺/🔻 subi est d'abord absorbé par un ◇ ; la piste ne bascule qu'une
+ * fois le ◇ épuisé.
  */
 function MentalPanel({ tenacity }: { tenacity: number }) {
   return (
@@ -359,12 +362,13 @@ function AdversaryScreenVerso({ adversary }: { adversary: Adversary }) {
 
 /** Deck d'actions (composant ActionCard partagé). */
 export function AdversaryDeck({ adversary }: { adversary: Adversary }) {
+  const conferredBy = conferringBlocks(adversary);
   return (
     <section className="adv-deck" aria-label="Deck d'actions">
       <h2 className="adv-deck-title">Deck d'actions</h2>
       <div className="adv-deck-cards">
         {adversary.cards.map((c) => (
-          <ActionCard key={c.id} card={adversaryCardToPlayerCard(c)} />
+          <ActionCard key={c.id} card={adversaryCardToPlayerCard(c, conferredBy[c.id])} />
         ))}
       </div>
     </section>
