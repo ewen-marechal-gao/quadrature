@@ -156,10 +156,43 @@
   margin-bottom: 0.35rem;
 }
 
+/* Colonne gauche : entretien + état physique empilés (l'entretien ne fait plus
+   toute la largeur de la fiche — il reste dans sa colonne). */
+.adv-col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
 .adv-aside {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
+}
+
+/* Défenses (encadré) ------------------------------------------------------- */
+.adv-defense {
+  border: 1.5px solid var(--adv-rule-soft);
+  border-radius: 5px;
+  padding: 0.4rem 0.55rem 0.45rem;
+}
+
+.adv-defense-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+  font-size: clamp(0.72rem, 1.4cqw, 0.85rem);
+}
+
+.adv-defense-value {
+  font-size: 1.15em;
+}
+
+.adv-defense-kind {
+  color: var(--adv-ink-soft, inherit);
+  opacity: 0.75;
 }
 
 /* Cases ▢ ------------------------------------------------------------------ */
@@ -183,6 +216,19 @@
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+/* Chaque groupe de cases se clôt par l'icône du seuil qu'il fait franchir
+   (😮‍💨 Essoufflé à la moitié · 😵‍💫 Inconscient à la piste pleine). */
+.adv-fatigue-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.adv-fatigue-milestone {
+  font-size: 0.95em;
+  line-height: 1;
 }
 
 /* État mental (encadré) --------------------------------------------------- */

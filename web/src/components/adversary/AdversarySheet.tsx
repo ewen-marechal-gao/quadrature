@@ -117,8 +117,7 @@ function MaintenancePanel({ groups }: { groups: ResGroup[] }) {
               <span className="adv-res-name">{RES_META[g.resource].label}</span>
             </li>
           ))}
-        </ul>
-        <span className="adv-res-note">↓ si le bloc source est détruit</span>
+        </ul>        
       </div>
     </section>
   );
@@ -143,8 +142,10 @@ function Boxes({ count }: { count: number }) {
 
 /**
  * Fatigue : ligne étiquetée (même format que la Ténacité) — toutes les cases sur
- * UNE ligne, coupée en deux groupes. La césure (floor/ceil) tombe sur le seuil
- * Essoufflé : entrer dans le 2ᵉ groupe = past half the clock (−1 ⚫).
+ * UNE ligne, coupée en deux groupes. Chaque groupe se termine par l'icône du
+ * seuil qu'il fait franchir :
+ *   - fin du 1ᵉʳ groupe → 😮‍💨 Essoufflé (au-delà de la moitié : −1 ⚫, plancher 1)
+ *   - fin du 2ᵉ groupe  → 😵‍💫 Inconscient (piste pleine : hors de combat)
  */
 function FatigueTrack({ total }: { total: number }) {
   const first = Math.floor(total / 2);
@@ -153,8 +154,32 @@ function FatigueTrack({ total }: { total: number }) {
     <div className="adv-fatigue">
       <span className="adv-fatigue-label">💧 Fatigue</span>
       <div className="adv-fatigue-groups">
-        <Boxes count={first} />
-        <Boxes count={second} />
+        <span className="adv-fatigue-group">
+          <Boxes count={first} />
+          <span className="adv-fatigue-milestone" title="Essoufflé : −1 ⚫ (jamais moins de 1)">
+            😮‍💨
+          </span>
+        </span>
+        <span className="adv-fatigue-group">
+          <Boxes count={second} />
+          <span className="adv-fatigue-milestone" title="Inconscient : hors de combat">
+            😵‍💫
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Encadré « Défenses » : la garde — seuil fixe que l'attaquant doit atteindre. */
+function DefensePanel({ guard }: { guard: Adversary["guard"] }) {
+  return (
+    <div className="adv-defense">
+      <div className="adv-section-label">Défenses</div>
+      <div className="adv-defense-row">
+        <span className="adv-defense-name">Garde</span>
+        <strong className="adv-defense-value">{guard.value}</strong>
+        <span className="adv-defense-kind">({guard.label.toLowerCase()})</span>
       </div>
     </div>
   );
@@ -277,9 +302,6 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
               <span key={i}>{DIE_GLYPH[d]}</span>
             ))}
           </span>
-          <span className="adv-guard">
-            Garde · {a.guard.label} <strong>{a.guard.value}</strong>
-          </span>
           <span className="adv-actions" title="Points d'action par manche (Essoufflé en retire 1, plancher 1)">
             {"⚫".repeat(a.actions ?? DEFAULT_ACTIONS)}
           </span>
@@ -292,10 +314,11 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
         </div>
       </header>
 
-      {resources.length > 0 && <MaintenancePanel groups={resources} />}
-
       <div className="adv-body">
-        <section className="adv-parts adv-physical">
+        <div className="adv-col-left">
+          {resources.length > 0 && <MaintenancePanel groups={resources} />}
+
+          <section className="adv-parts adv-physical">
           <div className="adv-section-label">État physique</div>
           <FatigueTrack total={a.fatigue} />
 
@@ -315,9 +338,12 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
               </div>
             </>
           )}
-        </section>
+          </section>
+        </div>
 
         <aside className="adv-aside">
+          <DefensePanel guard={a.guard} />
+
           {a.tenacity != null && <MentalPanel tenacity={a.tenacity} />}
 
           {a.traits.length > 0 && (
