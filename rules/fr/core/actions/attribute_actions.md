@@ -296,10 +296,11 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 **⚒️ Sous la peau :** l'effet ▶️ **🔺** de votre **Provocation** s'applique **deux fois**.
 
-▶️ **Effet :** la cible subit **🔺**  
-✴️ **Critique :** vous bénéficiez de 🟩 sur votre prochaine **Provocation** contre la même cible.  
-✅ **Succès :** la cible doit utiliser sa prochaine action pour se déplacer vers vous ou vous attaquer.  
-❌ **Échec :** la cible ressent une pointe d'hésitation. Elle subit **🔻**.
+▶️ **Effet :** si la cible n'a plus de jeton de **Stabilité ◇**, elle subit **🔺** (vers la Colère).  
+✅ **Succès :** la cible perd **1 ◇** et devient **🌀 Déstabilisée** (ignore son prochain regain de ◇).  
+❌ **Échec :** la cible perd **1 ◇**.  
+✴️ **Critique :** la cible perd **1 ◇** supplémentaire.  
+⚠️ **Défaut :** vous perdez un jeton de **Stabilité ◇**.
 
 ---
 

@@ -119,9 +119,10 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 🎲 **Jet :** Autorité 🟨🟨 + Volonté 🟦  
 🆚 **Contre :** Conviction
 
-✴️ **Critique :** vous bénéficiez de 🟩 sur votre prochaine **intimidation** contre la même cible.  
-✅ **Succès :** la prochaine attaque ou déplacement de la cible dans votre direction coûte un **⚫** supplémentaire.  
-❌ **Échec :** la cible ressent une pointe d'hésitation. Elle subit **🔻**.
+▶️ **Effet :** si la cible n'a plus de jeton de **Stabilité ◇**, elle subit **🔻** (vers la Peur).  
+✅ **Succès :** la cible perd **1 ◇** et devient **🌀 Déstabilisée** (ignore son prochain regain de ◇).  
+❌ **Échec :** la cible perd **1 ◇**.  
+✴️ **Critique :** la cible perd **1 ◇** supplémentaire.
 
 ---
 

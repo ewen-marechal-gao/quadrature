@@ -101,19 +101,22 @@ Par défaut, la **Garde** d'un adversaire est l'**Esquive**. Certaines créature
 
 Les jetons d'**Hémorragie 🩸** sont **cumulatifs**. À la **fin de chaque manche**, la créature coche autant de cases ▢ qu'elle possède de jetons, en **ignorant toute armure ou réduction** — le sang ne connaît ni le souffle (🫁) ni la cuirasse. Les cases sont cochées en **priorité sur les blocs les plus entamés** : le saignement concentre les pertes et précipite la destruction des capacités déjà fragilisées. Puis la **plaie se referme d'un cran** (retirez **1 jeton**) : un saignement récent continue de couler mais **s'estompe** si la créature n'est pas blessée à nouveau.
 
-### États mentaux simplifiés
+### États mentaux (4 états)
 
-**◇ Stabilité X** — au début de chaque manche, la créature gagne X jetons de Stabilité. Souvent conférée par la **Tête**.
+La piste mentale d'une créature est **simplifiée** (4 états au lieu des sept des personnages) et **sans centre neutre** : deux **dispositions douces** encadrées par deux **extrêmes**. Au début du combat, le meneur pose la disposition de départ — la créature est **😠 Agressive** ou **😟 Prudente** —, ce qui colore d'emblée son comportement.
 
-**🧠 Ténacité** — lorsque la créature subit un effet **🔺🔻**, retirer un jeton **◇**. Si elle n'en a plus, la déplacer sur sa **piste d'état mental simplifié** ; si c'est impossible, cocher une case ▢ de sa piste. Toutes les cases cochées → la créature effectue l'action décrite (généralement **fuite** ou **reddition**).
+| État | Menace (rang des dés) | Garde | |
+| :-- | :-- | :-- | :-- |
+| 😡 **Enragé** | **⬆** renforce un dé | **−2** | extrême colère : plus dangereux, mais s'ouvre |
+| 😠 **Agressif** | **⬆** renforce un dé | — | disposition offensive (pur bonus) |
+| 😟 **Prudent** | — | **+1** | disposition défensive (pur bonus) |
+| 😱 **Paniqué** | **⬇⬇** dégrade deux dés | **+1** | extrême peur : plus dur à toucher, mais inoffensif |
 
-La piste mentale simplifiée n'a que **trois états** (au lieu des sept des personnages) :
+*(**⬆/⬇** modifient le **rang** des dés de menace — 🟧 → ⬜ → 🟫 — en s'empilant avec les 🟩/🟥 de matchup ; **±garde** modifie le seuil fixe.)*
 
-| État | Effet typique |
-| :-- | :-- |
-| 😠 **Enragé** | +1 💀 attaque / −1 💀 défense |
-| 😐 **Concentré** | une amélioration ciblée (ex. +1 🛡️, +1 ⚫) |
-| 😬 **Paniqué** | +1 💀 défense / −1 💀 attaque |
+**🔺 vers la Colère / 🔻 vers la Peur.** Un **🔺** remonte la piste (Prudent → Agressif → Enragé), un **🔻** la descend (Agressif → Prudent → Paniqué) ; franchir le milieu **bascule la disposition**. Seuls les **extrêmes** portent une contrepartie pour la créature : les joueurs peuvent donc **chercher à l'y pousser** — vers **Enragé** pour la trouer plus facilement (garde −2), vers **Paniqué** pour la rendre inoffensive (menace ⬇⬇).
+
+**◇ Stabilité X** — au début de chaque manche, la créature gagne **X** jetons de Stabilité (souvent conférés par la **Tête** ; les détruire coupe cette régénération). Chaque **🔺/🔻** subi est d'abord **absorbé** en dépensant un **◇** : la piste ne bouge qu'une fois le **◇ épuisé** (§ Ténacité). Assécher ce ◇ est donc le préalable à toute bascule — voir l'état **Déstabilisé** ([etats.md](../core/etats.md)) et les actions sociales **Provocation** / **Intimidation**.
 
 ### Actions ⚫ et réactions ⚡
 

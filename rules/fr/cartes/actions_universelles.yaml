@@ -82,9 +82,10 @@ cartes:
     cout: "⚫⚫"
     jet: "Autorité 🟨🟨 + Volonté 🟦"
     contre: "Conviction"
-    critique: "vous bénéficiez de 🟩 sur votre prochaine **Intimidation** contre la même cible"
-    succes: "la prochaine attaque ou déplacement de la cible dans votre direction coûte un **⚫** supplémentaire"
-    echec: "la cible ressent une pointe d'hésitation. Elle subit **🔻**"
+    effet: "si la cible n'a plus de jeton de **Stabilité ◇** : elle subit **🔻** (vers la Peur)"
+    succes: "la cible perd **1 ◇** et devient **🌀 Déstabilisée** (ignore son prochain regain de ◇)"
+    echec: "la cible perd **1 ◇**"
+    critique: "la cible perd **1 ◇** supplémentaire"
     source: core/actions/universal_actions.md
 
   # ── Déplacement ─────────────────────────────────────────────────────────────

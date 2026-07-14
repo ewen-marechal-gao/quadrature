@@ -335,10 +335,10 @@ cartes:
       - nom: Sous la peau
         effet: "l'effet ▶️ **🔺** de votre **Provocation** s'applique **deux fois**"
     defaut: "vous perdez un jeton de **Stabilité ◇**"
-    effet: "la cible subit **🔺**"
-    critique: "vous bénéficiez de 🟩 sur votre prochaine **Provocation** contre la même cible"
-    succes: "la cible doit utiliser sa prochaine action pour se déplacer vers vous ou vous attaquer"
-    echec: "la cible ressent une pointe d'hésitation. Elle subit **🔻**"
+    effet: "si la cible n'a plus de jeton de **Stabilité ◇** : elle subit **🔺** (vers la Colère)"
+    succes: "la cible perd **1 ◇** et devient **🌀 Déstabilisée** (ignore son prochain regain de ◇)"
+    echec: "la cible perd **1 ◇**"
+    critique: "la cible perd **1 ◇** supplémentaire"
     source: core/actions/attribute_actions.md
 
   - id: inspiration

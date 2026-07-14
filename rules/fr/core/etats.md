@@ -52,6 +52,18 @@ L'épuisement est un état cumulable, suivi par des marqueurs **épuisement 😩
 
 ---
 
+### 🌀 Déstabilisé
+
+*L'assaut psychique a fissuré la concentration : l'esprit n'a pas le répit de se ressaisir.*
+
+Une cible **Déstabilisée** **ignore son prochain regain de jetons de Stabilité ◇** (au début de sa manche), puis l'état est retiré.
+
+Contrairement aux jetons **◇** d'une créature, qui se régénèrent chaque manche (souvent conférés par la Tête), cet état permet d'**assécher durablement** cette réserve : en déstabilisant une créature à répétition, on l'empêche de reconstituer son ◇, ouvrant la voie à une bascule de son **état mental** (🔺/🔻) une fois le ◇ épuisé. *(Sans effet sur une cible dont le ◇ ne se régénère pas, comme un personnage.)*
+
+**Infligé par :** les actions sociales **Provocation** et **Intimidation** ; certains sorts et effets psychiques.
+
+---
+
 ## États de position
 
 ### ⚔️ Engagé en mêlée
