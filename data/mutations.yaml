@@ -3,9 +3,9 @@
 # ÉCOLOGIE : add/removeBiome (north|dawn|dusk|south — dawn=Levant, dusk=Couchant) et add/removeHabitat
 # (terrestrial|aquatic|aerial) sont repliés racine→feuille depuis la graine rootBiome/rootHabitat de
 # data/cladogram.yaml. Ordre : remove PUIS add. Seules les mutations bougent l'écologie (héritage pur) —
-# un clade porte donc l'aire POTENTIELLE de sa lignée. Rapport : node tools/cladogram.mjs ecology
+# un clade porte donc l'aire POTENTIELLE de sa lignée. Rapport : node tools/cladogram.ts ecology
 # Référencées par l'arbre (data/cladogram.yaml, champ `mut`) et par les fiches de bestiaire.
-# Édition : `mut-*` (tools/cladogram.mjs) fait un PATCH TEXTUEL chirurgical — SÛR, il préserve ces
+# Édition : `mut-*` (tools/cladogram.ts) fait un PATCH TEXTUEL chirurgical — SÛR, il préserve ces
 # commentaires ET la mise en forme. Pour un kit riche (parties/blocs/grants), éditer à la main.
 mutations:
   purpleEndosymbiosis:

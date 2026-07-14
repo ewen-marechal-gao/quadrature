@@ -1,19 +1,19 @@
 # Cladogram tooling & schemas — reference
 
 Contents:
-1. `tools/cladogram.mjs` — CLI commands
-2. `tools/cladogram.mjs` — library API
+1. `tools/cladogram.ts` — CLI commands
+2. `tools/cladogram.ts` — library API
 3. Node schema (`data/cladogram.yaml`, flat)
 4. Mutation schema (`data/mutations.yaml`)
 5. Kit operations (adversary-sheet building blocks)
-6. `tools/derive.mjs` + the consolidator
+6. `tools/derive.ts` + the consolidator
 7. Derived ecology
 
 ---
 
-## 1. `tools/cladogram.mjs` — CLI
+## 1. `tools/cladogram.ts` — CLI
 
-Run from the repo root: `node tools/cladogram.mjs <command> [args]`.
+Run from the repo root: `node tools/cladogram.ts <command> [args]`.
 
 | Command | Effect |
 | :-- | :-- |
@@ -34,8 +34,8 @@ On an unexpected format they fail loudly rather than corrupt.
 import { loadRaw, saveTree, buildRoot, emitFlat, emitMinimalTree,
          findAny, findByUid, flatten, validate,
          deriveEcology, BIOMES, HABITATS, BIOME_LETTER, biomesToLetters,
-         TREE_FILE, TREE_MIN_FILE, MUT_FILE } from "./tools/cladogram.mjs";
-import { applyKit, ancestryMutations, deriveState, formatDerived } from "./tools/derive.mjs";
+         TREE_FILE, TREE_MIN_FILE, MUT_FILE } from "./tools/cladogram.ts";
+import { applyKit, ancestryMutations, deriveState, formatDerived } from "./tools/derive.ts";
 ```
 
 - `loadRaw()` → `{ data, header }`. `data = { title, rootNote, backlog, rootBiome,
@@ -52,7 +52,7 @@ import { applyKit, ancestryMutations, deriveState, formatDerived } from "./tools
 - `findByUid(root, uid)` / `findAny(root, nameOrTip)` → mutable node.
 - `flatten(root)` → `Map<uid, { node, parent }>`.
 - `deriveEcology(data)` → `Map<uid, { biomes:Set, habitats:Set }>`.
-- From `derive.mjs`: `deriveState(map, mutations, fromUid, extraMutations?)` →
+- From `derive.ts`: `deriveState(map, mutations, fromUid, extraMutations?)` →
   `{ keys, withKit, state }`; `applyKit(state, key, kit)`; `formatDerived(...)`.
 
 There is no faithful nested emitter or dry-run dance anymore — the flat file is
@@ -150,15 +150,15 @@ Guard rails: no two parts of the same `type`; can't modify/remove an absent part
 Actions referenced by `grantsCard` / `grant_action` must exist in
 `data/adversary_actions.yaml`.
 
-## 6. `tools/derive.mjs` + the consolidator
+## 6. `tools/derive.ts` + the consolidator
 
-`tools/derive.mjs` is the **single source** of the kit-application core
+`tools/derive.ts` is the **single source** of the kit-application core
 (`applyKit`, `ancestryMutations`, `deriveState`, `formatDerived`). It is pure —
 takes the flattened map + mutations, returns state. Imported by
-`tools/consolidate-bestiary.mjs` and by the `derive` CLI command
-(`node tools/cladogram.mjs derive <uid> …`).
+`tools/consolidate-bestiary.ts` and by the `derive` CLI command
+(`node tools/cladogram.ts derive <uid> …`).
 
-`node tools/consolidate-bestiary.mjs` reads each `data/bestiary/species/<id>.yaml`,
+`node tools/consolidate-bestiary.ts` reads each `data/bestiary/species/<id>.yaml`,
 walks its `from:` uid up the tree, applies kits root→tip (via `applyKit`), merges the
 species' own non-derived fields, and writes `data/bestiary/cards/<id>.card.yaml`. Its
 main block is guarded (`import.meta.url`) so it can be imported without side effects.
@@ -175,4 +175,4 @@ Species file fields: `id`, `from` (uid), `name`, `power`, `dice`, `guard`, `spee
 Seed = `rootBiome`/`rootHabitat`. Fold root→leaf; for each node's mutation apply
 `removeBiome`/`removeHabitat` then `addBiome`/`addHabitat`. Pure inheritance — no
 node-level override. Letters: N=north, L=dawn (Levant), C=dusk (Couchant), S=south.
-`node tools/cladogram.mjs ecology` reports coherence + area distribution.
+`node tools/cladogram.ts ecology` reports coherence + area distribution.

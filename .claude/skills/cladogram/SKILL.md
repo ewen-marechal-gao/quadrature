@@ -5,7 +5,7 @@ description: >-
   phylogenetic tree that DERIVES the bestiary (creatures, ecology, adversary
   sheets). Use this whenever touching data/cladogram.yaml or data/mutations.yaml,
   adding or reworking creatures / clades / mutations / grades, running
-  tools/cladogram.mjs or tools/consolidate-bestiary.mjs, deriving adversary fiches,
+  tools/cladogram.ts or tools/consolidate-bestiary.ts, deriving adversary fiches,
   or reasoning about the bestiary's evolutionary design — even if the user just
   says "add a creature", "edit the tree", "a new mutation", or names an Aeonir
   clade (Exoferres, Syntones, Faucheurs, Trachéés…). It encodes the flat-file data
@@ -56,7 +56,7 @@ Full schemas, the tool API, and the flat-node shape are in `references/tooling.m
    Reparent a node or move a whole subtree = change one `parent` value. No
    indentation cascade, no custom emitter to fight. **To see structure, read
    `data/cladogram.tree.yaml`.** After hand-editing the flat file, run
-   `node tools/cladogram.mjs sync` to regenerate that view.
+   `node tools/cladogram.ts sync` to regenerate that view.
 2. **`data/mutations.yaml` — the `mut-*` commands are now SAFE.** They apply a
    *surgical text patch* (one line) that preserves comments **and** formatting, so
    `mut-relabel` / `mut-describe` / `mut-add` no longer destroy the design
@@ -114,7 +114,7 @@ Full schemas, the tool API, and the flat-node shape are in `references/tooling.m
 ## Workflow: adding a grade, mutation, or creature
 
 1. **Derive the substrate first.** Before designing on top of a node, see what it
-   *already* derives — parts, blocks, fatigue: `node tools/cladogram.mjs derive
+   *already* derives — parts, blocks, fatigue: `node tools/cladogram.ts derive
    <uid> [<uid>…]`. Don't design blind.
 2. **Propose, then wait.** Sketch the sequence (grades, mutations, the creature at
    each node, the monster it unlocks) and get validation. Name the causal links.
@@ -125,16 +125,16 @@ Full schemas, the tool API, and the flat-node shape are in `references/tooling.m
    `parent` to reparent. For bulk restructuring, script it with the lib: `loadRaw`
    → mutate `data.nodes` → `saveTree(data, header)`. If a part uses a new `type`,
    add it to `PART_ORDER` (and any `group` to `GROUP_NAMES`) in
-   `tools/consolidate-bestiary.mjs`. Run `sync` after any hand-edit.
+   `tools/consolidate-bestiary.ts`. Run `sync` after any hand-edit.
 5. **Verify** (always — see below).
 
 ## Verify after every edit
 
 ```
-node tools/cladogram.mjs validate      # counts + unknown mut keys / unplaced mutations / dup uid / orphan parent
-node tools/cladogram.mjs ecology        # every leaf has a biome + habitat; area distribution
-node tools/cladogram.mjs derive <uid>   # the new/changed nodes derive what you intend
-node tools/consolidate-bestiary.mjs     # regenerates fiches — existing ones must be UNCHANGED (non-regression)
+node tools/cladogram.ts validate      # counts + unknown mut keys / unplaced mutations / dup uid / orphan parent
+node tools/cladogram.ts ecology        # every leaf has a biome + habitat; area distribution
+node tools/cladogram.ts derive <uid>   # the new/changed nodes derive what you intend
+node tools/consolidate-bestiary.ts     # regenerates fiches — existing ones must be UNCHANGED (non-regression)
 ```
 
 Even fatigue totals, no orphan-ecology leaves, no unexpected diff in existing
@@ -144,9 +144,9 @@ Even fatigue totals, no orphan-ecology leaves, no unexpected diff in existing
 ## Key files
 
 - `data/cladogram.yaml` (flat source) · `data/cladogram.tree.yaml` (generated view) · `data/mutations.yaml`.
-- `tools/cladogram.mjs` — tree lib + CLI (`validate`/`ecology`/`derive`/`sync`/`print`/`node-*`/`mut-*`).
-- `tools/derive.mjs` — shared kit-derivation core (single source of `applyKit`).
-- `tools/consolidate-bestiary.mjs` — fiche generator.
+- `tools/cladogram.ts` — tree lib + CLI (`validate`/`ecology`/`derive`/`sync`/`print`/`node-*`/`mut-*`).
+- `tools/derive.ts` — shared kit-derivation core (single source of `applyKit`).
+- `tools/consolidate-bestiary.ts` — fiche generator.
 - `data/bestiary/species/*.yaml` (authored) → `data/bestiary/cards/*.card.yaml` (generated).
 - `data/adversary_actions.yaml` — shared action library (referenced by `grantsCard`).
 - `web/src/lib/cladogram.ts` (reads fs) · `web/src/lib/cladogram-eco.ts` (pure vocab).

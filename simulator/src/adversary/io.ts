@@ -1,7 +1,7 @@
 /**
  * File I/O for adversary fiches (data/bestiary/cards/<id>.card.yaml).
  *
- * These files are GENERATED (tools/consolidate-bestiary.mjs) and carry English
+ * These files are GENERATED (tools/consolidate-bestiary.ts) and carry English
  * keys with Locale strings { fr, en? }. The loader resolves display strings to
  * a single locale (fr by default), yielding the plain-string AdversarySheet the
  * engine consumes.

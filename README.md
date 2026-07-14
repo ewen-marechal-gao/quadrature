@@ -66,7 +66,7 @@ Quadrature/
 ├── data/         # Données structurées (cladogramme, mutations, bestiaire) — lues par web/ & tools/
 ├── web/          # Site Next.js (lit rules/fr/ + data/ au build)
 ├── simulator/    # Moteur de combat TypeScript
-├── tools/        # astronomy.py · cladogram.mjs · consolidate-bestiary.mjs
+├── tools/        # astronomy.py · cladogram.ts · consolidate-bestiary.ts
 ├── images/       # Illustrations et concept art
 ├── README.md · Roadmap.md · CHANGELOG.md
 └── rapport_avancement_*.md   # revues d'avancement ponctuelles
@@ -79,7 +79,7 @@ Quadrature/
 
 ## Démarrage rapide
 
-Prérequis : **Node 20+** (web, simulator, `tools/cladogram.mjs`), **Python 3** (`tools/astronomy.py`), **Obsidian** (rules).
+Prérequis : **Node 20+** (web, simulator, `tools/cladogram.ts`), **Python 3** (`tools/astronomy.py`), **Obsidian** (rules).
 
 ### Règles (`rules/`)
 Ouvrir le dossier `rules/` comme **vault Obsidian** ; commencer par
@@ -119,16 +119,16 @@ python tools/astronomy.py    # régénère tools/aeonir_astronomy.md
 **Cladogramme du bestiaire** — [`data/cladogram.yaml`](data/cladogram.yaml) (l'arbre) et
 [`data/mutations.yaml`](data/mutations.yaml) (les mutations : label, description, `kit` de combat)
 sont la **source de vérité** de l'arbre phylogénétique de la faune d'Aeonir (clades, mutations,
-biomes, statut). On les édite via l'utilitaire `tools/cladogram.mjs` **plutôt qu'à la main** : il
+biomes, statut). On les édite via l'utilitaire `tools/cladogram.ts` **plutôt qu'à la main** : il
 préserve le style de l'arbre et **valide** après chaque opération.
 
 ```bash
 # nécessite js-yaml — lancer `npm install` dans web/ au préalable
-node tools/cladogram.mjs validate                          # contrôle (clés inconnues, mutations non placées)
-node tools/cladogram.mjs print                             # arbre indenté + label de chaque mutation
-node tools/cladogram.mjs node-mut "Faucheurs" sickleClaws  # pose une mutation (référencée par CLÉ)
-node tools/cladogram.mjs node-status "Faucheurs" done      # marque une espèce comme peuplée
-node tools/cladogram.mjs mut-add maCle "Label fr" "Description fr"
+node tools/cladogram.ts validate                          # contrôle (clés inconnues, mutations non placées)
+node tools/cladogram.ts print                             # arbre indenté + label de chaque mutation
+node tools/cladogram.ts node-mut "Faucheurs" sickleClaws  # pose une mutation (référencée par CLÉ)
+node tools/cladogram.ts node-status "Faucheurs" done      # marque une espèce comme peuplée
+node tools/cladogram.ts mut-add maCle "Label fr" "Description fr"
 # autres : node-cd · node-ref · node-rename · node-clear-mut · mut-relabel · mut-describe
 ```
 
@@ -137,17 +137,17 @@ Les **mutations** (`data/mutations.yaml`) forment un dictionnaire `clé → { la
 **`uid`** stable. Le **`kit`** décrit la brique de fiche d'adversaire conférée par la mutation
 (cf. `rules/fr/adversaires/`). La **numérotation d'affichage est calculée côté front**. Une
 **insertion de nœud** (qui ré-indente le sous-arbre) se fait en important la lib
-(`import { loadRaw, save, findAny } from "./cladogram.mjs"`) dans un petit script ponctuel.
+(`import { loadRaw, save, findAny } from "./cladogram.ts"`) dans un petit script ponctuel.
 
 **Bestiaire d'adversaires** — [`data/bestiary/`](data/bestiary/) relie le cladogramme aux fiches de monstres :
 les **sources** `species/<id>.yaml` (stats propres + `from:` = uid d'une espèce du cladogramme) sont
-consolidées en **fiches** `cards/<id>.card.yaml` par [`tools/consolidate-bestiary.mjs`](tools/consolidate-bestiary.mjs).
+consolidées en **fiches** `cards/<id>.card.yaml` par [`tools/consolidate-bestiary.ts`](tools/consolidate-bestiary.ts).
 Chaque **mutation** de l'ascendance apporte sa brique (`kit` : parties du corps, cartes, traits ;
 Speed/Fatigue dérivés) → *ce que la créature EST découle de ses mutations*. Les fiches (anglais + `Locale`)
 alimentent la rubrique web `/adversaires`.
 
 ```bash
-node tools/consolidate-bestiary.mjs   # régénère data/bestiary/cards/*.card.yaml
+node tools/consolidate-bestiary.ts   # régénère data/bestiary/cards/*.card.yaml
 ```
 
 ---

@@ -7,9 +7,10 @@
 // On fusionne enfin les stats NON dérivées (name, power, dice, guard, speed, fatigue, description)
 // et les extras (extraMutations, extraParts, extraTraits) et retraits (removeCards, removeTraits) de la source.
 //
-// Usage : node tools/consolidate-bestiary.mjs
-import { loadRaw, flatten } from "./cladogram.mjs";
-import { applyKit, ancestryMutations, applySize } from "./derive.mjs"; // noyau de dérivation PARTAGÉ
+// TypeScript « effaçable » exécuté par Node ≥ 22.18 (type-stripping natif). Usage : node tools/consolidate-bestiary.ts
+import { loadRaw, flatten } from "./cladogram.ts";
+import { applyKit, ancestryMutations, applySize } from "./derive.ts"; // noyau de dérivation PARTAGÉ (TS)
+import type { Block, Part, State } from "./derive.ts";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,7 +19,7 @@ import { createRequire } from "node:module";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.join(HERE, "..");
 const require = createRequire(path.join(REPO, "web", "package.json"));
-const yaml = require("js-yaml");
+const yaml: any = require("js-yaml");
 
 const SPECIES_DIR = path.join(REPO, "data/bestiary/species");
 const CARDS_DIR = path.join(REPO, "data/bestiary/cards");
@@ -26,15 +27,15 @@ const ACTIONS_FILE = path.join(REPO, "data/adversary_actions.yaml");
 
 // Bibliothèque d'actions partagée : id -> def (name/cost/initiative/onSuccess…).
 // Référencée par les blocs (grantsCard) et les kits (grant_action).
-const ACTION_LIBRARY = yaml.load(fs.readFileSync(ACTIONS_FILE, "utf8")).actions || {};
+const ACTION_LIBRARY: Record<string, any> = yaml.load(fs.readFileSync(ACTIONS_FILE, "utf8")).actions || {};
 
 // Ordre anatomique canonique d'affichage des parties.
 const PART_ORDER = ["head", "body", "segMedian", "segArriere", "abdomen", "jaws", "carapace", "emSpines", "sickles",
   "huntingClaws", "raptorial", "glidingMembrane", "finlets", "limbs", "frontLeg", "middleLeg", "rearLeg", "tail"];
-const partRank = (t) => { const i = PART_ORDER.indexOf(t); return i === -1 ? 99 : i; };
+const partRank = (t: string): number => { const i = PART_ORDER.indexOf(t); return i === -1 ? 99 : i; };
 
 // Noms des parties issues de la fusion de membres similaires (par `group`).
-const GROUP_NAMES = { limbs: { fr: "Membres" } };
+const GROUP_NAMES: Record<string, { fr: string }> = { limbs: { fr: "Membres" } };
 
 /**
  * Fusionne les parties partageant un même `group` (≥ 2 membres) en UNE partie à
@@ -43,15 +44,15 @@ const GROUP_NAMES = { limbs: { fr: "Membres" } };
  * tel quel (un quadrupède/biped garde sa patte propre). Le champ `group` est
  * interne : il est retiré de toutes les parties à l'émission.
  */
-function mergeLimbGroups(parts) {
-  const counts = {};
+function mergeLimbGroups(parts: Part[]): Part[] {
+  const counts: Record<string, number> = {};
   for (const p of parts) if (p.group) counts[p.group] = (counts[p.group] || 0) + 1;
-  const out = [];
-  const merged = {};
+  const out: Part[] = [];
+  const merged: Record<string, any> = {};
   for (const p of parts) {
     if (!p.group || counts[p.group] < 2) {
       const { group, ...rest } = p; // eslint-disable-line no-unused-vars
-      out.push(rest);
+      out.push(rest as Part);
       continue;
     }
     if (!merged[p.group]) {
@@ -66,18 +67,18 @@ function mergeLimbGroups(parts) {
 // Normalise la forme d'un bloc en sortie : le champ `grants` doit toujours être
 // { text: {Locale}, …ops }. Les blocs sources hérités (grants = {fr,en?}) sont
 // enveloppés ; ceux déjà en nouvelle forme (grants.text présent) sont inchangés.
-function normalizeBlock(block) {
+function normalizeBlock(block: any): any {
   const g = block.grants;
   if (!g || g.text) return block;
   return { ...block, grants: { text: g } };
 }
-function normalizePartBlocks(part) {
+function normalizePartBlocks(part: any): any {
   return { ...part, blocks: (part.blocks || []).map(normalizeBlock) };
 }
 
 // Ids d'actions conférées par les blocs d'une liste de parties (grantsCard).
-function deckIdsFromParts(parts) {
-  const ids = [];
+function deckIdsFromParts(parts: Part[] | null | undefined): string[] {
+  const ids: string[] = [];
   for (const p of parts || []) for (const b of p.blocks || []) {
     if (b.grants && b.grants.grantsCard) ids.push(b.grants.grantsCard);
   }
@@ -85,9 +86,9 @@ function deckIdsFromParts(parts) {
 }
 
 // Résout une liste d'ids (dédupliquée) en cartes depuis la bibliothèque, triées par initiative.
-function resolveDeck(ids) {
-  const seen = new Set();
-  const cards = [];
+function resolveDeck(ids: string[]): any[] {
+  const seen = new Set<string>();
+  const cards: any[] = [];
   for (const id of ids) {
     if (seen.has(id)) continue;
     seen.add(id);
@@ -98,11 +99,11 @@ function resolveDeck(ids) {
   return cards.sort((a, b) => a.initiative - b.initiative);
 }
 
-// `applyKit` et `ancestryMutations` vivent désormais dans ./derive.mjs (source unique).
+// `applyKit` et `ancestryMutations` vivent désormais dans ./derive.ts (source unique).
 
-function consolidate(source, map, mutations) {
+function consolidate(source: any, map: any, mutations: any): any {
   const keys = [...ancestryMutations(map, source.from), ...(source.extraMutations || [])];
-  const state = { parts: [], traits: [], appearance: [], fatigue: 0, speed: null, grantActions: [], size: null };
+  const state: State = { parts: [], traits: [], appearance: [], fatigue: 0, speed: null, grantActions: [], size: null };
   for (const key of keys) applyKit(state, key, mutations[key]?.kit);
 
   for (const p of source.extraParts || []) {
@@ -121,7 +122,7 @@ function consolidate(source, map, mutations) {
 
   // Deck : actions conférées par les blocs (grantsCard) + innées (grant_action),
   // résolues depuis la bibliothèque partagée. Les armes confèrent via leurs blocs.
-  const weapons = source.weapons ? structuredClone(source.weapons) : null;
+  const weapons: Part[] | null = source.weapons ? structuredClone(source.weapons) : null;
   // Taille : décale UNIQUEMENT le nombre de cases de chaque bloc (encaissement à la blessure).
   // L'impact offensif n'est PAS un bonus générique : il tient aux CARTES propres de la créature —
   // un petit ne mord pas comme un géant, et un colosse a d'AUTRES cartes (engloutir, briser, 💔).
@@ -141,7 +142,7 @@ function consolidate(source, map, mutations) {
   for (const p of [...state.parts, ...(weapons || [])]) {
     for (const b of p.blocks || []) {
       if (b.grants && b.grants.trait) {
-        state.traits.push({ name: b.grants.trait.name, kind: "passive", effect: b.grants.trait.effect, source: p.name });
+        state.traits.push({ name: b.grants.trait.name, kind: "passive", effect: b.grants.trait.effect, source: p.name } as any);
       }
     }
   }
@@ -180,7 +181,7 @@ function consolidate(source, map, mutations) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { data } = loadRaw();
   const map = flatten(data.root);
-  const HEADER = `# GÉNÉRÉ par tools/consolidate-bestiary.mjs — NE PAS ÉDITER À LA MAIN.
+  const HEADER = `# GÉNÉRÉ par tools/consolidate-bestiary.ts — NE PAS ÉDITER À LA MAIN.
 # Source : data/bestiary/species/<id>.yaml ; parties/cartes/traits dérivés du cladogramme (via \`from\`).
 `;
 

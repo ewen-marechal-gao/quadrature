@@ -23,9 +23,9 @@ Vue d'ensemble des chantiers, par thème. Le détail et la justification sont da
 
 ## Bestiaire & adversaires 🟠
 Cladogramme phylogénétique de la faune → génération des fiches de monstres (« ce que la créature EST découle de ses mutations »).
-- [x] ✅ Cladogramme (arbre + mutations) en `data/` (`cladogram.yaml` + `mutations.yaml`), édité via `tools/cladogram.mjs` ; visualiseur web `/evolution`.
+- [x] ✅ Cladogramme (arbre + mutations) en `data/` (`cladogram.yaml` + `mutations.yaml`), édité via `tools/cladogram.ts` ; visualiseur web `/evolution`.
 - [x] ✅ **Kits de combat** par mutation (`mutations[clé].kit`) : parties du corps, cartes, traits, Speed/Fatigue dérivés.
-- [x] ✅ **Consolidateur** `tools/consolidate-bestiary.mjs` : `data/bestiary/species/*.yaml` → `cards/*.card.yaml` (dérivées de l'ascendance).
+- [x] ✅ **Consolidateur** `tools/consolidate-bestiary.ts` : `data/bestiary/species/*.yaml` → `cards/*.card.yaml` (dérivées de l'ascendance).
 - [x] ✅ Schéma adversaire migré **anglais + `Locale`** ; champ `weapons` (sapients équipés) ; rubrique web `/adversaires`.
 - [x] ✅ Fiches : Faucheur, Lacérateur, Bandit des Cimes.
 - [ ] 🟠 Passe **nommage des membres par plan de corps** (bipèdes/sapients : « Jambes »/« Membres inférieurs » ≠ « Pattes » ; pieds différenciés).

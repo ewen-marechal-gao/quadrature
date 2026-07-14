@@ -5,7 +5,7 @@
 # Vue arborescente minimale (uid/mut/children) GÉNÉRÉE dans data/cladogram.tree.yaml (ne pas éditer).
 # Pas de champ « status » : une feuille est « peuplée » ssi une fiche d'adversaire la cible (data/bestiary/species/*.yaml, champ `from`).
 # Pas de champ « biome » : biome et habitat sont DÉRIVÉS (graine ci-dessous + transitions des mutations).
-# Édition via tools/cladogram.mjs.
+# Édition via tools/cladogram.ts.
 
 title: "Arbre phylogénétique de la vie d'Aeonir — état courant (mis à jour à chaque grade peuplé)"
 rootNote: "racine : hétérotrophe · électrosensible · sexuée (méiose)"

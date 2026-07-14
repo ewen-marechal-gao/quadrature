@@ -3,7 +3,7 @@
 # Une action est référencée par son id : un BLOC de partie la confère via
 # `grantsCard: <id>` (inclusion au deck + gate sur l'intégrité du bloc), ou un
 # kit via `grant_action: [<id>]` (action innée, non liée à un bloc destructible).
-# Le consolidateur (tools/consolidate-bestiary.mjs) résout ces références et
+# Le consolidateur (tools/consolidate-bestiary.ts) résout ces références et
 # EMBARQUE la def complète dans data/bestiary/cards/<id>.card.yaml (fiche
 # auto-suffisante ; cette bibliothèque n'est qu'un mécanisme DRY côté source).
 #

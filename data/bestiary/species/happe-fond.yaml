@@ -1,5 +1,5 @@
 # Source d'une fiche d'adversaire — le Happe-fond (apex marin du Grand Marais du Nord).
-# Parties/cartes/traits dérivés du cladogramme via `from` ; cf. tools/consolidate-bestiary.mjs.
+# Parties/cartes/traits dérivés du cladogramme via `from` ; cf. tools/consolidate-bestiary.ts.
 id: happe-fond
 from: cuirasses                # uid du grade CUIRASSÉS (grand embusqueur cuirassé ; taille GRANDE dérivée)
 name: { fr: "Happe-fond", en: "Deepgrasper" }

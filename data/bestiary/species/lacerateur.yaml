@@ -1,5 +1,5 @@
 # Source d'une fiche d'adversaire — Le Lacérateur (Sidéronyches).
-# Parties/cartes/traits dérivés du cladogramme via `from` ; cf. tools/consolidate-bestiary.mjs.
+# Parties/cartes/traits dérivés du cladogramme via `from` ; cf. tools/consolidate-bestiary.ts.
 id: lacerateur
 from: lacerateurs               # uid du tip dans data/cladogram.yaml
 name: { fr: "Lacérateur", en: "Lacerator" }

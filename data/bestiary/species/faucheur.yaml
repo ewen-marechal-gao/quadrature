@@ -1,6 +1,6 @@
 # Source d'une fiche d'adversaire — Le Faucheur.
 # Stats NON dérivées du cladogramme ; les parties du corps, cartes et traits sont
-# DÉRIVÉS de l'ascendance (via `from`) par tools/consolidate-bestiary.mjs → cards/faucheur.card.yaml.
+# DÉRIVÉS de l'ascendance (via `from`) par tools/consolidate-bestiary.ts → cards/faucheur.card.yaml.
 # Clés en anglais, chaînes en Locale { fr, en? }.
 id: faucheur
 from: faucheurs # uid du tip dans data/cladogram.yaml

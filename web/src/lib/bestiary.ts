@@ -2,7 +2,7 @@
  * src/lib/bestiary.ts
  *
  * Couche d'accès aux fiches d'adversaires (data/bestiary/cards/*.card.yaml, générées
- * par tools/consolidate-bestiary.mjs depuis data/bestiary/species/ + le cladogramme).
+ * par tools/consolidate-bestiary.ts depuis data/bestiary/species/ + le cladogramme).
  * Utilisée uniquement côté serveur (Server Components, generateStaticParams).
  *
  * Le schéma des fiches est documenté dans rules/fr/adversaires/regles_adversaires.md.

@@ -1,4 +1,4 @@
-# GÉNÉRÉ par tools/consolidate-bestiary.mjs — NE PAS ÉDITER À LA MAIN.
+# GÉNÉRÉ par tools/consolidate-bestiary.ts — NE PAS ÉDITER À LA MAIN.
 # Source : data/bestiary/species/<id>.yaml ; parties/cartes/traits dérivés du cladogramme (via `from`).
 id: happe-fond
 from: cuirasses
