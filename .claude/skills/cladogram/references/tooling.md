@@ -141,10 +141,23 @@ kit:
   group: null                          # remove from a group
   armor_add: 1  /  armor_set: 2
   descriptionAppend: { fr: " …" }
+  blocksModify:  [ <blockmod>, … ]     # modify INHERITED blocks (applied FIRST)
   blocksAdd:     [ <block>, … ]        # append
   blocksPrepend: [ <block>, … ]        # prepend (becomes the outer layer to pierce)
-  blocksRemove:  [ 0 ]                 # by index
+  blocksRemove:  [ 0 ]                 # by index (on the post-add array)
+
+# <blockmod> — selects an inherited block BY NAME (the author key, fr): stable
+# across the derivation chain, unlike an index that any intermediate mutation shifts.
+- match: "Mâchoires"                   # error if no block of that name on the part
+  cases: 3         /  casesAdd: 1      # replace / shift the case count (floor 1)
+  name: { fr: "Mâchoires broyeuses" }  # rename
+  grants: { … }                        # REPLACE what the block confers
+  grantsMerge: { grantsCard: rendingBite }  # MERGE into the existing grant (keeps the rest)
 ```
+
+A block's `grants` may also carry **`guard: N`** — a guard bonus held while the block
+is intact. Destroying it drops the creature's guard (the "blind it to hit it" loop).
+Effective guard = sheet guard + Σ(intact blocks' `guard`) ± mental-state modifier.
 
 Guard rails: no two parts of the same `type`; can't modify/remove an absent part.
 Actions referenced by `grantsCard` / `grant_action` must exist in

@@ -160,6 +160,9 @@ function FatigueTrack({ total }: { total: number }) {
   );
 }
 
+/** ⚫ Points d'action par manche — valeur PLATE (une fiche peut la surcharger). */
+const DEFAULT_ACTIONS = 2;
+
 /** Les quatre états de la piste mentale (colère → peur), § règles adversaires. */
 const MENTAL_STATES: { icon: string; name: string; effect: string }[] = [
   { icon: "😡", name: "Enragé", effect: "⬆ menace · garde −2" },
@@ -209,6 +212,14 @@ function BlockGrant({ block, cardNames }: { block: BodyPart["blocks"][number]; c
     return (
       <span className="adv-grant-chip">
         {RES_META[block.resource].icon} +{block.amount}
+      </span>
+    );
+  }
+  // Garde conférée : détruire le bloc la fait perdre (la créature devient plus facile à toucher).
+  if (block.guard != null) {
+    return (
+      <span className="adv-grant-chip" title="Garde conférée tant que le bloc est intact">
+        🛡️ Garde {block.guard >= 0 ? `+${block.guard}` : block.guard}
       </span>
     );
   }
@@ -268,6 +279,12 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
           </span>
           <span className="adv-guard">
             Garde · {a.guard.label} <strong>{a.guard.value}</strong>
+          </span>
+          <span className="adv-actions" title="Points d'action par manche (Essoufflé en retire 1, plancher 1)">
+            {"⚫".repeat(a.actions ?? DEFAULT_ACTIONS)}
+          </span>
+          <span className="adv-size" title="Palier de taille">
+            📏 {a.size ?? "normal"}
           </span>
           <span className="adv-speed">
             🚶 {a.speed.walk} &nbsp; 🏃 {a.speed.run}

@@ -16,6 +16,7 @@ import {
   canPlayCard, spendCardCost, baseActions,
   spendAdversaryFatigueCost, cardFatigueCost,
   addBleed, bleedTick,
+  grantedGuard, effectiveGuard,
   isBlockDestroyed, isPartDestroyed, isAdversaryDefeated, isAdversaryWinded,
   type AdversaryCombatant,
 } from '../../src/adversary/combatant'
@@ -398,6 +399,29 @@ describe('shiftAdversaryMental', () => {
     expect(shiftAdversaryMental(cautious, -1).mentalState).toBe('panicked')
     // 🔺 vers Colère : aggressive → enraged
     expect(shiftAdversaryMental(c, +1).mentalState).toBe('enraged')
+  })
+})
+
+// ─── Garde effective (blocs + état mental) ──────────────────────────────────────
+
+describe('garde effective — base + blocs intacts + état mental', () => {
+  it('combine la garde de fiche et le modificateur mental', async () => {
+    const c = await faucheur()                                  // garde 10, aggressive (mod 0)
+    expect(effectiveGuard(c)).toBe(10)
+    expect(effectiveGuard({ ...c, mentalState: 'cautious' })).toBe(11)  // Prudent +1
+    expect(effectiveGuard({ ...c, mentalState: 'enraged' })).toBe(8)    // Enragé −2
+  })
+
+  it('un bloc intact confère sa garde ; sa destruction la fait perdre', async () => {
+    const c = structuredClone(await faucheur())
+    const head = c.parts.find(p => p.type === 'head')!
+    head.blocks[0].grant = { ...head.blocks[0].grant, guard: 2 }
+    expect(grantedGuard(c)).toBe(2)
+    expect(effectiveGuard(c)).toBe(12)          // 10 + 2
+
+    head.blocks[0].damage = head.blocks[0].cases   // bloc détruit
+    expect(grantedGuard(c)).toBe(0)
+    expect(effectiveGuard(c)).toBe(10)          // bonus perdu
   })
 })
 

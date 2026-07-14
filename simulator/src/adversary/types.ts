@@ -64,6 +64,11 @@ export interface AdversaryBlockGrant {
   immunity?:   string
   /** Bonus armor 🛡️ conferred to all OTHER parts while intact (e.g. a carapace). */
   armorAll?:   number
+  /**
+   * Bonus de GARDE conféré tant que le bloc est intact (s'ajoute à la garde de
+   * base). Détruire le bloc fait chuter la garde de la créature.
+   */
+  guard?:      number
   /** A passive trait this block confers (surfaced in the traits list, conditional on the block's integrity). */
   trait?:      { name: string; effect: string }
 }

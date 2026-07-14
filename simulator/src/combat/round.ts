@@ -54,7 +54,7 @@ import {
 } from '../adversary/actor'
 import {
   spendCardCost, toAdversarySnapshot, type AdversarySnapshot,
-  mentalDieRank, mentalGuardMod,
+  mentalDieRank, effectiveGuard,
 } from '../adversary/combatant'
 import { resolveAdversaryAttack } from '../adversary/attack'
 import { attackAdvantages } from '../adversary/traits'
@@ -279,8 +279,8 @@ function resolveWave(
       if (isAdversaryActor(targetSnap)) {
         const targetPart = plan.targetPart ?? selectTargetPart(targetSnap, 'melee')?.type
         const ctx: ActionContext = {
-          // Garde fixe de la créature ± modificateur de son état mental.
-          dc:            Math.max(1, targetSnap.sheet.guard.value + mentalGuardMod(targetSnap.mentalState)),
+          // Garde de base + bonus des blocs intacts ± état mental (source unique).
+          dc:            effectiveGuard(targetSnap),
           guardReaction: { effects: [], notes: [] },
           target:        targetSnap,
         }

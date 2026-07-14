@@ -38,6 +38,8 @@ interface RawGrant {
   resource?: BlockResource;
   amount?: number;
   grantsCard?: string;
+  /** Bonus de garde conféré tant que le bloc est intact. */
+  guard?: number;
   [k: string]: unknown;
 }
 interface RawBlock { cases: number; name?: LocalizedString; grants?: RawGrant; }
@@ -72,6 +74,10 @@ interface RawAdversary {
   dice: AdversaryDie[];
   description?: LocalizedString;
   guard: { type: GuardType; value: number };
+  /** Palier de taille (omis par le générateur quand « normal »). */
+  size?: string;
+  /** ⚫ Points d'action (omis quand la valeur plate 2 s'applique). */
+  actions?: number;
   speed: { walk: number; run: number };
   fatigue: number;
   /** 🧠 Ténacité : longueur de la barre mentale (▢), tampon final avant fuite/reddition. */
@@ -102,6 +108,8 @@ export interface BodyBlock {
   resource?: BlockResource;
   amount?: number;
   grantsCard?: string;
+  /** Bonus de garde conféré tant que le bloc est intact (perdu s'il est détruit). */
+  guard?: number;
 }
 /** Une partie du corps (identifiée par `type`, affichée via `name`). */
 export interface BodyPart { type: string; name: string; description?: string; armor: number; blocks: BodyBlock[]; }
@@ -128,6 +136,10 @@ export interface Adversary {
   dice: AdversaryDie[];
   description?: string;
   guard: { type: GuardType; label: string; value: number };
+  /** Palier de taille (absent = « normal »). Décale les cases de chaque bloc. */
+  size?: string;
+  /** ⚫ Points d'action par manche (défaut plat : 2). Essoufflé en retire 1 (plancher 1). */
+  actions?: number;
   speed: { walk: number; run: number };
   fatigue: number;
   /** 🧠 Ténacité : longueur de la barre mentale (▢). Absent = créature sans piste mentale. */
@@ -169,6 +181,7 @@ function resolvePart(p: RawPart, locale: string): BodyPart {
       ...(b.grants?.resource && { resource: b.grants.resource }),
       ...(b.grants?.amount != null && { amount: b.grants.amount }),
       ...(b.grants?.grantsCard && { grantsCard: b.grants.grantsCard }),
+      ...(b.grants?.guard != null && { guard: b.grants.guard }),
     })),
   };
 }
@@ -182,6 +195,8 @@ function resolveAdversary(raw: RawAdversary, locale: string): Adversary {
     dice: raw.dice,
     description: opt(raw.description),
     guard: { type: raw.guard.type, label: localize(GUARD_LABELS[raw.guard.type], locale), value: raw.guard.value },
+    ...(raw.size ? { size: raw.size } : {}),
+    ...(raw.actions != null ? { actions: raw.actions } : {}),
     speed: raw.speed,
     fatigue: raw.fatigue,
     ...(raw.tenacity != null ? { tenacity: raw.tenacity } : {}),

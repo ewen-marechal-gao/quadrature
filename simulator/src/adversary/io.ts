@@ -28,6 +28,7 @@ interface RawGrant {
   amount?: number
   immunity?: string
   armorAll?: number
+  guard?: number
 }
 interface RawBlock { cases: number; name?: LocalizedString; grants: RawGrant }
 interface RawPart {
@@ -87,6 +88,7 @@ function resolveGrant(g: RawGrant, locale: string): AdversaryBlockGrant {
     ...(g.amount != null && { amount:  g.amount }),
     ...(g.immunity   && { immunity:   g.immunity }),
     ...(g.armorAll != null && { armorAll: g.armorAll }),
+    ...(g.guard != null && { guard: g.guard }),
   }
 }
 

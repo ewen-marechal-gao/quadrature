@@ -210,6 +210,23 @@ export function grantedResource(c: AdversaryCombatant, resource: AdversaryResour
   }, 0)
 }
 
+/** Bonus de garde conféré par les blocs INTACTS (détruire le bloc le fait perdre). */
+export function grantedGuard(c: AdversaryCombatant): number {
+  return allBlocks(c).reduce((sum, b) => {
+    if (isBlockDestroyed(b) || b.grant.guard == null) return sum
+    return sum + b.grant.guard
+  }, 0)
+}
+
+/**
+ * Garde EFFECTIVE : garde de base de la fiche + bonus des blocs intacts
+ * + modificateur d'état mental (Prudent/Paniqué +1, Enragé −2). Plancher à 1.
+ * SOURCE UNIQUE du seuil que le PJ doit atteindre pour toucher la créature.
+ */
+export function effectiveGuard(c: AdversaryCombatant): number {
+  return Math.max(1, c.sheet.guard.value + grantedGuard(c) + mentalGuardMod(c.mentalState))
+}
+
 /**
  * Start-of-round refresh: regenerating resources are replenished to what the
  * currently-intact blocks grant (destroying the granting part cuts the buffer).

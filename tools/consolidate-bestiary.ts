@@ -165,6 +165,8 @@ function consolidate(source: any, map: any, mutations: any): any {
     ...(source.art ? { art: source.art } : {}), // illustration du verso (data/bestiary/art/)
     guard: source.guard,
     ...(size !== "normal" ? { size } : {}),
+    // ⚫ Points d'action : 2 par défaut (valeur plate) — seul un override d'espèce est écrit.
+    ...(source.actions != null ? { actions: source.actions } : {}),
     speed: source.speed ?? state.speed ?? { walk: 0, run: 0 }, // source surcharge sinon dérivé
     fatigue: source.fatigue ?? state.fatigue,
     ...(source.tenacity != null ? { tenacity: source.tenacity } : {}), // 🧠 (A) explicite ; (B) dérivera du cladogramme

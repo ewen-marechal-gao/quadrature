@@ -30,6 +30,12 @@ export interface Grant {
   amount?: number;
   immunity?: string;
   armorAll?: number;
+  /**
+   * Bonus de GARDE conféré tant que le bloc est intact (s'ajoute à la garde de
+   * base de la fiche). Détruire le bloc fait donc chuter la garde : c'est le
+   * levier « aveugler/désarticuler la bête pour la toucher plus facilement ».
+   */
+  guard?: number;
   trait?: { name?: Localized; effect?: Localized };
   [key: string]: unknown;
 }
@@ -78,6 +84,26 @@ export interface State {
   size: Size | null;
 }
 
+/**
+ * Modification d'un bloc HÉRITÉ, sélectionné par son NOM (la clé d'auteur, en fr).
+ * Le nom est stable dans la chaîne de dérivation, contrairement à un index que
+ * toute mutation intermédiaire décalerait.
+ */
+export interface BlockMod {
+  /** Nom (fr) du bloc à modifier — erreur s'il est absent. */
+  match: string;
+  /** Remplace le nombre de cases. */
+  cases?: number;
+  /** Décale le nombre de cases (plancher 1). */
+  casesAdd?: number;
+  /** Renomme le bloc. */
+  name?: Localized;
+  /** REMPLACE intégralement ce que le bloc confère. */
+  grants?: Grant;
+  /** FUSIONNE dans le grant existant (ajoute / écrase des clés, garde le reste). */
+  grantsMerge?: Grant;
+}
+
 /** Modification d'une partie existante portée par un kit. */
 export interface PartMod {
   type: string;
@@ -88,6 +114,7 @@ export interface PartMod {
   name?: Localized;
   description?: Localized;
   descriptionAppend?: Localized;
+  blocksModify?: BlockMod[];
   blocksAdd?: Block[];
   blocksPrepend?: Block[];
   blocksRemove?: number[];
@@ -176,6 +203,17 @@ export function applyKit(state: State, key: string, kit: Kit | undefined): void 
     if (m.name) part.name = structuredClone(m.name);
     if (m.description) part.description = structuredClone(m.description);
     if (m.descriptionAppend) appendDescription(part, m.descriptionAppend);
+    // Modifie les blocs HÉRITÉS (par nom) AVANT tout ajout/suppression : la
+    // sélection reste stable quelles que soient les mutations intermédiaires.
+    for (const bm of m.blocksModify || []) {
+      const block = part.blocks.find((b) => b.name?.fr === bm.match);
+      if (!block) throw new Error(`${key}: blocksModify d'un bloc absent : « ${bm.match} » (partie ${m.type})`);
+      if (bm.cases !== undefined) block.cases = bm.cases;
+      if (bm.casesAdd !== undefined) block.cases = Math.max(1, (block.cases || 0) + bm.casesAdd);
+      if (bm.name) block.name = structuredClone(bm.name);
+      if (bm.grants) block.grants = structuredClone(bm.grants);
+      if (bm.grantsMerge) block.grants = { ...(block.grants || {}), ...structuredClone(bm.grantsMerge) };
+    }
     if (m.blocksAdd) part.blocks.push(...structuredClone(m.blocksAdd));
     if (m.blocksPrepend) part.blocks.unshift(...structuredClone(m.blocksPrepend));
     if (m.blocksRemove) for (const i of [...m.blocksRemove].sort((a, b) => b - a)) part.blocks.splice(i, 1);

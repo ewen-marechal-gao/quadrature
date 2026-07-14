@@ -95,9 +95,13 @@ Un personnage est *Engagé en mêlée* lorsqu'il est adjacent à au moins une cr
 
 ### 😮‍💨 Essoufflé
 
-*Le personnage agit avec difficulté, peine à respirer, et commet des erreurs.*
+*Le souffle manque : les gestes se font plus rares, plus économes.*
 
-Une créature **essoufflée** subit +🟥 à tous ses **jets**.
+Un personnage ou une créature **essoufflé** dispose d'**un point d'action ⚫ de moins** au début de chacune de ses manches — mais **jamais moins de 1 ⚫** : même à bout de souffle, on peut encore agir.
+
+**Personnage :** l'état est gagné en **échouant au test d'Endurance** de la phase d'entretien (déclenché à **fatigue 💧 ≥ 10**) ; l'action **Respiration** le retire.
+
+**Créature :** l'état est **dérivé**, pas suivi par un jeton — une créature est essoufflée dès que sa **fatigue dépasse la moitié de sa piste** (elle ne passe pas de test d'Endurance).
 
 ---
 
@@ -127,7 +131,13 @@ Une créature ou un personnage **immobilisé** subit +🟥 à tous ses jets de *
 
 ### 🫨 Sonné
 
-Le personnage perd toutes ses réactions et dispose d'un **⚫** de moins lors de son prochain tour.
+*Le coup a porté : on encaisse sans pouvoir répondre.*
+
+**Personnage :** il perd **toutes ses réactions ⚡** (il ne peut donc plus opposer de garde active — seul **Encaisser**, gratuit, reste possible). Ses points d'action ⚫ ne sont pas affectés.
+
+**Créature :** n'ayant pas de réactions ⚡, elle perd à la place son **Évasion 🍀** — les blessures graves 💔 la frappent alors de plein fouet.
+
+L'état se dissipe au **début de la manche suivante**.
 
 ---
 
