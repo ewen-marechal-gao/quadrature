@@ -139,13 +139,24 @@
 }
 
 /* ── Corps : colonne gauche (fatigue, traits) + parties ─────────────────── */
+/* Deux colonnes × deux rangées. La rangée 1 porte les deux encadrés hauts
+   (Entretien à gauche, Défenses à droite) : la grille les étire à la hauteur de
+   la plus haute (align-items: stretch par défaut), donc ils s'alignent. La
+   rangée 2 porte le corps de la fiche. Le placement est EXPLICITE pour rester
+   correct même quand l'encadré Entretien est absent (créature sans ressource). */
 .adv-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
   gap: clamp(0.7rem, 1.8cqw, 1.4rem);
   flex: 1;
   min-height: 0;
 }
+
+.adv-maintenance { grid-column: 1; grid-row: 1; }
+.adv-defense     { grid-column: 2; grid-row: 1; }
+.adv-parts       { grid-column: 1; grid-row: 2; }
+.adv-aside       { grid-column: 2; grid-row: 2; }
 
 .adv-section-label {
   font-size: 0.7rem;
@@ -154,15 +165,6 @@
   color: var(--adv-muted);
   font-weight: 700;
   margin-bottom: 0.35rem;
-}
-
-/* Colonne gauche : entretien + état physique empilés (l'entretien ne fait plus
-   toute la largeur de la fiche — il reste dans sa colonne). */
-.adv-col-left {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-  min-width: 0;
 }
 
 .adv-aside {

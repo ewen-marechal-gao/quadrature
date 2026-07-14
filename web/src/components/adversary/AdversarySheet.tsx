@@ -315,10 +315,12 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
       </header>
 
       <div className="adv-body">
-        <div className="adv-col-left">
-          {resources.length > 0 && <MaintenancePanel groups={resources} />}
+        {/* Rangée 1 de la grille : les deux encadrés hauts, étirés à la même hauteur. */}
+        {resources.length > 0 && <MaintenancePanel groups={resources} />}
+        <DefensePanel guard={a.guard} />
 
-          <section className="adv-parts adv-physical">
+        {/* Rangée 2 : le corps de la fiche. */}
+        <section className="adv-parts adv-physical">
           <div className="adv-section-label">État physique</div>
           <FatigueTrack total={a.fatigue} />
 
@@ -338,12 +340,9 @@ export function AdversaryStatBlock({ adversary }: { adversary: Adversary }) {
               </div>
             </>
           )}
-          </section>
-        </div>
+        </section>
 
         <aside className="adv-aside">
-          <DefensePanel guard={a.guard} />
-
           {a.tenacity != null && <MentalPanel tenacity={a.tenacity} />}
 
           {a.traits.length > 0 && (
