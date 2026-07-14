@@ -1,0 +1,18 @@
+name: "Le Meneur et la Lame — Provocation"
+description: >
+  Un meneur social provoque le Faucheur (assèche son ◇ puis 🔺 vers Enragé →
+  garde −2, plus facile à trouer) pendant qu'une lame précise l'exécute. Profil
+  offensif, miroir de l'encounter Intimidation.
+maxRounds: 30
+factions:
+  - name: "Aventuriers"
+    characters:
+      - sheet: characterSheets/Leader_social.yaml
+        persona: cautious
+      - sheet: characterSheets/Duelist_precise.yaml
+        persona: opportunist
+    allowedActions: [provocation, sharp-strike, respiration]
+
+  - name: "Faune d'Aeonir"
+    characters:
+      - adversary: faucheur

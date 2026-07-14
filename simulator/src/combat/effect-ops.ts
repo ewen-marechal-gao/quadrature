@@ -30,6 +30,9 @@ export type EffectOp =
   | { move: number }
   | { gainStability: number }
   | { selfFatigue: number }
+  | { drainStability: number }   // retire N ◇ à la cible
+  | { destabilize: true }        // « Déstabilisé » : la cible ignore son prochain regain de ◇
+  | { shiftIfBroken: number }    // décale l'état mental UNIQUEMENT si la cible n'a plus de ◇ (+N Colère / −N Peur)
 
 // ─── Declarative action outcomes ──────────────────────────────────────────────
 
@@ -107,6 +110,15 @@ export function opsToCombatEffects(
       if (selfId) out.push({ targetId: selfId, kind: 'add-stability', amount: op.gainStability })
     } else if ('selfFatigue' in op) {
       if (selfId) out.push({ targetId: selfId, kind: 'add-fatigue', amount: op.selfFatigue })
+    } else if ('drainStability' in op) {
+      out.push({ targetId, kind: 'drain-stability', amount: op.drainStability })
+    } else if ('destabilize' in op) {
+      out.push({ targetId, kind: 'destabilize' })
+    } else if ('shiftIfBroken' in op) {
+      const direction = op.shiftIfBroken < 0 ? 'toward-terror' : 'toward-rage'
+      for (let i = 0; i < Math.abs(op.shiftIfBroken); i++) {
+        out.push({ targetId, kind: 'shift-mental-broken', direction })
+      }
     }
     // 'move' → no CombatEffect (spatial model deferred)
   }

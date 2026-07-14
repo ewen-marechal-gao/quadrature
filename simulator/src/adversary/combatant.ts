@@ -125,6 +125,12 @@ export interface AdversaryCombatant {
    * d'un cran (−1 jeton). Un saignement s'estompe seul sans nouvelle blessure.
    */
   bleed:     number
+  /**
+   * « Déstabilisé » : la créature ignore son PROCHAIN regain de ◇ au début de
+   * manche (posé par Provocation/Intimidation, consommé au startRound). Assèche
+   * durablement le ◇ malgré sa régénération.
+   */
+  destabilized: boolean
 }
 
 // ─── Block / part predicates ──────────────────────────────────────────────────
@@ -174,6 +180,7 @@ export function initAdversary(sheet: AdversarySheet): AdversaryCombatant {
     actions:     0,
     stunned:     false,
     bleed:       0,
+    destabilized: false,
   }
   return startRound(base)
 }
@@ -206,15 +213,18 @@ export function grantedResource(c: AdversaryCombatant, resource: AdversaryResour
 /**
  * Start-of-round refresh: regenerating resources are replenished to what the
  * currently-intact blocks grant (destroying the granting part cuts the buffer).
+ * « Déstabilisé » saute UNE régénération de ◇ (l'état est alors consommé) :
+ * le ◇ asséché par Provocation/Intimidation reste bas la manche suivante.
  */
 export function startRound(c: AdversaryCombatant): AdversaryCombatant {
   return {
     ...c,
-    stability: grantedResource(c, 'stability'),
+    stability: c.destabilized ? c.stability : grantedResource(c, 'stability'),
     endurance: grantedResource(c, 'endurance'),
     evasion:   grantedResource(c, 'evasion'),
     actions:   baseActions(c),
-    stunned:   false,   // Sonné se dissipe au début de la manche
+    stunned:   false,        // Sonné se dissipe au début de la manche
+    destabilized: false,     // « Déstabilisé » consommé (a sauté ce regain de ◇)
   }
 }
 
@@ -463,6 +473,8 @@ export interface AdversarySnapshot {
   winded:      boolean
   /** 🩸 Jetons d'hémorragie cumulés (cases cochées en fin de manche). */
   bleed:       number
+  /** « Déstabilisé » : sautera son prochain regain de ◇. */
+  destabilized: boolean
   /** Per-part damage: marked cases / total cases, and destroyed flag. */
   parts: Array<{ type: string; marked: number; total: number; destroyed: boolean }>
 }
@@ -480,6 +492,7 @@ export function toAdversarySnapshot(c: AdversaryCombatant): AdversarySnapshot {
     stunned:     c.stunned,
     winded:      isAdversaryWinded(c),
     bleed:       c.bleed,
+    destabilized: c.destabilized,
     parts: [...c.parts, ...c.weapons].map(p => ({
       type:      p.type,
       marked:    p.blocks.reduce((s, b) => s + b.damage, 0),

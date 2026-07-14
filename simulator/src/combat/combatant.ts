@@ -586,6 +586,10 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'add-temp-protection': return { ...s, tempProtection: s.tempProtection + effect.amount }
     // ◇ regagné (consolidation) — plafonné à la réserve Ténacité + Discipline.
     case 'add-stability':       return { ...s, stability: Math.min(stabilityPool(s), s.stability + effect.amount) }
+    // Assaut mental (Provocation/Intimidation) — symétrique sur les PJ.
+    case 'drain-stability':     return { ...s, stability: Math.max(0, s.stability - effect.amount) }
+    case 'destabilize':         return s   // le ◇ PJ ne régénère pas → sans effet
+    case 'shift-mental-broken': return s.stability > 0 ? s : shiftMentalState(s, effect.direction)
   }
 }
 

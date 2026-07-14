@@ -223,23 +223,25 @@ actions:
   provocation:
     vaultCard: provocation
     name: { fr: "Provocation" }
-    description: { fr: "Vous raillez la cible pour l'enrager. Succès : la cible subit 🔺 (vers la Colère). Coûte 2 PA." }
+    description: { fr: "Vous raillez la cible pour l'enrager. Assèche son ◇ : succès → −1 ◇ + Déstabilisé (saute son prochain regain de ◇), critique → −1 ◇ de plus, échec → −1 ◇. Quand la cible n'a plus de ◇, elle subit 🔺 (vers la Colère). Coûte 2 PA." }
     initiative: 7
     cost: { actions: 2 }
     tags: [offensive, social, mental, mentalDamage]
     prerequisite: { skill: manipulation, minValue: 1 }
     roll: { characteristic: charisma, skill: manipulation }
-    onSuccess: { text: { fr: "🔺 — la cible s'échauffe" }, effect: [{ mental: 1 }] }
-    onFailure: { text: { fr: "Aucun effet" },              effect: [] }
+    onSuccess:  { text: { fr: "La cible perd 1 ◇ et est Déstabilisée" }, effect: [{ shiftIfBroken: 1 }, { drainStability: 1 }, { destabilize: true }] }
+    onFailure:  { text: { fr: "La cible perd 1 ◇" },                     effect: [{ shiftIfBroken: 1 }, { drainStability: 1 }] }
+    onCritical: { text: { fr: "Critique — la cible perd 1 ◇ de plus" }, effect: [{ drainStability: 1 }] }
 
   intimidation:
     vaultCard: intimidation
     name: { fr: "Intimidation" }
-    description: { fr: "Vous menacez la cible pour l'effrayer. Succès : la cible subit 🔻 (vers la Peur). Coûte 2 PA." }
+    description: { fr: "Vous menacez la cible pour l'effrayer. Assèche son ◇ : succès → −1 ◇ + Déstabilisé (saute son prochain regain de ◇), critique → −1 ◇ de plus, échec → −1 ◇. Quand la cible n'a plus de ◇, elle subit 🔻 (vers la Peur). Coûte 2 PA." }
     initiative: 5
     cost: { actions: 2 }
     tags: [offensive, social, mental, mentalDamage]
     prerequisite: { skill: authority, minValue: 1 }
     roll: { characteristic: willpower, skill: authority }
-    onSuccess: { text: { fr: "🔻 — la cible hésite" }, effect: [{ mental: -1 }] }
-    onFailure: { text: { fr: "Aucun effet" },          effect: [] }
+    onSuccess:  { text: { fr: "La cible perd 1 ◇ et est Déstabilisée" }, effect: [{ shiftIfBroken: -1 }, { drainStability: 1 }, { destabilize: true }] }
+    onFailure:  { text: { fr: "La cible perd 1 ◇" },                     effect: [{ shiftIfBroken: -1 }, { drainStability: 1 }] }
+    onCritical: { text: { fr: "Critique — la cible perd 1 ◇ de plus" }, effect: [{ drainStability: 1 }] }

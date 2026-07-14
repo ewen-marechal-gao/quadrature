@@ -400,3 +400,33 @@ describe('shiftAdversaryMental', () => {
     expect(shiftAdversaryMental(c, +1).mentalState).toBe('enraged')
   })
 })
+
+// ─── Assaut mental (Provocation / Intimidation) ─────────────────────────────────
+
+describe('assaut mental — drain-stability / destabilize / shift-if-broken', () => {
+  it('startRound skips the ◇ regen when destabilized, then clears the flag', async () => {
+    const c = { ...(await faucheur()), stability: 0, destabilized: true }
+    const r = startRound(c)
+    expect(r.stability).toBe(0)          // regain sauté (aurait rendu 2)
+    expect(r.destabilized).toBe(false)   // consommé
+    expect(startRound(r).stability).toBe(2)  // manche suivante : régén normale
+  })
+
+  it('drain-stability floors at 0 ; destabilize poses le flag', async () => {
+    let c = await faucheur()             // ◇ 2
+    c = applyEffectToActor(c, { targetId: c.id, kind: 'drain-stability', amount: 3 }) as AdversaryCombatant
+    expect(c.stability).toBe(0)
+    c = applyEffectToActor(c, { targetId: c.id, kind: 'destabilize' }) as AdversaryCombatant
+    expect(c.destabilized).toBe(true)
+  })
+
+  it('shift-mental-broken ne décale QUE si le ◇ est vide', async () => {
+    const c = await faucheur()           // ◇ 2, aggressive
+    const held = applyEffectToActor(c,
+      { targetId: c.id, kind: 'shift-mental-broken', direction: 'toward-rage' }) as AdversaryCombatant
+    expect(held.mentalState).toBe('aggressive')   // le ◇ tient encore la piste
+    const broken = applyEffectToActor({ ...c, stability: 0 },
+      { targetId: c.id, kind: 'shift-mental-broken', direction: 'toward-rage' }) as AdversaryCombatant
+    expect(broken.mentalState).toBe('enraged')    // ◇ vide → 🔺
+  })
+})

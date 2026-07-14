@@ -92,6 +92,14 @@ function applyEffectToAdversary(a: AdversaryCombatant, fx: CombatEffect): Advers
       return a  // toward-focused: PC-only recovery concept
     case 'add-stability':
       return { ...a, stability: a.stability + fx.amount }
+    case 'drain-stability':
+      return { ...a, stability: Math.max(0, a.stability - fx.amount) }
+    case 'destabilize':
+      return { ...a, destabilized: true }
+    case 'shift-mental-broken':
+      // Ne décale QUE si le ◇ est déjà épuisé (sinon le ◇ tient encore la piste).
+      if (a.stability > 0) return a
+      return shiftAdversaryMental(a, fx.direction === 'toward-rage' ? +1 : -1)
     case 'add-status':
       // Sonné 🫨 : désactive l'Évasion 🍀 jusqu'au reset ; Hémorragie 🩸 : +1
       // jeton de saignée. Les autres statuts PJ (À terre…) restent non modélisés.

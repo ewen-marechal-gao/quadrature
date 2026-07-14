@@ -211,6 +211,10 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
   | { kind: 'set-mental';          state: MentalState }  // décalage VOLONTAIRE (consolidation) — ne passe pas par le ◇
   | { kind: 'add-temp-protection'; amount: number }
   | { kind: 'add-stability';       amount: number }  // ◇ : PJ (consolidation, plafonné au pool) ou adversaire (op de carte)
+  // ── Assaut mental (Provocation / Intimidation) ──────────────────────────────
+  | { kind: 'drain-stability';     amount: number }  // retire N ◇ à la cible (plancher 0)
+  | { kind: 'destabilize' }                          // « Déstabilisé » : ignore le prochain regain de ◇ (adversaire)
+  | { kind: 'shift-mental-broken'; direction: 'toward-terror' | 'toward-rage' }  // ne décale QUE si la cible n'a plus de ◇
 )
 
 // ─── Resolution records ───────────────────────────────────────────────────────

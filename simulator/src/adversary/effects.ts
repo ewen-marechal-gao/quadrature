@@ -48,6 +48,15 @@ export function applyPcEffectsToAdversary(
       case 'shift-mental':
         c = shiftAdversaryMental(c, fx.direction === 'toward-terror' ? -1 : fx.direction === 'toward-rage' ? 1 : 0)
         break
+      case 'drain-stability':
+        c = { ...c, stability: Math.max(0, c.stability - fx.amount) }
+        break
+      case 'destabilize':
+        c = { ...c, destabilized: true }
+        break
+      case 'shift-mental-broken':
+        if (c.stability === 0) c = shiftAdversaryMental(c, fx.direction === 'toward-rage' ? 1 : -1)
+        break
       case 'add-status':
         // Sonné 🫨 désactive l'Évasion 🍀 ; Hémorragie 🩸 ajoute un jeton de
         // saignée (coché en fin de manche) ; les autres restent non modélisés.
