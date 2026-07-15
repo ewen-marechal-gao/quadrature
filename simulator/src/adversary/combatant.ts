@@ -340,12 +340,20 @@ function destroyTopBlock(part: PartState): void {
 }
 
 /**
- * Apply damage to a declared part.
+ * Apply damage to a declared part. Chaîne défensive, dans l'ordre :
  *
- * Light wounds are armor-reduced (min 1) and fill blocks top → bottom. Each
- * heavy wound destroys the top intact block — unless an 🍀 Evasion token is
- * available, in which case it is spent to convert that 💔 into 3 💢 (also
- * armor-reduced) applied to the part instead.
+ *  1. 🍀 **Évasion** (défense réactive, rare — désactivée si Sonné 🫨) : chaque
+ *     jeton convertit une 💔 en 3 💢 (le coup ripe).
+ *  2. 🛡️ **Armure** (§ Armure à cases) : chaque 💔 restante est **annulée** —
+ *     mais l'encaisser **détruit un point d'armure** de la partie (la plaque
+ *     cède). L'armure ne se régénère PAS : c'est une défense d'attrition.
+ *  3. 💢 réduites par l'armure **restante** (+ `armorAll` des blocs intacts
+ *     d'autres parties), minimum 1 qui passe. Une armure entamée protège donc
+ *     moins des 💢 : craquer la cuirasse ouvre les DEUX canaux à la fois.
+ *  4. Les 💔 non absorbées détruisent chacune le bloc intact du dessus.
+ *
+ * Note : le bonus `armorAll` (carapace) ne réduit que les 💢 — seule l'armure
+ * PROPRE de la partie, celle qui porte les cases, encaisse une 💔.
  *
  * @returns the new state (input is not mutated).
  */
@@ -361,16 +369,20 @@ export function damagePart(
   let light = wounds.light ?? 0
   let heavy = wounds.heavy ?? 0
 
-  // Evasion converts heavy wounds (while tokens last) into armor-reduced light —
-  // UNLESS the creature is Sonné 🫨 (its reactive defence is disabled this round).
+  // 1. Évasion : convertit la 💔 en 3 💢 (tant qu'il reste des jetons).
   while (heavy > 0 && next.evasion > 0 && !next.stunned) {
     next.evasion -= 1
     heavy -= 1
     light += 3
   }
 
-  // Effective armor = the part's own armor + any global bonus (armorAll) still
-  // conferred by intact blocks on OTHER parts (e.g. an intact carapace).
+  // 2. Armure : annule la 💔 en cédant un point (la plaque se détruit).
+  while (heavy > 0 && part.armor > 0) {
+    part.armor -= 1
+    heavy -= 1
+  }
+
+  // 3. 💢 réduites par l'armure RESTANTE + le bonus des carapaces intactes.
   const effectiveArmor = part.armor + grantedArmorAll(next, part.type)
   fillBlocks(part, armorReduced(effectiveArmor, light))
   for (let i = 0; i < heavy; i++) destroyTopBlock(part)

@@ -23,9 +23,10 @@ describe('applyPcEffectsToAdversary', () => {
     expect(isBlockDestroyed(part(state, 'rearLeg').blocks[0])).toBe(true)
   })
 
-  it('a heavy wound destroys a block on the declared part (evasion spent first)', async () => {
+  it('a heavy wound destroys a block once armor and evasion are gone', async () => {
     let c = await faucheur()
-    c = { ...c, evasion: 0 }  // no evasion → heavy destroys a block
+    // Ni évasion ni armure sur les Serpes → la 💔 détruit directement le bloc.
+    c = { ...c, evasion: 0, parts: c.parts.map(p => p.type === 'sickles' ? { ...p, armor: 0 } : p) }
     const fx: CombatEffect[] = [{ targetId: c.id, kind: 'heavy-wound' }]
     const { state } = applyPcEffectsToAdversary(c, fx, 'sickles')
     expect(isBlockDestroyed(part(state, 'sickles').blocks[0])).toBe(true)

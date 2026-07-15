@@ -10,6 +10,12 @@ async function faucheur(): Promise<AdversaryCombatant> {
   return initAdversary(await loadAdversary('faucheur'))
 }
 const card = (c: AdversaryCombatant, id: string) => c.sheet.cards.find(k => k.id === id)!
+/** Évasion 0 + armure 0 partout : une 💔 détruit directement un bloc (isole le ciblage/deck). */
+const bare = (c: AdversaryCombatant): AdversaryCombatant => ({
+  ...c, evasion: 0,
+  parts:   c.parts.map(p => ({ ...p, armor: 0 })),
+  weapons: c.weapons.map(p => ({ ...p, armor: 0 })),
+})
 
 describe('selectTargetPart', () => {
   it('a melee attacker strikes the offensive part first (Serpes)', async () => {
@@ -29,8 +35,7 @@ describe('selectTargetPart', () => {
   })
 
   it('falls through to the next priority once the top part is destroyed', async () => {
-    let c = await faucheur()
-    c = { ...c, evasion: 0 }
+    let c = bare(await faucheur())
     // Destroy both Serpes blocks → offensive part gone; melee falls to defensive (tail).
     c = damagePart(c, 'sickles', { heavy: 1 })
     c = damagePart(c, 'sickles', { heavy: 1 })
@@ -61,8 +66,7 @@ describe('planAdversaryCard', () => {
   })
 
   it('falls back to a wound-dealer (bite) once the Serpes are gone, not the Cri', async () => {
-    let c = await faucheur()
-    c = { ...c, evasion: 0 }
+    let c = bare(await faucheur())
     // Destroy both Serpes blocks → sickleStrike leaves the deck.
     c = damagePart(c, 'sickles', { heavy: 1 })
     c = damagePart(c, 'sickles', { heavy: 1 })
@@ -71,8 +75,7 @@ describe('planAdversaryCard', () => {
   })
 
   it('plays the Cri only when no wound-dealer is playable', async () => {
-    let c = await faucheur()
-    c = { ...c, evasion: 0 }
+    let c = bare(await faucheur())
     // Destroy every physicalDamage source: Serpes (2 → sickleStrike), the Pattes
     // top block (→ charge) and the head's Mâchoires block (→ bite). Cri est conféré
     // par le Corps (Poumons), laissé intact. Destruction top → bottom ; ordre de la
