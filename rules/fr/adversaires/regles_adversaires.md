@@ -73,11 +73,16 @@ La vitalité d'un adversaire n'est pas une barre de points de vie unique : elle 
 
 **Capacités conférées.** Une partie intacte donne à la créature ce qu'elle *est* : des **actions** disponibles dans son deck, des **ressources régénérantes** (gagnées au début de chaque manche), ou des **modificateurs**. On lit toujours ce que la créature possède encore, jamais ce qu'elle a perdu.
 
-**Cibler une partie.** L'attaquant **déclare la partie visée avant de lancer les dés**. Les blessures s'appliquent à cette partie (réduites par son armure).
+**Cibler une partie.** L'attaquant **déclare la partie visée avant de lancer les dés**. Les blessures s'appliquent à cette partie, à travers ses défenses (voir ci-dessous).
 
-**Détruire un bloc.** Les **blessures 💢** cochent les cases de la partie, **bloc par bloc** dans l'ordre imprimé (du haut vers le bas). Une **blessure grave 💔** détruit immédiatement un bloc entier. Lorsque toutes les cases d'un bloc sont cochées, le bloc est **détruit** et la capacité qu'il conférait est **perdue** (par exemple, une action quitte le deck, ou son coût augmente).
+**Blessures légères 💢.** Réduites par l'**Armure 🛡️** de la partie (au moins **1** passe toujours), elles cochent les cases **bloc par bloc** dans l'ordre imprimé (du haut vers le bas). Lorsque toutes les cases d'un bloc sont cochées, le bloc est **détruit** et la capacité qu'il conférait est **perdue** (une action quitte le deck, ou son coût augmente).
 
-> Un bloc de |▢▢| absorbe donc **2 blessures légères 💢** ou **1 blessure grave 💔**. Contrairement aux personnages, les adversaires **n'effectuent pas de conversion 💢 → 💔 en fin de manche** : les blessures restent sur la partie jusqu'à ce qu'un bloc soit rempli.
+**Blessures graves 💔.** Une 💔 traverse une chaîne de défenses avant d'atteindre un bloc :
+1. **Évasion 🍀** (si la créature en a — rare) : un jeton convertit la 💔 en **3 💢** (le coup ripe) ;
+2. sinon, **Armure 🛡️** : la 💔 est **annulée** en **détruisant une case d'armure** de la partie ;
+3. une fois l'armure de la partie épuisée, la 💔 **détruit un bloc entier** (le bloc intact du dessus).
+
+> Contrairement aux personnages, les adversaires **n'effectuent pas de conversion 💢 → 💔 en fin de manche** : les blessures restent sur la partie jusqu'à ce qu'un bloc soit rempli.
 
 La créature reste en jeu tant que toutes ses parties ne sont pas détruites ; sa mise hors de combat dépend surtout de la **Fatigue 💧** (voir ci-dessous).
 
@@ -89,11 +94,16 @@ La créature reste en jeu tant que toutes ses parties ne sont pas détruites ; s
 
 💧 **Coût de fatigue des actions.** Certaines actions puissantes portent un coût en fatigue (ex. `Cri 💧`) payé au moment de les jouer. Contrairement à la fatigue subie, ce coût est absorbable **intégralement** par les jetons 🫁 : agir en étant frais est gratuit. Mais le tampon brûlé n'absorbe plus les attaques — une créature qui se dépense s'ouvre aux dégâts de fatigue. Une créature **ne peut pas jouer** une action dont le coût remplirait sa piste de fatigue.
 
-### Défenses : Évasion et Armure
+### Défenses : Armure et Évasion
 
-🛡️ **Armure X** — propre à chaque partie du corps (voir ci-dessus).
+🛡️ **Armure X** — propre à chaque partie du corps, suivie par **X cases ▢**. Elle joue sur les **deux** types de blessure :
 
-🍀 **Évasion X** — défense **globale** de la créature. Au début de chaque manche, elle gagne X jetons d'Évasion. Chaque jeton transforme **une blessure grave 💔** reçue dans la manche en **3 blessures légères 💢** (elles-mêmes réduites par l'armure de la partie). L'Évasion est conférée par les **Pattes** : pattes détruites → **Évasion 0** et plus aucun déplacement possible.
+- elle **réduit les blessures légères 💢** reçues par la partie (au moins **1** passe toujours) ;
+- elle **annule une blessure grave 💔** — mais l'encaisser **détruit une case d'armure** (la plaque cède).
+
+L'armure **ne se régénère pas** : c'est une défense d'**attrition**, pas un tampon qui revient chaque manche. Et comme elle réduit aussi les 💢, une **armure entamée protège moins** : craquer la cuirasse d'une partie **ouvre les deux canaux** à la fois. *(Le bonus d'armure qu'une **carapace** confère aux autres parties ne joue, lui, que sur les 💢.)*
+
+🍀 **Évasion X** — défense **réactive et rare**, signature des créatures agiles (bondisseurs, planeurs). Au début de chaque manche, la créature gagne X jetons ; chaque jeton transforme **une blessure grave 💔** reçue dans la manche en **3 blessures légères 💢** (elles-mêmes réduites par l'armure de la partie). L'Évasion est **désactivée** quand la créature est **Sonnée 🫨**.
 
 Par défaut, la **Garde** d'un adversaire est l'**Esquive**. Certaines créatures **bloquent** ou **parent** à la place, généralement avec une valeur plus haute. ⚔️
 
