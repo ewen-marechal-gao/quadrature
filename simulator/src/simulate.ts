@@ -28,7 +28,7 @@ import {
   initCombatant, resetRoundTokensWithLog, effChar, resistanceThreshold,
 } from './combat/combatant'
 import { resolveRoundBands } from './combat/round'
-import { bandOf, type Band } from './combat/bands'
+import { bandOf, BAND_MOON, type Band } from './combat/bands'
 import type { GuardProvider, PlannedAction, Plan } from './combat/round'
 
 import { loadAdversary } from './adversary/io'
@@ -150,6 +150,13 @@ async function simulate(): Promise<void> {
           }
         },
         onWave: (phaseLogs) => {
+          // Une révélation = une bande. L'en-tête la nomme, sans quoi le compte
+          // rendu ne montre plus la structure de la manche — et « une carte par
+          // bande » devient invérifiable à la lecture.
+          const band = phaseLogs.find(p => p.band)?.band
+          if (band && phaseLogs.some(p => p.actions.length > 0)) {
+            console.log(`  ── Bande ${band} ${BAND_MOON[band]} ${'┈'.repeat(44)}`)
+          }
           for (const phase of phaseLogs) {
             if (phase.actions.length === 0) continue
             console.log(`  [init ${phase.initiative}]`)

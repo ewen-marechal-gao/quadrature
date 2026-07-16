@@ -47,6 +47,15 @@ describe('mixed round — PC vs Faucheur', () => {
     expect(log.phases[1].actions).toHaveLength(2)
   })
 
+  it('names the band of every phase — the log must be auditable on its own', async () => {
+    // Sans ça, « une carte par bande » n'est vérifiable qu'en re-dérivant le
+    // découpage à la lecture du rapport. Le CombatLog se veut self-contained.
+    const { states } = await setup()
+    const { log } = await runMixedRound(states)
+    expect(log.phases.map(p => ({ init: p.initiative, band: p.band })))
+      .toEqual([{ init: 3, band: 'I' }, { init: 5, band: 'II' }])
+  })
+
   it('drops a second card committed to the same band', async () => {
     const { states } = await setup()
     // cry (init 2) et bite (init 3) sont toutes deux en Bande I : une seule passe.

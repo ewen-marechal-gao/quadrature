@@ -20,6 +20,13 @@ export type Band = 'I' | 'II' | 'III'
 /** The bands in reveal order — the sweep of a round. */
 export const BANDS: readonly Band[] = ['I', 'II', 'III'] as const
 
+/**
+ * The moon each band is written with on the cards — waxing, full, waning
+ * (§ glossaire : 🌓 = 1 PA Bande I, 🌕 = Bande II, 🌗 = Bande III).
+ * Mirrors web/src/lib/bands.ts, which draws them as SVG rather than emoji.
+ */
+export const BAND_MOON: Record<Band, string> = { I: '🌓', II: '🌕', III: '🌗' }
+
 /** Band of an initiative, or null when it is out-of-band (0 and 10). */
 export function bandOf(initiative: number): Band | null {
   if (initiative >= 1 && initiative <= 3) return 'I'

@@ -9,6 +9,7 @@
 
 import type { Character, CharacteristicName, SkillName, CharacteristicState } from '../character/types'
 import type { Position } from './position'
+import type { Band } from './bands'
 import type { RollResult } from '../types'
 import type { AdversaryRollResult } from '../adversary/dice'
 import type { AdversarySnapshot } from '../adversary/combatant'
@@ -339,6 +340,16 @@ export interface ActionLogEntry {
 /** All simultaneous actions sharing the same initiative value */
 export interface PhaseLog {
   initiative: number
+  /**
+   * Reveal this phase belonged to — I (init 1-3), II (4-6) or III (7-9).
+   *
+   * Derivable from `initiative`, and recorded anyway: a CombatLog is meant to be
+   * self-contained (see the file header), and the band is the round's structure.
+   * A reader should not have to re-derive the cut to audit « une carte par
+   * bande ». Absent for the out-of-band initiatives 0 and 10, and for the
+   * bandless resolveRound.
+   */
+  band?:      Band
   actions:    ActionLogEntry[]
 }
 

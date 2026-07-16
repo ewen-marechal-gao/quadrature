@@ -38,7 +38,7 @@ export type { PlannedAction, GuardProvider } from './round'
 export { resolveRound, resolveRoundBands } from './round'
 
 export type { Band } from './bands'
-export { BANDS, bandOf } from './bands'
+export { BANDS, BAND_MOON, bandOf } from './bands'
 
 export type { Position, Board, Speed } from './position'
 export {
