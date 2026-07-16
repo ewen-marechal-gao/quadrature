@@ -49,6 +49,8 @@ La phase d'actions se déroule en **trois bandes** révélées successivement �
 Pour chaque bande, dans l'ordre :
 
 1. **Engagement.** Chaque joueur pose face cachée la ou les **cartes action 🎴** de cette bande qu'il souhaite jouer et peut payer. Le meneur fait de même pour chaque **adversaire** et chaque **horde**. Un combattant qui n'a rien à jouer dans cette bande **passe**.
+
+   Une même carte ne peut être engagée **qu'une fois par bande** : on ne dispose que d'un **exemplaire** de chacune. Frapper deux fois dans une même bande suppose donc **deux cartes différentes**.
 2. **Révélation.** Toutes les cartes de la bande sont révélées **simultanément**.
 3. **Résolution.** Les actions se résolvent par **ordre d'initiative croissante** (résolution fine **1️⃣ à 🔟**). Les actions à **initiative identique** sont **simultanées** : on prend un **instantané** de l'état de chaque combattant concerné *avant* de résoudre le groupe, puis on applique les effets d'un bloc.
 

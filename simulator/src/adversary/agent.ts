@@ -78,13 +78,21 @@ export function cardRank(card: AdversaryCardDef): number {
  * their current cost), prefer wound-dealers, then the highest BASE cost as a
  * power proxy (a cost-override block makes a strong card cheap, not weak), then
  * deck order. Returns null when the creature cannot (or need not) act.
+ *
+ * `alreadyPlayed` carries the cards the creature has already committed this
+ * round: a card can only be played once per band (§ combat.md), and its
+ * initiative pins it to a single band — so a card played once is spent for the
+ * round. Pass the growing set when planning a whole round card by card.
  */
 export function planAdversaryCard(
-  c:        AdversaryCombatant,
-  targetId: string,
+  c:             AdversaryCombatant,
+  targetId:      string,
+  alreadyPlayed: ReadonlySet<string> = new Set(),
 ): PlannedCard | null {
   if (isAdversaryDefeated(c)) return null
-  const playable = activeDeck(c).filter(card => canPlayCard(c, card.id))
+  const playable = activeDeck(c).filter(
+    card => canPlayCard(c, card.id) && !alreadyPlayed.has(card.id),
+  )
   if (playable.length === 0) return null
   const best = [...playable]
     .map((card, i) => ({ card, i }))

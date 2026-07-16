@@ -436,12 +436,15 @@ async function plansForParticipant(
     if (!isAdversaryActor(self)) return []
     // La créature engage sa manche entière : on rejoue son heuristique sur un
     // état simulé jusqu'à épuisement de ses ⚫ (l'état réel n'est pas muté).
+    // `played` fait respecter « une carte par bande » : pas de morsure ×2.
     const plans: Plan[] = []
+    const played = new Set<string>()
     let sim = self
     for (let i = 0; i < MAX_CARDS_PER_ROUND; i++) {
-      const plan = planAdversaryCard(sim, enemy.side.id)
+      const plan = planAdversaryCard(sim, enemy.side.id, played)
       if (!plan) break
       plans.push(plan)
+      played.add(plan.card)
       sim = spendCardCost(sim, plan.card)
     }
     return plans

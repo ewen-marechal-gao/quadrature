@@ -216,8 +216,11 @@ export function planRoundActions(
   }
 
   // ── Phase C: Second offensive action (if PA allows) ─────────────────────
+  // Elle doit être une carte DIFFÉRENTE : une carte ne peut être jouée qu'une
+  // fois par bande, et son initiative la fixe à une seule bande (§ combat.md).
   if (config.persona === 'aggressive' || config.persona === 'opportunist') {
-    const secondAction = selectOffensiveAction(state, opponent, config)
+    const played = new Set<ActionId>(plans.map(p => p.action))
+    const secondAction = selectOffensiveAction(state, opponent, config, played)
     if (secondAction !== null) {
       plans.push({ actorId: self.id, action: secondAction, targetId: config.targetId })
     }
@@ -529,6 +532,7 @@ function selectOffensiveAction(
   state:    CombatantState,
   opponent: Actor,
   config:   AgentConfig,
+  exclude:  ReadonlySet<ActionId> = new Set(),
 ): ActionId | null {
   const { persona } = config
   const lowOnFatigue = state.fatigue >= 14
@@ -563,8 +567,9 @@ function selectOffensiveAction(
       break
   }
 
-  // Apply scenario whitelist — only keep actions the encounter permits
-  const allowed = candidates.filter(id => isActionAllowed(id, config))
+  // Whitelist du scénario, puis cartes déjà engagées cette manche (une carte ne
+  // peut être jouée qu'une fois par bande, et son initiative la fixe à une bande)
+  const allowed = candidates.filter(id => isActionAllowed(id, config) && !exclude.has(id))
 
   for (const actionId of allowed) {
     if (canUseAction(state, actionId) && canAffordAction(state, actionId)) {
@@ -577,7 +582,8 @@ function selectOffensiveAction(
   // de la cible — Intimidation (🔻) avant Provocation (🔺) par défaut ; la
   // whitelist de l'encounter choisit laquelle est réellement disponible.
   for (const social of ['intimidation', 'provocation'] as ActionId[]) {
-    if (isActionAllowed(social, config) && canUseAction(state, social) && canAffordAction(state, social)) {
+    if (isActionAllowed(social, config) && !exclude.has(social)
+      && canUseAction(state, social) && canAffordAction(state, social)) {
       return social
     }
   }

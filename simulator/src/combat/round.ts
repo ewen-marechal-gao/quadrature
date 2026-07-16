@@ -425,7 +425,7 @@ export async function resolveRoundBands<A extends Actor>(
     const declared = await Promise.resolve(
       getPlans(states as unknown as ReadonlyMap<string, A>, band),
     )
-    const plans = declared.filter(p => bandOf(initiativeOf(p, states)) === band)
+    const plans = onePerCard(declared.filter(p => bandOf(initiativeOf(p, states)) === band))
     if (plans.length === 0) continue
 
     const { states: next, phaseLogs } = resolvePlans(states, plans, getGuard, guardCache)
@@ -464,6 +464,24 @@ export async function resolveRoundBands<A extends Actor>(
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Enforce « une carte ne peut être engagée qu'une fois par bande » (§ b) : a
+ * combatant holds a single copy of each card, so it cannot commit the same one
+ * twice in one reveal. Striking twice in a band takes two different cards.
+ *
+ * The first occurrence wins; later duplicates are dropped. Planners are expected
+ * to respect the rule themselves — this is the contract's safety net.
+ */
+function onePerCard(plans: Plan[]): Plan[] {
+  const seen = new Set<string>()
+  return plans.filter(p => {
+    const key = `${p.actorId} ${isCardPlan(p) ? p.card : p.action}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
 
 /** Initiative of a plan: ACTION_DEFS for a PC action, the card's for an adversary play. */
 function initiativeOf(plan: Plan, states: ReadonlyMap<string, Actor>): number {
