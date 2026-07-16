@@ -12,6 +12,7 @@
 
 import type { ActionCard as PlayerCard } from "@/lib/cards";
 import type { AdversaryCard, Adversary } from "@/lib/bestiary";
+import { BAND_MOON, bandOf } from "@/lib/bands";
 
 /**
  * Pour chaque carte du deck, la partie du corps et le bloc qui la confèrent
@@ -32,6 +33,19 @@ export function conferringBlocks(adversary: Adversary): Record<string, string> {
 }
 
 /**
+ * Coût d'une carte d'adversaire : la lune de sa **bande** répétée autant de fois
+ * qu'elle coûte de points d'action, suivie de sa fatigue 💧. Les fiches ne
+ * stockent qu'un coût numérique — la bande se dérive donc de l'initiative, comme
+ * pour les cartes joueur (§ combat.md). Une carte hors-bande (initiative 0 ou 10)
+ * retombe sur le pip générique ⚫.
+ */
+function moonCost(card: AdversaryCard): string {
+  const band = bandOf(card.initiative);
+  const pip  = band ? BAND_MOON[band] : "⚫";
+  return pip.repeat(card.cost) + "💧".repeat(card.fatigueCost ?? 0);
+}
+
+/**
  * Les actions d'adversaires sont offensives par défaut et n'ont pas de
  * Défaut ⚠️ ; le « Repérez X 5 » passe par le champ `repere` (⭐).
  *
@@ -49,7 +63,7 @@ export function adversaryCardToPlayerCard(card: AdversaryCard, conferredBy?: str
     famille: "melee",
     categorie: "offensive",
     initiative: card.initiative,
-    cout: "⚫".repeat(card.cost) + "💧".repeat(card.fatigueCost ?? 0),
+    cout: moonCost(card),
     ...(conferredBy && { prerequis: conferredBy }),
     repere: card.onFives,
     succes: card.onSuccess,

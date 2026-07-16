@@ -12,7 +12,9 @@
  *   amelioration violet · réactions = liseré jaune (attribut data-type).
  */
 
+import { Fragment } from "react";
 import type { ActionCard as Card } from "@/lib/cards";
+import { bandOf, bandOfMoon, type Band } from "@/lib/bands";
 
 /**
  * Convertit le balisage léger (**gras**, *italique*) en HTML, après
@@ -35,6 +37,47 @@ function Field({ icon, text }: { icon: string; text?: string }) {
       <span className="ac-field-icon">{icon}</span>
       <span dangerouslySetInnerHTML={{ __html: mdLite(text) }} />
     </div>
+  );
+}
+
+const BAND_LABEL: Record<Band, string> = {
+  I: "Bande I — lune croissante",
+  II: "Bande II — pleine lune",
+  III: "Bande III — lune décroissante",
+};
+
+/**
+ * Lune de bande, en SVG laiton : un point d'action, joué dans la bande que la
+ * phase désigne. Dessinée plutôt qu'écrite en emoji — le rendu des emojis
+ * dépend de la police système et passe mal sur les cinq teintes d'en-tête.
+ */
+function MoonGlyph({ band }: { band: Band }) {
+  return (
+    <svg className="ac-moon" viewBox="0 0 16 16" role="img" aria-label={BAND_LABEL[band]}>
+      {band === "II" ? (
+        <circle cx="8" cy="8" r="6" />
+      ) : (
+        <>
+          <circle className="ac-moon-ring" cx="8" cy="8" r="6" />
+          {/* Moitié éclairée : à droite quand la lune croît, à gauche quand elle décroît. */}
+          <path d={band === "I" ? "M8 2 A6 6 0 0 1 8 14 Z" : "M8 2 A6 6 0 0 0 8 14 Z"} />
+        </>
+      )}
+    </svg>
+  );
+}
+
+/** Coût : les lunes (PA) deviennent des glyphes dessinés, le reste (💧/⚡) reste du texte. */
+function Cost({ cout }: { cout: string }) {
+  return (
+    <span className="ac-cost">
+      {[...cout].map((ch, i) => {
+        const band = bandOfMoon(ch);
+        return band
+          ? <MoonGlyph key={i} band={band} />
+          : <Fragment key={i}>{ch}</Fragment>;
+      })}
+    </span>
   );
 }
 
@@ -62,14 +105,19 @@ export function ActionCard({ card }: { card: Card }) {
     !!(card.repere || card.effet || card.effet_duree || card.succes || card.echec || card.table);
 
   return (
-    <div className="action-card" data-categorie={card.categorie} data-type={card.type}>
+    <div
+      className="action-card"
+      data-categorie={card.categorie}
+      data-type={card.type}
+      data-bande={bandOf(card.initiative) ?? undefined}
+    >
       <span className="ac-initiative" title={`Initiative ${card.initiative}`}>
         {card.initiative}
       </span>
 
       <header className="ac-header">
         <span className="ac-name">{card.nom}</span>
-        {card.cout && <span className="ac-cost">{card.cout}</span>}
+        {card.cout && <Cost cout={card.cout} />}
       </header>
 
       {card.prerequis && (

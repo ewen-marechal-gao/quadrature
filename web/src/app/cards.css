@@ -260,7 +260,27 @@
   white-space: nowrap;
 }
 
-.ac-cost { flex-shrink: 0; letter-spacing: 0.05em; }
+.ac-cost {
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1em;
+}
+
+/* Lune de bande dans le coût : laiton plein, lisible sur les cinq teintes d'en-tête.
+   🌓 Bande I (croissante) · 🌕 Bande II (pleine) · 🌗 Bande III (décroissante). */
+.ac-moon {
+  width: 1.3em;
+  height: 1.3em;
+  flex-shrink: 0;
+  fill: var(--brass);
+}
+.ac-moon-ring {
+  fill: none;
+  stroke: var(--brass);
+  stroke-width: 1.4;
+}
 
 .ac-prereq {
   padding: 2px 7px 2px 4.5em;          /* la pastille déborde sur cette ligne */
