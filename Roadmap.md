@@ -26,11 +26,14 @@ Cladogramme phylogénétique de la faune → génération des fiches de monstres
 - [x] ✅ Cladogramme (arbre + mutations) en `data/` (`cladogram.yaml` + `mutations.yaml`), édité via `tools/cladogram.ts` ; visualiseur web `/evolution`.
 - [x] ✅ **Kits de combat** par mutation (`mutations[clé].kit`) : parties du corps, cartes, traits, Speed/Fatigue dérivés.
 - [x] ✅ **Consolidateur** `tools/consolidate-bestiary.ts` : `data/bestiary/species/*.yaml` → `cards/*.card.yaml` (dérivées de l'ascendance).
-- [x] ✅ Schéma adversaire migré **anglais + `Locale`** ; champ `weapons` (sapients équipés) ; rubrique web `/adversaires`.
-- [x] ✅ Fiches : Faucheur, Lacérateur, Bandit des Cimes.
+- [x] ✅ Schéma adversaire migré **anglais + `Locale`** ; champ `weapons` (sapients équipés) ; rubrique web `/adversaires` (fiche A5 + deck imprimables, coût de fatigue 💧).
+- [x] ✅ Fiches : Faucheur, Lacérateur, Bandit des Cimes, Cuirassard, Happe-fond, Évoluant.
+- [x] ✅ **Intégration simulateur** : résolution asymétrique, parties du corps à blocs, ressources régénérantes, **armure à cases**, **hémorragie 🩸**, piste mentale **4 états**, actions mentales (Provocation/Intimidation).
 - [ ] 🟠 Passe **nommage des membres par plan de corps** (bipèdes/sapients : « Jambes »/« Membres inférieurs » ≠ « Pattes » ; pieds différenciés).
-- [ ] 🟡 Étoffer les kits (mutations restantes) ; nouvelles espèces ; carte de la mécanique 🩸.
-- [ ] 🟡 Intégration **simulateur** (résolution asymétrique, parties du corps, ressources régénérantes).
+- [ ] 🟠 **Intégration des armes** des sapients (épée longue / à deux mains — aujourd'hui l'attaque reste générique).
+- [ ] 🟡 Étoffer les kits (mutations restantes) ; nouvelles espèces.
+- [ ] 🟡 Consommable **Bandage** (retire jusqu'à 3 🩸, utilisable sans Récupération) ; déclencheurs mentaux à la **perte d'une partie**.
+- [ ] 🟡 Refondre `exemples_adversaires.md` (obsolète : piste à 3 états, « Esquive » mal étiquetée, armure ancienne).
 
 ## Langue rituelle 🟡
 Conlang générative d'Aeonir ([`rules/fr/univers/language.md`](rules/fr/univers/language.md)) — noms, lieux, créatures, incantations.
@@ -52,8 +55,9 @@ Conlang générative d'Aeonir ([`rules/fr/univers/language.md`](rules/fr/univers
 - [ ] 🟡 Activer la locale **EN** (contenu `rules/en/`) ; remplacer le README boilerplate de `web/`.
 
 ## Simulateur 🟡
-- [ ] README documentant les écarts règles ↔ simulation ; commiter la modif en cours d'`agent.ts`.
-- [ ] Rapprocher des règles : fatigue initiale = 1, défaut ⚠️ sur le dé 🟪, positionnement/déplacements.
+- [x] ✅ Fatigue initiale des personnages = 1 ; **dérivation des caractéristiques** (`value = f(compétences)`) — fiches robustes, incohérence impossible.
+- [ ] README documentant les écarts règles ↔ simulation.
+- [ ] Rapprocher des règles : défaut ⚠️ sur le dé 🟪 ; **positionnement / déplacements** (la vitesse des créatures est chargée mais pas encore exploitée en combat).
 
 ## Infrastructure
 - [x] ✅ Consolidation en monorepo (historique préservé) — *0.1.0*.
