@@ -11,7 +11,9 @@
  *  - { heavyWound: N }   💔 N heavy wounds
  *  - { status: S }       apply a StatusEffect (🫨/🩸/🕸️/🙏/🧎…)
  *  - { mental: ±N }      shift the target's mental track (−N = 🔻 vers Peur, +N = 🔺 vers Colère)
- *  - { move: N }         Déplacement [N] — no effect yet (spatial model deferred)
+ *  - { move: N }         SELF: Déplacement [N] — the ACTOR closes on the target,
+ *                        spending up to N cases. Emits a `move-toward` intent
+ *                        that the resolver turns into a path (see movement.ts).
  *  - { gainStability: N }  SELF: the acting creature gains N ◇ (adversary resource)
  *  - { selfFatigue: N }    SELF: the actor takes N 💧 (e.g. ⚠️ Maladresse)
  *
@@ -119,8 +121,13 @@ export function opsToCombatEffects(
       for (let i = 0; i < Math.abs(op.shiftIfBroken); i++) {
         out.push({ targetId, kind: 'shift-mental-broken', direction })
       }
+    } else if ('move' in op) {
+      // SELF-targeted: the mover is the actor, the target is what it closes on
+      // (« Charge : Déplacement [6] puis inflige 💢💢 » — the creature crosses
+      // the ground, not its victim). An intent, not a path: only the resolver
+      // knows the board and who stands where (see expandMoves).
+      if (selfId) out.push({ targetId: selfId, kind: 'move-toward', goalId: targetId, budget: op.move })
     }
-    // 'move' → no CombatEffect (spatial model deferred)
   }
   return out
 }

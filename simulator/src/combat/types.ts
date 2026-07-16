@@ -231,6 +231,21 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
    * The path is decided upstream by `planApproach` — applying it is a pure write.
    */
   | { kind: 'move'; path: Position[] }
+  /**
+   * INTENT: "close on `goalId`, spending up to `budget` cases". This is what a
+   * card actually grants — « Déplacement [6] » is a budget, never a destination.
+   *
+   * It is expanded into a concrete `move` at apply time by `expandMoves`, the
+   * only point that knows the board and who stands where. Deliberately NOT
+   * resolved from the snapshot: two figures closing on the same square would
+   * both find it free and stack up. Expansion orders the movers and lets each
+   * see the previous one's square taken — the one place where movement steps
+   * outside snapshot simultaneity (§ ambiguïté de la case contestée).
+   *
+   * An unexpanded move-toward is a no-op, which is what a positionless
+   * encounter wants.
+   */
+  | { kind: 'move-toward'; goalId: string; budget: number; reach?: number }
 )
 
 // ─── Resolution records ───────────────────────────────────────────────────────

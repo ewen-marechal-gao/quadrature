@@ -47,7 +47,7 @@ export {
 } from './position'
 
 export type { Blocked, ApproachOptions, MovePlan } from './movement'
-export { planApproach, occupiedBy } from './movement'
+export { planApproach, occupiedBy, expandMoves } from './movement'
 
 export type { ActionDef, GuardDef, ActionContext } from './actions'
 export {

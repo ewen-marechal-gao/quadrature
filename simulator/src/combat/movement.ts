@@ -22,6 +22,7 @@
 import {
   type Board, type Position, distance, neighbours, samePosition,
 } from './position'
+import type { CombatEffect } from './types'
 
 /** True when a square cannot be entered (occupied by another figure, obstacle…). */
 export type Blocked = (p: Position) => boolean
@@ -135,4 +136,68 @@ export function occupiedBy(positions: Iterable<Position>): Blocked {
   const taken = new Set<string>()
   for (const p of positions) taken.add(key(p))
   return (p: Position) => taken.has(key(p))
+}
+
+// ─── Expanding move intents ───────────────────────────────────────────────────
+
+/**
+ * Turn every `move-toward` INTENT (a budget) into a concrete `move` (a path).
+ *
+ * This is the one place movement leaves snapshot simultaneity, and it has to.
+ * Everything else in an initiative group is resolved against a frozen snapshot,
+ * which is right for blows — two fighters trade hits without either seeing the
+ * other's. Movement cannot work that way: two figures closing on the same
+ * square would each snapshot it as free and end up stacked.
+ *
+ * So movers are ORDERED and expanded one at a time, each seeing the squares the
+ * previous ones just claimed. The order is « distance puis id » — the figure
+ * already closest to its goal claims first (it had the least ground to cover,
+ * so it gets there first), and the id breaks the remaining ties so the same
+ * inputs always give the same board. Rare in play, but never ambiguous.
+ *
+ * A mover with no square (positionless encounter) yields an empty path, which
+ * applies as a no-op. Non-movement effects pass through untouched, and every
+ * effect keeps its position in the list — a Charge's move still precedes its 💢.
+ */
+export function expandMoves(
+  board:     Board,
+  positions: ReadonlyMap<string, Position>,
+  effects:   readonly CombatEffect[],
+): CombatEffect[] {
+  const intents = effects.filter(e => e.kind === 'move-toward')
+  if (intents.length === 0) return [...effects]
+
+  // Live occupancy, mutated as each mover claims its destination.
+  const claimed = new Map(positions)
+
+  const gapOf = (e: Extract<CombatEffect, { kind: 'move-toward' }>): number => {
+    const from = claimed.get(e.targetId)
+    const goal = claimed.get(e.goalId)
+    return from && goal ? distance(from, goal) : Number.MAX_SAFE_INTEGER
+  }
+
+  // « Distance puis id » — deterministic, and cheap to reason about at the mat.
+  const ordered = [...intents].sort((a, b) =>
+    gapOf(a) - gapOf(b) || a.targetId.localeCompare(b.targetId))
+
+  const paths = new Map<CombatEffect, Position[]>()
+  for (const intent of ordered) {
+    const from = claimed.get(intent.targetId)
+    const goal = claimed.get(intent.goalId)
+    if (!from || !goal) { paths.set(intent, []); continue }
+
+    const others = [...claimed].filter(([id]) => id !== intent.targetId).map(([, p]) => p)
+    const plan = planApproach(board, from, goal, {
+      budget:    intent.budget,
+      reach:     intent.reach ?? 1,
+      isBlocked: occupiedBy(others),
+    })
+    paths.set(intent, plan.path)
+    claimed.set(intent.targetId, plan.to)
+  }
+
+  return effects.map(e =>
+    e.kind === 'move-toward'
+      ? { targetId: e.targetId, kind: 'move', path: paths.get(e) ?? [] }
+      : e)
 }

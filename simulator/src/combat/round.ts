@@ -63,6 +63,8 @@ import { resolveAdversaryAttack } from '../adversary/attack'
 import { attackAdvantages } from '../adversary/traits'
 import { selectTargetPart } from '../adversary/agent'
 import { BANDS, bandOf, type Band } from './bands'
+import { DEFAULT_BOARD, type Board, type Position } from './position'
+import { expandMoves } from './movement'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -157,6 +159,7 @@ function resolvePlans(
   plans:       Plan[],
   getGuard:    GuardProvider,
   guardCache:  Map<string, CachedGuard>,
+  board:       Board = DEFAULT_BOARD,
 ): { states: Map<string, Actor>; phaseLogs: PhaseLog[] } {
 
   // ── Step 1: Spend action costs ──────────────────────────────────────────────
@@ -321,8 +324,22 @@ function resolvePlans(
       actionLogs.push(toActionLogEntry(resolved, preActions, preReactions, plan.battleCry, plan.reasoning))
     }
 
-    // c. Apply all effects collected in this phase at once
-    states = applyEffectsToActors(states, phaseEffects)
+    // c. Expand move intents, then apply everything at once.
+    //    Expansion reads the LIVE states, not the snapshots — deliberately: it
+    //    is what lets a second mover see the square the first just took (§ case
+    //    contestée). Blows stay snapshot-simultaneous; only feet sequence.
+    const expanded = expandMoves(board, livePositions(states), phaseEffects)
+
+    // Effects are pushed by reference into both lists, so identity maps the
+    // expanded ones back into the log — it records the path walked, not the
+    // intent declared.
+    const rewritten = new Map<CombatEffect, CombatEffect>()
+    phaseEffects.forEach((e, i) => { if (e !== expanded[i]) rewritten.set(e, expanded[i]) })
+    if (rewritten.size > 0) {
+      for (const entry of actionLogs) entry.effects = entry.effects.map(e => rewritten.get(e) ?? e)
+    }
+
+    states = applyEffectsToActors(states, expanded)
     phaseLogs.push({ initiative, actions: actionLogs })
   }
 
@@ -404,6 +421,9 @@ export function resolveRound(
  * @param onBandResolved  Optional callback invoked synchronously after each band
  *                        resolves, BEFORE the next band's getPlans call. Used for
  *                        real-time display and to update LLM session context.
+ * @param board           The play surface, for expanding move intents into paths.
+ *                        Irrelevant to a positionless encounter (no actor carries
+ *                        a `pos` → nothing moves), hence the mat-sized default.
  * @returns Updated state map and a structured RoundLog
  */
 export async function resolveRoundBands<A extends Actor>(
@@ -413,6 +433,7 @@ export async function resolveRoundBands<A extends Actor>(
   maintenance:     MaintenanceEntry[],
   getPlans:        (currentStates: ReadonlyMap<string, A>, band: Band) => Plan[] | Promise<Plan[]>,
   onBandResolved?: (band: Band, phaseLogs: PhaseLog[]) => void,
+  board:           Board = DEFAULT_BOARD,
 ): Promise<{ states: Map<string, A>; log: RoundLog }> {
 
   const guardCache = new Map<string, CachedGuard>()
@@ -428,7 +449,7 @@ export async function resolveRoundBands<A extends Actor>(
     const plans = oneCardPerActor(declared.filter(p => bandOf(initiativeOf(p, states)) === band))
     if (plans.length === 0) continue
 
-    const { states: next, phaseLogs } = resolvePlans(states, plans, getGuard, guardCache)
+    const { states: next, phaseLogs } = resolvePlans(states, plans, getGuard, guardCache, board)
     states = next
     allPhases.push(...phaseLogs)
 
@@ -480,6 +501,17 @@ function oneCardPerActor(plans: Plan[]): Plan[] {
     seen.add(p.actorId)
     return true
   })
+}
+
+/**
+ * Who stands where, right now. Positionless actors are simply absent — the map
+ * carries no invented squares, so `expandMoves` can tell "no spatial model"
+ * apart from "standing at the origin".
+ */
+function livePositions(states: ReadonlyMap<string, Actor>): Map<string, Position> {
+  const out = new Map<string, Position>()
+  for (const [id, a] of states) if (a.pos) out.set(id, a.pos)
+  return out
 }
 
 /** Initiative of a plan: ACTION_DEFS for a PC action, the card's for an adversary play. */

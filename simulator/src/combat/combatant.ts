@@ -592,6 +592,8 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'destabilize':         return s   // le ◇ PJ ne régénère pas → sans effet
     case 'shift-mental-broken': return s.stability > 0 ? s : shiftMentalState(s, effect.direction)
     case 'move':                return applyMove(s, effect.path)
+    // Un intent non détendu (rencontre sans plateau) : rien à appliquer.
+    case 'move-toward':         return s
   }
 }
 
