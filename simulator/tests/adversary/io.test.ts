@@ -28,12 +28,11 @@ describe('adversary loader — Faucheur', () => {
     expect(types).toEqual(['head', 'body', 'sickles', 'rearLeg', 'tail'])
 
     const sickles = a.parts.find(p => p.type === 'sickles')!
-    expect(sickles.blocks).toHaveLength(2)
-    // Both blocks carry display prose; the structured grants gate the deck / cost.
+    expect(sickles.armor).toBe(1)                 // arme ferro-renforcée, dure à entamer
+    expect(sickles.blocks).toHaveLength(1)
+    // Le bloc unique porte sa prose et confère l'action (gate sur son intégrité).
     expect(sickles.blocks.every(b => b.grants.text.length > 0)).toBe(true)
-    // Upper block overrides the card cost; lower block confers the action.
-    expect(sickles.blocks[0].grants.cardCost).toEqual({ card: 'sickleStrike', cost: 1 })
-    expect(sickles.blocks[1].grants.grantsCard).toBe('sickleStrike')
+    expect(sickles.blocks[0].grants.grantsCard).toBe('sickleStrike')
   })
 
   it('exposes the deck by stable card ids', async () => {
@@ -50,10 +49,10 @@ describe('adversary loader — Faucheur', () => {
   it('carries structured effects on card outcomes', async () => {
     const a = await loadAdversary('faucheur')
     const sickle = a.cards.find(c => c.id === 'sickleStrike')!
-    expect(sickle.onSuccess.effect).toEqual([{ wound: 3 }])
-    expect(sickle.onFailure.effect).toEqual([{ wound: 1 }])
+    expect(sickle.onSuccess.effect).toEqual([{ wound: 4 }])
+    expect(sickle.onFailure.effect).toEqual([{ wound: 2 }])
     expect(sickle.onFives).toMatchObject({ count: 1, effect: [{ mental: -1 }] })
-    expect(sickle.onSuccess.text).toBe('Inflige 💢💢💢')
+    expect(sickle.onSuccess.text).toBe('Inflige 💢💢💢💢')
 
     const charge = a.cards.find(c => c.id === 'charge')!
     expect(charge.onSuccess.effect).toEqual([{ move: 6 }, { wound: 2 }])

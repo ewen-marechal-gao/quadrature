@@ -126,6 +126,13 @@ export interface Kit {
   fatigue?: number;
   speed?: Speed;
   size?: Size;
+  /**
+   * Ajoute cette valeur à l'armure de CHAQUE partie présente (celles héritées ET
+   * celles ajoutées par ce même kit). STATIQUE et bake-in : agit sur les deux
+   * canaux (réduit les 💢 ET encaisse une 💔), et n'est PAS perdue si une partie
+   * cède — contrairement au grant runtime `armorAll`. Ex. : cuirasse généralisée.
+   */
+  armor_add_all?: number;
   addParts?: Part[];
   modifyPart?: PartMod;
   modifyParts?: PartMod[];
@@ -223,6 +230,8 @@ export function applyKit(state: State, key: string, kit: Kit | undefined): void 
     if (i === -1) throw new Error(`${key}: removeParts d'une partie absente : ${t}`);
     state.parts.splice(i, 1);
   }
+  // Après addParts/removeParts : la cuirasse générale couvre toutes les parties survivantes.
+  if (kit.armor_add_all) for (const p of state.parts) p.armor = (p.armor ?? 0) + kit.armor_add_all;
   if (kit.grant_action) {
     const ids = Array.isArray(kit.grant_action) ? kit.grant_action : [kit.grant_action];
     state.grantActions.push(...ids);

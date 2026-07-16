@@ -2,12 +2,12 @@
  * Body-part health model tests, exercised against the real Faucheur fiche.
  *
  * Faucheur parts (armor · blocks):
- *   head    🛡️1  |▢▢| |▢▢| |▢▢|  → +1 ◇ · grants bite · +1 ◇
- *   body    🛡️1  |▢▢▢| |▢▢▢|     → +2 🫁 · grants cry
- *   sickles 🛡️1  |▢▢▢| |▢▢▢|     → cost override sickleStrike · grants sickleStrike
- *   rearLeg 🛡️1  |▢▢| |▢▢▢|      → +1 action Charge (grants charge) · Évasion 1
- *   tail    🛡️0  |▢▢| |▢▢|       → immunity knockdown · grants tailSweep
- * fatigue 8 · tenacity 4 · dice 4×threat · guard Esquive 10 · ◇ 2 (Tête).
+ *   head    🛡️1  |▢▢| |▢▢|        → grants bite · +1 ◇ (Cerveau)
+ *   body    🛡️0  |▢▢▢| |▢▢| |▢▢▢| → +2 🫁 · +1 ◇ (SNC) · grants cry
+ *   sickles 🛡️1  |▢▢▢▢|            → grants sickleStrike (bloc unique, armé)
+ *   rearLeg 🛡️0  |▢▢| |▢▢▢|       → +1 action Charge (grants charge) · structure
+ *   tail    🛡️0  |▢▢| |▢▢|        → immunity knockdown · grants tailSweep
+ * fatigue 8 · tenacity 4 · dice 4×threat · guard Esquive 10 · ◇ 2 (Corps SNC + Tête Cerveau) · évasion 0.
  */
 import { loadAdversary } from '../../src/adversary/io'
 import {
@@ -47,9 +47,9 @@ describe('initAdversary', () => {
   it('starts intact with resources granted by intact blocks', async () => {
     const c = await faucheur()
     expect(c.fatigue).toBe(0)
-    expect(c.stability).toBe(2)   // head : 2 blocs ◇ (nerveux + cerveau)
-    expect(c.endurance).toBe(2)   // body
-    expect(c.evasion).toBe(1)     // rearLeg
+    expect(c.stability).toBe(2)   // Corps (SNC) + Tête (Cerveau)
+    expect(c.endurance).toBe(2)   // body (Cœur)
+    expect(c.evasion).toBe(0)     // plus d'évasion terrestre (signature aquatique/rare)
     expect(c.mentalState).toBe('aggressive')   // disposition de départ par défaut
     expect(c.parts.some(isPartDestroyed)).toBe(false)
   })
@@ -60,25 +60,25 @@ describe('initAdversary', () => {
 describe('damagePart — light wounds', () => {
   it('at least 1 wound lands through armor (§ minimum 1)', async () => {
     const c = await faucheur()
-    // body armor 1, deal 1💢 → max(1, 1-1) = 1 mark
-    const d = damagePart(c, 'body', { light: 1 })
-    expect(part(d, 'body').blocks[0].damage).toBe(1)
+    // head armor 1, deal 1💢 → max(1, 1-1) = 1 mark (le minimum passe toujours)
+    const d = damagePart(c, 'head', { light: 1 })
+    expect(part(d, 'head').blocks[0].damage).toBe(1)
   })
 
   it('armor reduces excess light wounds', async () => {
     const c = await faucheur()
-    // rearLeg armor 1, deal 3💢 → max(1, 3-1) = 2 marks into the top block (|▢▢|)
-    const d = damagePart(c, 'rearLeg', { light: 3 })
-    expect(part(d, 'rearLeg').blocks[0].damage).toBe(2)
-    expect(isBlockDestroyed(part(d, 'rearLeg').blocks[0])).toBe(true)
+    // head armor 1, deal 3💢 → max(1, 3-1) = 2 marks into the top block (Mâchoires |▢▢|)
+    const d = damagePart(c, 'head', { light: 3 })
+    expect(part(d, 'head').blocks[0].damage).toBe(2)
+    expect(isBlockDestroyed(part(d, 'head').blocks[0])).toBe(true)
   })
 
   it('fills blocks top → bottom, spilling into the next block', async () => {
     const c = await faucheur()
-    // sickles armor 1, top block |▢▢▢| (3). Deal 6💢 → 5 land: 3 fill top (destroyed) + 2 into next.
-    const d = damagePart(c, 'sickles', { light: 6 })
-    const s = part(d, 'sickles')
-    expect(s.blocks[0].damage).toBe(3)
+    // rearLeg armor 0, top block Charge |▢▢| (2). Deal 4💢 → 2 fill top (destroyed) + 2 into next.
+    const d = damagePart(c, 'rearLeg', { light: 4 })
+    const s = part(d, 'rearLeg')
+    expect(s.blocks[0].damage).toBe(2)
     expect(isBlockDestroyed(s.blocks[0])).toBe(true)
     expect(s.blocks[1].damage).toBe(2)
   })
@@ -94,7 +94,7 @@ describe('damagePart — light wounds', () => {
 
 describe('damagePart — heavy wounds & evasion', () => {
   it('a heavy wound is first converted by an Evasion token into 3💢', async () => {
-    const c = await faucheur()  // evasion 1
+    const c = { ...(await faucheur()), evasion: 1 }  // jeton d'Évasion injecté (test mécanique)
     // Target head (armor 1, |▢▢|): 1💔 → evasion spends → 3💢 armor-reduced to 2 → block full.
     const d = damagePart(c, 'head', { heavy: 1 })
     expect(d.evasion).toBe(0)
@@ -102,19 +102,19 @@ describe('damagePart — heavy wounds & evasion', () => {
   })
 
   it('without evasion, a heavy wound is absorbed by armor before touching a block', async () => {
-    let c = { ...(await faucheur()), evasion: 0 }   // sickles armor 1
+    let c = { ...(await faucheur()), evasion: 0 }   // head armor 1
     // 1re 💔 : l'armure encaisse (1→0), le bloc reste intact.
-    c = damagePart(c, 'sickles', { heavy: 1 })
-    expect(part(c, 'sickles').armor).toBe(0)
-    expect(isBlockDestroyed(part(c, 'sickles').blocks[0])).toBe(false)
+    c = damagePart(c, 'head', { heavy: 1 })
+    expect(part(c, 'head').armor).toBe(0)
+    expect(isBlockDestroyed(part(c, 'head').blocks[0])).toBe(false)
     // 2e 💔 : armure épuisée → le bloc du dessus est détruit.
-    c = damagePart(c, 'sickles', { heavy: 1 })
-    expect(isBlockDestroyed(part(c, 'sickles').blocks[0])).toBe(true)
-    expect(isBlockDestroyed(part(c, 'sickles').blocks[1])).toBe(false)
+    c = damagePart(c, 'head', { heavy: 1 })
+    expect(isBlockDestroyed(part(c, 'head').blocks[0])).toBe(true)
+    expect(isBlockDestroyed(part(c, 'head').blocks[1])).toBe(false)
   })
 
   it('Sonné 🫨 disables Evasion — the heavy wound falls on armor, not evasion', async () => {
-    const c = await faucheur()  // evasion 1, head armor 1
+    const c = { ...(await faucheur()), evasion: 1 }  // head armor 1, jeton d'Évasion injecté
     // Sans Sonné : la 💔 est convertie par l'Évasion (3💢 réduites à 2 → bloc plein).
     const evaded = damagePart(c, 'head', { heavy: 1 })
     expect(evaded.evasion).toBe(0)
@@ -128,7 +128,9 @@ describe('damagePart — heavy wounds & evasion', () => {
 
   it('armor absorbs heavy wounds by losing a point each; a cracked plate protects 💢 less', async () => {
     let c = { ...(await faucheur()), evasion: 0 }
-    const body = () => part(c, 'body')                // body armor 1, |▢▢▢|
+    // Le Corps n'a plus d'armure dérivée : on la force à 1 pour isoler l'attrition sur un |▢▢▢|.
+    c = { ...c, parts: c.parts.map(p => p.type === 'body' ? { ...p, armor: 1 } : p) }
+    const body = () => part(c, 'body')                // body armor 1, |▢▢▢| (Cœur)
     expect(body().armor).toBe(1)
     // Une 💢 est d'abord réduite par l'armure 1 → min 1 passe.
     c = damagePart(c, 'body', { light: 2 })           // max(1, 2−1) = 1
@@ -160,18 +162,15 @@ describe('capability derivation', () => {
 
   it('destroying the granting block drops the card from the deck', async () => {
     let c = bare(await faucheur())
-    // sickles lower block grants sickleStrike; destroy both blocks (top then lower).
-    c = damagePart(c, 'sickles', { heavy: 1 })
+    // Le bloc unique des Serpes confère sickleStrike ; le détruire retire la carte.
     c = damagePart(c, 'sickles', { heavy: 1 })
     expect(activeDeck(c).map(k => k.id).sort())
       .toEqual(['bite', 'charge', 'cry', 'tailSweep'])
   })
 
-  it('the sickles upper block overrides sickleStrike cost to ⚫ while intact', async () => {
-    let c = bare(await faucheur())
-    expect(cardCost(c, 'sickleStrike')).toBe(1)   // override active
-    c = damagePart(c, 'sickles', { heavy: 1 })     // destroy the upper (cost) block
-    expect(cardCost(c, 'sickleStrike')).toBe(2)   // base cost ⚫⚫ returns
+  it('sickleStrike costs its base ⚫⚫ (plus de réduction de coût)', async () => {
+    const c = await faucheur()
+    expect(cardCost(c, 'sickleStrike')).toBe(2)
   })
 
   it('exposes knockdown immunity from the intact tail', async () => {
@@ -182,31 +181,40 @@ describe('capability derivation', () => {
     expect(hasImmunity(c, 'knockdown')).toBe(false)
   })
 
-  it('destroying the rearLeg cuts the Evasion resource at next round start', async () => {
-    let c = bare(await faucheur())
-    // rearLeg: top |▢▢| (charge), lower |▢▢▢| (evasion). Destroy both.
-    c = damagePart(c, 'rearLeg', { heavy: 1 })
-    c = damagePart(c, 'rearLeg', { heavy: 1 })
-    expect(grantedResource(c, 'evasion')).toBe(0)
-    expect(startRound(c).evasion).toBe(0)
+  it('destroying an Aileron block cuts the Evasion resource (signature aquatique)', async () => {
+    // L'évasion vit désormais sur les ailerons aquatiques (rigidFinlets), pas sur les
+    // pattes terrestres. L'Évoluant porte 3 ailerons (un par segment) → évasion 3.
+    let c = initAdversary(await loadAdversary('evoluant'))
+    expect(grantedResource(c, 'evasion')).toBe(3)
+    // segArriere : bloc du haut = Aileron ; le détruire retire son +1 🍀.
+    c = damagePart(c, 'segArriere', { heavy: 1 })
+    expect(grantedResource(c, 'evasion')).toBe(2)
+    expect(startRound(c).evasion).toBe(2)
   })
 })
 
-// ─── armorAll (carapace) ────────────────────────────────────────────────────────
+// ─── Cuirasse généralisée (armor_add_all) ────────────────────────────────────────
 
-describe('armorAll — the carapace shields the other parts', () => {
+describe('armor_add_all — la carapace cuirasse toutes les parties (statique)', () => {
   const cuirassard = async () => initAdversary(await loadAdversary('cuirassard'))
 
-  it('an intact carapace adds its bonus to other parts; cracking it exposes them', async () => {
-    let c = await cuirassard()
-    c = { ...c, evasion: 0 }
-    // Body base armor 0 + carapace +2 = effective 2. 4💢 → max(1, 4-2) = 2 marks.
-    expect(part(damagePart(c, 'body', { light: 4 }), 'body').blocks[0].damage).toBe(2)
-    // Crack the carapace : on isole son armure (→0) puis une 💔 détruit son bloc.
-    c = { ...c, parts: c.parts.map(p => p.type === 'carapace' ? { ...p, armor: 0 } : p) }
-    c = damagePart(c, 'carapace', { heavy: 1 })
+  it('chitinoFerricCarapace bake +1 🛡️ dans chaque partie, y compris la carapace', async () => {
+    const c = await cuirassard()
+    expect(part(c, 'body').armor).toBe(1)      // base 0 + armor_add_all 1
+    expect(part(c, 'carapace').armor).toBe(4)  // base 3 + 1
+    expect(part(c, 'head').armor).toBe(2)      // ossification 1 + 1
+  })
+
+  it('le +1 est statique : détruire la carapace ne l’enlève PAS aux autres parties', async () => {
+    let c = { ...(await cuirassard()), evasion: 0 }
+    // Corps armure 1 : 4💢 → max(1, 4-1) = 3 (remplit |▢▢▢| Cœur).
+    expect(part(damagePart(c, 'body', { light: 4 }), 'body').blocks[0].damage).toBe(3)
+    // Réduire la carapace en miettes (armure 0 + tous blocs détruits).
+    c = { ...c, parts: c.parts.map(p => p.type === 'carapace'
+      ? { ...p, armor: 0, blocks: p.blocks.map(b => ({ ...b, damage: b.cases })) } : p) }
     expect(isPartDestroyed(part(c, 'carapace'))).toBe(true)
-    // Body now on its own armor 0: 4💢 → max(1, 4-0) = 4 marks (fills |▢▢▢|, spills 1).
+    // Le Corps garde son armure baked-in : toujours 3 marques (pas 4).
+    expect(part(c, 'body').armor).toBe(1)
     expect(part(damagePart(c, 'body', { light: 4 }), 'body').blocks[0].damage).toBe(3)
   })
 })
@@ -243,22 +251,22 @@ describe('addAdversaryFatigue', () => {
     expect(e.fatigue).toBe(2)           // buffer burnt → the cost marks the clock
   })
 
-  it('spendCardCost spends the ⚫ AND the 💧 cost (cry: ⚫ + 1💧)', async () => {
+  it('spendCardCost spends the ⚫ AND the 💧 cost (cry: ⚫ + 2💧)', async () => {
     const c = await faucheur()          // actions 2, endurance 2
-    expect(cardFatigueCost(c, 'cry')).toBe(1)
+    expect(cardFatigueCost(c, 'cry')).toBe(2)
     const d = spendCardCost(c, 'cry')
     expect(d.actions).toBe(1)
-    expect(d.endurance).toBe(1)         // 💧 cost absorbed by the buffer
+    expect(d.endurance).toBe(0)         // 2💧 cost entièrement absorbés par le tampon
     expect(d.fatigue).toBe(0)
   })
 
   it('canPlayCard refuses a card whose 💧 cost would fill the clock', async () => {
     const c = await faucheur()          // clock 8
-    const exhausted = { ...c, endurance: 0, fatigue: 7 }
-    expect(canPlayCard(exhausted, 'cry')).toBe(false)   // 7 + 1 ≥ 8
-    expect(canPlayCard(exhausted, 'bite')).toBe(true)   // no 💧 cost
-    // With a 🫁 left, the cost is absorbed → playable again.
-    expect(canPlayCard({ ...exhausted, endurance: 1 }, 'cry')).toBe(true)
+    const exhausted = { ...c, endurance: 0, fatigue: 6 }
+    expect(canPlayCard(exhausted, 'cry')).toBe(false)   // 6 + 2 ≥ 8
+    expect(canPlayCard(exhausted, 'bite')).toBe(true)   // 6 + 1 < 8
+    // With a 🫁 left, part of the cost is absorbed → playable again.
+    expect(canPlayCard({ ...exhausted, endurance: 1 }, 'cry')).toBe(true)  // 1 absorbé, 6+1 < 8
   })
 
   it('Essoufflé past half the clock ⇒ −1 ⚫ (min 1)', async () => {
@@ -274,9 +282,9 @@ describe('addAdversaryFatigue', () => {
 
   it('defeat triggers when every body part is destroyed (weapons excluded)', async () => {
     let c = bare(await faucheur())   // armure 0 → chaque 💔 détruit un bloc
-    // Destroy every block of every part: head 3 (◇·bite·◇), body 2 (🫁·cri), sickles 2, rearLeg 2, tail 2
+    // Destroy every block of every part: head 2 (bite·◇), body 3 (🫁·◇·cri), sickles 2, rearLeg 2, tail 2
     const blows: Array<[string, number]> = [
-      ['head', 3], ['body', 2], ['sickles', 2], ['rearLeg', 2], ['tail', 2],
+      ['head', 2], ['body', 3], ['sickles', 2], ['rearLeg', 2], ['tail', 2],
     ]
     for (const [part, n] of blows) {
       for (let i = 0; i < n; i++) {
@@ -380,12 +388,12 @@ describe('action economy', () => {
     expect(boosted.actions).toBe(3)
   })
 
-  it('canPlayCard respects the current (block-overridden) cost and remaining ⚫', async () => {
+  it('canPlayCard respects the current cost and remaining ⚫', async () => {
     const c = await faucheur()
-    // sickleStrike base cost 2, but the intact upper Serpes block overrides to 1.
-    expect(cardCost(c, 'sickleStrike')).toBe(1)
-    expect(canPlayCard(c, 'sickleStrike')).toBe(true)
-    expect(canPlayCard({ ...c, actions: 0 }, 'sickleStrike')).toBe(false)
+    // sickleStrike coûte sa base ⚫⚫ (plus de réduction) → il prend toute la manche.
+    expect(cardCost(c, 'sickleStrike')).toBe(2)
+    expect(canPlayCard(c, 'sickleStrike')).toBe(true)                       // 2 ⚫ dispo
+    expect(canPlayCard({ ...c, actions: 1 }, 'sickleStrike')).toBe(false)   // 1 < 2
   })
 
   it('spending a card deducts its current cost from the pool', async () => {
@@ -396,15 +404,14 @@ describe('action economy', () => {
 
   it('a card whose block is destroyed is no longer playable', async () => {
     let c = bare(await faucheur())
-    c = damagePart(c, 'sickles', { heavy: 1 })  // destroy cost-override block
-    c = damagePart(c, 'sickles', { heavy: 1 })  // destroy grants block → card leaves deck
+    c = damagePart(c, 'sickles', { heavy: 1 })  // bloc unique des Serpes détruit → carte hors deck
     expect(canPlayCard(c, 'sickleStrike')).toBe(false)
   })
 
   it('start of round refills ⚫ to the base', async () => {
     let c = await faucheur()
-    c = spendCardCost(c, 'sickleStrike')
-    expect(c.actions).toBe(1)
+    c = spendCardCost(c, 'sickleStrike')   // coût 2 → toute la manche
+    expect(c.actions).toBe(0)
     expect(startRound(c).actions).toBe(2)
   })
 })
@@ -413,7 +420,7 @@ describe('action economy', () => {
 
 describe('shiftAdversaryMental', () => {
   it('stability absorbs a shift before the track moves (§ Ténacité)', async () => {
-    const c = await faucheur()  // stability 1, aggressive (disposition de départ)
+    const c = await faucheur()  // stability 2, aggressive (disposition de départ)
     const d = shiftAdversaryMental(c, -1)  // 🔻 vers Peur, absorbé par le ◇
     expect(d.stability).toBe(1)            // ◇ 2 − 1 absorbé
     expect(d.mentalState).toBe('aggressive')

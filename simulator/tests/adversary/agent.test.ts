@@ -67,8 +67,7 @@ describe('planAdversaryCard', () => {
 
   it('falls back to a wound-dealer (bite) once the Serpes are gone, not the Cri', async () => {
     let c = bare(await faucheur())
-    // Destroy both Serpes blocks → sickleStrike leaves the deck.
-    c = damagePart(c, 'sickles', { heavy: 1 })
+    // Bloc unique des Serpes détruit → sickleStrike quitte le deck.
     c = damagePart(c, 'sickles', { heavy: 1 })
     // Remaining physicalDamage cards: bite (init 3) and charge (init 5) → bite by deck order.
     expect(planAdversaryCard(c, 'pc')!.card).toBe('bite')
@@ -78,12 +77,10 @@ describe('planAdversaryCard', () => {
     let c = bare(await faucheur())
     // Destroy every physicalDamage source: Serpes (2 → sickleStrike), the Pattes
     // top block (→ charge) and the head's Mâchoires block (→ bite). Cri est conféré
-    // par le Corps (Poumons), laissé intact. Destruction top → bottom ; ordre de la
-    // Tête = ◇ (nerveux) · bite (mâchoires) · ◇ (cerveau) → 2 coups atteignent bite.
-    c = damagePart(c, 'sickles', { heavy: 1 })
+    // par le Corps (Poumons), laissé intact. Le SNC a migré vers le Corps : la Tête
+    // = bite (Mâchoires) · ◇ (cerveau) → 1 seul coup atteint bite. Serpes = 1 bloc.
     c = damagePart(c, 'sickles', { heavy: 1 })
     c = damagePart(c, 'rearLeg', { heavy: 1 })
-    c = damagePart(c, 'head', { heavy: 1 })   // ◇ Système nerveux central
     c = damagePart(c, 'head', { heavy: 1 })   // bite (Mâchoires) → hors deck
     // Remaining offensive cards: cry (mental, init 2) and tailSweep (fatigue, init 4)
     // → deck order picks the Cri.

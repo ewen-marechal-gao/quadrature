@@ -64,16 +64,16 @@ describe('adversaryEffectToCombatEffects', () => {
 // ─── Scoring: hit / miss / fives (Faucheur cards) ─────────────────────────────
 
 describe('scoreAdversaryAttack — sickleStrike', () => {
-  it('total ≥ guard applies onSuccess (3💢)', async () => {
+  it('total ≥ guard applies onSuccess (4💢)', async () => {
     const r = scoreAdversaryAttack(roll(12), await card('sickleStrike'), 10, 'PC')
     expect(r.hit).toBe(true)
-    expect(r.effects).toContainEqual({ targetId: 'PC', kind: 'light-wound', amount: 3 })
+    expect(r.effects).toContainEqual({ targetId: 'PC', kind: 'light-wound', amount: 4 })
   })
 
-  it('total < guard applies onFailure (1💢)', async () => {
+  it('total < guard applies onFailure (2💢)', async () => {
     const r = scoreAdversaryAttack(roll(8), await card('sickleStrike'), 10, 'PC')
     expect(r.hit).toBe(false)
-    expect(r.effects).toContainEqual({ targetId: 'PC', kind: 'light-wound', amount: 1 })
+    expect(r.effects).toContainEqual({ targetId: 'PC', kind: 'light-wound', amount: 2 })
   })
 
   it('a single 5 triggers onFives (🔻 mental shift)', async () => {

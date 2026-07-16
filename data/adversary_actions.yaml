@@ -35,10 +35,9 @@ actions:
     cost: 2
     initiative: 4
     tags: [offensive, melee, physical, physicalDamage, mentalDamage]
-    onSuccess: { text: { fr: "Inflige 💢💢💢" }, effect: [{ wound: 3 }] }
-    onFailure: { text: { fr: "Inflige 💢" },     effect: [{ wound: 1 }] }
+    onSuccess: { text: { fr: "Inflige 💢💢💢💢" }, effect: [{ wound: 4 }] }
+    onFailure: { text: { fr: "Inflige 💢💢" },      effect: [{ wound: 2 }] }
     onFives:   { text: { fr: "Repérez un 5 : la cible subit 🔻." }, count: 1, effect: [{ mental: -1 }] }
-    note:      { fr: "Coût réduit à ⚫ tant que le bloc supérieur des Serpes est intact." }
 
   charge:
     name: { fr: "Charge", en: "Charge" }
@@ -53,6 +52,7 @@ actions:
   bite:
     name: { fr: "Morsure", en: "Bite" }
     cost: 1
+    fatigueCost: 1
     initiative: 3
     tags: [offensive, melee, physical, physicalDamage]
     onSuccess: { text: { fr: "Inflige 💢💢" }, effect: [{ wound: 2 }] }
@@ -64,7 +64,7 @@ actions:
   cry:
     name: { fr: "Cri", en: "Cry" }
     cost: 1
-    fatigueCost: 1
+    fatigueCost: 2
     initiative: 2
     tags: [offensive, mental, mentalDamage]
     onSuccess: { text: { fr: "La créature la plus proche subit 🔻" }, effect: [{ mental: -1 }] }

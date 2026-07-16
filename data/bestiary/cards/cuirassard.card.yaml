@@ -29,17 +29,9 @@ parts:
     name:
       fr: Tête
     description:
-      fr: Extrémité antérieure distincte, portant les sens et la concentration nerveuse. Crâne ferro-cartilagineux, cordon nerveux centralisé. Crâne ossifié (protection accrue).
-    armor: 1
+      fr: Extrémité antérieure distincte, portant les sens et la concentration nerveuse. Crâne ferro-cartilagineux. Crâne ossifié (protection accrue).
+    armor: 2
     blocks:
-      - cases: 2
-        name:
-          fr: Système nerveux central
-        grants:
-          text:
-            fr: +1 ◇ au début de la manche
-          resource: stability
-          amount: 1
       - cases: 2
         name:
           fr: Mâchoires
@@ -52,8 +44,8 @@ parts:
     name:
       fr: Corps
     description:
-      fr: Tronc musculeux logeant les viscères. Charpenté par un axe ferro-cartilagineux interne.
-    armor: 0
+      fr: Tronc musculeux logeant les viscères. Charpenté par un axe ferro-cartilagineux interne ; cordon nerveux centralisé.
+    armor: 1
     blocks:
       - cases: 3
         name:
@@ -63,6 +55,14 @@ parts:
             fr: +2 🫁 au début de la manche
           resource: endurance
           amount: 2
+      - cases: 2
+        name:
+          fr: Système nerveux central
+        grants:
+          text:
+            fr: +1 ◇ au début de la manche
+          resource: stability
+          amount: 1
       - cases: 3
         name:
           fr: Poumons
@@ -76,25 +76,19 @@ parts:
       fr: Carapace
     description:
       fr: "Bouclier dermique chitino-ferrique sur le dos et les flancs : fait ricocher les coups légers."
-    armor: 3
+    armor: 4
     blocks:
       - cases: 5
         name:
           fr: Plastron
         grants:
           text:
-            fr: Confère Blindage lourd
-          armorAll: 2
-          trait:
-            name:
-              fr: Blindage lourd
-            effect:
-              fr: +2 🛡️ à toutes les autres parties (perdu si la carapace cède)
+            fr: "Bouclier dorsal chitino-ferrique : le cœur de la cuirasse."
   - type: limbs
     tag: mobility
     name:
       fr: Membres
-    armor: 0
+    armor: 1
     blocks:
       - cases: 3
         name:
@@ -108,24 +102,20 @@ parts:
           fr: Pattes médianes
         grants:
           text:
-            fr: +1 🍀 Évasion
-          resource: evasion
-          amount: 1
+            fr: Contribue au déplacement
       - cases: 3
         name:
           fr: Pattes postérieures
         grants:
           text:
-            fr: +1 🍀 Évasion
-          resource: evasion
-          amount: 1
+            fr: Contribue au déplacement
   - type: tail
     tag: defensive
     name:
       fr: Queue
     description:
       fr: Longue queue musclée. Queue devenue balancier terrestre.
-    armor: 0
+    armor: 1
     blocks:
       - cases: 2
         name:
@@ -141,13 +131,6 @@ parts:
               fr: Insensible au renversement (mise à terre)
 traits:
   - name:
-      fr: Blindage lourd
-    kind: passive
-    effect:
-      fr: +2 🛡️ à toutes les autres parties (perdu si la carapace cède)
-    source:
-      fr: Carapace
-  - name:
       fr: Stabilité
     kind: passive
     effect:
@@ -160,7 +143,7 @@ cards:
       fr: Cri
       en: Cry
     cost: 1
-    fatigueCost: 1
+    fatigueCost: 2
     initiative: 2
     tags:
       - offensive
@@ -180,6 +163,7 @@ cards:
       fr: Morsure
       en: Bite
     cost: 1
+    fatigueCost: 1
     initiative: 3
     tags:
       - offensive

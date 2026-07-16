@@ -60,6 +60,9 @@ mutations:
     kit:
       body:
         fr: une lourde carapace dermique chitino-ferrique couvrant le dos et les flancs
+      # Cuirasse généralisée : +1 🛡️ à CHAQUE partie (statique, deux canaux, NON perdu
+      # si la carapace cède) — la carapace elle-même passe ainsi à 🛡️4.
+      armor_add_all: 1
       addParts:
         - type: carapace
           tag: defensive
@@ -74,16 +77,10 @@ mutations:
                 fr: Plastron
               grants:
                 text:
-                  fr: Confère Blindage lourd
-                armorAll: 2
-                trait:
-                  name:
-                    fr: Blindage lourd
-                  effect:
-                    fr: "+2 🛡️ à toutes les autres parties (perdu si la carapace cède)"
-      # Pattes massives du tank : les antérieures PIÉTINENT (bloc unique, plus d'évasion).
-      # Après la fusion « Membres » → 3 blocs à 3 PV : Piétiner + Évasion (médianes) +
-      # Évasion (postérieures) = +2 🍀. (Les 3 PV des médianes viennent de weightBearingLimbs.)
+                  fr: "Bouclier dorsal chitino-ferrique : le cœur de la cuirasse."
+      # Pattes massives du tank : les antérieures PIÉTINENT (bloc unique). Après la fusion
+      # « Membres » → 3 blocs de structure/locomotion (Piétiner + médianes + postérieures).
+      # (Les 3 PV des médianes viennent de weightBearingLimbs.)
       modifyParts:
         - type: frontLeg
           blocksRemove:
@@ -459,7 +456,7 @@ mutations:
     description:
       fr: "Vertèbres ferro-cartilagineuses et cordon nerveux centralisé : coordination accrue (nageur ondulant céphalisé)."
     # Le Corps (cephalization) et la Tête (bilateralSymmetry) sont désormais hérités : cette mutation
-    # ne les crée plus. Elle CENTRALISE le système nerveux (bloc sur la Tête → +1 ◇/manche) et durcit
+    # ne les crée plus. Elle CENTRALISE le système nerveux (bloc sur le Corps → +1 ◇/manche) et durcit
     # l'axe. Fatigue 0 (l'endurance est portée par Corps + Cœur en amont).
     kit:
       body:
@@ -467,7 +464,10 @@ mutations:
       modifyParts:
         - type: head
           descriptionAppend:
-            fr: " Crâne ferro-cartilagineux, cordon nerveux centralisé."
+            fr: " Crâne ferro-cartilagineux."
+        - type: body
+          descriptionAppend:
+            fr: " Charpenté par un axe ferro-cartilagineux interne ; cordon nerveux centralisé."
           blocksAdd:
             - cases: 2
               name:
@@ -477,9 +477,6 @@ mutations:
                   fr: +1 ◇ au début de la manche
                 resource: stability
                 amount: 1
-        - type: body
-          descriptionAppend:
-            fr: " Charpenté par un axe ferro-cartilagineux interne."
   jaws:
     label:
       fr: Mâchoires
@@ -528,7 +525,8 @@ mutations:
       body:
         fr: trois paires de membres porteurs (plan hexapode)
       # Trois paires de pattes, même `group: limbs` → fusionnées en « Membres »
-      # (blocs nommés) chez un hexapode ; chaque paire confère +1 🍀 Évasion.
+      # (blocs nommés) chez un hexapode ; les blocs de pattes = structure/locomotion
+      # (plus d'évasion terrestre — celle-ci reste une signature aquatique/rare).
       # Un membre repurposé (Serpes/Mains/Pattes griffues) quitte le groupe.
       addParts:
         - type: frontLeg
@@ -545,9 +543,7 @@ mutations:
                 fr: Pattes antérieures
               grants:
                 text:
-                  fr: +1 🍀 Évasion
-                resource: evasion
-                amount: 1
+                  fr: Contribue au déplacement
         - type: middleLeg
           tag: mobility
           group: limbs
@@ -562,9 +558,7 @@ mutations:
                 fr: Pattes médianes
               grants:
                 text:
-                  fr: +1 🍀 Évasion
-                resource: evasion
-                amount: 1
+                  fr: Contribue au déplacement
         - type: rearLeg
           tag: mobility
           group: limbs
@@ -579,9 +573,7 @@ mutations:
                 fr: Pattes postérieures
               grants:
                 text:
-                  fr: +1 🍀 Évasion
-                resource: evasion
-                amount: 1
+                  fr: Contribue au déplacement
       speed:
         walk: 4
         run: 8
@@ -721,7 +713,6 @@ mutations:
         fr: une fourrure dense
       modifyParts:
         - type: body
-          armor_add: 1
           descriptionAppend:
             fr: " Couvert d'une fourrure dense et isolante."
         - type: tail
@@ -822,7 +813,6 @@ mutations:
         - type: rearLeg
           name:
             fr: Pattes
-          armor_add: 1
           descriptionAppend:
             fr: " Postérieurs puissants et ramassés, porteurs de la station bipède."
           blocksPrepend:
@@ -967,19 +957,10 @@ mutations:
           name:
             fr: Serpes
           description:
-            fr: "Deux longues faux (ongles allongés en lames recourbées) : l'arme maîtresse."
+            fr: "Deux longues faux (ongles allongés en lames ferro-renforcées) : l'arme maîtresse, dure à entamer."
           armor: 1
           blocks:
-            - cases: 3
-              name:
-                fr: Fil
-              grants:
-                text:
-                  fr: Frappe faucheuse coûte ⚫ (au lieu de ⚫⚫)
-                cardCost:
-                  card: sickleStrike
-                  cost: 1
-            - cases: 3
+            - cases: 4
               name:
                 fr: Serpes
               grants:
@@ -1071,7 +1052,6 @@ mutations:
         fr: un lard isolant et un pelage polaire dense et pâle
       modifyParts:
         - type: body
-          armor_add: 1
           descriptionAppend:
             fr: " Épaisse couche de lard isolant."
       # Le lard isole (pas d'endurance brute) → trait de qualité.

@@ -122,6 +122,7 @@ cards:
       fr: Morsure
       en: Bite
     cost: 1
+    fatigueCost: 1
     initiative: 3
     tags:
       - offensive

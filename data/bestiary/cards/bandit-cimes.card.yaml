@@ -29,17 +29,9 @@ parts:
     name:
       fr: Tête
     description:
-      fr: Extrémité antérieure distincte, portant les sens et la concentration nerveuse. Crâne ferro-cartilagineux, cordon nerveux centralisé. Crâne ossifié (protection accrue).
+      fr: Extrémité antérieure distincte, portant les sens et la concentration nerveuse. Crâne ferro-cartilagineux. Crâne ossifié (protection accrue).
     armor: 1
     blocks:
-      - cases: 2
-        name:
-          fr: Système nerveux central
-        grants:
-          text:
-            fr: +1 ◇ au début de la manche
-          resource: stability
-          amount: 1
       - cases: 2
         name:
           fr: Cerveau
@@ -53,8 +45,8 @@ parts:
     name:
       fr: Corps
     description:
-      fr: Tronc musculeux logeant les viscères. Charpenté par un axe ferro-cartilagineux interne. Couvert d'une fourrure dense et isolante.
-    armor: 1
+      fr: Tronc musculeux logeant les viscères. Charpenté par un axe ferro-cartilagineux interne ; cordon nerveux centralisé. Couvert d'une fourrure dense et isolante.
+    armor: 0
     blocks:
       - cases: 3
         name:
@@ -64,6 +56,14 @@ parts:
             fr: +2 🫁 au début de la manche
           resource: endurance
           amount: 2
+      - cases: 2
+        name:
+          fr: Système nerveux central
+        grants:
+          text:
+            fr: +1 ◇ au début de la manche
+          resource: stability
+          amount: 1
   - type: frontLeg
     tag: offensive
     name:
@@ -84,7 +84,7 @@ parts:
       fr: Pattes
     description:
       fr: Paire de membres arrière, moteur principal du déplacement. Postérieurs puissants et ramassés, porteurs de la station bipède.
-    armor: 1
+    armor: 0
     blocks:
       - cases: 2
         name:
@@ -98,9 +98,7 @@ parts:
           fr: Pattes postérieures
         grants:
           text:
-            fr: +1 🍀 Évasion
-          resource: evasion
-          amount: 1
+            fr: Contribue au déplacement
 weapons:
   - type: sword
     tag: offensive

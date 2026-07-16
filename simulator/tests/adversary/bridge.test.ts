@@ -17,10 +17,10 @@ describe('applyPcEffectsToAdversary', () => {
   it('light wounds land on the declared part (armor applies)', async () => {
     const c = await faucheur()
     const fx: CombatEffect[] = [{ targetId: c.id, kind: 'light-wound', amount: 3 }]
-    // rearLeg armor 1 → 3−1 = 2 into the top |▢▢| block (destroyed).
-    const { state } = applyPcEffectsToAdversary(c, fx, 'rearLeg')
-    expect(part(state, 'rearLeg').blocks[0].damage).toBe(2)
-    expect(isBlockDestroyed(part(state, 'rearLeg').blocks[0])).toBe(true)
+    // head armor 1 → 3−1 = 2 into the top |▢▢| block (Mâchoires, destroyed).
+    const { state } = applyPcEffectsToAdversary(c, fx, 'head')
+    expect(part(state, 'head').blocks[0].damage).toBe(2)
+    expect(isBlockDestroyed(part(state, 'head').blocks[0])).toBe(true)
   })
 
   it('a heavy wound destroys a block once armor and evasion are gone', async () => {
