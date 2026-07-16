@@ -29,6 +29,7 @@ import {
 } from './combat/combatant'
 import { resolveRoundBands } from './combat/round'
 import { bandOf, BAND_MOON, type Band } from './combat/bands'
+import { distance, type Position } from './combat/position'
 import type { GuardProvider, PlannedAction, Plan } from './combat/round'
 
 import { loadAdversary } from './adversary/io'
@@ -209,6 +210,8 @@ interface PcSide {
   char:      Character
   cfg:       AgentConfig
   agentType: AgentType
+  /** Starting square, when the encounter declares a board (§ EncounterConfig.board). */
+  pos?:      Position
 }
 
 /** An adversary side: fiche-driven, scripted deck heuristic, fixed guard. */
@@ -216,6 +219,7 @@ interface AdversarySide {
   kind:  'adversary'
   id:    string
   sheet: AdversarySheet
+  pos?:  Position
 }
 
 type Side = PcSide | AdversarySide
@@ -224,7 +228,7 @@ type Side = PcSide | AdversarySide
 async function loadSide(cfg: EncounterCharacter, faction: EncounterFaction): Promise<Side> {
   if (cfg.adversary) {
     const sheet = await loadAdversary(cfg.adversary)
-    return { kind: 'adversary', id: sheet.id, sheet }
+    return { kind: 'adversary', id: sheet.id, sheet, ...(cfg.pos && { pos: cfg.pos }) }
   }
   const char = await loadCharacter(resolveCharacterPath(cfg.sheet!))
   return {
@@ -232,6 +236,7 @@ async function loadSide(cfg: EncounterCharacter, faction: EncounterFaction): Pro
     id:        char.name,
     char,
     agentType: cfg.agent ?? 'scripted',
+    ...(cfg.pos && { pos: cfg.pos }),
     // targetId is (re)assigned each wave to a living enemy in plansForParticipant
     cfg: { persona: cfg.persona!, targetId: '', allowedActions: faction.allowedActions },
   }
@@ -317,10 +322,19 @@ async function runCombat(
     ? Math.max(0, parseInt(process.env.MISTRAL_API_RATELIMIT_MS ?? '0', 10))
     : 0
 
-  const initSide = (s: Side): Actor =>
-    s.kind === 'pc' ? initCombatant(s.char) : initAdversary(s.sheet)
+  // La case de depart vient de la rencontre ; sans plateau, l'acteur reste sans
+  // position et tout le modele spatial est inerte (cf. CombatantState.pos).
+  const initSide = (s: Side): Actor => {
+    const actor: Actor = s.kind === 'pc' ? initCombatant(s.char) : initAdversary(s.sheet)
+    return s.pos ? { ...actor, pos: s.pos } : actor
+  }
 
   let states = new Map<string, Actor>(participants.map(p => [p.side.id, initSide(p.side)]))
+
+  // Le tapis avant le premier coup — les phases n'enregistrent que l'APRÈS.
+  const startPositions = encounter.board
+    ? Object.fromEntries([...states].flatMap(([id, a]) => a.pos ? [[id, a.pos] as const] : []))
+    : undefined
 
   /** A faction is alive while at least one of its members can still act. */
   const factionAlive = (f: number) =>
@@ -375,6 +389,7 @@ async function runCombat(
         }
         callbacks?.onWave?.(phaseLogs)
       },
+      encounter.board,
     )
     states = next
     roundLogs.push(log)
@@ -403,6 +418,8 @@ async function runCombat(
     id,
     timestamp,
     combatants: participants.map(makeParticipantSummary),
+    ...(encounter.board && { board: encounter.board }),
+    ...(startPositions && { startPositions }),
     rounds:     roundLogs,
     outcome,
     durationMs,
@@ -447,9 +464,12 @@ async function plansForParticipant(
     // `used` fait respecter « une carte par bande » : une seule carte par palier.
     const plans: Plan[] = []
     const used = new Set<Band>()
+    // Distance à la cible — indéfinie hors plateau, et l'heuristique retombe
+    // alors sur son comportement d'origine.
+    const gap = self.pos && target.pos ? distance(self.pos, target.pos) : undefined
     let sim = self
     for (let i = 0; i < MAX_CARDS_PER_ROUND; i++) {
-      const plan = planAdversaryCard(sim, enemy.side.id, used)
+      const plan = planAdversaryCard(sim, enemy.side.id, used, gap)
       if (!plan) break
       plans.push(plan)
       const card = sim.sheet.cards.find(k => k.id === plan.card)

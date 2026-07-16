@@ -72,6 +72,18 @@ export function cardRank(card: AdversaryCardDef): number {
   return CARD_PRIORITY.length
 }
 
+/** Ground a card covers, in cases — the biggest `move` op across its outcomes. */
+export function cardMoveBudget(card: AdversaryCardDef): number {
+  const ops = [...card.onSuccess.effect, ...card.onFailure.effect]
+  return ops.reduce((max, op) => 'move' in op ? Math.max(max, op.move) : max, 0)
+}
+
+/** True when the blow could land from `gap` cases away, movement included. */
+function canConnect(card: AdversaryCardDef, gap: number): boolean {
+  if (card.reach == null) return true          // ungated (cri, tir) : porte toujours
+  return gap <= card.reach + cardMoveBudget(card)
+}
+
 /**
  * Plan the creature's next card play for one wave (scripted, synchronous).
  *
@@ -83,11 +95,19 @@ export function cardRank(card: AdversaryCardDef): number {
  * `usedBands` carries the bands the creature has already committed to this
  * round: it lays down a single card per band (§ combat.md), so a band once used
  * is closed. Pass the growing set when planning a whole round card by card.
+ *
+ * `gap` is the distance to the target, in cases, when both stand on a board.
+ * It makes the creature answer the only question that matters at range: *can I
+ * hit — and if not, can I get closer?* Without it a Faucheur would rake the air
+ * at twelve cases, round after round, because Frappe faucheuse outranks Charge
+ * on paper. It only ever ADDS a preference: a positionless fight passes no gap
+ * and keeps the historical behaviour exactly.
  */
 export function planAdversaryCard(
   c:         AdversaryCombatant,
   targetId:  string,
   usedBands: ReadonlySet<Band> = new Set(),
+  gap?:      number,
 ): PlannedCard | null {
   if (isAdversaryDefeated(c)) return null
   const playable = activeDeck(c).filter(card => {
@@ -95,12 +115,28 @@ export function planAdversaryCard(
     return band !== null && !usedBands.has(band) && canPlayCard(c, card.id)
   })
   if (playable.length === 0) return null
-  const best = [...playable]
-    .map((card, i) => ({ card, i }))
-    .sort((a, b) =>
-      cardRank(a.card) - cardRank(b.card) ||  // wound-dealers first
-      b.card.cost - a.card.cost ||            // then power proxy
-      a.i - b.i)                              // then deck order
-    [0].card
+
+  const byPreference = (cards: AdversaryCardDef[]): AdversaryCardDef =>
+    [...cards]
+      .map((card, i) => ({ card, i }))
+      .sort((a, b) =>
+        cardRank(a.card) - cardRank(b.card) ||  // wound-dealers first
+        b.card.cost - a.card.cost ||            // then power proxy
+        a.i - b.i)                              // then deck order
+      [0].card
+
+  // Fight if you can, else advance, else do whatever is left. The middle tier is
+  // what an approach IS: from twelve cases even a Charge cannot connect, yet it
+  // is plainly the right card — it buys the ground the next one needs.
+  let best: AdversaryCardDef
+  if (gap === undefined) {
+    best = byPreference(playable)
+  } else {
+    const connecting = playable.filter(card => canConnect(card, gap))
+    const closing    = playable.filter(card => cardMoveBudget(card) > 0)
+    best = connecting.length > 0 ? byPreference(connecting)
+         : closing.length    > 0 ? [...closing].sort((a, b) => cardMoveBudget(b) - cardMoveBudget(a))[0]
+         : byPreference(playable)
+  }
   return { actorId: c.id, card: best.id, targetId }
 }

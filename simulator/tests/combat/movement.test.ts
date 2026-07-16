@@ -48,6 +48,29 @@ describe('planApproach — reaching the goal', () => {
   })
 })
 
+describe('planApproach — it walks in a straight line', () => {
+  it('does not veer off the axis when the rules see no difference', () => {
+    // Chebyshev rend toute une couronne equidistante : depuis (14,2) vers une
+    // cible en (2,2), (10,2) et (10,0) sont tous deux a 8 cases. Les regles s'en
+    // moquent ; l'oeil, non — une creature qui part se coller au mur pour couvrir
+    // le meme terrain se lit comme un bug. On garde la ligne droite.
+    const plan = planApproach({ width: 20, height: 5 }, at(14, 2), at(2, 2), { budget: 4 })
+    expect(plan.to).toEqual(at(10, 2))
+    for (const p of plan.path) expect(p.y).toBe(2)
+  })
+
+  it('holds the axis on a diagonal approach too', () => {
+    const plan = planApproach(B, at(0, 0), at(10, 10), { budget: 3 })
+    expect(plan.to).toEqual(at(3, 3))
+  })
+
+  it('still leaves the axis when a body is in the way', () => {
+    const plan = planApproach(B, at(6, 2), at(0, 2), { budget: 3, isBlocked: occupiedBy([at(5, 2)]) })
+    expect(plan.path).not.toContainEqual(at(5, 2))
+    expect(distance(plan.to, at(0, 2))).toBe(3)   // il contourne sans perdre de terrain
+  })
+})
+
 describe('planApproach — when it cannot close', () => {
   it('closes as much as it can: an approach is never wasted', () => {
     // Marche 3 cases vers une cible à 10 → il reste 6 cases d'écart.

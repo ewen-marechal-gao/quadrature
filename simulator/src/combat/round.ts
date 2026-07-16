@@ -351,8 +351,15 @@ function resolvePlans(
     const dropped = gateByReach(reachChecks, positionsAfter(states, expanded))
 
     states = applyEffectsToActors(states, expanded.filter(e => !dropped.has(e)))
-    const band = bandOf(initiative)
-    phaseLogs.push({ initiative, ...(band && { band }), actions: actionLogs })
+
+    const band  = bandOf(initiative)
+    const after = livePositions(states)
+    phaseLogs.push({
+      initiative,
+      ...(band && { band }),
+      actions: actionLogs,
+      ...(after.size > 0 && { positions: Object.fromEntries(after) }),
+    })
   }
 
   return { states, phaseLogs }

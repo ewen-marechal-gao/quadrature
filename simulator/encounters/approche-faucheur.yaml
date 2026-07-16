@@ -1,0 +1,40 @@
+# Premier scénario AVEC PLATEAU — la vitrine du modèle spatial.
+#
+# Les duels existants restent volontairement SANS positions : les doter d'un
+# plateau changerait leurs résultats (le Précis frapperait dans le vide pendant
+# que le Faucheur traverse) et invaliderait la ligne de base des mesures. Ce
+# scénario-ci est donc neuf, et n'a pas vocation à équilibrer quoi que ce soit :
+# il sert à VOIR bouger les figurines.
+#
+# Mise en place : les deux combattants se font face à 12 cases, sur la longueur
+# du tapis. Le Faucheur doit donc franchir la distance — sa Charge (Bande II 🌕,
+# Déplacement [6]) est la seule carte de son deck qui avale du terrain, et il lui
+# en faut deux avant d'être au contact. D'ici là, chaque coup porté de part et
+# d'autre tombe « hors d'atteinte » : c'est exactement ce qu'on veut pouvoir lire.
+#
+# ⚠️ Les agents ne SAVENT PAS encore se déplacer (todo #17f) : le PJ restera
+# planté sur sa case et frappera dans le vide. C'est une limite connue, pas un
+# bug du scénario — le mouvement du Faucheur suffit à valider la chaîne.
+name: Approche — traverser le terrain
+description: >-
+  Une clairière longue. Le Faucheur est repéré de loin : il faut le temps qu'il
+  franchisse la distance, et chaque coup tenté trop tôt se perd dans l'air.
+maxRounds: 30
+
+# Un couloir plutôt que le tapis complet (34×22) : la largeur ne sert à rien ici,
+# et une bande étroite rend le rapprochement lisible d'un coup d'œil.
+board: { width: 20, height: 5 }
+
+factions:
+  - name: Aventuriers
+    characters:
+      - sheet: characterSheets/Duelist_precise.yaml
+        persona: opportunist
+        pos: { x: 2, y: 2 }
+    allowedActions: ["sharp-strike", "respiration", "stabilize", "preservation"]
+
+  - name: Faune d'Aeonir
+    characters:
+      - adversary: faucheur
+        pos: { x: 14, y: 2 }
+    allowedActions: []

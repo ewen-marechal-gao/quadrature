@@ -4,7 +4,9 @@
  */
 import { loadAdversary } from '../../src/adversary/io'
 import { initAdversary, damagePart, type AdversaryCombatant } from '../../src/adversary/combatant'
-import { targetPriority, selectTargetPart, planAdversaryCard, cardRank } from '../../src/adversary/agent'
+import {
+  targetPriority, selectTargetPart, planAdversaryCard, cardRank, cardMoveBudget,
+} from '../../src/adversary/agent'
 
 async function faucheur(): Promise<AdversaryCombatant> {
   return initAdversary(await loadAdversary('faucheur'))
@@ -91,5 +93,56 @@ describe('planAdversaryCard', () => {
     let c = await faucheur()
     c = { ...c, fatigue: c.sheet.fatigue, endurance: 0 }
     expect(planAdversaryCard(c, 'pc')).toBeNull()
+  })
+})
+
+// ─── Distance-aware card choice (§ approche) ─────────────────────────────────
+
+describe('cardMoveBudget', () => {
+  it('reads the ground a card covers from its ops', async () => {
+    const c = await faucheur()
+    expect(cardMoveBudget(card(c, 'charge'))).toBe(6)   // 6 en succès, 4 en échec → le meilleur
+    expect(cardMoveBudget(card(c, 'bite'))).toBe(0)     // une morsure n'avance pas
+  })
+})
+
+describe('planAdversaryCard — with a gap to close', () => {
+  it('fights when it can reach: its best card, unchanged', async () => {
+    const c = await faucheur()
+    // Au contact, la distance ne doit RIEN changer au choix historique.
+    expect(planAdversaryCard(c, 'pc', new Set(), 1)?.card)
+      .toBe(planAdversaryCard(c, 'pc')?.card)
+  })
+
+  it('stops raking the air at twelve cases', async () => {
+    const c = await faucheur()
+    // Sans la distance, Frappe faucheuse (portée 1) l'emporte et le Faucheur
+    // frappe le vide manche après manche : c'est le bug que ça corrige.
+    expect(planAdversaryCard(c, 'pc')?.card).toBe('sickleStrike')
+    expect(planAdversaryCard(c, 'pc', new Set(), 12)?.card).not.toBe('sickleStrike')
+  })
+
+  it('howls, then runs: the Cri carries at any range, the Charge buys the ground', async () => {
+    const c = await faucheur()
+    // Le Cri n'a PAS de portée — les règles n'en donnent pas pour la voix (trou
+    // assumé), donc il « atteint » de partout et part en Bande I. La Bande II
+    // revient alors à la Charge. Un prédateur qui hurle puis fond : c'est juste.
+    expect(planAdversaryCard(c, 'pc', new Set(), 12)?.card).toBe('cry')
+    expect(planAdversaryCard(c, 'pc', new Set(['I']), 12)?.card).toBe('charge')
+  })
+
+  it('picks the card covering the most ground when nothing can connect', async () => {
+    const c = await faucheur()
+    // Bande I consommée : il ne reste que des cartes de contact et la Charge. À
+    // 12 cases même la Charge (portée 1 + 6) ne connecte pas — et c'est pourtant
+    // la bonne : elle achète le terrain de la suivante.
+    const plan = planAdversaryCard(c, 'pc', new Set(['I']), 12)
+    expect(cardMoveBudget(card(c, plan!.card))).toBeGreaterThan(0)
+  })
+
+  it('a positionless fight passes no gap and behaves exactly as before', async () => {
+    const c = await faucheur()
+    expect(planAdversaryCard(c, 'pc', new Set(), undefined)?.card)
+      .toBe(planAdversaryCard(c, 'pc')?.card)
   })
 })

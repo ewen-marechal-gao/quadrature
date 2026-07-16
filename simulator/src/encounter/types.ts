@@ -14,6 +14,7 @@
  */
 
 import type { ActionId } from '../combat/types'
+import type { Board, Position } from '../combat/position'
 import type { AgentPersona } from '../combat/agent'
 
 // ─── Agent type ───────────────────────────────────────────────────────────────
@@ -50,6 +51,12 @@ export interface EncounterCharacter {
    * - 'llm'                — Claude API, async, single-run only
    */
   agent?: AgentType
+
+  /**
+   * Starting square. Required when the encounter declares a `board`, forbidden
+   * otherwise — see EncounterConfig.board for why it is all-or-nothing.
+   */
+  pos?: Position
 }
 
 // ─── Faction ──────────────────────────────────────────────────────────────────
@@ -85,6 +92,18 @@ export interface EncounterConfig {
 
   /** Round cap; the fight is a draw if neither side is defeated by this round */
   maxRounds: number
+
+  /**
+   * The play surface. **Absent = no spatial model at all**: every combatant is
+   * assumed within reach of every other, which is how every scenario behaved
+   * before positions existed.
+   *
+   * Positions are ALL-OR-NOTHING, and the loader enforces it: declare a board
+   * and every combatant needs a starting square; declare none and none may have
+   * one. A half-placed encounter is never what someone meant — it would silently
+   * make the unplaced fighters unreachable and un-gated at once.
+   */
+  board?: Board
 
   /** Exactly two opposing factions */
   factions: [EncounterFaction, EncounterFaction]

@@ -8,7 +8,7 @@
  */
 
 import type { Character, CharacteristicName, SkillName, CharacteristicState } from '../character/types'
-import type { Position } from './position'
+import type { Board, Position } from './position'
 import type { Band } from './bands'
 import type { RollResult } from '../types'
 import type { AdversaryRollResult } from '../adversary/dice'
@@ -351,6 +351,14 @@ export interface PhaseLog {
    */
   band?:      Band
   actions:    ActionLogEntry[]
+  /**
+   * Where every figure stands once this phase has resolved — the board AFTER
+   * the blow. Recorded for every phase, moved or not, so a reader can draw the
+   * mat at any step without replaying a single effect. That is the point: the
+   * viewer stays dumb, and the rules live in one place. Absent in a
+   * positionless encounter.
+   */
+  positions?: Record<string, Position>
 }
 
 /** Complete log of one round */
@@ -397,6 +405,13 @@ export interface CombatLog {
   /** ISO 8601 timestamp */
   timestamp:  string
   combatants: CombatantSummary[]
+  /**
+   * The play surface, when the encounter declared one. Absent = the fight had
+   * no spatial model, and no phase carries positions.
+   */
+  board?:     Board
+  /** Where each figure stood before the first round (§ board). */
+  startPositions?: Record<string, Position>
   rounds:     RoundLog[]
   outcome:    CombatOutcome
   durationMs: number

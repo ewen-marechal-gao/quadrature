@@ -85,5 +85,56 @@ export async function loadEncounter(filePath: string): Promise<EncounterConfig> 
     }
   }
 
+  validateBoard(raw, filePath)
+
   return raw
+}
+
+/**
+ * Enforce the all-or-nothing rule on positions (§ EncounterConfig.board), plus
+ * the two invariants the mat cannot express: every figure stands ON the board,
+ * and no two share a square.
+ *
+ * Strict on purpose. A silently half-placed encounter would be worse than a
+ * loud failure: the unplaced fighters would be both unreachable and un-gated,
+ * and the numbers would look plausible.
+ */
+function validateBoard(raw: EncounterConfig, filePath: string): void {
+  const chars = raw.factions.flatMap(f => f.characters as EncounterCharacter[])
+  const named = (c: EncounterCharacter) => c.sheet ?? c.adversary ?? '?'
+
+  if (!raw.board) {
+    const placed = chars.find(c => c.pos)
+    if (placed)
+      throw new Error(
+        `"${named(placed)}" declares a starting "pos" but the encounter has no "board" — ` +
+        `add a board, or drop the positions, in: ${filePath}`
+      )
+    return
+  }
+
+  const { width, height } = raw.board
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1)
+    throw new Error(`Encounter "board" must have integer width/height ≥ 1 in: ${filePath}`)
+
+  const taken = new Map<string, string>()
+  for (const c of chars) {
+    const p = c.pos
+    if (!p || !Number.isInteger(p.x) || !Number.isInteger(p.y))
+      throw new Error(
+        `"${named(c)}" needs an integer starting "pos: { x, y }" — the encounter declares a board, ` +
+        `so every combatant must be placed, in: ${filePath}`
+      )
+    if (p.x < 0 || p.y < 0 || p.x >= width || p.y >= height)
+      throw new Error(
+        `"${named(c)}" starts at (${p.x}, ${p.y}), off the ${width}×${height} board in: ${filePath}`
+      )
+    const key = `${p.x},${p.y}`
+    const other = taken.get(key)
+    if (other)
+      throw new Error(
+        `"${named(c)}" and "${other}" both start on (${p.x}, ${p.y}) — two figures cannot share a square, in: ${filePath}`
+      )
+    taken.set(key, named(c))
+  }
 }

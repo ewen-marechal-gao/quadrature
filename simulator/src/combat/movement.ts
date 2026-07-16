@@ -59,6 +59,20 @@ const gapTo = (p: Position, goal: Position, reach: number): number =>
   Math.max(0, distance(p, goal) - reach)
 
 /**
+ * Squared straight-line distance — the tiebreaker between squares the rules
+ * consider identical.
+ *
+ * Chebyshev makes whole rings equidistant: from (14,2), both (10,2) and (10,0)
+ * sit 8 cases from a goal at (2,2). The rules genuinely do not care, but a
+ * figure that veers into a wall to cover the same ground reads as a bug to
+ * anyone watching the mat. Euclid does care, and picks the straight line.
+ *
+ * Kept squared: same ordering, no square root, exact in integers.
+ */
+const straightness = (p: Position, goal: Position): number =>
+  (p.x - goal.x) ** 2 + (p.y - goal.y) ** 2
+
+/**
  * Plan a move from `from` toward `goal`, spending at most `budget` cases.
  *
  * Gets within `reach` of the goal when the budget allows; otherwise gets as
@@ -83,33 +97,40 @@ export function planApproach(
   const seen    = new Set<string>([key(from)])
   let   frontier: Position[] = [from]
 
-  let best     = from
-  let bestGap  = gapTo(from, goal, reach)
+  // The mover wants, in this order: to get as close as the rules allow (gap),
+  // without running further than needed (steps), along the straightest line
+  // available (straightness). BFS explores in a fixed order, so the first
+  // square found wins any remaining tie — same inputs, same path, always.
+  let best = { pos: from, gap: gapTo(from, goal, reach), steps: 0, line: straightness(from, goal) }
 
   for (let step = 1; step <= budget && frontier.length > 0; step++) {
     const next: Position[] = []
     for (const p of frontier) {
-      for (const n of neighbours(board, p)) {
+      // Expand toward the goal first. BFS records a square's parent the first
+      // time it sees it, so discovery order IS the path that gets walked: fan
+      // out blindly and the route wanders even when the destination is right.
+      // Sorting costs nothing (8 squares) and makes the drawn path the one a
+      // player would have taken.
+      const steps = [...neighbours(board, p)].sort(
+        (a, b) => straightness(a, goal) - straightness(b, goal))
+      for (const n of steps) {
         const k = key(n)
         if (seen.has(k) || isBlocked(n)) continue
         seen.add(k)
         prev.set(k, p)
         next.push(n)
 
-        const gap = gapTo(n, goal, reach)
-        // Strict `<` keeps the first square found at this gap — and BFS finds it
-        // at the fewest steps, so the mover never wanders to reach the same spot.
-        if (gap < bestGap) {
-          bestGap = gap
-          best    = n
-          if (gap === 0) return { ...toPlan(prev, from, best), reached: true }
+        const cand = { pos: n, gap: gapTo(n, goal, reach), steps: step, line: straightness(n, goal) }
+        if (cand.gap < best.gap ||
+           (cand.gap === best.gap && cand.steps === best.steps && cand.line < best.line)) {
+          best = cand
         }
       }
     }
     frontier = next
   }
 
-  return { ...toPlan(prev, from, best), reached: bestGap === 0 }
+  return { ...toPlan(prev, from, best.pos), reached: best.gap === 0 }
 }
 
 /** Walk `prev` back from `end` to `from`, yielding the forward path (start excluded). */
