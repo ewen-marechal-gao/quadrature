@@ -17,9 +17,9 @@ import { loadEncounter, resolveCharacterPath }  from './encounter/io'
 import type { Character }                       from './character/types'
 import type { EncounterConfig }                 from './encounter/types'
 import { initCombatant, resetRoundTokensWithLog, isDefeated } from './combat/combatant'
-import { resolveRoundWaves }                    from './combat/round'
+import { resolveRoundBands }                    from './combat/round'
 import type { GuardProvider, PlannedAction }    from './combat/round'
-import { planNextAction, makeGuardProvider }    from './combat/agent'
+import { planRoundActions, makeGuardProvider }  from './combat/agent'
 import type { AgentConfig }                     from './combat/agent'
 import type { CombatantState, MaintenanceEntry } from './combat/types'
 
@@ -55,13 +55,15 @@ async function quickCombat(
       if (maintenanceEntry) maintenance.push(maintenanceEntry)
     }
 
-    // Résolution par vagues (scripted uniquement dans l'optimiseur)
-    const { states: next } = await resolveRoundWaves(
+    // Balayage par bandes (scripted uniquement dans l'optimiseur) : chaque
+    // combattant engage sa manche entière, le résolveur en extrait chaque bande.
+    const roundPlan: PlannedAction[] = [
+      ...planRoundActions(states.get(char1.name)!, states.get(char2.name)!, cfg1),
+      ...planRoundActions(states.get(char2.name)!, states.get(char1.name)!, cfg2),
+    ]
+    const { states: next } = await resolveRoundBands(
       states, r + 1, getGuard, maintenance,
-      (cur) => [
-        planNextAction(cur.get(char1.name)!, cur.get(char2.name)!, cfg1),
-        planNextAction(cur.get(char2.name)!, cur.get(char1.name)!, cfg2),
-      ].filter((p): p is PlannedAction => p !== null),
+      () => roundPlan,
     )
     states = next
 

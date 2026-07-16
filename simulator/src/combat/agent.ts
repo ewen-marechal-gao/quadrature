@@ -171,24 +171,29 @@ export function planNextAction(
 }
 
 /**
- * Plan all actions for one combatant's round (scripted, synchronous).
+ * Plan a combatant's whole round at once (scripted, synchronous).
  *
- * Returns 0–3 PlannedActions depending on available PA and strategy.
- * Guard choice is included on every entry; resolveRound uses the first one.
+ * Returns 0–3 PlannedActions depending on available PA and strategy. The caller
+ * hands the lot to resolveRoundBands, which reveals them band by band.
+ *
+ * Why plan the round as a whole rather than one band at a time: a combatant must
+ * RESERVE its PA. Spending greedily band after band would strand the late cards —
+ * a Frappe brutale (Bande III, 2 PA) would never fire once bands I and II had
+ * drained the pool. Committing the round up front means giving up the
+ * inter-band adaptation the rules allow, which a scripted agent would not
+ * exploit anyway.
  *
  * Local state is simulated via `spendActionCost` to track resource consumption
  * across multiple planned actions — the real CombatantState is never mutated.
  *
  * Round structure:
- *  Phase A  — Self-targeted action (🟢 first action), if warranted by persona
+ *  Phase A  — Self-targeted action (Bande I), if warranted by persona
  *  Phase B  — Primary offensive action
  *  Phase C  — Second offensive action (aggressive / opportunist only)
- *
- * @deprecated Use planNextAction + resolveRoundWaves for wave-based simulation.
  */
-export function planRound(
+export function planRoundActions(
   self:     CombatantState,
-  opponent: CombatantState,
+  opponent: Actor,
   config:   AgentConfig,
 ): PlannedAction[] {
   if (isDefeated(self)) return []
@@ -369,7 +374,7 @@ export async function planRoundAI(
 
   } catch (err) {
     console.warn(`[agent] AI call failed for "${self.id}", falling back to scripted agent:`, err)
-    return planRound(self, opponent, config)
+    return planRoundActions(self, opponent, config)
   }
 }
 

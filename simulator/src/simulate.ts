@@ -27,19 +27,20 @@ import type { EncounterConfig, EncounterFaction, EncounterCharacter, AgentType }
 import {
   initCombatant, resetRoundTokensWithLog, effChar, resistanceThreshold,
 } from './combat/combatant'
-import { resolveRoundWaves } from './combat/round'
+import { resolveRoundBands } from './combat/round'
 import type { GuardProvider, PlannedAction, Plan } from './combat/round'
 
 import { loadAdversary } from './adversary/io'
 import type { AdversarySheet } from './adversary/types'
 import {
-  initAdversary, DEFAULT_ADVERSARY_ACTIONS, ADVERSARY_MENTAL_ICONS, type AdversarySnapshot,
+  initAdversary, DEFAULT_ADVERSARY_ACTIONS, ADVERSARY_MENTAL_ICONS, spendCardCost,
+  type AdversarySnapshot,
 } from './adversary/combatant'
 import { ADVERSARY_EMOJI, type AdversaryRollResult } from './adversary/dice'
 import { planAdversaryCard, selectTargetPart } from './adversary/agent'
 import { type Actor, isAdversaryActor, actorDefeated, actorStartRound } from './adversary/actor'
 import {
-  planNextAction, planRoundAI, makeGuardProvider,
+  planRoundActions, planRoundAI, makeGuardProvider,
   createAgentSession, recordOpponentActions,
 } from './combat/agent'
 import type { AgentConfig, LLMAgentSession } from './combat/agent'
@@ -56,6 +57,9 @@ import { computeStats, printStats } from './stats'
 
 const REPORTS_DIR    = path.resolve(__dirname, '..', 'combatReports')
 const ENCOUNTERS_DIR = path.resolve(__dirname, '..', 'encounters')
+
+/** Garde-fou de la boucle de planification d'une créature (elle s'arrête à court de ⚫). */
+const MAX_CARDS_PER_ROUND = 8
 
 // ─── Batch report type ────────────────────────────────────────────────────────
 
@@ -335,24 +339,25 @@ async function runCombat(
 
     callbacks?.onRoundStart?.(roundNumber, maintenanceEntries)
 
-    // Résolution par vagues — chaque combattant vivant planifie une action
-    const { states: next, log } = await resolveRoundWaves(
+    // Chaque combattant engage sa manche entière (il doit réserver ses PA, sinon
+    // ses cartes de Bande III ne partiraient jamais), puis resolveRoundBands la
+    // révèle bande par bande — il ne retient de ce plan que la bande courante.
+    const t0 = Date.now()
+    // Tous les planners tournent en parallèle (gain de latence en mode LLM)
+    const roundPlan = (await Promise.all(
+      participants.map(p => plansForParticipant(p, participants, states, sessions.get(p.side.id))),
+    )).flat()
+    // Rate limit : si les appels ont été plus rapides que le seuil, on attend le reste
+    if (rateLimitMs > 0) {
+      const elapsed = Date.now() - t0
+      if (elapsed < rateLimitMs) await new Promise<void>(r => setTimeout(r, rateLimitMs - elapsed))
+    }
+
+    const { states: next, log } = await resolveRoundBands(
       states, roundNumber, getGuard, maintenanceEntries,
-      async (currentStates) => {
-        const t0 = Date.now()
-        // Tous les planners tournent en parallèle (gain de latence en mode LLM)
-        const perParticipant = await Promise.all(
-          participants.map(p => plansForParticipant(p, participants, currentStates, sessions.get(p.side.id))),
-        )
-        // Rate limit : si les appels ont été plus rapides que le seuil, on attend le reste
-        if (rateLimitMs > 0) {
-          const elapsed = Date.now() - t0
-          if (elapsed < rateLimitMs) await new Promise<void>(r => setTimeout(r, rateLimitMs - elapsed))
-        }
-        return perParticipant.flat()
-      },
-      (phaseLogs) => {
-        // Mise à jour du contexte LLM avec les actions adverses (avant la prochaine vague)
+      () => roundPlan,
+      (_band, phaseLogs) => {
+        // Mise à jour du contexte LLM avec les actions adverses (avant la prochaine bande)
         for (const p of participants) {
           const session = sessions.get(p.side.id)
           if (!session) continue
@@ -429,12 +434,21 @@ async function plansForParticipant(
 
   if (p.side.kind === 'adversary') {
     if (!isAdversaryActor(self)) return []
-    const plan = planAdversaryCard(self, enemy.side.id)
-    return plan ? [plan] : []
+    // La créature engage sa manche entière : on rejoue son heuristique sur un
+    // état simulé jusqu'à épuisement de ses ⚫ (l'état réel n'est pas muté).
+    const plans: Plan[] = []
+    let sim = self
+    for (let i = 0; i < MAX_CARDS_PER_ROUND; i++) {
+      const plan = planAdversaryCard(sim, enemy.side.id)
+      if (!plan) break
+      plans.push(plan)
+      sim = spendCardCost(sim, plan.card)
+    }
+    return plans
   }
 
   if (isAdversaryActor(self)) return []  // defensive — a pc side holds a PC state
-  p.side.cfg.targetId = enemy.side.id    // (re)aim at the chosen enemy this wave
+  p.side.cfg.targetId = enemy.side.id    // (re)aim at the chosen enemy this round
   const plans = await planFor(p.side.agentType, self, target, p.side.cfg, session)
   if (isAdversaryActor(target)) {
     return plans.map(pl => pl.targetId === enemy.side.id
@@ -462,8 +476,7 @@ async function planFor(
     // LLM vs adversaire : bloqué en amont dans simulate() (prompt PC-shaped)
     return planRoundAI(self, opponent as CombatantState, cfg, session)
   }
-  const action = planNextAction(self, opponent, cfg)
-  return action ? [action] : []
+  return planRoundActions(self, opponent, cfg)
 }
 
 // ─── Console display — mode 1 run ─────────────────────────────────────────────

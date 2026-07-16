@@ -1,17 +1,17 @@
 /**
- * Integration: a mixed round (PC vs Faucheur) through resolveRoundWaves.
+ * Integration: a mixed round (PC vs Faucheur) through resolveRoundBands.
  *
  * Exercises the unified-Actor seam end to end:
  *  - PC attacks the creature vs its FIXED guard (Esquive 10), damage on the
  *    declared part (Serpes) through the body-part model.
  *  - The creature plays deck cards: summed dice vs the PC's rolled guard score,
  *    reusing the once-per-round guard cache (one ⚡ spent total).
- *  - Initiative interleaves card plays (bite init 3) with PC actions
- *    (armed-attack init 5).
+ *  - The band sweep orders the round: both bites (init 3) resolve together in
+ *    band I, the armed-attack (init 5) in band II.
  *  - Round end: PC wound overflow runs; adversary snapshot lands in the log.
  */
 import {
-  resolveRoundWaves, type Plan, type GuardProvider,
+  resolveRoundBands, type Plan, type GuardProvider,
 } from '../../src/combat/round'
 import { makeCombatant } from '../helpers/fixtures'
 import { loadAdversary } from '../../src/adversary/io'
@@ -28,28 +28,23 @@ async function setup(): Promise<{ states: Map<string, Actor>; fau: AdversaryComb
 
 /** One round: PC strikes the Serpes; the Faucheur bites twice (2⚫ → 2×1⚫ ; sickleStrike coûte désormais 2⚫). */
 async function runMixedRound(states: Map<string, Actor>) {
-  let wave = 0
-  return resolveRoundWaves(states, 1, alwaysDodge, [], () => {
-    wave++
-    if (wave === 1) {
-      return [
-        { actorId: 'PC', action: 'armed-attack', targetId: 'faucheur', targetPart: 'sickles' },
-        { actorId: 'faucheur', card: 'bite', targetId: 'PC' },
-      ] as Plan[]
-    }
-    if (wave === 2) {
-      return [{ actorId: 'faucheur', card: 'bite', targetId: 'PC' }] as Plan[]
-    }
-    return []
-  })
+  const roundPlan: Plan[] = [
+    { actorId: 'PC', action: 'armed-attack', targetId: 'faucheur', targetPart: 'sickles' },
+    { actorId: 'faucheur', card: 'bite', targetId: 'PC' },
+    { actorId: 'faucheur', card: 'bite', targetId: 'PC' },
+  ]
+  // Chacun engage sa manche entière ; le résolveur n'en retient que la bande courante.
+  return resolveRoundBands(states, 1, alwaysDodge, [], () => roundPlan)
 }
 
 describe('mixed round — PC vs Faucheur', () => {
-  it('interleaves card plays and PC actions by initiative', async () => {
+  it('sweeps the bands: both bites (I, init 3) then the armed-attack (II, init 5)', async () => {
     const { states } = await setup()
     const { log } = await runMixedRound(states)
-    // Wave 1: bite (3) resolves before armed-attack (5); wave 2: bite again.
-    expect(log.phases.map(p => p.initiative)).toEqual([3, 5, 3])
+    // Band I holds both bites — same initiative, so a single simultaneous group.
+    // Band II then resolves the armed-attack.
+    expect(log.phases.map(p => p.initiative)).toEqual([3, 5])
+    expect(log.phases[0].actions).toHaveLength(2)
   })
 
   it('adversary entries log the summed roll; PC entries face the fixed guard', async () => {

@@ -27,10 +27,13 @@
  * 5. End-of-round processing:
  *    Light-wound overflow → 1 heavy wound; hemorrhage token consumed on conversion.
  *
- * 6. Wave-based round structure:
- *    A round is a loop of waves. Each wave, every active combatant declares
- *    ONE action. Waves repeat until no combatant can (or wants to) act.
- *    Use resolveRoundWaves for this behaviour; resolveRound is kept for tests.
+ * 6. Band-swept round structure (§ b) Phase d'actions):
+ *    A round sweeps the three initiative bands — I, then II, then III. A band
+ *    is revealed only once the previous one has resolved, so a slow card
+ *    commits knowing the outcome of the fast ones, but blind to the rest of its
+ *    own band. Within a band, resolution stays ordered by the fine 1-10
+ *    initiative (rule 1).
+ *    Use resolveRoundBands for this behaviour; resolveRound is kept for tests.
  */
 
 import type { RollResult } from '../types'
@@ -59,6 +62,7 @@ import {
 import { resolveAdversaryAttack } from '../adversary/attack'
 import { attackAdvantages } from '../adversary/traits'
 import { selectTargetPart } from '../adversary/agent'
+import { BANDS, bandOf, type Band } from './bands'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -137,17 +141,18 @@ interface CachedGuard {
 // ─── Wave resolution (internal) ───────────────────────────────────────────────
 
 /**
- * Resolve one wave of actions.
+ * Resolve one set of plans — in practice, everything committed to a single band.
  *
- * A wave is a set of PlannedActions (typically one per combatant), resolved
- * simultaneously by initiative group. Action costs are spent here.
+ * Plans are resolved by initiative group: same-initiative actions are truly
+ * simultaneous (snapshot-then-apply), while distinct initiatives sequence, each
+ * group seeing the previous one's result. Action costs are spent here.
  *
- * The guard cache must be shared across all waves within a round so that a
+ * The guard cache must be shared across every band within a round so that a
  * combatant's guard is rolled only once per round (§Système de Garde).
  *
- * @returns Updated state map and the PhaseLog entries produced by this wave.
+ * @returns Updated state map and the PhaseLog entries produced by these plans.
  */
-function resolveWave(
+function resolvePlans(
   inputStates: ReadonlyMap<string, Actor>,
   plans:       Plan[],
   getGuard:    GuardProvider,
@@ -351,7 +356,7 @@ export function resolveRound(
 ): { states: Map<string, CombatantState>; log: RoundLog } {
 
   const guardCache = new Map<string, CachedGuard>()
-  const { states: waveStates, phaseLogs } = resolveWave(inputStates, plans, getGuard, guardCache)
+  const { states: waveStates, phaseLogs } = resolvePlans(inputStates, plans, getGuard, guardCache)
 
   // All inputs were PCs and resolveWave never changes an actor's kind,
   // so narrowing the union map back to CombatantState is sound.
@@ -373,61 +378,62 @@ export function resolveRound(
 }
 
 /**
- * Resolve a full combat round using a wave-based loop.
+ * Resolve a full combat round by sweeping the three initiative bands.
  *
- * Each wave:
- *  1. getPlans(currentStates) is called — returns one PlannedAction per
- *     combatant who still has PA and can act.
- *  2. The wave is resolved via resolveWave.
- *  3. States are updated; the loop repeats.
+ * For each band I → II → III:
+ *  1. getPlans(currentStates, band) is called — returns what every combatant
+ *     commits to THIS band. An empty band is normal (a combatant may sit one
+ *     out): unlike a wave loop, the sweep carries on to the next band.
+ *  2. The band is resolved via resolvePlans, ordered by fine initiative.
+ *  3. States are updated; onBandResolved fires; the sweep moves on.
  *
- * The loop ends when getPlans() returns an empty array (no one can act), or
- * when all combatants are defeated, or when the safety cap is reached.
+ * Plans whose initiative does not fall in the requested band are dropped —
+ * the band is the contract, and honouring it is the planner's job.
  *
- * The guard cache is shared across all waves: a combatant's guard roll is done
- * once per round (§Système de Garde), regardless of how many waves occur.
+ * The guard cache is shared across all bands: a combatant's guard is rolled
+ * once per round (§Système de Garde), whichever band the attacks land in.
  *
- * End-of-round processing (wound conversion, etc.) runs once, after all waves.
+ * End-of-round processing (wound conversion, etc.) runs once, after band III.
  *
  * @param inputStates  Current states of all combatants (not mutated)
  * @param round        Round number (1-based, for logging)
  * @param getGuard     Callback invoked once per target per round to choose a guard
  * @param maintenance  Maintenance entries from resetRoundTokensWithLog (logged but not re-applied)
- * @param getPlans        Called each wave; returns actions for this wave (empty = stop).
+ * @param getPlans        Called once per band; returns what is committed to it.
  *                        May be synchronous or asynchronous (e.g. LLM agent).
- * @param onWaveResolved  Optional callback invoked synchronously after each wave is
- *                        resolved, BEFORE the next getPlans call. Used for real-time
- *                        display and to update persistent LLM session context.
+ * @param onBandResolved  Optional callback invoked synchronously after each band
+ *                        resolves, BEFORE the next band's getPlans call. Used for
+ *                        real-time display and to update LLM session context.
  * @returns Updated state map and a structured RoundLog
  */
-export async function resolveRoundWaves<A extends Actor>(
+export async function resolveRoundBands<A extends Actor>(
   inputStates:     ReadonlyMap<string, A>,
   round:           number,
   getGuard:        GuardProvider,
   maintenance:     MaintenanceEntry[],
-  getPlans:        (currentStates: ReadonlyMap<string, A>) => Plan[] | Promise<Plan[]>,
-  onWaveResolved?: (phaseLogs: PhaseLog[]) => void,
+  getPlans:        (currentStates: ReadonlyMap<string, A>, band: Band) => Plan[] | Promise<Plan[]>,
+  onBandResolved?: (band: Band, phaseLogs: PhaseLog[]) => void,
 ): Promise<{ states: Map<string, A>; log: RoundLog }> {
 
   const guardCache = new Map<string, CachedGuard>()
   const allPhases: PhaseLog[] = []
   let   states: Map<string, Actor> = new Map(inputStates)
 
-  // Safety cap — a round can never have more waves than the max PA per combatant
-  const MAX_WAVES = 10
-
-  for (let wave = 0; wave < MAX_WAVES; wave++) {
-    // resolveWave never changes an actor's kind, so the map stays A-shaped
+  for (const band of BANDS) {
+    // resolvePlans never changes an actor's kind, so the map stays A-shaped
     // (the double cast is required: TS cannot see that invariant).
-    const plans = await Promise.resolve(getPlans(states as unknown as ReadonlyMap<string, A>))
-    if (plans.length === 0) break
+    const declared = await Promise.resolve(
+      getPlans(states as unknown as ReadonlyMap<string, A>, band),
+    )
+    const plans = declared.filter(p => bandOf(initiativeOf(p, states)) === band)
+    if (plans.length === 0) continue
 
-    const { states: next, phaseLogs } = resolveWave(states, plans, getGuard, guardCache)
+    const { states: next, phaseLogs } = resolvePlans(states, plans, getGuard, guardCache)
     states = next
     allPhases.push(...phaseLogs)
 
-    // Notify: display + LLM context update — BEFORE the next getPlans call
-    onWaveResolved?.(phaseLogs)
+    // Notify: display + LLM context update — BEFORE the next band's getPlans
+    onBandResolved?.(band, phaseLogs)
 
     // Stop early if all combatants are defeated mid-round
     if ([...states.values()].every(actorDefeated)) break
