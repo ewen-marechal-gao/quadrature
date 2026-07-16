@@ -40,6 +40,15 @@ export { resolveRound, resolveRoundBands } from './round'
 export type { Band } from './bands'
 export { BANDS, bandOf } from './bands'
 
+export type { Position, Board, Speed } from './position'
+export {
+  DEFAULT_BOARD, PC_SPEED,
+  distance, samePosition, inBounds, isAdjacent, inReach, neighbours, applyMove,
+} from './position'
+
+export type { Blocked, ApproachOptions, MovePlan } from './movement'
+export { planApproach, occupiedBy } from './movement'
+
 export type { ActionDef, GuardDef, ActionContext } from './actions'
 export {
   ACTION_DEFS,

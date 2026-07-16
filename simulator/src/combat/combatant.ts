@@ -14,6 +14,7 @@ import type {
   CombatEffect, CombatantSnapshot, ActionCost, MaintenanceEntry,
 } from './types'
 import { STATUS_DEFS } from './status'
+import { applyMove } from './position'
 import { PHYSICAL_CHARACTERISTICS } from '../character/data'
 import { MENTAL_STATES } from './types'
 import { roll, buildPool } from '../dieSystem'
@@ -590,6 +591,7 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'drain-stability':     return { ...s, stability: Math.max(0, s.stability - effect.amount) }
     case 'destabilize':         return s   // le ◇ PJ ne régénère pas → sans effet
     case 'shift-mental-broken': return s.stability > 0 ? s : shiftMentalState(s, effect.direction)
+    case 'move':                return applyMove(s, effect.path)
   }
 }
 

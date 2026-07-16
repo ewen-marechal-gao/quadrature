@@ -30,6 +30,36 @@ export interface Board {
 /** The physical mat this project is designed around. */
 export const DEFAULT_BOARD: Board = { width: 34, height: 22 }
 
+/** A figure's movement budgets, in cases. */
+export interface Speed {
+  walk: number
+  run:  number
+}
+
+/**
+ * Player-character speeds (§ universal_actions.md) : Marche 🚶 → 3 cases,
+ * Course 🏃 → 6 cases. Fixed for every PC — unlike creatures, whose speeds come
+ * from their fiche (`sheet.speed`, set by the mutations that shaped their legs).
+ *
+ * Two riders the engine does not model yet: a failed Course covers 5 cases, and
+ * a Sprint ⛞🟦 adds 3.
+ */
+export const PC_SPEED: Speed = { walk: 3, run: 6 }
+
+/**
+ * Move anything that carries a `pos` along a path (start excluded — it ends on
+ * the last square). Generic because a PC and a creature model position
+ * identically; living here keeps both domains free of a mutual import.
+ *
+ * A figure with no `pos` does not move: in a positionless encounter there is no
+ * square to move it from, and inventing one would put two figures on top of
+ * each other. Movement there is a no-op, which is the pre-positions behaviour.
+ */
+export function applyMove<T extends { pos?: Position }>(o: T, path: readonly Position[]): T {
+  if (o.pos === undefined || path.length === 0) return o
+  return { ...o, pos: path[path.length - 1] }
+}
+
 /**
  * Distance between two squares, in cases (§ « 1 case = 1,5 m, diagonales
  * comprises » → Chebyshev). Adjacency is distance 1, diagonals included.

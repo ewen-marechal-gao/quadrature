@@ -23,6 +23,7 @@
  */
 
 import type { AdversarySheet, AdversaryPart, AdversaryCardDef, AdversaryResource, PartTag } from './types'
+import type { Position } from '../combat/position'
 
 // ─── Mental track (4-state, simplified vs the player's 7) ─────────────────────
 
@@ -131,6 +132,13 @@ export interface AdversaryCombatant {
    * durablement le ◇ malgré sa régénération.
    */
   destabilized: boolean
+  /**
+   * Square on the board — optional, exactly like a PC's (§ CombatantState.pos):
+   * absent means this encounter has no spatial model. Speeds are NOT stored
+   * here; they live on the fiche (`sheet.speed`, walk/run in cases), set by the
+   * mutations that shaped the creature's legs.
+   */
+  pos?: Position
 }
 
 // ─── Block / part predicates ──────────────────────────────────────────────────

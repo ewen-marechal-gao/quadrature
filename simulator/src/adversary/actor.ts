@@ -17,6 +17,7 @@
  */
 
 import type { CombatantState, CombatEffect } from '../combat/types'
+import { PC_SPEED, applyMove, type Position, type Speed } from '../combat/position'
 import {
   isDefeated, processRoundEnd, applyEffectToState,
 } from '../combat/combatant'
@@ -67,6 +68,26 @@ export function actorEndRound(a: Actor): Actor {
   return isAdversaryActor(a) ? bleedTick(a) : processRoundEnd(a)
 }
 
+// ─── Space ────────────────────────────────────────────────────────────────────
+
+/**
+ * The actor's square, or `undefined` in a positionless encounter (the default —
+ * see CombatantState.pos). Callers must handle the absence rather than assume a
+ * default square: an invented (0,0) would make two figures silently co-located.
+ */
+export function actorPos(a: Actor): Position | undefined {
+  return a.pos
+}
+
+/**
+ * Movement budgets in cases. PCs are uniform (Marche 3 / Course 6, § règles);
+ * a creature's come from its fiche, where the mutations that shaped its legs
+ * set them (cf. data/mutations.yaml `speed`).
+ */
+export function actorSpeed(a: Actor): Speed {
+  return isAdversaryActor(a) ? a.sheet.speed : PC_SPEED
+}
+
 // ─── Effect application ───────────────────────────────────────────────────────
 
 /**
@@ -106,6 +127,8 @@ function applyEffectToAdversary(a: AdversaryCombatant, fx: CombatEffect): Advers
       if (fx.status === 'stunned')    return { ...a, stunned: true }
       if (fx.status === 'hemorrhage') return addBleed(a, 1)
       return a
+    case 'move':
+      return applyMove(a, fx.path)
     // PC-only kinds (heal, reactions, protection…): not modelled.
     default:
       return a

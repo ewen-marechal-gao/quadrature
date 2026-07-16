@@ -8,6 +8,7 @@
  */
 
 import type { Character, CharacteristicName, SkillName, CharacteristicState } from '../character/types'
+import type { Position } from './position'
 import type { RollResult } from '../types'
 import type { AdversaryRollResult } from '../adversary/dice'
 import type { AdversarySnapshot } from '../adversary/combatant'
@@ -159,6 +160,13 @@ export interface CombatantState {
   bleed: number
   /** Active status effects */
   status: StatusEffect[]
+  /**
+   * Square on the board. **Optional**: a combat without a `board` has no spatial
+   * model at all (every actor is assumed in reach of every other), which is how
+   * every encounter behaved before positions existed and still behaves today.
+   * Movement effects on a positionless actor are silently no-ops.
+   */
+  pos?: Position
 
   // ── Protection ──────────────────────────────────────────────────────────────
   /**
@@ -215,6 +223,14 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
   | { kind: 'drain-stability';     amount: number }  // retire N ◇ à la cible (plancher 0)
   | { kind: 'destabilize' }                          // « Déstabilisé » : ignore le prochain regain de ◇ (adversaire)
   | { kind: 'shift-mental-broken'; direction: 'toward-terror' | 'toward-rage' }  // ne décale QUE si la cible n'a plus de ◇
+  // ── Déplacement ─────────────────────────────────────────────────────────────
+  /**
+   * Move the target along `path` (start excluded; it ends on the last square).
+   * The route is carried in full, not just the destination: the coming réactions
+   * d'allonge fire on *crossing* a weapon's reach, which endpoints cannot show.
+   * The path is decided upstream by `planApproach` — applying it is a pure write.
+   */
+  | { kind: 'move'; path: Position[] }
 )
 
 // ─── Resolution records ───────────────────────────────────────────────────────
