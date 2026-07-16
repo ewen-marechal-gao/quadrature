@@ -170,6 +170,7 @@ cards:
       - melee
       - physical
       - physicalDamage
+    reach: 1
     onSuccess:
       text:
         fr: Inflige 💢💢
@@ -197,6 +198,7 @@ cards:
       - melee
       - physical
       - physicalDamage
+    reach: 1
     onSuccess:
       text:
         fr: Inflige 💢💢💢

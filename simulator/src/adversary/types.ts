@@ -163,6 +163,16 @@ export interface AdversaryCardDef {
   tags:       CardTag[]
   /** True for ranged actions (à distance) — display legacy; `tags` is authoritative. */
   ranged?:    boolean
+  /**
+   * How far the blow carries, in cases (1 = adjacent, 2 = arme d'allonge).
+   * Hard-coded per action in the kits, as Ewen specified.
+   *
+   * ABSENT = ungated. Deliberate, not an oversight: the rules have no range
+   * table for shouts or bowshots, so a `cry` or a `bowShot` reaches whatever it
+   * targets. Inventing a shouting distance is a rules decision, not this
+   * loader's. Only melee is pinned down today.
+   */
+  reach?:     number
   onSuccess:  AdversaryOutcome
   onFailure:  AdversaryOutcome
   onFives?:   AdversaryFivesOutcome

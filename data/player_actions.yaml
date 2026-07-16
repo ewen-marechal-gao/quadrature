@@ -9,6 +9,13 @@
 #     (montants dynamiques, effets inconditionnels), enregistré dans
 #     simulator/src/combat/action-resolvers.ts (qui porte aussi le getDC).
 #
+# `reach` = portée du coup, en cases (1 = au contact). ⚠️ TEMPORAIRE : la portée
+# d'un personnage vient de son ARME, pas de l'action — la même Attaque armée est
+# à portée 1 avec une dague et 2 avec une hast. Codée en dur ici en attendant le
+# chantier des armes (même raccourci que le jet de Puissance pour tous). Absente
+# = non gâtée : les règles ne donnent pas de portée de voix pour les actions
+# sociales, et l'inventer serait une décision de règles.
+#
 # `vaultCard` = id de la carte française rules/fr/cartes/*.yaml : sert au test
 # de cohérence (coût/initiative/nom) en attendant la projection générée (3b).
 # `description` = résumé tactique FR injecté dans les prompts des agents LLM.
@@ -24,6 +31,7 @@ actions:
     initiative: 5
     cost: { actions: 2 }
     tags: [offensive, melee, physical, physicalDamage]
+    reach: 1
     roll: { characteristic: strength, skill: power }
     onSuccess: { text: { fr: "Touché — 3💢" }, effect: [{ wound: 3 }] }
     onFailure: { text: { fr: "Égratigné — 1💢" }, effect: [{ wound: 1 }] }
@@ -49,6 +57,7 @@ actions:
     initiative: 3
     cost: { actions: 2 }
     tags: [offensive, melee, physical, fatigueDamage]
+    reach: 1
     roll: { characteristic: strength, skill: power }
     onSuccess: { text: { fr: "Touché — 2💧" }, effect: [{ fatigue: 2 }] }
     onFailure: { text: { fr: "Effleuré — 1💧" }, effect: [{ fatigue: 1 }] }
@@ -73,6 +82,7 @@ actions:
     initiative: 8
     cost: { actions: 2, fatigue: 2 }
     tags: [offensive, melee, physical, physicalDamage]
+    reach: 1
     prerequisite: { skill: power, minValue: 1 }
     roll: { characteristic: strength, skill: power }
     onSuccess:
@@ -97,6 +107,7 @@ actions:
     initiative: 3
     cost: { actions: 1, fatigue: 1 }
     tags: [offensive, melee, physical, physicalDamage]
+    reach: 1
     prerequisite: { skill: precision, minValue: 1 }
     roll: { characteristic: agility, skill: precision }
     onSuccess: { text: { fr: "Touché — 2💢" }, effect: [{ wound: 2 }] }

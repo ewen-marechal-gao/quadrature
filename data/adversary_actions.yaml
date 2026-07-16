@@ -17,7 +17,12 @@
 #   { wound: N }  💢   { fatigue: N } 💧   { heavyWound: N } 💔
 #   { status: knockdown|stunned|hemorrhage|entrapped|kneeling }
 #   { mental: -N } 🔻 vers Peur   { mental: +N } 🔺 vers Colère
-#   { move: N }  Déplacement [N] (loggé ; modèle spatial différé)
+#   { move: N }  Déplacement [N] : le LANCEUR fond sur sa cible, jusqu'à N cases
+#
+# `reach: N` (optionnel) : portée du coup, en cases (1 = au contact, 2 = allonge).
+# Codée en dur par action, comme convenu. ABSENTE = non gâtée — les règles ne
+# donnent ni portée de voix (cry, shriek) ni distance de tir (bowShot), et les
+# inventer serait une décision de règles. Seule la mêlée est fixée aujourd'hui.
 #   { gainStability: N }  auto-ciblé : la créature gagne N ◇
 # `text: auto` est accepté (rendu auto de la prose différé) ; la prose explicite
 # reste renseignée pour l'affichage MJ tant que l'auto-rendu n'existe pas.
@@ -35,6 +40,7 @@ actions:
     cost: 2
     initiative: 4
     tags: [offensive, melee, physical, physicalDamage, mentalDamage]
+    reach: 1
     onSuccess: { text: { fr: "Inflige 💢💢💢💢" }, effect: [{ wound: 4 }] }
     onFailure: { text: { fr: "Inflige 💢💢" },      effect: [{ wound: 2 }] }
     onFives:   { text: { fr: "Repérez un 5 : la cible subit 🔻." }, count: 1, effect: [{ mental: -1 }] }
@@ -44,6 +50,7 @@ actions:
     cost: 1
     initiative: 5
     tags: [offensive, movement, melee, physical, physicalDamage]
+    reach: 1
     onSuccess: { text: { fr: "Déplacement [6] puis inflige 💢💢" }, effect: [{ move: 6 }, { wound: 2 }] }
     onFailure: { text: { fr: "Déplacement [4]" },                   effect: [{ move: 4 }] }
     onFives:   { text: { fr: "Repérez deux 5 : la cible est Entravée 🕸️." }, count: 2, effect: [{ status: entrapped }] }
@@ -55,6 +62,7 @@ actions:
     fatigueCost: 1
     initiative: 3
     tags: [offensive, melee, physical, physicalDamage]
+    reach: 1
     onSuccess: { text: { fr: "Inflige 💢💢" }, effect: [{ wound: 2 }] }
     onFailure: { text: { fr: "Inflige 💢" },  effect: [{ wound: 1 }] }
     onFives:   { text: { fr: "Repérez un 5 : la cible subit une hémorragie 🩸." }, count: 1, effect: [{ status: hemorrhage }] }
@@ -76,6 +84,7 @@ actions:
     cost: 2
     initiative: 3
     tags: [offensive, melee, physical, physicalDamage]
+    reach: 1
     onSuccess: { text: { fr: "Inflige 💢💢💢 et une hémorragie 🩸" }, effect: [{ wound: 3 }, { status: hemorrhage }] }
     onFailure: { text: { fr: "Inflige 💢💢" },                        effect: [{ wound: 2 }] }
     onFives:   { text: { fr: "Repérez un 5 : hémorragie 🩸 supplémentaire." }, count: 1, effect: [{ status: hemorrhage }] }
@@ -97,6 +106,7 @@ actions:
     fatigueCost: 1
     initiative: 4
     tags: [offensive, melee, physical, fatigueDamage]
+    reach: 1
     onSuccess: { text: { fr: "La cible est À terre 🙏" },   effect: [{ status: knockdown }] }
     onFailure: { text: { fr: "La cible est À genoux 🧎" },  effect: [{ status: kneeling }] }
     onFives:   { text: { fr: "Repérez un 5 : inflige 💧💧." }, count: 1, effect: [{ fatigue: 2 }] }
@@ -107,6 +117,7 @@ actions:
     cost: 2
     initiative: 5
     tags: [offensive, melee, physical, physicalDamage]
+    reach: 1
     onSuccess: { text: { fr: "Inflige 💢💢💢" }, effect: [{ wound: 3 }] }
     onFailure: { text: { fr: "Inflige 💢" },     effect: [{ wound: 1 }] }
     onFives:   { text: { fr: "Repérez un 5 : la cible est À terre 🙏." }, count: 1, effect: [{ status: knockdown }] }
@@ -115,6 +126,9 @@ actions:
     name: { fr: "Lacération", en: "Laceration" }
     cost: 2
     initiative: 3
+    # Sans `tags` (carte historique non taguée) : la portée est donc posée à la
+    # main, sans quoi ces griffes lacéreraient à l'autre bout du tapis.
+    reach: 1
     onSuccess: { text: { fr: "Inflige 💢💢💢" }, effect: [{ wound: 3 }] }
     onFailure: { text: { fr: "Inflige 💢" },     effect: [{ wound: 1 }] }
     onFives:   { text: { fr: "Repérez un 5 : la cible subit une hémorragie 🩸 et le prédateur gagne +1 ◇." }, count: 1, effect: [{ status: hemorrhage }, { gainStability: 1 }] }
@@ -126,6 +140,7 @@ actions:
     fatigueCost: 1
     initiative: 5
     tags: [offensive, melee, physical, fatigueDamage]
+    reach: 1
     onSuccess: { text: { fr: "La cible est Entravée 🕸️ et subit 💧💧" }, effect: [{ status: entrapped }, { fatigue: 2 }] }
     onFailure: { text: { fr: "La cible subit 💧" },                        effect: [{ fatigue: 1 }] }
     onFives:   { text: { fr: "Repérez un 5 : 💧 supplémentaire." }, count: 1, effect: [{ fatigue: 1 }] }
@@ -137,6 +152,7 @@ actions:
     fatigueCost: 1
     initiative: 5
     tags: [offensive, melee, physical, physicalDamage]
+    reach: 1
     onSuccess: { text: { fr: "La cible est Entravée 🕸️ et subit une hémorragie 🩸" }, effect: [{ status: entrapped }, { status: hemorrhage }] }
     onFailure: { text: { fr: "Inflige 💢" },                                            effect: [{ wound: 1 }] }
     onFives:   { text: { fr: "Repérez un 5 : hémorragie 🩸 supplémentaire." }, count: 1, effect: [{ status: hemorrhage }] }
@@ -147,6 +163,7 @@ actions:
     cost: 1
     initiative: 4
     tags: [offensive, melee, physical]
+    reach: 1
     onSuccess: { text: { fr: "La cible est Entravée 🕸️" }, effect: [{ status: entrapped }] }
     onFailure: { text: { fr: "Aucun effet" },              effect: [] }
     onFives:   { text: { fr: "Repérez un 5 : les serres entaillent — 💢." }, count: 1, effect: [{ wound: 1 }] }
@@ -158,6 +175,7 @@ actions:
     fatigueCost: 1
     initiative: 6
     tags: [offensive, melee, physical, fatigueDamage]
+    reach: 1
     onSuccess: { text: { fr: "Entraîne la cible Entravée sous l'eau : 💧💧💧 (noyade), reste Entravée 🕸️" }, effect: [{ fatigue: 3 }, { status: entrapped }] }
     onFailure: { text: { fr: "La cible subit 💧" },                                                        effect: [{ fatigue: 1 }] }
     onFives:   { text: { fr: "Repérez un 5 : plus d'air — 💧 supplémentaire." }, count: 1, effect: [{ fatigue: 1 }] }
@@ -168,6 +186,7 @@ actions:
     cost: 1
     initiative: 4
     tags: [offensive, melee, physical, physicalDamage]
+    reach: 1
     onSuccess: { text: { fr: "Inflige 💢💢💢" }, effect: [{ wound: 3 }] }
     onFailure: { text: { fr: "Inflige 💢" },     effect: [{ wound: 1 }] }
     onFives:   { text: { fr: "Repérez un 5 : la cible est Sonnée 🫨." }, count: 1, effect: [{ status: stunned }] }

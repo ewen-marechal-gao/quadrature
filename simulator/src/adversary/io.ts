@@ -50,6 +50,7 @@ interface RawCard {
   initiative: number
   tags?: import('./types').CardTag[]
   ranged?: boolean
+  reach?: number
   onSuccess: RawOutcome
   onFailure: RawOutcome
   onFives?: RawFivesOutcome
@@ -119,6 +120,7 @@ function resolveCard(c: RawCard, locale: string): AdversaryCardDef {
     initiative: c.initiative,
     tags:       c.tags ?? [],
     ...(c.ranged && { ranged: true }),
+    ...(c.reach != null && { reach: c.reach }),
     onSuccess:  resolveOutcome(c.onSuccess, locale),
     onFailure:  resolveOutcome(c.onFailure, locale),
     ...(fives && { onFives: fives }),

@@ -63,7 +63,7 @@ import { resolveAdversaryAttack } from '../adversary/attack'
 import { attackAdvantages } from '../adversary/traits'
 import { selectTargetPart } from '../adversary/agent'
 import { BANDS, bandOf, type Band } from './bands'
-import { DEFAULT_BOARD, type Board, type Position } from './position'
+import { DEFAULT_BOARD, distance, inReach, type Board, type Position } from './position'
 import { expandMoves } from './movement'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -200,6 +200,8 @@ function resolvePlans(
 
     const phaseEffects: CombatEffect[] = []
     const actionLogs:   ActionLogEntry[] = []
+    /** Blows to test against the board once feet have moved (see step d). */
+    const reachChecks:  ReachCheck[] = []
 
     // b. Resolve each action using snapshots
     for (const plan of group.plans) {
@@ -240,7 +242,7 @@ function resolvePlans(
         )
         const effects = [...reaction.effects, ...result.effects]
         phaseEffects.push(...effects)
-        actionLogs.push({
+        const entry: ActionLogEntry = {
           actorId:        plan.actorId,
           action:         card.id,
           targetId:       plan.targetId,
@@ -255,7 +257,9 @@ function resolvePlans(
           actorReactions: 0,
           ...(plan.battleCry && { battleCry: plan.battleCry }),
           ...(plan.reasoning && { reasoning: plan.reasoning }),
-        })
+        }
+        actionLogs.push(entry)
+        if (card.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: card.reach })
         continue
       }
 
@@ -297,11 +301,13 @@ function resolvePlans(
         const routed = resolved.effects.map(e =>
           e.targetId === plan.targetId && targetPart ? { ...e, targetPart } : e)
         phaseEffects.push(...routed)
-        actionLogs.push({
+        const entry: ActionLogEntry = {
           ...toActionLogEntry(resolved, preActions, preReactions, plan.battleCry, plan.reasoning),
           effects: routed,
           ...(targetPart && { targetPart }),
-        })
+        }
+        actionLogs.push(entry)
+        if (def.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: def.reach })
         continue
       }
 
@@ -321,7 +327,9 @@ function resolvePlans(
       }
       const resolved = resolveAction(actorSnap, plan.action, ctx)
       phaseEffects.push(...resolved.effects)
-      actionLogs.push(toActionLogEntry(resolved, preActions, preReactions, plan.battleCry, plan.reasoning))
+      const entry = toActionLogEntry(resolved, preActions, preReactions, plan.battleCry, plan.reasoning)
+      actionLogs.push(entry)
+      if (def.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: def.reach })
     }
 
     // c. Expand move intents, then apply everything at once.
@@ -339,7 +347,10 @@ function resolvePlans(
       for (const entry of actionLogs) entry.effects = entry.effects.map(e => rewritten.get(e) ?? e)
     }
 
-    states = applyEffectsToActors(states, expanded)
+    // d. Gate blows that cannot reach (§ portée), now that feet have moved.
+    const dropped = gateByReach(reachChecks, positionsAfter(states, expanded))
+
+    states = applyEffectsToActors(states, expanded.filter(e => !dropped.has(e)))
     phaseLogs.push({ initiative, actions: actionLogs })
   }
 
@@ -512,6 +523,61 @@ function livePositions(states: ReadonlyMap<string, Actor>): Map<string, Position
   const out = new Map<string, Position>()
   for (const [id, a] of states) if (a.pos) out.set(id, a.pos)
   return out
+}
+
+/** Where everyone will stand once this phase's expanded moves are applied. */
+function positionsAfter(
+  states:  ReadonlyMap<string, Actor>,
+  effects: readonly CombatEffect[],
+): Map<string, Position> {
+  const out = livePositions(states)
+  for (const e of effects) {
+    if (e.kind !== 'move' || e.path.length === 0) continue
+    if (out.has(e.targetId)) out.set(e.targetId, e.path[e.path.length - 1])
+  }
+  return out
+}
+
+/** A blow awaiting the "can it actually reach?" question (§ portée). */
+interface ReachCheck {
+  entry:    ActionLogEntry
+  targetId: string
+  reach:    number
+}
+
+/**
+ * Drop the blows that land nowhere near their target, and report which effects
+ * they were, so the caller can withhold them.
+ *
+ * Checked AFTER movement, on the final squares: what matters is whether the
+ * weapon reaches when the blow lands, not where everyone stood when it was
+ * declared. This is what makes a Charge coherent — it crosses the ground first,
+ * and only connects if it actually arrived.
+ *
+ * Only the effects aimed AT the target are withheld. What the attacker did to
+ * itself still stands: it swung, it moved, it tired itself out. The defender's
+ * guard also stands — it reacted to an attack that was coming, and its guard is
+ * rolled once a round regardless (§ Système de Garde).
+ *
+ * Ungated when either figure has no square (positionless encounter) or when the
+ * action declares no `reach`: no rule, no gate.
+ */
+function gateByReach(
+  checks:    readonly ReachCheck[],
+  positions: ReadonlyMap<string, Position>,
+): Set<CombatEffect> {
+  const dropped = new Set<CombatEffect>()
+  for (const { entry, targetId, reach } of checks) {
+    const from = positions.get(entry.actorId)
+    const to   = positions.get(targetId)
+    if (!from || !to || inReach(from, to, reach)) continue
+
+    entry.hit = false
+    entry.notes.push(`⊘ Hors d'atteinte — ${distance(from, to)} cases, portée ${reach}`)
+    for (const e of entry.effects) if (e.targetId === targetId) dropped.add(e)
+    entry.effects = entry.effects.filter(e => !dropped.has(e))
+  }
+  return dropped
 }
 
 /** Initiative of a plan: ACTION_DEFS for a PC action, the card's for an adversary play. */

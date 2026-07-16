@@ -189,6 +189,7 @@ cards:
       - melee
       - physical
       - physicalDamage
+    reach: 1
     onSuccess:
       text:
         fr: Inflige 💢💢
@@ -217,6 +218,7 @@ cards:
       - physical
       - physicalDamage
       - mentalDamage
+    reach: 1
     onSuccess:
       text:
         fr: Inflige 💢💢💢💢
@@ -245,6 +247,7 @@ cards:
       - melee
       - physical
       - fatigueDamage
+    reach: 1
     onSuccess:
       text:
         fr: La cible est À terre 🙏
@@ -273,6 +276,7 @@ cards:
       - melee
       - physical
       - physicalDamage
+    reach: 1
     onSuccess:
       text:
         fr: Déplacement [6] puis inflige 💢💢

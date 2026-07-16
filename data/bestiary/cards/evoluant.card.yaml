@@ -129,6 +129,7 @@ cards:
       - melee
       - physical
       - physicalDamage
+    reach: 1
     onSuccess:
       text:
         fr: Inflige 💢💢
@@ -157,6 +158,7 @@ cards:
       - melee
       - physical
       - fatigueDamage
+    reach: 1
     onSuccess:
       text:
         fr: La cible est Entravée 🕸️ et subit 💧💧

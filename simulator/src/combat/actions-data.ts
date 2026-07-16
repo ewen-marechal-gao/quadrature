@@ -37,6 +37,8 @@ interface RawPlayerAction {
   initiative:   number
   cost:         { actions: number; reactions?: number; fatigue?: number; endPlayerRound?: boolean }
   tags:         CardTag[]
+  /** Portée du coup, en cases. Absent = non gâté (cf. ActionDef.reach). */
+  reach?:       number
   prerequisite?: { skill: SkillName; minValue: number }
   /** Mental states allowing this action (empty/absent = no constraint). */
   mentalConditions?: MentalState[]
@@ -76,6 +78,7 @@ function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string): Action
     initiative:  raw.initiative,
     cost,
     tags:        raw.tags,
+    ...(raw.reach != null && { reach: raw.reach }),
     ...(raw.prerequisite && { prerequisite: raw.prerequisite }),
     mentalConditions: raw.mentalConditions ?? [],
     requiresFirstAction: raw.requiresFirstAction ?? false,

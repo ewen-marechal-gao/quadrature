@@ -61,6 +61,18 @@ export interface ActionDef {
   cost:          ActionCost
   /** Card typing (shared CardTag vocabulary, same as adversary cards). */
   tags:          CardTag[]
+  /**
+   * How far the blow carries, in cases (1 = adjacent, 2 = arme d'allonge).
+   *
+   * ⚠️ TEMPORAIRE. A character's reach is a property of the WEAPON, not of the
+   * action — the same Attaque armée is reach 1 with a dagger and reach 2 with a
+   * hast. Pinning it to the action is a stopgap until the weapons chantier
+   * (todo #18) gives characters equipment; it is the same shortcut that makes
+   * Attaque armée roll Puissance for everyone, rapier or not.
+   *
+   * ABSENT = ungated (social actions: the rules give no shouting distance).
+   */
+  reach?:        number
   prerequisite?: { skill: SkillName; minValue: number }
   /**
    * Mental states in which this action may be used (consolidation actions gate

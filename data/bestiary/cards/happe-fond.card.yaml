@@ -150,6 +150,7 @@ cards:
       - melee
       - physical
       - physicalDamage
+    reach: 1
     onSuccess:
       text:
         fr: Inflige 💢💢
@@ -176,6 +177,7 @@ cards:
       - offensive
       - melee
       - physical
+    reach: 1
     onSuccess:
       text:
         fr: La cible est Entravée 🕸️
@@ -203,6 +205,7 @@ cards:
       - melee
       - physical
       - fatigueDamage
+    reach: 1
     onSuccess:
       text:
         fr: "Entraîne la cible Entravée sous l'eau : 💧💧💧 (noyade), reste Entravée 🕸️"
