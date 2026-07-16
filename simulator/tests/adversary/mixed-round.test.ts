@@ -6,9 +6,9 @@
  *    declared part (Serpes) through the body-part model.
  *  - The creature plays deck cards: summed dice vs the PC's rolled guard score,
  *    reusing the once-per-round guard cache (one ⚡ spent total).
- *  - The band sweep orders the round: cry (init 2) then bite (init 3) in band I,
- *    the armed-attack (init 5) in band II. The creature needs two DIFFERENT
- *    cards to act twice — a card is playable only once per band.
+ *  - The band sweep orders the round: bite (init 3) in band I, then charge and
+ *    the PC's armed-attack (both init 5) simultaneously in band II. A combatant
+ *    lays down a single card per band, so acting twice takes two bands.
  *  - Round end: PC wound overflow runs; adversary snapshot lands in the log.
  */
 import {
@@ -27,34 +27,35 @@ async function setup(): Promise<{ states: Map<string, Actor>; fau: AdversaryComb
   return { states: new Map<string, Actor>([['PC', pc], [fau.id, fau]]), fau }
 }
 
-/** One round: PC strikes the Serpes; the Faucheur spends its 2⚫ on cry + bite (1⚫ each). */
+/** One round: PC strikes the Serpes; the Faucheur spends its 2⚫ on bite (I) + charge (II). */
 async function runMixedRound(states: Map<string, Actor>) {
   const roundPlan: Plan[] = [
     { actorId: 'PC', action: 'armed-attack', targetId: 'faucheur', targetPart: 'sickles' },
-    { actorId: 'faucheur', card: 'cry', targetId: 'PC' },
     { actorId: 'faucheur', card: 'bite', targetId: 'PC' },
+    { actorId: 'faucheur', card: 'charge', targetId: 'PC' },
   ]
   // Chacun engage sa manche entière ; le résolveur n'en retient que la bande courante.
   return resolveRoundBands(states, 1, alwaysDodge, [], () => roundPlan)
 }
 
 describe('mixed round — PC vs Faucheur', () => {
-  it('sweeps the bands: cry (2) then bite (3) in band I, armed-attack (5) in band II', async () => {
+  it('sweeps the bands: bite (3) in band I, then charge + armed-attack (5) in band II', async () => {
     const { states } = await setup()
     const { log } = await runMixedRound(states)
-    // Band I resolves its two initiative groups in order, then band II.
-    expect(log.phases.map(p => p.initiative)).toEqual([2, 3, 5])
+    // Band II holds charge and armed-attack at the same initiative → one group.
+    expect(log.phases.map(p => p.initiative)).toEqual([3, 5])
+    expect(log.phases[1].actions).toHaveLength(2)
   })
 
-  it('drops a card committed twice in the same band', async () => {
+  it('drops a second card committed to the same band', async () => {
     const { states } = await setup()
-    const twice: Plan[] = [
-      { actorId: 'faucheur', card: 'bite', targetId: 'PC' },
+    // cry (init 2) et bite (init 3) sont toutes deux en Bande I : une seule passe.
+    const twoInBandI: Plan[] = [
+      { actorId: 'faucheur', card: 'cry', targetId: 'PC' },
       { actorId: 'faucheur', card: 'bite', targetId: 'PC' },
     ]
-    const { log } = await resolveRoundBands(states, 1, alwaysDodge, [], () => twice)
-    // Une seule morsure survit : on ne dispose que d'un exemplaire de la carte.
-    expect(log.phases.flatMap(p => p.actions).filter(a => a.action === 'bite')).toHaveLength(1)
+    const { log } = await resolveRoundBands(states, 1, alwaysDodge, [], () => twoInBandI)
+    expect(log.phases.flatMap(p => p.actions)).toHaveLength(1)
   })
 
   it('adversary entries log the summed roll; PC entries face the fixed guard', async () => {

@@ -28,6 +28,7 @@ import {
   initCombatant, resetRoundTokensWithLog, effChar, resistanceThreshold,
 } from './combat/combatant'
 import { resolveRoundBands } from './combat/round'
+import { bandOf, type Band } from './combat/bands'
 import type { GuardProvider, PlannedAction, Plan } from './combat/round'
 
 import { loadAdversary } from './adversary/io'
@@ -436,15 +437,17 @@ async function plansForParticipant(
     if (!isAdversaryActor(self)) return []
     // La créature engage sa manche entière : on rejoue son heuristique sur un
     // état simulé jusqu'à épuisement de ses ⚫ (l'état réel n'est pas muté).
-    // `played` fait respecter « une carte par bande » : pas de morsure ×2.
+    // `used` fait respecter « une carte par bande » : une seule carte par palier.
     const plans: Plan[] = []
-    const played = new Set<string>()
+    const used = new Set<Band>()
     let sim = self
     for (let i = 0; i < MAX_CARDS_PER_ROUND; i++) {
-      const plan = planAdversaryCard(sim, enemy.side.id, played)
+      const plan = planAdversaryCard(sim, enemy.side.id, used)
       if (!plan) break
       plans.push(plan)
-      played.add(plan.card)
+      const card = sim.sheet.cards.find(k => k.id === plan.card)
+      const band = card ? bandOf(card.initiative) : null
+      if (band) used.add(band)
       sim = spendCardCost(sim, plan.card)
     }
     return plans

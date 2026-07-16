@@ -11,6 +11,7 @@
 import type { PartTag, AdversaryCardDef } from './types'
 import type { CardTag } from '../combat/types'
 import type { PlannedCard } from '../combat/round'
+import { bandOf, type Band } from '../combat/bands'
 import {
   isPartDestroyed, activeDeck, canPlayCard, isAdversaryDefeated,
   type AdversaryCombatant, type PartState,
@@ -79,20 +80,20 @@ export function cardRank(card: AdversaryCardDef): number {
  * power proxy (a cost-override block makes a strong card cheap, not weak), then
  * deck order. Returns null when the creature cannot (or need not) act.
  *
- * `alreadyPlayed` carries the cards the creature has already committed this
- * round: a card can only be played once per band (§ combat.md), and its
- * initiative pins it to a single band — so a card played once is spent for the
- * round. Pass the growing set when planning a whole round card by card.
+ * `usedBands` carries the bands the creature has already committed to this
+ * round: it lays down a single card per band (§ combat.md), so a band once used
+ * is closed. Pass the growing set when planning a whole round card by card.
  */
 export function planAdversaryCard(
-  c:             AdversaryCombatant,
-  targetId:      string,
-  alreadyPlayed: ReadonlySet<string> = new Set(),
+  c:         AdversaryCombatant,
+  targetId:  string,
+  usedBands: ReadonlySet<Band> = new Set(),
 ): PlannedCard | null {
   if (isAdversaryDefeated(c)) return null
-  const playable = activeDeck(c).filter(
-    card => canPlayCard(c, card.id) && !alreadyPlayed.has(card.id),
-  )
+  const playable = activeDeck(c).filter(card => {
+    const band = bandOf(card.initiative)
+    return band !== null && !usedBands.has(band) && canPlayCard(c, card.id)
+  })
   if (playable.length === 0) return null
   const best = [...playable]
     .map((card, i) => ({ card, i }))

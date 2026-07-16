@@ -28,6 +28,7 @@ import type { PhaseLog }          from './types'
 import type { PlannedAction, GuardProvider } from './round'
 import { ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction, availableGuards } from './actions'
 import { spendActionCost, effChar, isDefeated, mentalDegree } from './combatant'
+import { bandOf, type Band } from './bands'
 import { STATUS_DEFS } from './status'
 import { type Actor, isAdversaryActor, actorDefeated } from '../adversary/actor'
 import { isPartDestroyed } from '../adversary/combatant'
@@ -199,31 +200,38 @@ export function planRoundActions(
   if (isDefeated(self)) return []
 
   const plans: PlannedAction[] = []
+  const usedBands = new Set<Band>()
   let state = self   // local simulation — real state is never mutated
 
-  // ── Phase A: First-action self-care (🟢) ────────────────────────────────
-  const selfAction = selectSelfAction(state, config)
-  if (selfAction !== null) {
-    plans.push({ actorId: self.id, action: selfAction })
-    state = spendActionCost(state, ACTION_DEFS[selfAction].cost)
+  /**
+   * Commit an action to the round, unless its band is already taken: only one
+   * card per band (§ combat.md). Every band is thus a choice — soigner OU
+   * frapper. Returns false when the band is spoken for.
+   */
+  const commit = (id: ActionId, targetId?: string): boolean => {
+    const band = bandOf(ACTION_DEFS[id].initiative)
+    if (band === null || usedBands.has(band)) return false
+    usedBands.add(band)
+    plans.push(targetId === undefined
+      ? { actorId: self.id, action: id }
+      : { actorId: self.id, action: id, targetId })
+    state = spendActionCost(state, ACTION_DEFS[id].cost)
+    return true
   }
+
+  // ── Phase A: Self-care (Bande I) ────────────────────────────────────────
+  const selfAction = selectSelfAction(state, config)
+  if (selfAction !== null) commit(selfAction)
 
   // ── Phase B: Primary offensive action ───────────────────────────────────
   const offAction = selectOffensiveAction(state, opponent, config)
-  if (offAction !== null) {
-    plans.push({ actorId: self.id, action: offAction, targetId: config.targetId })
-    state = spendActionCost(state, ACTION_DEFS[offAction].cost)
-  }
+  if (offAction !== null) commit(offAction, config.targetId)
 
-  // ── Phase C: Second offensive action (if PA allows) ─────────────────────
-  // Elle doit être une carte DIFFÉRENTE : une carte ne peut être jouée qu'une
-  // fois par bande, et son initiative la fixe à une seule bande (§ combat.md).
+  // ── Phase C: Second offensive action, in ANOTHER band ───────────────────
   if (config.persona === 'aggressive' || config.persona === 'opportunist') {
     const played = new Set<ActionId>(plans.map(p => p.action))
     const secondAction = selectOffensiveAction(state, opponent, config, played)
-    if (secondAction !== null) {
-      plans.push({ actorId: self.id, action: secondAction, targetId: config.targetId })
-    }
+    if (secondAction !== null) commit(secondAction, config.targetId)
   }
 
   return plans
