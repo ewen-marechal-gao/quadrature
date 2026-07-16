@@ -9,7 +9,7 @@ describe('deserializeFromYaml', () => {
 name: TestChar
 characteristics:
   strength:
-    value: 2
+    value: 1
     wounds: 0
     power: 1
     robustness: 0
@@ -29,9 +29,9 @@ characteristics:
     composure: 0
     disguise: 0
   acuity:
-    value: 1
+    value: 2
     wounds: 0
-    observation: 1
+    observation: 2
     vigilance: 0
   willpower:
     value: 1
@@ -81,9 +81,10 @@ characteristics:
     expect(names).toContain('intuition')
   })
 
-  it('correctly parses characteristic values and wounds', () => {
+  it('derives characteristic values from skill ranks (base 1 · +1 au rang 2)', () => {
     const char = deserializeFromYaml(MINIMAL_YAML)
-    expect(char.characteristics.strength.value).toBe(2)
+    expect(char.characteristics.acuity.value).toBe(2)     // observation 2 → +1
+    expect(char.characteristics.strength.value).toBe(1)   // power 1 (< rang 2) → reste 1
     expect(char.characteristics.strength.wounds).toBe(0)
   })
 
@@ -127,14 +128,14 @@ describe('loadCharacter', () => {
     expect(char.name).toBe('Lena')
   })
 
-  it('Lena has strength=3', async () => {
+  it('Lena has strength=2 (dérivé de power 2)', async () => {
     const char = await loadCharacter(LENA_PATH)
-    expect(char.characteristics.strength.value).toBe(3)
+    expect(char.characteristics.strength.value).toBe(2)
   })
 
-  it('Lena has power=1 (unlocks brutal-strike)', async () => {
+  it('Lena has power=2 (unlocks brutal-strike)', async () => {
     const char = await loadCharacter(LENA_PATH)
-    expect(char.skills.power).toBe(1)
+    expect(char.skills.power).toBe(2)
   })
 
   it('Lena has endurance=1 (unlocks respiration)', async () => {

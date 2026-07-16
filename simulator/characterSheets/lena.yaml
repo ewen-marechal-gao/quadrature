@@ -18,9 +18,9 @@ training:
     - mobility
 characteristics:
   strength:
-    value: 3
+    value: 2
     wounds: 0
-    power: 1
+    power: 2
     robustness: 0
   agility:
     value: 1
@@ -33,7 +33,7 @@ characteristics:
     endurance: 1
     recovery: 0
   grace:
-    value: 2
+    value: 1
     wounds: 0
     composure: 0
     disguise: 0

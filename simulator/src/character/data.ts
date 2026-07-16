@@ -104,6 +104,18 @@ export const SKILL_LABEL: Record<SkillName, string> = {
   intuition:    'Intuition',
 }
 
+/**
+ * Valeur d'une caractéristique DÉRIVÉE de ses deux compétences (§ personnages,
+ * rules/fr/core/personnages.md). Les caractéristiques ne s'achètent jamais
+ * directement : base 1, +1 quand une compétence associée atteint le rang 2, +1
+ * de plus au rang 4 — le tout plafonné à 5. La valeur ne peut donc pas diverger
+ * des rangs pratiqués (ex. : Vigueur 2 EXIGE une compétence Endurance/Récup ≥ 2).
+ */
+export function deriveCharacteristicValue(skillA: number, skillB: number): number {
+  const milestones = (s: number) => (s >= 2 ? 1 : 0) + (s >= 4 ? 1 : 0)
+  return Math.min(5, 1 + milestones(skillA) + milestones(skillB))
+}
+
 /** Base character: all characteristics = 1, all skills = 0, no wounds */
 export const BASE_CHARACTER: Pick<Character, 'characteristics' | 'skills'> = {
   characteristics: Object.fromEntries(

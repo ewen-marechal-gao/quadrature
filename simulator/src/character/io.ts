@@ -4,7 +4,7 @@ import type {
   Character, CharacteristicName, SkillName,
   PeopleChoice, OriginChoice, TrainingChoice,
 } from './types'
-import { ALL_CHARACTERISTICS, ALL_SKILLS, CARAC_SKILLS } from './data'
+import { ALL_CHARACTERISTICS, ALL_SKILLS, CARAC_SKILLS, deriveCharacteristicValue } from './data'
 import { validateCharacter } from './character'
 
 // ─── YAML shape (matches the human-readable format) ──────────────────────────
@@ -42,7 +42,8 @@ export function serializeToYaml(char: Character): string {
     const state  = char.characteristics[c]
     const [s1, s2] = CARAC_SKILLS[c]
     characteristicsBlock[c] = {
-      value:  state.value,
+      // La valeur affichée est TOUJOURS dérivée des rangs (source unique).
+      value:  deriveCharacteristicValue(char.skills[s1], char.skills[s2]),
       wounds: state.wounds,
       [s1]: char.skills[s1],
       [s2]: char.skills[s2],
@@ -86,13 +87,16 @@ export function deserializeFromYaml(yamlStr: string): Character {
     const block = raw.characteristics[c]
     if (!block) throw new Error(`Missing characteristic block "${c}" in YAML`)
 
-    characteristics[c] = {
-      value:  Number(block.value  ?? 0),
-      wounds: Number(block.wounds ?? 0),
-    }
+    const [s1, s2] = CARAC_SKILLS[c]
+    skills[s1] = Number(block[s1] ?? 0)
+    skills[s2] = Number(block[s2] ?? 0)
 
-    for (const s of CARAC_SKILLS[c]) {
-      skills[s] = Number(block[s] ?? 0)
+    // La valeur de caractéristique est DÉRIVÉE des compétences (jamais lue de la
+    // fiche : le champ `value` n'est qu'un aide-lecture). Une fiche ne peut donc
+    // plus être incohérente (§ personnages : les caracs ne s'achètent pas).
+    characteristics[c] = {
+      value:  deriveCharacteristicValue(skills[s1], skills[s2]),
+      wounds: Number(block.wounds ?? 0),
     }
   }
 

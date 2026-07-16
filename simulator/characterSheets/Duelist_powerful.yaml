@@ -1,23 +1,10 @@
 name: "Powerful Duelist"
+# Armes non encore intégrées : épée à deux mains (l'attaque reste brutal-strike).
 inventory:
-  protection: 2
-people:
-  name: Humain
-  caracs: []
-  skills: []
-origin:
-  caracs:
-    - strength
-  skills:
-    - power
-    - robustness
-training:
-  skills:
-    - power
-    - recovery
+  protection: 3
 characteristics:
   strength:
-    value: 3
+    value: 2          # dérivé : power 2 → rang 2
     wounds: 0
     power: 2
     robustness: 1
@@ -27,9 +14,9 @@ characteristics:
     precision: 0
     mobility: 0
   vigor:
-    value: 2
+    value: 2          # dérivé : endurance 2 → rang 2
     wounds: 0
-    endurance: 1
+    endurance: 2
     recovery: 1
   grace:
     value: 1
@@ -44,8 +31,8 @@ characteristics:
   willpower:
     value: 1
     wounds: 0
-    authority: 0
-    discipline: 1
+    authority: 1
+    discipline: 0
   intelligence:
     value: 1
     wounds: 0
@@ -54,7 +41,7 @@ characteristics:
   tenacity:
     value: 1
     wounds: 0
-    conviction: 0
+    conviction: 1
     resilience: 0
   charisma:
     value: 1

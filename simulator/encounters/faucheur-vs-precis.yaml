@@ -12,7 +12,7 @@ factions:
     characters:
       - sheet: characterSheets/Duelist_precise.yaml
         persona: opportunist
-    allowedActions: ["sharp-strike", "respiration"]
+    allowedActions: ["sharp-strike", "respiration", "stabilize", "preservation", "provocation"]
 
   - name: Faune d'Aeonir
     characters:

@@ -12,7 +12,7 @@ factions:
     characters:
       - sheet: characterSheets/Duelist_powerful.yaml
         persona: aggressive
-    allowedActions: []
+    allowedActions: ["brutal-strike", "respiration", "stabilize", "resolution", "intimidation"]
 
   - name: Faune d'Aeonir
     characters:
