@@ -29,5 +29,5 @@
 | :---- | ----- | ----- | :---- |
 | 🧠 La horde de rats débute le combat avec **5** ◇. 😠 La horde de rats gagne +💀 en attaque et -1 💀 défense. 😐 La horde de rats gagne 1 ◇ pour chaque 💢 infligée. 😬 La horde de rats gagne +💀 en défense et -1 💀 attaque. |  |  |  |
 | 🕷️ La horde de rats débute le combat avec **4 groupes** 🕷️. 😠 **▢▢▢▢▢** 😐 **▢▢▢▢▢ ▢▢▢▢▢** 😬 **▢▢▢▢▢** |  |  |  |
-| 🟢 **Déplacer les membres de la horde de [4]** |  |  |  |
-| **🔴 Morsures** ⭐ Repérer un 5 : l'adversaire subit **🔻** ✅ Inflige 💢💢 ❌ Inflige 💢 |  |  |  |
+| 🌕 **Déplacer les membres de la horde de [4]** |  |  |  |
+| **🌗 Morsures** ⭐ Repérer un 5 : l'adversaire subit **🔻** ✅ Inflige 💢💢 ❌ Inflige 💢 |  |  |  |

@@ -8,7 +8,7 @@
 
 Les **Réactions ⚡** sont utilisables à n'importe quel moment pour effectuer des actions dont le **déclencheur** est satisfait.
 
-À tout moment, un joueur peut transformer un **point d'action non utilisé** (🟢/⚫/🔴) en une **Réaction ⚡**. Les points de réaction inutilisés ne sont pas conservés de manche en manche. De plus, tout personnage peut renoncer au point d'action 🟢 de la **prochaine manche** pour gagner immédiatement une **Réaction ⚡**.
+À tout moment, un joueur peut transformer un **point d'action non utilisé** en une **Réaction ⚡**. Les points de réaction inutilisés ne sont pas conservés de manche en manche. De plus, tout personnage peut renoncer à un **point d'action** de la **prochaine manche** pour gagner immédiatement une **Réaction ⚡**.
 
 ---
 

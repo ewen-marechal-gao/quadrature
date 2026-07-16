@@ -253,7 +253,11 @@ L'état mental d'une horde dépend du nombre de ses membres : elle débute **enr
 
 ### Actions simplifiées
 
-Les hordes ne disposent que de deux actions, 🟢 et 🔴, et **pas de réactions ⚡** :
+Les hordes ne disposent que de **deux actions** par manche, et **pas de réactions ⚡** :
 
-- 🟢 sert à **déplacer** les jetons des membres de la horde.
-- 🔴 sert à effectuer une **attaque** pour l'ensemble des membres.
+- **🌕 Bande II** — **déplacer** les jetons des membres de la horde.
+- **🌗 Bande III** — effectuer une **attaque** pour l'ensemble des membres.
+
+La horde **avance avant de frapper** : sa masse se déplace au moment des manœuvres, puis mord une fois le contact établi.
+
+> ⚙️ **Provisoire :** attribution de bandes par défaut. Les hordes recevront des **cartes d'action propres**, suivant les règles normales (§ [combat.md](../core/combat.md)).

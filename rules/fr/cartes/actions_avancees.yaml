@@ -10,8 +10,8 @@ cartes:
     type: action
     famille: melee
     categorie: offensive
-    initiative: 6
-    cout: "⚫⚫💧💧"
+    initiative: 8
+    cout: "🌗🌗💧💧"
     prerequis: "Puissance 1"
     jet: "Puissance 🟨🟨 + Force 🟦"
     contre: "Garde"
@@ -29,7 +29,7 @@ cartes:
     famille: melee
     categorie: offensive
     initiative: 5
-    cout: "⚫🔴"
+    cout: "🌕🌕"
     prerequis: "Robustesse 1"
     condition: "la cible doit être **entravée 🕸️**"
     jet: "Robustesse 🟨🟨 + Force 🟦"
@@ -49,7 +49,7 @@ cartes:
     famille: melee
     categorie: offensive
     initiative: 3
-    cout: "⚫💧"
+    cout: "🌓💧"
     prerequis: "Précision 1"
     jet: "Précision 🟨🟨 + Agilité 🟦"
     contre: "Garde"
@@ -67,8 +67,8 @@ cartes:
     type: action
     famille: melee
     categorie: offensive
-    initiative: 3
-    cout: "⚫💧"
+    initiative: 6
+    cout: "🌕💧"
     prerequis: "Mobilité 1"
     condition: "disposer d'un niveau d'**Inertie ➡️ 3** (ou plus)"
     jet: "Mobilité 🟨🟨 + Agilité 🟦, avec 🟩"
@@ -91,7 +91,7 @@ cartes:
     famille: distance
     categorie: offensive
     initiative: 3
-    cout: "⚫💧"
+    cout: "🌓💧"
     prerequis: "Intuition 1"
     jet: "Intuition 🟨🟨 + Lucidité 🟦, avantage contre Parade 🟩"
     contre: "Garde"
@@ -110,7 +110,7 @@ cartes:
     famille: distance
     categorie: offensive
     initiative: 7
-    cout: "⚫⚫💧"
+    cout: "🌗🌗💧"
     prerequis: "Observation 1"
     jet: "Observation 🟨🟨 + Acuité 🟦, avantage contre Parade 🟩"
     contre: "Garde"
@@ -131,12 +131,12 @@ cartes:
     famille: tempo
     categorie: amelioration
     initiative: 1
-    cout: "🟢"
+    cout: "🌓"
     prerequis: "Réactivité 1"
     mental: "ne pas être **enragé** ou **terrifié**"
     ameliorations:
       - nom: Anticipation
-        effet: "peut être jouée avec une action 🔴. En cas de succès, vous conservez un nombre de **Réactions ⚡** égal à votre Réactivité pour la manche suivante"
+        effet: "peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous conservez un nombre de **Réactions ⚡** égal à votre Réactivité pour la manche suivante"
     effet: "gagnez trois **Réactions ⚡**"
     source: core/actions/attribute_actions.md
 
@@ -146,13 +146,13 @@ cartes:
     famille: tempo
     categorie: amelioration
     initiative: 1
-    cout: "🟢"
+    cout: "🌓"
     prerequis: "Prestance 1"
     mental: "ne pas être **enragé** ou **terrifié**"
     ameliorations:
       - nom: Surprise
         effet: "l'action choisie bénéficie de 🟩 sur son jet si applicable"
-    effet: "choisissez entre **Attaque armée**, **Attaque à mains nues**, **Saisir**, **Jeter**, **Marche** ou **Course** et jouez-la immédiatement en payant son coût, avec une initiative augmentée de 1️⃣"
+    effet: "choisissez entre **Attaque armée**, **Attaque à mains nues**, **Saisir**, **Jeter**, **Marche** ou **Course** et jouez-la **cette manche** en payant son coût, avec une **initiative augmentée de 1️⃣** (elle se résout dans sa bande)"
     source: core/actions/attribute_actions.md
 
   - id: protection
@@ -161,12 +161,12 @@ cartes:
     famille: tempo
     categorie: amelioration
     initiative: 1
-    cout: "🟢"
+    cout: "🌓"
     prerequis: "Vigilance 1"
     mental: "ne pas être **enragé** ou **terrifié**"
     ameliorations:
       - nom: Sentinelle
-        effet: "peut être jouée avec une action **🔴** à la place de **🟢** ; gagnez alors **deux Réactions ⚡** au lieu d'une"
+        effet: "peut être jouée en **Bande III** (🌗) au lieu de la Bande I ; gagnez alors **deux Réactions ⚡** au lieu d'une"
     effet: "gagnez une **Réaction ⚡**. Vous bénéficiez de 🟩 sur votre prochain jet de Garde, et votre score de Garde ne diminue pas à chaque échec de vos adversaires"
     source: core/actions/attribute_actions.md
 
@@ -179,7 +179,7 @@ cartes:
     cout: "⚡"
     description: "Vous lisez les appuis, le regard, la respiration — et devinez le geste avant qu'il naisse."
     prerequis: "Clairvoyance 1"
-    declencheur: "pendant la phase d'actions, juste avant la révélation des cartes"
+    declencheur: "au début de la phase d'actions, juste avant la révélation de la **Bande I**"
     jet: "Clairvoyance 🟨🟨 + Lucidité 🟦"
     contre: "DD = 7 + nombre de cartes consultées (maximum : votre **Clairvoyance**)"
     ameliorations:
@@ -199,7 +199,7 @@ cartes:
     famille: mental
     categorie: amelioration
     initiative: 1
-    cout: "🟢"
+    cout: "🌓"
     description: "Vous bridez vos émotions et ralentissez votre rythme cardiaque pour privilégier votre survie."
     prerequis: "Discipline 1"
     mental: "être **concentré** ou dans un **état colérique**"
@@ -207,7 +207,7 @@ cartes:
     contre: "DD = 8 + votre degré d'état mental"
     ameliorations:
       - nom: Précaution
-        effet: "peut être jouée avec une action 🔴. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet de Garde"
+        effet: "peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet de Garde"
     defaut: "vous perdez un point d'action **⚫**"
     critique: "vous pouvez **🔻** (jamais en dessous de **Prudent**)"
     succes: "**🔻** (jamais en dessous de **Prudent**) et gagnez un **Stabilité ◇**"
@@ -220,14 +220,14 @@ cartes:
     famille: mental
     categorie: amelioration
     initiative: 1
-    cout: "🟢"
+    cout: "🌓"
     description: "Vous faites abstraction de vos émotions pour retrouver votre clarté d'esprit."
     prerequis: "Logique 1"
     jet: "Logique 🟨🟨 + Intelligence 🟦"
     contre: "DD = 8 + votre degré d'état mental"
     ameliorations:
       - nom: Incantation
-        effet: "peut être jouée avec une action 🔴. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence"
+        effet: "peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence"
     defaut: "vous perdez un point d'action **⚫**"
     critique: "déplacement supplémentaire (**🔺 ou 🔻**) vers **Concentré**"
     succes: "déplacez (**🔺 ou 🔻**) vers **Concentré** et gagnez un **Stabilité ◇**"
@@ -240,7 +240,7 @@ cartes:
     famille: mental
     categorie: amelioration
     initiative: 1
-    cout: "🟢"
+    cout: "🌓"
     description: "Vous transformez votre peur en détermination ou votre colère en une force motrice implacable."
     prerequis: "Conviction 1"
     mental: "être **concentré** ou dans un **état craintif**"
@@ -248,7 +248,7 @@ cartes:
     contre: "DD = 8 + votre degré d'état mental"
     ameliorations:
       - nom: Militant
-        effet: "peut être jouée avec une action 🔴. En cas de succès, vous bénéficiez de +1 relance 🟦 sur votre prochaine action"
+        effet: "peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de +1 relance 🟦 sur votre prochaine action"
     defaut: "vous perdez un point d'action **⚫**"
     critique: "déplacement **🔺** supplémentaire (jamais au-dessus d'**Agressif**)"
     succes: "**🔺** (jamais au-dessus d'**Agressif**) et gagnez un **Stabilité ◇**"
@@ -261,7 +261,7 @@ cartes:
     famille: mental
     categorie: amelioration
     initiative: 1
-    cout: "🟢"
+    cout: "🌓"
     description: "Vous videz votre esprit de toute agitation pour ancrer votre équilibre."
     prerequis: "Résilience 1"
     mental: "être **concentré**"
@@ -284,7 +284,7 @@ cartes:
     famille: physique
     categorie: guerison
     initiative: 1
-    cout: "🟢"
+    cout: "🌓"
     prerequis: "Endurance 1"
     jet: "Endurance 🟨🟨 + Vigueur 🟦"
     contre: "DD = niveau de Fatigue"
@@ -304,7 +304,7 @@ cartes:
     famille: physique
     categorie: guerison
     initiative: 1
-    cout: "🟢"
+    cout: "🌓"
     description: "Vous exercez une pression ferme sur la plaie ou improvisez un bandage pour stopper l'hémorragie."
     prerequis: "Récupération 1"
     jet: "Récupération 🟨🟨 + Vigueur 🟦"
@@ -327,7 +327,7 @@ cartes:
     famille: sociale
     categorie: offensive
     initiative: 7
-    cout: "⚫⚫"
+    cout: "🌗🌗"
     prerequis: "Manipulation 1"
     jet: "Manipulation 🟨🟨 + Charisme 🟦"
     contre: "Discipline"
@@ -347,7 +347,7 @@ cartes:
     famille: sociale
     categorie: amelioration
     initiative: 5
-    cout: "⚫⚫"
+    cout: "🌕🌕"
     prerequis: "Éloquence 1"
     cible: "portée auditive (la cible doit pouvoir vous entendre)"
     jet: "Éloquence 🟨🟨 + Charisme 🟦"
@@ -381,7 +381,7 @@ cartes:
     famille: sociale
     categorie: offensive
     initiative: 5
-    cout: "⚫⚫"
+    cout: "🌕🌕"
     prerequis: "Autorité 1"
     cible: "portée auditive (la cible doit pouvoir vous entendre)"
     jet: "Autorité 🟨🟨 + Volonté 🟦 (+🟥 si la cible vous est hostile)"

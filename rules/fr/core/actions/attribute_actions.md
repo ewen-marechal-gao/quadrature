@@ -8,10 +8,10 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 ## Actions offensives (mêlée)
 
-### 6️⃣ Frappe brutale
+### 8️⃣ Frappe brutale
 
 **Prérequis :** Puissance 1  
-**Coût :** ⚫⚫💧💧  
+**Coût :** 🌗🌗💧💧  
 🎲 **Jet :** Puissance 🟨🟨 + Force 🟦  
 🆚 **Contre :** Garde
 
@@ -26,7 +26,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 ### 5️⃣ Lutte
 
 **Prérequis :** Robustesse 1  
-**Coût :** ⚫🔴  
+**Coût :** 🌕🌕  
 🔒 **Condition :** la cible doit être **entravée 🕸️**  
 🎲 **Jet :** Robustesse 🟨🟨 + Force 🟦  
 🆚 **Contre :** Garde
@@ -43,7 +43,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 ### 3️⃣ Frappe vive
 
 **Prérequis :** Précision 1  
-**Coût :** ⚫💧  
+**Coût :** 🌓💧  
 🎲 **Jet :** Précision 🟨🟨 + Agilité 🟦  
 🆚 **Contre :** Garde
 
@@ -56,10 +56,10 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 ---
 
-### 3️⃣ Charge
+### 6️⃣ Charge
 
 **Prérequis :** Mobilité 1  
-**Coût :** ⚫💧  
+**Coût :** 🌕💧  
 🔒 **Condition :** disposer d'un niveau d'**Inertie ➡️ 3** (ou plus)  
 🎲 **Jet :** Mobilité 🟨🟨 + Agilité 🟦, avec 🟩  
 🆚 **Contre :** Garde
@@ -81,7 +81,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 ### 3️⃣ Tir rapide
 
 **Prérequis :** Intuition 1  
-**Coût :** ⚫💧  
+**Coût :** 🌓💧  
 🎲 **Jet :** Intuition 🟨🟨 + Lucidité 🟦, avantage contre Parade 🟩  
 🆚 **Contre :** Garde
 
@@ -96,7 +96,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 ### 7️⃣ Tir ciblé
 
 **Prérequis :** Observation 1  
-**Coût :** ⚫⚫💧  
+**Coût :** 🌗🌗💧  
 🎲 **Jet :** Observation 🟨🟨 + Acuité 🟦, avantage contre Parade 🟩  
 🆚 **Contre :** Garde
 
@@ -113,10 +113,10 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 ### 1️⃣ Préparation
 
 **Prérequis :** Réactivité 1  
-**Coût :** 🟢  
+**Coût :** 🌓  
 🧠 **Mental :** ne pas être **enragé** ou **terrifié**
 
-**⚒️ Anticipation :** peut être jouée avec une action 🔴. En cas de succès, vous conservez un nombre de **Réactions ⚡** égal à votre Réactivité pour la manche suivante.
+**⚒️ Anticipation :** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous conservez un nombre de **Réactions ⚡** égal à votre Réactivité pour la manche suivante.
 
 ▶️ **Effet :** gagnez trois **Réactions ⚡**
 
@@ -125,22 +125,22 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 ### 1️⃣ Feinte
 
 **Prérequis :** Prestance 1  
-**Coût :** 🟢  
+**Coût :** 🌓  
 🧠 **Mental :** ne pas être **enragé** ou **terrifié**
 
 **⚒️ Surprise :** l'action choisie bénéficie de 🟩 sur son jet si applicable.
 
-▶️ **Effet :** choisissez entre **Attaque armée**, **Attaque à mains nues**, **Saisir**, **Jeter**, **Marche** ou **Course** et jouez-la immédiatement en payant son coût, avec une initiative augmentée de 1️⃣.
+▶️ **Effet :** choisissez entre **Attaque armée**, **Attaque à mains nues**, **Saisir**, **Jeter**, **Marche** ou **Course** et jouez-la **cette manche** en payant son coût, avec une **initiative augmentée de 1️⃣** (elle se résout dans sa bande).
 
 ---
 
 ### 1️⃣ Protection
 
 **Prérequis :** Vigilance 1  
-**Coût :** 🟢  
+**Coût :** 🌓  
 🧠 **Mental :** ne pas être **enragé** ou **terrifié**
 
-**⚒️ Sentinelle :** peut être jouée avec une action **🔴** à la place de **🟢** ; gagnez alors **deux Réactions ⚡** au lieu d'une.
+**⚒️ Sentinelle :** peut être jouée en **Bande III** (🌗) au lieu de la Bande I ; gagnez alors **deux Réactions ⚡** au lieu d'une.
 
 ▶️ **Effet :** gagnez une **Réaction ⚡**. Vous bénéficiez de 🟩 sur votre prochain jet de Garde, et votre score de Garde ne diminue pas à chaque échec de vos adversaires.
 
@@ -152,7 +152,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 **Prérequis :** Clairvoyance 1  
 **Coût :** ⚡  
-⚡ **Déclencheur :** pendant la phase d'actions, juste avant la révélation des cartes  
+⚡ **Déclencheur :** au début de la phase d'actions, juste avant la révélation de la **Bande I**  
 🎲 **Jet :** Clairvoyance 🟨🟨 + Lucidité 🟦  
 🆚 **Contre :** DD = 7 + nombre de cartes consultées (maximum : votre **Clairvoyance**)
 
@@ -173,12 +173,12 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 *Vous bridez vos émotions et ralentissez votre rythme cardiaque pour privilégier votre survie.*
 
 **Prérequis :** Discipline 1  
-**Coût :** 🟢  
+**Coût :** 🌓  
 🧠 **Mental :** être **concentré** ou dans un **état colérique**  
 🎲 **Jet :** Discipline 🟨🟨 + Volonté 🟦  
 🆚 **Contre :** DD = 8 + votre degré d'état mental
 
-**⚒️ Précaution :** peut être jouée avec une action 🔴. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet de Garde.
+**⚒️ Précaution :** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet de Garde.
 
 ⚠️ **Défaut :** vous perdez un point d'action **⚫**  
 ✴️ **Critique :** vous pouvez **🔻** (jamais en dessous de **Prudent**)  
@@ -192,11 +192,11 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 *Vous faites abstraction de vos émotions pour retrouver votre clarté d'esprit.*
 
 **Prérequis :** Logique 1  
-**Coût :** 🟢  
+**Coût :** 🌓  
 🎲 **Jet :** Logique 🟨🟨 + Intelligence 🟦  
 🆚 **Contre :** DD = 8 + votre degré d'état mental
 
-**⚒️ Incantation :** peut être jouée avec une action 🔴. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence.
+**⚒️ Incantation :** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence.
 
 ⚠️ **Défaut :** vous perdez un point d'action **⚫**  
 ✴️ **Critique :** déplacement supplémentaire (**🔺 ou 🔻**) vers **Concentré**  
@@ -210,12 +210,12 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 *Vous transformez votre peur en détermination ou votre colère en une force motrice implacable.*
 
 **Prérequis :** Conviction 1  
-**Coût :** 🟢  
+**Coût :** 🌓  
 🧠 **Mental :** être **concentré** ou dans un **état craintif**  
 🎲 **Jet :** Conviction 🟨🟨 + Ténacité 🟦  
 🆚 **Contre :** DD = 8 + votre degré d'état mental
 
-**⚒️ Militant :** peut être jouée avec une action 🔴. En cas de succès, vous bénéficiez de +1 relance 🟦 sur votre prochaine action.
+**⚒️ Militant :** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de +1 relance 🟦 sur votre prochaine action.
 
 ⚠️ **Défaut :** vous perdez un point d'action **⚫**  
 ✴️ **Critique :** déplacement **🔺** supplémentaire (jamais au-dessus d'**Agressif**)  
@@ -229,7 +229,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 *Vous videz votre esprit de toute agitation pour ancrer votre équilibre.*
 
 **Prérequis :** Résilience 1  
-**Coût :** 🟢  
+**Coût :** 🌓  
 🧠 **Mental :** être **concentré**  
 🎲 **Jet :** Résilience 🟨🟨 + Ténacité 🟦  
 🆚 **Contre :** DD = 8 + votre degré d'état mental
@@ -248,7 +248,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 ### 1️⃣ Respiration
 
 **Prérequis :** Endurance 1  
-**Coût :** 🟢  
+**Coût :** 🌓  
 🎲 **Jet :** Endurance 🟨🟨 + Vigueur 🟦  
 🆚 **Contre :** DD = niveau de Fatigue
 
@@ -268,7 +268,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 *Vous exercez une pression ferme sur la plaie ou improvisez un bandage pour stopper l'hémorragie.*
 
 **Prérequis :** Récupération 1  
-**Coût :** 🟢  
+**Coût :** 🌓  
 🎲 **Jet :** Récupération 🟨🟨 + Vigueur 🟦  
 🆚 **Contre :** DD = 8 + nombre de 💔
 
@@ -290,7 +290,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 ### 7️⃣ Provocation
 
 **Prérequis :** Manipulation 1  
-**Coût :** ⚫⚫  
+**Coût :** 🌗🌗  
 🎲 **Jet :** Manipulation 🟨🟨 + Charisme 🟦  
 🆚 **Contre :** Discipline
 
@@ -307,7 +307,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 ### 5️⃣ Inspiration
 
 **Prérequis :** Éloquence 1  
-**Coût :** ⚫⚫  
+**Coût :** 🌕🌕  
 🎲 **Jet :** Éloquence 🟨🟨 + Charisme 🟦  
 🆚 **Contre :** DD 10 + degré d'état mental de la cible  
 🎯 **Portée :** auditive (la cible doit pouvoir vous entendre)
@@ -337,7 +337,7 @@ La cible dépense immédiatement ses points d'inspiration (minimum 0), librement
 ### 5️⃣ Injonction
 
 **Prérequis :** Autorité 1  
-**Coût :** ⚫⚫  
+**Coût :** 🌕🌕  
 🎲 **Jet :** Autorité 🟨🟨 + Volonté 🟦 (+🟥 si la cible vous est hostile)  
 🆚 **Contre :** Logique  
 🎯 **Portée :** auditive (la cible doit pouvoir vous entendre)

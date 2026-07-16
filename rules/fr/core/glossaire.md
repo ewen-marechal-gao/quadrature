@@ -42,14 +42,19 @@ La fatigue représente l'usure physique ou mentale. Elle augmente la difficulté
 
 ## ⚫ Actions et Réactions
 
-Les Points d'Action déterminent le nombre d'actions réalisables durant une manche.
+Les **Points d'Action (PA)** déterminent le nombre d'actions réalisables durant une manche. Chaque joueur reçoit **3 PA** par manche.
+
+Chaque carte porte une **initiative** (1-10) qui la range dans l'une des trois **bandes** de la phase d'actions (voir [combat.md](combat.md)). Son **coût** est noté en **phases de lune** — le glyphe indique la **bande**, le nombre de glyphes le nombre de **PA** dépensés.
 
 | Symbole | Signification |
 | :---: | :--- |
-| ⚫ | Point d'Action (PA), utilisable pour n'importe quelle action |
-| 🟢 | PA utilisable uniquement pour la **première** action de la manche |
-| 🔴 | PA utilisable uniquement pour la **dernière** action de la manche |
+| 🌓 | 1 PA — carte de **Bande I** (initiative 1-3) |
+| 🌕 | 1 PA — carte de **Bande II** (initiative 4-6) |
+| 🌗 | 1 PA — carte de **Bande III** (initiative 7-9) |
+| ⚫ | 1 PA générique — pour un **gain ou une perte** de PA hors coût de carte |
 | ⚡ | Point de Réaction (PR), utilisable lorsque le déclencheur est satisfait |
+
+*Exemples de coût : **🌓🌓** = 2 PA en Bande I ; **🌕🌕🌕** = 3 PA en Bande II ; **🌗** = 1 PA en Bande III. La fatigue 💧 éventuelle s'ajoute au coût.*
 
 ---
 

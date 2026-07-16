@@ -26,7 +26,7 @@
 
 | Fichier | Contenu |
 | :--- | :--- |
-| [core/actions/universal_actions.md](core/actions/universal_actions.md) | Système de PA (🟢⚫🔴), format de carte, actions universelles (sans prérequis) |
+| [core/actions/universal_actions.md](core/actions/universal_actions.md) | Système de PA et bandes d'initiative (🌓🌕🌗), format de carte, actions universelles (sans prérequis) |
 | [core/actions/attribute_actions.md](core/actions/attribute_actions.md) | Actions avancées (avec prérequis) : combat, mentales, physiques, sociales |
 | [core/actions/defense_reactions.md](core/actions/defense_reactions.md) | Réactions⚡, Frappe opportuniste, Gardes (Encaisser/Parade/Esquive/Dérobade/Blocage) |
 

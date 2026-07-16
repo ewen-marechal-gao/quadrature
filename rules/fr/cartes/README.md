@@ -26,8 +26,8 @@ cartes:
     categorie: offensive        # code couleur de la carte :
                                 #   mouvement (cyan) | offensive (rouge) | defensive (bleu)
                                 #   guerison (vert) | amelioration (violet)
-    initiative: 6               # ordre de résolution 1-10
-    cout: "⚫⚫💧💧"             # points d'action / réaction / ressources
+    initiative: 6               # ordre de résolution 1-10 (→ bande I:1-3 · II:4-6 · III:7-9)
+    cout: "🌕🌕💧💧"             # PA en phases de lune (la lune = la bande) : 🌓 I · 🌕 II · 🌗 III ; + 💧 fatigue
     description: ""             # texte d'ambiance (italique en bas de carte)
     prerequis: "Puissance 1"    # condition de déblocage
     bandeau: ""                 # note de règle affichée sous l'en-tête

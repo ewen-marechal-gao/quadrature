@@ -88,7 +88,7 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 
 ### Vigilance
 
-**⚒️ Sentinelle :** l'action **Protection** peut être jouée avec une action **🔴** à la place de **🟢** ; gagnez alors **deux Réactions ⚡** au lieu d'une.
+**⚒️ Sentinelle :** l'action **Protection** peut être jouée en **Bande III** (🌗) au lieu de la Bande I ; gagnez alors **deux Réactions ⚡** au lieu d'une.
 
 **♾️ Toujours en éveil :** vous ne subissez jamais le **Désavantage 🟥** de défense pour avoir été pris pour cible par une créature **Dissimulée 😶‍🌫️**.
 
@@ -102,7 +102,7 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 
 ### Discipline
 
-**⚒️ Précaution :** l'action **Préservation** peut être jouée avec une action 🔴 à la place de 🟢. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet de Garde.
+**⚒️ Précaution :** l'action **Préservation** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet de Garde.
 
 ---
 
@@ -110,7 +110,7 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 
 ### Logique
 
-**⚒️ Incantation :** l'action **Focalisation** peut être jouée avec une action 🔴 à la place de 🟢. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence.
+**⚒️ Incantation :** l'action **Focalisation** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence.
 
 **♾️ Vision tactique :** une fois par combat, vous pouvez **renforcer ⬆** un dé d'aléa (🟩 ou 🟥).
 
@@ -118,7 +118,7 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 
 ### Réactivité
 
-**⚒️ Anticipation :** l'action **Préparation** peut être jouée avec une action 🔴. Vous conservez un nombre de **Réactions ⚡** égal à votre Réactivité pour la manche suivante.
+**⚒️ Anticipation :** l'action **Préparation** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. Vous conservez un nombre de **Réactions ⚡** égal à votre Réactivité pour la manche suivante.
 
 ---
 
@@ -126,7 +126,7 @@ Les traits sont débloqués en progressant dans les compétences (rangs 3 et 5).
 
 ### Conviction
 
-**⚒️ Militant :** l'action **Résolution** peut être jouée avec une action 🔴 à la place de 🟢. En cas de succès, vous bénéficiez de +1 ⟳🟦 sur votre prochaine action.
+**⚒️ Militant :** l'action **Résolution** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de +1 ⟳🟦 sur votre prochaine action.
 
 **♾️ Éliminer les faibles :** toutes vos actions et réactions infligeant des **blessures 💢** infligent une **blessure 💢** supplémentaire aux adversaires **à terre** ou **essoufflés**.
 

@@ -11,7 +11,7 @@ cartes:
     famille: melee
     categorie: offensive
     initiative: 5
-    cout: "⚫⚫"
+    cout: "🌕🌕"
     condition: "tenir une arme ou un objet lourd en main"
     jet: "Puissance 🟨🟨 + Force 🟦"
     contre: "Garde (toutes)"
@@ -27,7 +27,7 @@ cartes:
     famille: melee
     categorie: offensive
     initiative: 3
-    cout: "⚫⚫"
+    cout: "🌓🌓"
     jet: "Puissance 🟨🟨 + Force 🟦"
     contre: "Garde (esquive, parade, dérobade)"
     ameliorations:
@@ -45,7 +45,7 @@ cartes:
     famille: melee
     categorie: offensive
     initiative: 3
-    cout: "⚫"
+    cout: "🌓"
     jet: "Robustesse 🟨🟨 + Force 🟦"
     contre: "Garde (esquive, parade, dérobade)"
     ameliorations:
@@ -63,7 +63,7 @@ cartes:
     famille: distance
     categorie: offensive
     initiative: 4
-    cout: "⚫"
+    cout: "🌕"
     condition: "tenir un objet en main"
     jet: "Observation 🟨🟨 + Acuité 🟦"
     contre: "Garde (toutes)"
@@ -79,7 +79,7 @@ cartes:
     famille: sociale
     categorie: offensive
     initiative: 5
-    cout: "⚫⚫"
+    cout: "🌕🌕"
     jet: "Autorité 🟨🟨 + Volonté 🟦"
     contre: "Conviction"
     effet: "si la cible n'a plus de jeton de **Stabilité ◇** : elle subit **🔻** (vers la Peur)"
@@ -96,7 +96,7 @@ cartes:
     famille: mouvement
     categorie: mouvement
     initiative: 3
-    cout: "⚫"
+    cout: "🌓"
     condition: "ne pas être **immobilisé**"
     effet: "**Inertie 1 ➡️**, déplacement d'une case, puis choisissez votre posture : 🧍 **Debout**, 🧎 **À genoux** ou 🙏 **À terre** (effets décrits dans États)"
     source: core/actions/universal_actions.md
@@ -107,7 +107,7 @@ cartes:
     famille: mouvement
     categorie: mouvement
     initiative: 4
-    cout: "⚫"
+    cout: "🌕"
     condition: "ne pas être **à terre** ou **immobilisé**"
     effet: "**Inertie 2 ➡️**, déplacement de 3 cases"
     source: core/actions/universal_actions.md
@@ -117,8 +117,8 @@ cartes:
     type: action
     famille: mouvement
     categorie: mouvement
-    initiative: 4
-    cout: "⚫💧"
+    initiative: 6
+    cout: "🌕💧"
     condition: "ne pas être **à genoux**, **à terre**, **entravé**, **immobilisé**, ni **essoufflé**"
     jet: "Mobilité 🟨🟨 + Agilité 🟦 (+🟥 si terrain encombré)"
     contre: "7 + Inertie ➡️"
@@ -139,7 +139,7 @@ cartes:
     famille: mouvement
     categorie: offensive
     initiative: 5
-    cout: "⚫"
+    cout: "🌕"
     condition: "disposer d'un niveau d'**Inertie ➡️ 3** (ou plus)"
     jet: "Mobilité 🟨🟨 + Agilité 🟦, avec 🟩"
     contre: "Garde (esquive, dérobade)"
@@ -158,7 +158,7 @@ cartes:
     famille: utilitaire
     categorie: guerison
     initiative: 1
-    cout: "🟢"
+    cout: "🌓"
     condition: "être **sonné 🫨** ou **inconscient 😵‍💫**"
     jet: "Récupération 🟨🟨 + Vigueur 🟦"
     contre: "DD = niveau de **fatigue 💧**"
@@ -174,7 +174,7 @@ cartes:
     famille: utilitaire
     categorie: guerison
     initiative: 1
-    cout: "🟢⚫"
+    cout: "🌓🌓"
     jet: "Prestance 🟨🟨 + Grâce 🟦"
     contre: "DD = nombre de marqueurs **brûlure 🔥**"
     critique: "gagnez un jeton **Stabilité ◇**"

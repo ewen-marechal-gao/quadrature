@@ -2,10 +2,11 @@
 
 > Voir aussi : [attribute_actions.md](attribute_actions.md) · [defense_reactions.md](defense_reactions.md) · [glossaire.md](../glossaire.md)
 
-Les combats se décomposent en Manches, au cours desquelles les personnages et les adversaires agissent simultanément. Au début de chaque manche, un personnage reçoit trois points d'action **🟢⚫🔴**. Un point d'action correspond à une durée de 2 à 3 secondes.
+Les combats se décomposent en Manches, au cours desquelles les personnages et les adversaires agissent simultanément. Au début de chaque manche, un personnage reçoit **trois points d'action**. Un point d'action correspond à une durée de 2 à 3 secondes.
 
-- 🟢 et 🔴 peuvent être librement utilisés comme **⚫**, mais 🟢 ne peut être dépensé que pour la **première** action de la manche, et 🔴 que pour la **dernière**.
-- Lorsque l'action d'un joueur ne peut pas être résolue, les **⚫** sont restitués sous forme de **Réactions ⚡**.
+- La phase d'actions se joue en **trois bandes** révélées successivement — **I** (initiative 1-3), **II** (4-6), **III** (7-9). Le **coût** d'une carte est noté en **phases de lune** : la lune indique la **bande** (🌓 I · 🌕 II · 🌗 III), le nombre de glyphes le nombre de **points d'action** (voir [combat.md](../combat.md)).
+- Les points d'action sont **génériques** : ils se dépensent librement d'une bande à l'autre, dans la limite de trois par manche.
+- Lorsque l'action d'un joueur ne peut pas être résolue, les points d'action sont restitués sous forme de **Réactions ⚡**.
 
 **Code couleur des cartes d'action :**
 
@@ -24,9 +25,9 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 
 | Champ | Signification |
 | :--- | :--- |
-| 1️⃣ **Initiative** | Ordre de résolution (1️⃣ le premier, 🔟 le dernier) |
+| 1️⃣ **Initiative** | Ordre de résolution (1️⃣ le premier, 🔟 le dernier) — détermine la **bande** : I (1-3) · II (4-6) · III (7-9) |
 | **Prérequis** | Condition de déblocage de l'action |
-| **Coût** | Points d'action 🟢/⚫/🔴/⚡ et/ou ressources 💧 |
+| **Coût** | Points d'action en phases de lune 🌓/🌕/🌗 (la lune = la bande), Réactions ⚡ et/ou ressources 💧 |
 | ⚡ **Déclencheur** | Conditions pour déclencher une réaction |
 | 🔒 **Conditions** | Facteurs devant être satisfaits |
 | 🧠 **Mental** | État mental requis |
@@ -53,7 +54,7 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 
 #### 5️⃣ Attaque armée
 
-**Coût :** ⚫⚫  
+**Coût :** 🌕🌕  
 🔒 **Condition :** tenir une arme ou un objet lourd en main  
 🎲 **Jet :** Puissance 🟨🟨 + Force 🟦  
 🆚 **Contre :** Garde (toutes)
@@ -67,7 +68,7 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 
 #### 3️⃣ Attaque à mains nues 🤜
 
-**Coût :** ⚫  
+**Coût :** 🌓🌓  
 🎲 **Jet :** Puissance 🟨🟨 + Force 🟦  
 🆚 **Contre :** Garde (esquive, parade, dérobade)
 
@@ -75,18 +76,18 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 
 ⚠️ **Défaut :** augmentez votre **fatigue** 💧  
 ✴️ **Critique :** la cible est **sonnée 🫨**  
-✅ **Succès :** infligez 3 **fatigue** 💧 à la cible  
+✅ **Succès :** infligez 2 **fatigue** 💧 à la cible  
 ❌ **Échec :** la cible subit 💧
 
 ---
 
 #### 3️⃣ Saisir
 
-**Coût :** ⚫  
+**Coût :** 🌓  
 🎲 **Jet :** Robustesse 🟨🟨 + Force 🟦  
 🆚 **Contre :** Garde (esquive, parade, dérobade)
 
-**⚒️ Agripper :** peut être utilisée en **Réaction ⚡** lorsqu'une créature adjacente initie une action de **Marche**, de **Course** ou se **Relève**. Coût : ⚡💧 au lieu de ⚫.
+**⚒️ Agripper :** peut être utilisée en **Réaction ⚡** lorsqu'une créature adjacente initie une action de **Marche**, de **Course** ou se **Relève**. Coût : ⚡💧 au lieu de 🌓.
 
 ⚠️ **Défaut :** augmentez votre **fatigue** 💧  
 ✴️ **Critique :** la cible est **immobilisée 🔗**  
@@ -97,7 +98,7 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 
 #### 4️⃣ Jeter
 
-**Coût :** ⚫  
+**Coût :** 🌕  
 🔒 **Condition :** tenir un objet en main  
 🎲 **Jet :** Observation 🟨🟨 + Acuité 🟦  
 🆚 **Contre :** Garde (toutes)
@@ -115,7 +116,7 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 
 #### 5️⃣ Intimidation
 
-**Coût :** ⚫⚫  
+**Coût :** 🌕🌕  
 🎲 **Jet :** Autorité 🟨🟨 + Volonté 🟦  
 🆚 **Contre :** Conviction
 
@@ -128,7 +129,7 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 
 ### Déplacement
 
-Les actions de déplacement consomment des **⚫** et génèrent parfois de la **fatigue 💧**. Les déplacements fixent le niveau d'**Inertie ➡️** du personnage jusqu'à la résolution de son action suivante.
+Les actions de déplacement consomment des **points d'action** et génèrent parfois de la **fatigue 💧**. Les déplacements fixent le niveau d'**Inertie ➡️** du personnage jusqu'à la résolution de son action suivante.
 
 *Précision : 1 case = 1,5 m, diagonales comprises.*
 
@@ -136,7 +137,7 @@ Les actions de déplacement consomment des **⚫** et génèrent parfois de la *
 
 #### 3️⃣ Posture
 
-**Coût :** ⚫  
+**Coût :** 🌓  
 🔒 **Condition :** ne pas être **immobilisé**
 
 ▶️ **Inertie 1 ➡️**, déplacement d'une case, puis choisissez votre posture : 🧍 **Debout**, 🧎 **À genoux** ou 🙏 **À terre** — effets décrits dans [etats.md](../etats.md).
@@ -145,16 +146,16 @@ Les actions de déplacement consomment des **⚫** et génèrent parfois de la *
 
 #### 4️⃣ Marche 🚶
 
-**Coût :** ⚫  
+**Coût :** 🌕  
 🔒 **Condition :** ne pas être **à terre** ou **immobilisé**
 
 ▶️ **Inertie 2 ➡️**, déplacement de 3 cases.
 
 ---
 
-#### 4️⃣ Course 🏃
+#### 6️⃣ Course 🏃
 
-**Coût :** ⚫💧  
+**Coût :** 🌕💧  
 🔒 **Condition :** ne pas être **à genoux**, **à terre**, **entravé**, **immobilisé**, ni **essoufflé**  
 🎲 **Jet :** Mobilité 🟨🟨 + Agilité 🟦 (+🟥 si terrain encombré)  
 ⛞🟦 **Sprint :** augmenter le déplacement de 3 cases supplémentaires  
@@ -171,7 +172,7 @@ Les actions de déplacement consomment des **⚫** et génèrent parfois de la *
 
 #### 5️⃣ Bousculade 🏃
 
-**Coût :** ⚫  
+**Coût :** 🌕  
 🔒 **Condition :** disposer d'un niveau d'**Inertie ➡️ 3** (ou plus)  
 🎲 **Jet :** Mobilité 🟨🟨 + Agilité 🟦, avec 🟩  
 🆚 **Contre :** Garde (esquive, dérobade)
@@ -188,7 +189,7 @@ Les actions de déplacement consomment des **⚫** et génèrent parfois de la *
 
 #### 1️⃣ Reprendre Conscience
 
-**Coût :** 🟢  
+**Coût :** 🌓  
 🔒 **Condition :** être **sonné 🫨** ou **inconscient 😵‍💫**  
 🎲 **Jet :** Récupération 🟨🟨 + Vigueur 🟦  
 🆚 **Contre :** DD = niveau de **fatigue** 💧
@@ -203,7 +204,7 @@ Les actions de déplacement consomment des **⚫** et génèrent parfois de la *
 
 #### 1️⃣ Éteindre les flammes
 
-**Coût :** 🟢⚫  
+**Coût :** 🌓🌓  
 🎲 **Jet :** Prestance 🟨🟨 + Grâce 🟦  
 🆚 **Contre :** DD = nombre de marqueurs **brûlure 🔥**
 
