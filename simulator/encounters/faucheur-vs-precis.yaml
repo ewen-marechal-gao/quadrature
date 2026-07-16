@@ -12,6 +12,11 @@ factions:
     characters:
       - sheet: characterSheets/Duelist_precise.yaml
         persona: opportunist
+    # Bande II vide, faute d'attaque de Précision à ce palier (cf. chantier armes :
+    # une rapière « finesse » porterait l'attaque armée sur Précision).
+    # Mesuré : ajouter armed-attack ici fait bondir le PJ à 90,2% malgré 26,6% de
+    # touche — les dégâts d'échec (1💢) rendent toute action rentable. Sonde
+    # retirée : remplir la bande avec une action inadaptée est dégénéré.
     allowedActions: ["sharp-strike", "respiration", "stabilize", "preservation", "provocation"]
 
   - name: Faune d'Aeonir
