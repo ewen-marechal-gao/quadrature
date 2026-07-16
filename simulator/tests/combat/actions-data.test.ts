@@ -65,6 +65,9 @@ function loadVaultCards(): Map<string, VaultCard> {
 
 const count = (s: string, symbol: string) => s.split(symbol).length - 1
 
+/** Lunes de coût : chacune vaut 1 PA et porte la bande de la carte (§ combat.md). */
+const MOONS: string[] = ['🌓', '🌕', '🌗']
+
 describe('cohérence data/player_actions.yaml ↔ rules/fr/cartes', () => {
   const raw   = readRawPlayerActions()
   const vault = loadVaultCards()
@@ -79,10 +82,29 @@ describe('cohérence data/player_actions.yaml ↔ rules/fr/cartes', () => {
     expect(card!.nom).toBe(def.label)
     expect(card!.initiative).toBe(def.initiative)
 
-    // Coût : ⚫/🟢 = PA (🟢 = 1 PA jouable en première action), 💧 fatigue, ⚡ réactions
-    expect(count(card!.cout, '⚫') + count(card!.cout, '🟢')).toBe(def.cost.actions)
+    // Coût : 🌓/🌕/🌗 = 1 PA chacune (la lune porte la bande), 💧 fatigue, ⚡ réactions.
+    // La « première action » n'est plus encodée dans le coût : les PA colorés 🟢⚫🔴
+    // sont retirés au profit des bandes d'initiative.
+    expect(MOONS.reduce((n, m) => n + count(card!.cout, m), 0)).toBe(def.cost.actions)
     expect(count(card!.cout, '💧')).toBe(def.cost.fatigue ?? 0)
     expect(count(card!.cout, '⚡')).toBe(def.cost.reactions)
-    expect(card!.cout.includes('🟢')).toBe(def.requiresFirstAction)
+  })
+})
+
+// ─── Lint du vault : la lune du coût encode la bande de l'initiative ───────────
+
+/** Bande d'une initiative : I (1-3) 🌓 · II (4-6) 🌕 · III (7-9) 🌗. 0 et 10 sont hors-bande. */
+const bandMoon = (initiative: number): string =>
+  initiative <= 3 ? '🌓' : initiative <= 6 ? '🌕' : '🌗'
+
+describe("vault — la lune du coût correspond à la bande de l'initiative", () => {
+  const banded = [...loadVaultCards().values()].filter(
+    c => MOONS.some(m => c.cout?.includes(m)) && c.initiative >= 1 && c.initiative <= 9,
+  )
+
+  it.each(banded.map(c => [c.id, c] as const))('%s', (_id, card) => {
+    for (const ch of [...card.cout]) {
+      if (MOONS.includes(ch)) expect(ch).toBe(bandMoon(card.initiative))
+    }
   })
 })

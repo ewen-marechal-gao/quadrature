@@ -70,7 +70,7 @@ actions:
       {
         fr: "Coup dévastateur à haut risque. Succès : 1💔 blessure grave, Échec : 2💢. Critique : cible sonnée 💫. Coûte 1💧 à toi en plus des PA.",
       }
-    initiative: 6
+    initiative: 8
     cost: { actions: 2, fatigue: 2 }
     tags: [offensive, melee, physical, physicalDamage]
     prerequisite: { skill: power, minValue: 1 }
