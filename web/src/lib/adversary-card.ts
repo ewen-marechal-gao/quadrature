@@ -49,7 +49,7 @@ export function adversaryCardToPlayerCard(card: AdversaryCard, conferredBy?: str
     famille: "melee",
     categorie: "offensive",
     initiative: card.initiative,
-    cout: "⚫".repeat(card.cost),
+    cout: "⚫".repeat(card.cost) + "💧".repeat(card.fatigueCost ?? 0),
     ...(conferredBy && { prerequis: conferredBy }),
     repere: card.onFives,
     succes: card.onSuccess,

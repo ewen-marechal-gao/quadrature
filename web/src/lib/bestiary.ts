@@ -58,6 +58,7 @@ interface RawCard {
   id: string;
   name: LocalizedString;
   cost: number;
+  fatigueCost?: number;
   initiative: number;
   ranged?: boolean;
   onSuccess: RawOutcome;
@@ -121,6 +122,8 @@ export interface AdversaryCard {
   name: string;
   /** Cost in action points ⚫ (integer); rendered as N symbols by the front-end. */
   cost: number;
+  /** Coût en fatigue 💧 payé à l'usage (optionnel) ; rendu en N symboles. */
+  fatigueCost?: number;
   initiative: number;
   onFives?: string;
   onSuccess?: string;
@@ -207,6 +210,7 @@ function resolveAdversary(raw: RawAdversary, locale: string): Adversary {
       id: c.id,
       name: localize(c.name, locale),
       cost: c.cost,
+      ...(c.fatigueCost != null && { fatigueCost: c.fatigueCost }),
       initiative: c.initiative,
       onFives: c.onFives ? localizeText(c.onFives.text, locale) : undefined,
       onSuccess: localizeText(c.onSuccess.text, locale),
