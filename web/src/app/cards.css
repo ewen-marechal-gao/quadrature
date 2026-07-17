@@ -423,3 +423,45 @@
     border: 0.8mm solid var(--card-reaction);
   }
 }
+
+/* ── Modes ────────────────────────────────────────────────────────────────────
+   Une carte peut porter plusieurs MODES (Déplacement → 🚶 Marche · 🏃 Course) :
+   la carte est du matériel, l'action est une règle. Chaque mode a son initiative
+   et son coût, donc sa pastille en ligne — la pastille du coin, elle, ne sert
+   qu'aux cartes à action unique. Les modes n'ont pas à partager une bande. */
+.ac-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ac-mode-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+/* Même grammaire visuelle que .ac-initiative, en réduit et posé dans le flux. */
+.ac-mode-init {
+  flex-shrink: 0;
+  width: 1.7em;
+  height: 1.7em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 0.14em solid var(--brass);
+  background: var(--cat);
+  color: var(--parchment);
+  font-weight: 700;
+}
+
+.ac-mode-name {
+  flex: 1;
+  font-weight: 700;
+}
+
+/* Sans pastille de coin, le titre reprend toute la largeur de l'en-tête. */
+.ac-header[data-modes] .ac-name {
+  padding-left: 0;
+}

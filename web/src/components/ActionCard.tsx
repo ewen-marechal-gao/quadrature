@@ -13,7 +13,7 @@
  */
 
 import { Fragment } from "react";
-import type { ActionCard as Card } from "@/lib/cards";
+import type { ActionCard as Card, CardMode } from "@/lib/cards";
 import { bandOf, bandOfMoon, type Band } from "@/lib/bands";
 
 /**
@@ -81,6 +81,27 @@ function Cost({ cout }: { cout: string }) {
   );
 }
 
+/**
+ * Un mode : sa propre initiative, son propre coût, ses propres conditions.
+ * La pastille d'initiative de la carte étant unique, chaque mode porte la sienne
+ * en ligne — c'est le mode qu'on joue, pas la carte.
+ */
+function Mode({ mode }: { mode: CardMode }) {
+  return (
+    <div className="ac-mode" data-bande={bandOf(mode.initiative) ?? undefined}>
+      <div className="ac-mode-header">
+        <span className="ac-mode-init" title={`Initiative ${mode.initiative}`}>
+          {mode.initiative}
+        </span>
+        <span className="ac-mode-name">{mode.nom}</span>
+        {mode.cout && <Cost cout={mode.cout} />}
+      </div>
+      <Field icon="🔒" text={mode.condition} />
+      <Field icon="▶️" text={mode.effet} />
+    </div>
+  );
+}
+
 /** Séparateur de sections : trait sur la moitié de la largeur, losange central. */
 function Separator() {
   return (
@@ -109,13 +130,16 @@ export function ActionCard({ card }: { card: Card }) {
       className="action-card"
       data-categorie={card.categorie}
       data-type={card.type}
-      data-bande={bandOf(card.initiative) ?? undefined}
+      // Une carte à modes n'a pas UNE bande : chaque mode porte la sienne.
+      data-bande={card.initiative !== undefined ? bandOf(card.initiative) ?? undefined : undefined}
     >
-      <span className="ac-initiative" title={`Initiative ${card.initiative}`}>
-        {card.initiative}
-      </span>
+      {card.initiative !== undefined && (
+        <span className="ac-initiative" title={`Initiative ${card.initiative}`}>
+          {card.initiative}
+        </span>
+      )}
 
-      <header className="ac-header">
+      <header className="ac-header" data-modes={card.modes ? "" : undefined}>
         <span className="ac-name">{card.nom}</span>
         {card.cout && <Cost cout={card.cout} />}
       </header>
@@ -126,6 +150,14 @@ export function ActionCard({ card }: { card: Card }) {
       {card.bandeau && <div className="ac-prereq">{card.bandeau}</div>}
 
       <div className="ac-body">
+        {card.modes?.map((m, i) => (
+          <Fragment key={m.id}>
+            {i > 0 && <Separator />}
+            <Mode mode={m} />
+          </Fragment>
+        ))}
+        {card.modes && (hasSetup || hasRoll || hasOutcome) && <Separator />}
+
         <Field icon="⚡" text={card.declencheur} />
         <Field icon="🔒" text={card.condition} />
         <Field icon="🧠" text={card.mental} />

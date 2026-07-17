@@ -33,6 +33,25 @@ export interface CardUpgrade {
   effet: string;
 }
 
+/**
+ * Un MODE d'une carte : une façon distincte de la jouer, avec sa propre
+ * initiative et son propre coût (Déplacement → 🚶 Marche 4️⃣ · 🏃 Course 6️⃣).
+ *
+ * La carte est du MATÉRIEL, l'action est une RÈGLE : rien n'impose 1↔1. Les
+ * modes d'une carte n'ont même pas à partager une bande — les decks sont
+ * organisationnels, sans fonction mécanique (ni pioche ni mélange), donc un
+ * joueur range sa carte où il veut. Côté moteur, chaque mode reste une action à
+ * initiative statique.
+ */
+export interface CardMode {
+  id: string;
+  nom: string;
+  initiative: number;
+  cout?: string;
+  condition?: string;
+  effet?: string;
+}
+
 export interface CardSacrifice {
   des: "🟦" | "🟨";
   nom?: string;
@@ -50,8 +69,11 @@ export interface ActionCard {
   type: CardType;
   famille: CardFamily;
   categorie: CardCategory;
-  initiative: number;
+  /** Absente sur une carte à `modes` : c'est alors chaque mode qui porte la sienne. */
+  initiative?: number;
   cout?: string;
+  /** Façons distinctes de jouer cette carte (cf. CardMode). Exclusif avec `initiative`/`cout`. */
+  modes?: CardMode[];
   description?: string;
   prerequis?: string;
   /** Note de règle affichée sous l'en-tête, même rendu que le prérequis. */

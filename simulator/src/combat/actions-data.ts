@@ -32,6 +32,12 @@ interface RawOutcome { text?: LocalizedString; effect: EffectOp[] }
 interface RawPlayerAction {
   /** Id of the matching French card in rules/fr/cartes (coherence test, 3b projection). */
   vaultCard?:   string
+  /**
+   * Id du MODE visé sur cette carte, quand elle en porte plusieurs
+   * (deplacement → marche | course). Une carte est du matériel, une action est
+   * une règle : le lien n'est pas 1↔1. Absent = la carte n'a qu'une action.
+   */
+  vaultMode?:   string
   name:         LocalizedString
   description:  LocalizedString
   initiative:   number

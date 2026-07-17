@@ -51,7 +51,12 @@ describe('loadPlayerActionDefs', () => {
 
 // ─── Cohérence /data ↔ vault (rules/fr/cartes) ────────────────────────────────
 
-interface VaultCard { id: string; nom: string; initiative: number; cout: string }
+interface VaultMode { id: string; nom: string; initiative: number; cout?: string }
+interface VaultCard {
+  id: string; nom: string; initiative?: number; cout?: string
+  /** Modes : une carte est du matériel, une action est une règle — le lien n'est pas 1↔1. */
+  modes?: VaultMode[]
+}
 
 function loadVaultCards(): Map<string, VaultCard> {
   const dir = path.resolve(path.dirname(PLAYER_ACTIONS_FILE), '..', 'rules', 'fr', 'cartes')
@@ -78,16 +83,25 @@ describe('cohérence data/player_actions.yaml ↔ rules/fr/cartes', () => {
     const card = vault.get(action!.vaultCard!)
     expect(card).toBeDefined()
 
+    // Une action du moteur vise une UNITÉ JOUABLE : la carte elle-même, ou l'un
+    // de ses modes quand elle en porte (`vaultMode`). C'est le lien matériel →
+    // règle, qui n'est pas 1↔1.
+    const unit = action!.vaultMode
+      ? card!.modes?.find(m => m.id === action!.vaultMode)
+      : card
+    expect(unit).toBeDefined()
+
     const def = ACTION_DEFS[id]
-    expect(card!.nom).toBe(def.label)
-    expect(card!.initiative).toBe(def.initiative)
+    expect(unit!.nom).toBe(def.label)
+    expect(unit!.initiative).toBe(def.initiative)
 
     // Coût : 🌓/🌕/🌗 = 1 PA chacune (la lune porte la bande), 💧 fatigue, ⚡ réactions.
     // La « première action » n'est plus encodée dans le coût : les PA colorés 🟢⚫🔴
     // sont retirés au profit des bandes d'initiative.
-    expect(MOONS.reduce((n, m) => n + count(card!.cout, m), 0)).toBe(def.cost.actions)
-    expect(count(card!.cout, '💧')).toBe(def.cost.fatigue ?? 0)
-    expect(count(card!.cout, '⚡')).toBe(def.cost.reactions)
+    const cout = unit!.cout ?? ''
+    expect(MOONS.reduce((n, m) => n + count(cout, m), 0)).toBe(def.cost.actions)
+    expect(count(cout, '💧')).toBe(def.cost.fatigue ?? 0)
+    expect(count(cout, '⚡')).toBe(def.cost.reactions)
   })
 })
 
@@ -97,14 +111,41 @@ describe('cohérence data/player_actions.yaml ↔ rules/fr/cartes', () => {
 const bandMoon = (initiative: number): string =>
   initiative <= 3 ? '🌓' : initiative <= 6 ? '🌕' : '🌗'
 
+/**
+ * Toutes les UNITÉS JOUABLES du vault : une carte à action unique en donne une,
+ * une carte à modes en donne une par mode (Déplacement → marche · course).
+ *
+ * L'aplatissement est ce qui compte : sans lui, une carte à modes n'a ni `cout`
+ * ni `initiative` à sa racine et traverse le lint sans être vue — un faux vert.
+ */
+function playableUnits(): Array<{ id: string; initiative: number; cout: string }> {
+  const out: Array<{ id: string; initiative: number; cout: string }> = []
+  for (const c of loadVaultCards().values()) {
+    if (c.modes?.length) {
+      for (const m of c.modes) {
+        if (m.cout && m.initiative != null) out.push({ id: `${c.id}/${m.id}`, initiative: m.initiative, cout: m.cout })
+      }
+    } else if (c.cout && c.initiative != null) {
+      out.push({ id: c.id, initiative: c.initiative, cout: c.cout })
+    }
+  }
+  return out
+}
+
 describe("vault — la lune du coût correspond à la bande de l'initiative", () => {
-  const banded = [...loadVaultCards().values()].filter(
-    c => MOONS.some(m => c.cout?.includes(m)) && c.initiative >= 1 && c.initiative <= 9,
+  const banded = playableUnits().filter(
+    u => MOONS.some(m => u.cout.includes(m)) && u.initiative >= 1 && u.initiative <= 9,
   )
 
-  it.each(banded.map(c => [c.id, c] as const))('%s', (_id, card) => {
-    for (const ch of [...card.cout]) {
-      if (MOONS.includes(ch)) expect(ch).toBe(bandMoon(card.initiative))
+  it.each(banded.map(u => [u.id, u] as const))('%s', (_id, unit) => {
+    for (const ch of [...unit.cout]) {
+      if (MOONS.includes(ch)) expect(ch).toBe(bandMoon(unit.initiative))
     }
+  })
+
+  it('couvre bien les modes — le Déplacement ne doit pas passer entre les mailles', () => {
+    const ids = banded.map(u => u.id)
+    expect(ids).toContain('deplacement/marche')
+    expect(ids).toContain('deplacement/course')
   })
 })

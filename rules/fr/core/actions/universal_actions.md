@@ -144,29 +144,25 @@ Les actions de déplacement consomment des **points d'action** et génèrent par
 
 ---
 
-#### 4️⃣ Marche 🚶
+#### Déplacement 🚶🏃
+
+Une seule carte, deux modes : on avance, ou l'on court en y laissant son souffle. **Aucun jet** — franchir du terrain ne se rate pas, et le combat n'a rien à gagner à ce qu'on lance les dés pour marcher.
+
+**🚶 Marche — 4️⃣**
 
 **Coût :** 🌕  
 🔒 **Condition :** ne pas être **à terre** ou **immobilisé**
 
-▶️ **Inertie 2 ➡️**, déplacement de 3 cases.
+▶️ **Inertie 2 ➡️**, déplacement de **3 cases**.
 
----
-
-#### 6️⃣ Course 🏃
+**🏃 Course — 6️⃣**
 
 **Coût :** 🌕💧  
-🔒 **Condition :** ne pas être **à genoux**, **à terre**, **entravé**, **immobilisé**, ni **essoufflé**  
-🎲 **Jet :** Mobilité 🟨🟨 + Agilité 🟦 (+🟥 si terrain encombré)  
-⛞🟦 **Sprint :** augmenter le déplacement de 3 cases supplémentaires  
-🆚 **Contre :** 7 + Inertie ➡️
+🔒 **Condition :** ne pas être **à genoux**, **à terre**, **entravé**, **immobilisé**, ni **essoufflé**
 
-⚠️ **Défaut :** le personnage est **essoufflé 😮‍💨**  
-✴️ **Critique :** vous bénéficiez de 🟩 sur votre prochaine **Charge** ou **Bousculade**
+▶️ **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases, puis le personnage est **essoufflé 😮‍💨**.
 
-▶️ **Inertie 3 ➡️**  
-✅ **Succès :** déplacement jusqu'à 6 cases  
-❌ **Échec :** déplacement jusqu'à 5 cases
+*Courir vous essouffle, et un essoufflé ne court plus : on ne sprinte pas deux manches d'affilée sans reprendre son souffle (**Respiration 🌓**). C'est aussi ce qui fait de l'Inertie ➡️ 3 une ressource rare — seule la Course la donne, et la **Bousculade** comme la **Charge** l'exigent.*
 
 ---
 
