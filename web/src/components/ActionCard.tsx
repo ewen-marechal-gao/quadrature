@@ -13,7 +13,7 @@
  */
 
 import { Fragment } from "react";
-import type { ActionCard as Card, CardMode } from "@/lib/cards";
+import type { ActionCard as Card, CardOption, CardSection, CardUpgrade } from "@/lib/cards";
 import { bandOf, bandOfMoon, type Band } from "@/lib/bands";
 
 /**
@@ -81,37 +81,35 @@ function Cost({ cout }: { cout: string }) {
   );
 }
 
-/**
- * Une VARIANTE de la carte : une autre façon de la jouer, qui décale son
- * initiative et son coût.
- *
- * La carte garde son identité en tête (pastille, coût, condition, effet de
- * base) — c'est elle qu'on tient en main. La variante ne la redéfinit pas, elle
- * l'infléchit, et se lit donc comme une amélioration ⚒️ : mêmes codes, avec en
- * plus la pastille et le coût qui changent.
- */
-function Mode({ mode }: { mode: CardMode }) {
+/** Amélioration ⚒️ — ce qu'un Trait débloque sur la section qu'elle modifie. */
+function Upgrade({ up }: { up: CardUpgrade }) {
   return (
-    <div className="ac-field ac-upgrade ac-mode" data-bande={bandOf(mode.initiative) ?? undefined}>
+    <div className="ac-field ac-upgrade">
       <span className="ac-field-icon">⚒️</span>
-      <span>
-        <span className="ac-mode-head">
-          <strong>{mode.nom}</strong>
-          <span className="ac-mode-init" title={`Initiative ${mode.initiative}`}>
-            {mode.initiative}
-          </span>
-          {mode.cout && <Cost cout={mode.cout} />}
-        </span>
-        {mode.effet && (
-          <span dangerouslySetInnerHTML={{ __html: ` — ${mdLite(mode.effet)}` }} />
-        )}
-        {mode.condition && (
-          <span
-            className="ac-mode-cond"
-            dangerouslySetInnerHTML={{ __html: `🔒 ${mdLite(mode.condition)}` }}
-          />
-        )}
-      </span>
+      <span
+        dangerouslySetInnerHTML={{
+          __html: `<strong>${mdLite(up.nom)} :</strong> ${mdLite(up.effet)}`,
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Une OPTION d'une carte à effets multiples : condition + issue, groupées.
+ *
+ * Ce n'est PAS une amélioration — ⚒️ désigne ce qu'un Trait débloque. C'est un
+ * effet ALTERNATIF : on choisit l'un des blocs au moment de jouer. Son surcoût
+ * et son initiative se lisent dans sa prose, ce qui laisse la partie haute de la
+ * carte à son action de base.
+ */
+function Option({ option }: { option: CardOption }) {
+  return (
+    <div className="ac-choice">
+      <Field icon="🔒" text={option.condition} />
+      <Field icon="▶️" text={option.effet} />
+      <Field icon="✅" text={option.succes} />
+      <Field icon="❌" text={option.echec} />
     </div>
   );
 }
@@ -125,28 +123,78 @@ function Separator() {
   );
 }
 
+/** Une section de carte : ce qu'elle affiche, et si elle a quoi que ce soit à dire. */
+interface Section {
+  /** Vraie quand la DONNÉE existe. À ne pas déduire des éléments : un <Field>
+   *  vide rend `null` mais reste un objet truthy — il ferait apparaître un
+   *  séparateur fantôme autour d'une section pourtant muette. */
+  has:   boolean;
+  nodes: React.ReactNode;
+}
+
+/**
+ * Assemble les sections d'une carte, en n'insérant un séparateur qu'entre celles
+ * qui portent réellement quelque chose. Une section vide ne laisse pas de trace.
+ */
+function Sections({ blocks }: { blocks: Section[] }) {
+  const filled = blocks.filter(b => b.has);
+  return (
+    <>
+      {filled.map((block, i) => (
+        <Fragment key={i}>
+          {i > 0 && <Separator />}
+          {block.nodes}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
 export function ActionCard({ card }: { card: Card }) {
-  // Sections du corps de carte, séparées visuellement :
-  //   A. mise en place — déclencheur, condition, état mental, cible
-  //   B. jet — jet, contre, améliorations, sacrifices, défaut, critique
-  //   C. résolution — effet, succès, échec, table
-  const hasSetup =
-    !!(card.declencheur || card.condition || card.mental || card.cible);
+  /** Les ⚒️ d'une section. Défaut « jet » : la place historique de toutes. */
+  const ups = (section: CardSection) =>
+    (card.ameliorations ?? [])
+      .filter(a => (a.section ?? "jet") === section)
+      .map(a => <Upgrade key={a.nom} up={a} />);
+
+  // Deux grammaires de carte :
+  //  · classique       — le séparateur découpe le DÉROULÉ d'une action :
+  //                      déclencheur/condition › cible › jet › effet.
+  //  · effets multiples — la tête est commune (déclencheur, jet, défaut,
+  //                      critique), puis le séparateur départage des OPTIONS
+  //                      concurrentes, chacune groupant sa condition et son issue.
+  const options = card.options?.length ? card.options : null;
+
   const hasRoll = !!(
-    card.jet || card.contre || card.ameliorations?.length ||
-    card.sacrifices?.length || card.defaut || card.critique
+    card.jet || card.contre || card.sacrifices?.length ||
+    card.defaut || card.critique || ups("jet").length
   );
-  const hasOutcome = !!(
-    card.repere || card.effet || card.effet_duree || card.succes || card.echec ||
-    card.table || card.modes?.length
-  );
+  const rollNodes = [
+    <Field key="jet" icon="🎲" text={card.jet} />,
+    <Field key="contre" icon="🆚" text={card.contre} />,
+    ...(card.sacrifices ?? []).map((s, i) => (
+      <div key={`s${i}`} className="ac-field ac-upgrade">
+        <span className="ac-field-icon">⛞{s.des}</span>
+        <span
+          dangerouslySetInnerHTML={{
+            __html: s.nom
+              ? `<strong>${mdLite(s.nom)} :</strong> ${mdLite(s.effet)}`
+              : mdLite(s.effet),
+          }}
+        />
+      </div>
+    )),
+    <Field key="defaut" icon="⚠️" text={card.defaut} />,
+    <Field key="critique" icon="✴️" text={card.critique} />,
+    ...ups("jet"),
+  ];
+  const rollBlock: Section = { has: hasRoll, nodes: rollNodes };
 
   return (
     <div
       className="action-card"
       data-categorie={card.categorie}
       data-type={card.type}
-      // Une carte à modes n'a pas UNE bande : chaque mode porte la sienne.
       data-bande={card.initiative !== undefined ? bandOf(card.initiative) ?? undefined : undefined}
     >
       {card.initiative !== undefined && (
@@ -155,7 +203,7 @@ export function ActionCard({ card }: { card: Card }) {
         </span>
       )}
 
-      <header className="ac-header" data-modes={card.modes ? "" : undefined}>
+      <header className="ac-header">
         <span className="ac-name">{card.nom}</span>
         {card.cout && <Cost cout={card.cout} />}
       </header>
@@ -166,70 +214,83 @@ export function ActionCard({ card }: { card: Card }) {
       {card.bandeau && <div className="ac-prereq">{card.bandeau}</div>}
 
       <div className="ac-body">
-        <Field icon="⚡" text={card.declencheur} />
-        <Field icon="🔒" text={card.condition} />
-        <Field icon="🧠" text={card.mental} />
-        <Field icon="🎯" text={card.cible} />
-
-        {hasSetup && (hasRoll || hasOutcome) && <Separator />}
-
-        <Field icon="🎲" text={card.jet} />
-        <Field icon="🆚" text={card.contre} />
-
-        {card.ameliorations?.map((a) => (
-          <div key={a.nom} className="ac-field ac-upgrade">
-            <span className="ac-field-icon">⚒️</span>
-            <span
-              dangerouslySetInnerHTML={{
-                __html: `<strong>${mdLite(a.nom)} :</strong> ${mdLite(a.effet)}`,
-              }}
-            />
-          </div>
-        ))}
-
-        {card.sacrifices?.map((s, i) => (
-          <div key={i} className="ac-field ac-upgrade">
-            <span className="ac-field-icon">⛞{s.des}</span>
-            <span
-              dangerouslySetInnerHTML={{
-                __html: s.nom
-                  ? `<strong>${mdLite(s.nom)} :</strong> ${mdLite(s.effet)}`
-                  : mdLite(s.effet),
-              }}
-            />
-          </div>
-        ))}
-
-        <Field icon="⚠️" text={card.defaut} />
-        <Field icon="✴️" text={card.critique} />
-
-        {hasRoll && hasOutcome && <Separator />}
-
-        <Field icon="⭐" text={card.repere} />
-        <Field icon="▶️" text={card.effet} />
-        <Field icon="⏳" text={card.effet_duree} />
-        <Field icon="✅" text={card.succes} />
-        <Field icon="❌" text={card.echec} />
-
-        {/* Les variantes se lisent APRÈS l'effet de base : on infléchit ce qui
-            précède, on ne le remplace pas. */}
-        {card.modes?.map((m) => <Mode key={m.id} mode={m} />)}
-
-        {card.table && (
-          <div className="ac-table">
-            {card.table.titre && (
-              <div
-                className="ac-table-title"
-                dangerouslySetInnerHTML={{ __html: mdLite(card.table.titre) }}
-              />
-            )}
-            {card.table.lignes.map((row, i) => (
-              <div key={i} className="ac-table-row">
-                <span className="ac-table-cost">{row.cout}</span>
-                <span dangerouslySetInnerHTML={{ __html: mdLite(row.effet) }} />
-              </div>
-            ))}
-          </div>
+        {options ? (
+          // Effets multiples : tête commune, puis les options concurrentes.
+          <Sections
+            blocks={[
+              {
+                has: !!(card.declencheur || card.mental || card.cible) || hasRoll,
+                nodes: [
+                  <Field key="d" icon="⚡" text={card.declencheur} />,
+                  <Field key="m" icon="🧠" text={card.mental} />,
+                  <Field key="c" icon="🎯" text={card.cible} />,
+                  ...rollNodes,
+                ],
+              },
+              {
+                has: true,
+                nodes: [
+                  <div key="lbl" className="ac-choice-label">Choisissez l&apos;un :</div>,
+                  ...options.map((o, i) => (
+                    <Fragment key={o.id}>
+                      {i > 0 && <Separator />}
+                      <Option option={o} />
+                    </Fragment>
+                  )),
+                ],
+              },
+            ]}
+          />
+        ) : (
+          // Classique : le séparateur découpe le déroulé de l'action.
+          <Sections
+            blocks={[
+              {
+                has: !!(card.declencheur || card.condition || card.mental) || !!ups("condition").length,
+                nodes: [
+                  <Field key="d" icon="⚡" text={card.declencheur} />,
+                  <Field key="c" icon="🔒" text={card.condition} />,
+                  <Field key="m" icon="🧠" text={card.mental} />,
+                  ...ups("condition"),
+                ],
+              },
+              {
+                has: !!card.cible || !!ups("cible").length,
+                nodes: [<Field key="t" icon="🎯" text={card.cible} />, ...ups("cible")],
+              },
+              rollBlock,
+              {
+                has: !!(
+                  card.repere || card.effet || card.effet_duree || card.succes ||
+                  card.echec || card.table || ups("effet").length
+                ),
+                nodes: [
+                  <Field key="r" icon="⭐" text={card.repere} />,
+                  <Field key="e" icon="▶️" text={card.effet} />,
+                  <Field key="du" icon="⏳" text={card.effet_duree} />,
+                  <Field key="s" icon="✅" text={card.succes} />,
+                  <Field key="x" icon="❌" text={card.echec} />,
+                  ...ups("effet"),
+                  card.table ? (
+                    <div key="tbl" className="ac-table">
+                      {card.table.titre && (
+                        <div
+                          className="ac-table-title"
+                          dangerouslySetInnerHTML={{ __html: mdLite(card.table.titre) }}
+                        />
+                      )}
+                      {card.table.lignes.map((row, i) => (
+                        <div key={i} className="ac-table-row">
+                          <span className="ac-table-cost">{row.cout}</span>
+                          <span dangerouslySetInnerHTML={{ __html: mdLite(row.effet) }} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null,
+                ],
+              },
+            ]}
+          />
         )}
 
         {(card.description || card.notes) && (

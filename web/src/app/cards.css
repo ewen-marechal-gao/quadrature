@@ -424,38 +424,21 @@
   }
 }
 
-/* ── Variantes ────────────────────────────────────────────────────────────────
-   Une carte peut porter des VARIANTES (Déplacement → 🏃 Course) : d'autres
-   façons de la jouer, qui décalent son initiative et son coût. La carte garde
-   son identité en tête — c'est elle qu'on tient en main ; la variante l'infléchit
-   et se lit donc dans la grammaire des améliorations ⚒️. */
-.ac-mode-head {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3em;
-  margin-right: 0.15em;
-}
-
-/* Même grammaire que .ac-initiative, en réduit et posé dans le flux du texte. */
-.ac-mode-init {
-  flex-shrink: 0;
-  width: 1.55em;
-  height: 1.55em;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  border: 0.12em solid var(--brass);
-  background: var(--cat);
-  color: var(--parchment);
-  font-weight: 700;
-  font-size: 0.92em;
-  line-height: 1;
-}
-
-/* Condition de la variante : repliée sous son effet, en retrait. */
-.ac-mode-cond {
-  display: block;
+/* ── Choix ────────────────────────────────────────────────────────────────────
+   Une carte peut offrir plusieurs EFFETS ALTERNATIFS (Déplacement → 🚶 Marche ·
+   🏃 Course) : on choisit l'un des blocs au moment de jouer. Chaque bloc groupe
+   sa condition et son effet, et le séparateur départage les options au lieu de
+   couper la carte en « mise en place / résolution ».
+   Ce n'est PAS une amélioration ⚒️ — ce symbole désigne ce qu'un Trait débloque.
+   Le surcoût et l'initiative d'une alternative se lisent dans sa prose, ce qui
+   laisse la partie haute de la carte à son action de base. */
+.ac-choice-label {
   font-style: italic;
-  opacity: 0.85;
+  opacity: 0.8;
+}
+
+.ac-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }

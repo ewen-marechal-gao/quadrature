@@ -51,11 +51,11 @@ describe('loadPlayerActionDefs', () => {
 
 // ─── Cohérence /data ↔ vault (rules/fr/cartes) ────────────────────────────────
 
-interface VaultMode { id: string; nom: string; initiative: number; cout?: string }
+interface VaultOption { id: string; nom?: string; initiative?: number; cout?: string; effet?: string }
 interface VaultCard {
   id: string; nom: string; initiative?: number; cout?: string
-  /** Modes : une carte est du matériel, une action est une règle — le lien n'est pas 1↔1. */
-  modes?: VaultMode[]
+  /** Options : une carte est du matériel, une action est une règle — pas 1↔1. */
+  options?: VaultOption[]
 }
 
 function loadVaultCards(): Map<string, VaultCard> {
@@ -83,11 +83,11 @@ describe('cohérence data/player_actions.yaml ↔ rules/fr/cartes', () => {
     const card = vault.get(action!.vaultCard!)
     expect(card).toBeDefined()
 
-    // Une action du moteur vise une UNITÉ JOUABLE : la carte elle-même, ou l'un
-    // de ses modes quand elle en porte (`vaultMode`). C'est le lien matériel →
-    // règle, qui n'est pas 1↔1.
-    const unit = action!.vaultMode
-      ? card!.modes?.find(m => m.id === action!.vaultMode)
+    // Une action du moteur vise une UNITÉ JOUABLE : la carte elle-même, ou l'une
+    // de ses options quand elle en porte (`vaultOption`). C'est le lien matériel
+    // → règle, qui n'est pas 1↔1.
+    const unit = action!.vaultOption
+      ? card!.options?.find(o => o.id === action!.vaultOption)
       : card
     expect(unit).toBeDefined()
 
@@ -113,20 +113,21 @@ const bandMoon = (initiative: number): string =>
 
 /**
  * Toutes les UNITÉS JOUABLES du vault : une carte à action unique en donne une,
- * une carte à modes en donne une par mode (Déplacement → marche · course).
+ * une carte à effets multiples en donne une par option qui redéfinit son coût.
  *
- * L'aplatissement est ce qui compte : sans lui, une carte à modes n'a ni `cout`
- * ni `initiative` à sa racine et traverse le lint sans être vue — un faux vert.
+ * L'aplatissement est ce qui compte : sans lui, une option ne porte ni `cout` ni
+ * `initiative` à la racine de la carte et traverse le lint sans être vue — un
+ * faux vert, deja constate deux fois sur ce chantier.
  */
 function playableUnits(): Array<{ id: string; initiative: number; cout: string }> {
   const out: Array<{ id: string; initiative: number; cout: string }> = []
   for (const c of loadVaultCards().values()) {
-    // La base ET les variantes : une carte à variantes garde son action de base
-    // (Déplacement = la Marche), et n'importe laquelle des deux peut dériver.
+    // La carte ET ses options : la pastille imprimée est une unité jouable à
+    // part entière, et n'importe laquelle des deux peut dériver.
     if (c.cout && c.initiative != null) {
       out.push({ id: c.id, initiative: c.initiative, cout: c.cout })
     }
-    for (const m of c.modes ?? []) {
+    for (const m of c.options ?? []) {
       if (m.cout && m.initiative != null) {
         out.push({ id: `${c.id}/${m.id}`, initiative: m.initiative, cout: m.cout })
       }
@@ -146,9 +147,23 @@ describe("vault — la lune du coût correspond à la bande de l'initiative", ()
     }
   })
 
-  it('couvre la base ET les variantes — rien ne passe entre les mailles', () => {
+  it('couvre la carte ET ses options — rien ne passe entre les mailles', () => {
     const ids = banded.map(u => u.id)
-    expect(ids).toContain('deplacement')          // la base : 🚶 Marche, 4️⃣ 🌕
-    expect(ids).toContain('deplacement/course')   // la variante : 🏃 Course, 6️⃣ 🌕💧
+    expect(ids).toContain('deplacement')          // la pastille : 4️⃣ 🌕
+    expect(ids).toContain('deplacement/course')   // l'option : 🏃 Course, 6️⃣ 🌕💧
+  })
+
+  it("l'initiative citée dans la prose d'une option colle à sa donnée", () => {
+    // La prose est ecrite a la main (choix assume) : ce garde-fou ne contraint
+    // rien — une prose muette reste valide — mais supprime la divergence des que
+    // l'autrice ecrit le chiffre.
+    for (const c of loadVaultCards().values()) {
+      for (const o of c.options ?? []) {
+        const cite = /initiative de (\d)/.exec(o.effet ?? '')
+        if (cite && o.initiative != null) {
+          expect(`${c.id}/${o.id}: ${cite[1]}`).toBe(`${c.id}/${o.id}: ${o.initiative}`)
+        }
+      }
+    }
   })
 })

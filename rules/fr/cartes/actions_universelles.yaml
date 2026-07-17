@@ -101,10 +101,15 @@ cartes:
     effet: "**Inertie 1 ➡️**, déplacement d'une case, puis choisissez votre posture : 🧍 **Debout**, 🧎 **À genoux** ou 🙏 **À terre** (effets décrits dans États)"
     source: core/actions/universal_actions.md
 
-  # UNE carte, DEUX modes. Le deck est organisationnel, pas mécanique : rien
-  # n'oblige les modes d'une carte à partager une bande (les cartes tempo portent
-  # déjà une amélioration qui les fait passer de la Bande I à la Bande III). Ici
-  # les deux modes tombent en Bande II 🌕 — Marche 4️⃣, Course 6️⃣.
+  # Carte à EFFETS MULTIPLES — « Choisissez l'un : ». La carte est du matériel,
+  # l'action est une règle : le lien n'est pas 1↔1. Ce ne sont PAS des
+  # améliorations (⚒️ désigne ce qu'un Trait débloque) mais des effets
+  # alternatifs, tranchés au moment de jouer.
+  #
+  # La pastille et le coût imprimés sont ceux de la Marche ; le surcoût de la
+  # Course (💧) et son initiative (6) se lisent dans sa prose. Les options n'ont
+  # pas à partager une bande — les decks sont organisationnels, sans fonction
+  # mécanique ; ici les deux tombent en Bande II 🌕.
   #
   # Aucun jet : franchir du terrain ne se rate pas. Le frein n'est plus un ⚠️
   # Défaut mais l'essoufflement lui-même, qui interdit de courir la manche
@@ -114,20 +119,18 @@ cartes:
     type: action
     famille: mouvement
     categorie: mouvement
-    # La carte EST la Marche : elle garde son initiative et son coût en tête. La
-    # Course est une variante — on force l'allure, l'initiative recule et le
-    # souffle se paie.
     initiative: 4
     cout: "🌕"
-    condition: "ne pas être **à terre** ou **immobilisé**"
-    effet: "🚶 **Marche** — **Inertie 2 ➡️**, déplacement de **3 cases**"
-    modes:
+    options:
+      - id: marche
+        condition: "ne pas être **à terre** ou **immobilisé**"
+        effet: "🚶 **Marche** — **Inertie 2 ➡️**, déplacement de **3 cases**"
       - id: course
         nom: "🏃 Course"
         initiative: 6
         cout: "🌕💧"
         condition: "ne pas être **à genoux**, **à terre**, **entravé**, ni **essoufflé**"
-        effet: "**Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases, puis vous êtes **essoufflé 😮‍💨**"
+        effet: "🏃 **Course**, dépensez 💧 — **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases. Vous gagnez l'état **essoufflé 😮‍💨**. Cette action sera résolue avec une **initiative de 6️⃣**"
     source: core/actions/universal_actions.md
 
   - id: bousculade

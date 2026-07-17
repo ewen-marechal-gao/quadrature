@@ -28,9 +28,38 @@ export type CardFamily =
   | "melee" | "distance" | "mouvement" | "tempo" | "mental"
   | "physique" | "sociale" | "utilitaire" | "garde";
 
+/**
+ * Section d'une carte classique — le déroulé d'une action, dans l'ordre où on
+ * le lit. Une amélioration ⚒️ se rattache à celle qu'elle modifie : sans ça elle
+ * flotte au milieu de la carte, loin de ce sur quoi elle agit.
+ */
+export type CardSection = "condition" | "cible" | "jet" | "effet";
+
 export interface CardUpgrade {
   nom: string;
   effet: string;
+  /** Section modifiée. Défaut « jet » — la place historique de toutes les ⚒️. */
+  section?: CardSection;
+}
+
+/**
+ * Une OPTION d'une carte à effets multiples : on en choisit une au moment de
+ * jouer. Chacune porte sa condition et son issue ; son initiative et son coût
+ * propres servent au moteur et au lint, pas à l'affichage (ils se lisent dans
+ * la prose de l'option).
+ *
+ * La carte est du MATÉRIEL, l'action est une RÈGLE : le lien n'est pas 1↔1.
+ */
+export interface CardOption {
+  id: string;
+  nom?: string;
+  /** Remplace celle de la carte quand cette option est choisie. */
+  initiative?: number;
+  cout?: string;
+  condition?: string;
+  effet?: string;
+  succes?: string;
+  echec?: string;
 }
 
 /**
@@ -69,11 +98,11 @@ export interface ActionCard {
   type: CardType;
   famille: CardFamily;
   categorie: CardCategory;
-  /** Absente sur une carte à `modes` : c'est alors chaque mode qui porte la sienne. */
+  /** Celle imprimée en pastille. Une option peut la remplacer (cf. CardOption). */
   initiative?: number;
   cout?: string;
-  /** Façons distinctes de jouer cette carte (cf. CardMode). Exclusif avec `initiative`/`cout`. */
-  modes?: CardMode[];
+  /** Effets alternatifs — « Choisissez l'un : ». Change la grammaire de la carte. */
+  options?: CardOption[];
   description?: string;
   prerequis?: string;
   /** Note de règle affichée sous l'en-tête, même rendu que le prérequis. */
