@@ -424,44 +424,38 @@
   }
 }
 
-/* ── Modes ────────────────────────────────────────────────────────────────────
-   Une carte peut porter plusieurs MODES (Déplacement → 🚶 Marche · 🏃 Course) :
-   la carte est du matériel, l'action est une règle. Chaque mode a son initiative
-   et son coût, donc sa pastille en ligne — la pastille du coin, elle, ne sert
-   qu'aux cartes à action unique. Les modes n'ont pas à partager une bande. */
-.ac-mode {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.ac-mode-header {
-  display: flex;
+/* ── Variantes ────────────────────────────────────────────────────────────────
+   Une carte peut porter des VARIANTES (Déplacement → 🏃 Course) : d'autres
+   façons de la jouer, qui décalent son initiative et son coût. La carte garde
+   son identité en tête — c'est elle qu'on tient en main ; la variante l'infléchit
+   et se lit donc dans la grammaire des améliorations ⚒️. */
+.ac-mode-head {
+  display: inline-flex;
   align-items: center;
-  gap: 0.4em;
+  gap: 0.3em;
+  margin-right: 0.15em;
 }
 
-/* Même grammaire visuelle que .ac-initiative, en réduit et posé dans le flux. */
+/* Même grammaire que .ac-initiative, en réduit et posé dans le flux du texte. */
 .ac-mode-init {
   flex-shrink: 0;
-  width: 1.7em;
-  height: 1.7em;
-  display: flex;
+  width: 1.55em;
+  height: 1.55em;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  border: 0.14em solid var(--brass);
+  border: 0.12em solid var(--brass);
   background: var(--cat);
   color: var(--parchment);
   font-weight: 700;
+  font-size: 0.92em;
+  line-height: 1;
 }
 
-.ac-mode-name {
-  flex: 1;
-  font-weight: 700;
-}
-
-/* Sans pastille de coin, le titre reprend toute la largeur de l'en-tête. */
-.ac-header[data-modes] .ac-name {
-  padding-left: 0;
+/* Condition de la variante : repliée sous son effet, en retrait. */
+.ac-mode-cond {
+  display: block;
+  font-style: italic;
+  opacity: 0.85;
 }

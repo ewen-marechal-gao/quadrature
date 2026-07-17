@@ -114,18 +114,19 @@ cartes:
     type: action
     famille: mouvement
     categorie: mouvement
+    # La carte EST la Marche : elle garde son initiative et son coût en tête. La
+    # Course est une variante — on force l'allure, l'initiative recule et le
+    # souffle se paie.
+    initiative: 4
+    cout: "🌕"
+    condition: "ne pas être **à terre** ou **immobilisé**"
+    effet: "🚶 **Marche** — **Inertie 2 ➡️**, déplacement de **3 cases**"
     modes:
-      - id: marche
-        nom: "🚶 Marche"
-        initiative: 4
-        cout: "🌕"
-        condition: "ne pas être **à terre** ou **immobilisé**"
-        effet: "**Inertie 2 ➡️**, déplacement de **3 cases**"
       - id: course
         nom: "🏃 Course"
         initiative: 6
         cout: "🌕💧"
-        condition: "ne pas être **à genoux**, **à terre**, **entravé**, **immobilisé**, ni **essoufflé**"
+        condition: "ne pas être **à genoux**, **à terre**, **entravé**, ni **essoufflé**"
         effet: "**Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases, puis vous êtes **essoufflé 😮‍💨**"
     source: core/actions/universal_actions.md
 

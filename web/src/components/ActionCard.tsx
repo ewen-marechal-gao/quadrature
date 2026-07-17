@@ -82,22 +82,36 @@ function Cost({ cout }: { cout: string }) {
 }
 
 /**
- * Un mode : sa propre initiative, son propre coût, ses propres conditions.
- * La pastille d'initiative de la carte étant unique, chaque mode porte la sienne
- * en ligne — c'est le mode qu'on joue, pas la carte.
+ * Une VARIANTE de la carte : une autre façon de la jouer, qui décale son
+ * initiative et son coût.
+ *
+ * La carte garde son identité en tête (pastille, coût, condition, effet de
+ * base) — c'est elle qu'on tient en main. La variante ne la redéfinit pas, elle
+ * l'infléchit, et se lit donc comme une amélioration ⚒️ : mêmes codes, avec en
+ * plus la pastille et le coût qui changent.
  */
 function Mode({ mode }: { mode: CardMode }) {
   return (
-    <div className="ac-mode" data-bande={bandOf(mode.initiative) ?? undefined}>
-      <div className="ac-mode-header">
-        <span className="ac-mode-init" title={`Initiative ${mode.initiative}`}>
-          {mode.initiative}
+    <div className="ac-field ac-upgrade ac-mode" data-bande={bandOf(mode.initiative) ?? undefined}>
+      <span className="ac-field-icon">⚒️</span>
+      <span>
+        <span className="ac-mode-head">
+          <strong>{mode.nom}</strong>
+          <span className="ac-mode-init" title={`Initiative ${mode.initiative}`}>
+            {mode.initiative}
+          </span>
+          {mode.cout && <Cost cout={mode.cout} />}
         </span>
-        <span className="ac-mode-name">{mode.nom}</span>
-        {mode.cout && <Cost cout={mode.cout} />}
-      </div>
-      <Field icon="🔒" text={mode.condition} />
-      <Field icon="▶️" text={mode.effet} />
+        {mode.effet && (
+          <span dangerouslySetInnerHTML={{ __html: ` — ${mdLite(mode.effet)}` }} />
+        )}
+        {mode.condition && (
+          <span
+            className="ac-mode-cond"
+            dangerouslySetInnerHTML={{ __html: `🔒 ${mdLite(mode.condition)}` }}
+          />
+        )}
+      </span>
     </div>
   );
 }
@@ -122,8 +136,10 @@ export function ActionCard({ card }: { card: Card }) {
     card.jet || card.contre || card.ameliorations?.length ||
     card.sacrifices?.length || card.defaut || card.critique
   );
-  const hasOutcome =
-    !!(card.repere || card.effet || card.effet_duree || card.succes || card.echec || card.table);
+  const hasOutcome = !!(
+    card.repere || card.effet || card.effet_duree || card.succes || card.echec ||
+    card.table || card.modes?.length
+  );
 
   return (
     <div
@@ -150,14 +166,6 @@ export function ActionCard({ card }: { card: Card }) {
       {card.bandeau && <div className="ac-prereq">{card.bandeau}</div>}
 
       <div className="ac-body">
-        {card.modes?.map((m, i) => (
-          <Fragment key={m.id}>
-            {i > 0 && <Separator />}
-            <Mode mode={m} />
-          </Fragment>
-        ))}
-        {card.modes && (hasSetup || hasRoll || hasOutcome) && <Separator />}
-
         <Field icon="⚡" text={card.declencheur} />
         <Field icon="🔒" text={card.condition} />
         <Field icon="🧠" text={card.mental} />
@@ -202,6 +210,10 @@ export function ActionCard({ card }: { card: Card }) {
         <Field icon="⏳" text={card.effet_duree} />
         <Field icon="✅" text={card.succes} />
         <Field icon="❌" text={card.echec} />
+
+        {/* Les variantes se lisent APRÈS l'effet de base : on infléchit ce qui
+            précède, on ne le remplace pas. */}
+        {card.modes?.map((m) => <Mode key={m.id} mode={m} />)}
 
         {card.table && (
           <div className="ac-table">

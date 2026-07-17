@@ -144,25 +144,19 @@ Les actions de déplacement consomment des **points d'action** et génèrent par
 
 ---
 
-#### Déplacement 🚶🏃
-
-Une seule carte, deux modes : on avance, ou l'on court en y laissant son souffle. **Aucun jet** — franchir du terrain ne se rate pas, et le combat n'a rien à gagner à ce qu'on lance les dés pour marcher.
-
-**🚶 Marche — 4️⃣**
+#### 4️⃣ Déplacement 🚶
 
 **Coût :** 🌕  
 🔒 **Condition :** ne pas être **à terre** ou **immobilisé**
 
-▶️ **Inertie 2 ➡️**, déplacement de **3 cases**.
+▶️ 🚶 **Marche** — **Inertie 2 ➡️**, déplacement de **3 cases**.
 
-**🏃 Course — 6️⃣**
+⚒️ **🏃 Course — 6️⃣, coût 🌕💧 :** **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases, puis le personnage est **essoufflé 😮‍💨**.  
+🔒 *Exige de ne pas être* **à genoux**, **à terre**, **entravé**, *ni* **essoufflé**.
 
-**Coût :** 🌕💧  
-🔒 **Condition :** ne pas être **à genoux**, **à terre**, **entravé**, **immobilisé**, ni **essoufflé**
+**Aucun jet** — franchir du terrain ne se rate pas, et le combat n'a rien à gagner à ce qu'on lance les dés pour marcher. Forcer l'allure ne se paie pas en dés mais en souffle : courir vous **essouffle**, et un essoufflé ne court plus. On ne sprinte donc pas deux manches d'affilée sans reprendre haleine (**Respiration 🌓**).
 
-▶️ **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases, puis le personnage est **essoufflé 😮‍💨**.
-
-*Courir vous essouffle, et un essoufflé ne court plus : on ne sprinte pas deux manches d'affilée sans reprendre son souffle (**Respiration 🌓**). C'est aussi ce qui fait de l'Inertie ➡️ 3 une ressource rare — seule la Course la donne, et la **Bousculade** comme la **Charge** l'exigent.*
+*C'est aussi ce qui fait de l'**Inertie ➡️ 3** une ressource rare : seule la Course la donne, et la **Bousculade** comme la **Charge** l'exigent.*
 
 ---
 

@@ -121,12 +121,15 @@ const bandMoon = (initiative: number): string =>
 function playableUnits(): Array<{ id: string; initiative: number; cout: string }> {
   const out: Array<{ id: string; initiative: number; cout: string }> = []
   for (const c of loadVaultCards().values()) {
-    if (c.modes?.length) {
-      for (const m of c.modes) {
-        if (m.cout && m.initiative != null) out.push({ id: `${c.id}/${m.id}`, initiative: m.initiative, cout: m.cout })
-      }
-    } else if (c.cout && c.initiative != null) {
+    // La base ET les variantes : une carte à variantes garde son action de base
+    // (Déplacement = la Marche), et n'importe laquelle des deux peut dériver.
+    if (c.cout && c.initiative != null) {
       out.push({ id: c.id, initiative: c.initiative, cout: c.cout })
+    }
+    for (const m of c.modes ?? []) {
+      if (m.cout && m.initiative != null) {
+        out.push({ id: `${c.id}/${m.id}`, initiative: m.initiative, cout: m.cout })
+      }
     }
   }
   return out
@@ -143,9 +146,9 @@ describe("vault — la lune du coût correspond à la bande de l'initiative", ()
     }
   })
 
-  it('couvre bien les modes — le Déplacement ne doit pas passer entre les mailles', () => {
+  it('couvre la base ET les variantes — rien ne passe entre les mailles', () => {
     const ids = banded.map(u => u.id)
-    expect(ids).toContain('deplacement/marche')
-    expect(ids).toContain('deplacement/course')
+    expect(ids).toContain('deplacement')          // la base : 🚶 Marche, 4️⃣ 🌕
+    expect(ids).toContain('deplacement/course')   // la variante : 🏃 Course, 6️⃣ 🌕💧
   })
 })
