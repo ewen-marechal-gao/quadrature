@@ -16,7 +16,7 @@ import fs   from 'fs'
 import path from 'path'
 import { parse } from 'yaml'
 import type { CharacteristicName, SkillName } from '../character/types'
-import type { ActionId, ActionCost, CardTag } from './types'
+import type { ActionId, ActionCost, CardTag, StatusEffect, CombatantState } from './types'
 import {
   makeResolve, type ActionOutcome, type ActionOutcomes, type EffectOp,
 } from './effect-ops'
@@ -49,8 +49,23 @@ interface RawPlayerAction {
   /** Mental states allowing this action (empty/absent = no constraint). */
   mentalConditions?: MentalState[]
   requiresFirstAction?: boolean
-  roll:         { characteristic: CharacteristicName; skill: SkillName }
+  roll?:        { characteristic: CharacteristicName; skill: SkillName }
   selfTargeted?: boolean
+  // ── Déplacement & élan (§ positions) ────────────────────────────────────────
+  /** Action de mouvement (Marche/Course) : ni jet ni garde. */
+  movement?:    boolean
+  /** Budget de déplacement : un nombre fixe, ou { base, addSkill } dérivé d'une compétence. */
+  moveBudget?:  number | { base: number; addSkill: SkillName }
+  /** Inertie ➡️ posée en se résolvant (Marche 2, Course 3). */
+  grantsInertia?: number
+  /** Statut auto-infligé (Course → winded). */
+  grantsStatus?: StatusEffect
+  /** Statuts qui interdisent l'action. */
+  blockedByStatus?: StatusEffect[]
+  /** Inertie ➡️ minimale requise (Charge/Bousculade : 3). */
+  requiresInertia?: number
+  /** 🟩 que l'action s'accorde sur son propre jet (Charge « avec 🟩 »). */
+  selfAdvantage?: number
   onSuccess?:   RawOutcome
   onFailure?:   RawOutcome
   onCritical?:  RawOutcome
@@ -77,6 +92,12 @@ function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string): Action
     endPlayerRound: raw.cost.endPlayerRound ?? false,
     ...(raw.cost.fatigue != null && { fatigue: raw.cost.fatigue }),
   }
+  // Budget de déplacement : nombre fixe, ou dérivé d'une compétence (Course = 5 + Mobilité).
+  const moveBudget = raw.moveBudget == null ? undefined
+    : typeof raw.moveBudget === 'number' ? raw.moveBudget
+    : (() => { const { base, addSkill } = raw.moveBudget as { base: number; addSkill: SkillName }
+               return (actor: CombatantState) => base + actor.skills[addSkill] })()
+
   const base = {
     id,
     label:       localize(raw.name, locale),
@@ -88,15 +109,29 @@ function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string): Action
     ...(raw.prerequisite && { prerequisite: raw.prerequisite }),
     mentalConditions: raw.mentalConditions ?? [],
     requiresFirstAction: raw.requiresFirstAction ?? false,
-    rollChar:    raw.roll.characteristic,
-    rollSkill:   raw.roll.skill,
+    // Les actions de mouvement n'ont pas de jet ; on met un jet nominal jamais lu.
+    rollChar:    raw.roll?.characteristic ?? 'agility',
+    rollSkill:   raw.roll?.skill ?? 'mobility',
     selfTargeted: raw.selfTargeted ?? false,
+    ...(raw.movement && { movement: true }),
+    ...(moveBudget != null && { moveBudget }),
+    ...(raw.grantsInertia != null && { grantsInertia: raw.grantsInertia }),
+    ...(raw.grantsStatus && { grantsStatus: raw.grantsStatus }),
+    ...(raw.blockedByStatus && { blockedByStatus: raw.blockedByStatus }),
+    ...(raw.requiresInertia != null && { requiresInertia: raw.requiresInertia }),
+    ...(raw.selfAdvantage != null && { selfAdvantage: raw.selfAdvantage }),
   }
 
   if (raw.resolver) {
     const custom = ACTION_RESOLVERS[raw.resolver as ActionResolverId]
     if (!custom) throw new Error(`player_actions.yaml: resolver inconnu "${raw.resolver}" (action ${id})`)
     return { ...base, getDC: custom.getDC, resolve: (o, actor) => custom.resolve(o, actor) }
+  }
+
+  // Action de mouvement : résolue par resolveMovementAction (branche dédiée de
+  // resolvePlans), pas par def.resolve — d'où un resolve inerte, jamais appelé.
+  if (raw.movement) {
+    return { ...base, resolve: () => ({ effects: [], notes: [] }) }
   }
 
   if (!raw.onSuccess || !raw.onFailure) {

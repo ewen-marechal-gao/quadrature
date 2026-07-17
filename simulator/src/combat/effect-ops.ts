@@ -35,6 +35,7 @@ export type EffectOp =
   | { drainStability: number }   // retire N ◇ à la cible
   | { destabilize: true }        // « Déstabilisé » : la cible ignore son prochain regain de ◇
   | { shiftIfBroken: number }    // décale l'état mental UNIQUEMENT si la cible n'a plus de ◇ (+N Colère / −N Peur)
+  | { setInertia: number }       // SELF: pose l'Inertie ➡️ (la Charge la remet à 0 en consommant l'élan)
 
 // ─── Declarative action outcomes ──────────────────────────────────────────────
 
@@ -121,6 +122,9 @@ export function opsToCombatEffects(
       for (let i = 0; i < Math.abs(op.shiftIfBroken); i++) {
         out.push({ targetId, kind: 'shift-mental-broken', direction })
       }
+    } else if ('setInertia' in op) {
+      // SELF: l'élan est une propriété du lanceur (la Charge le consomme → 0).
+      if (selfId) out.push({ targetId: selfId, kind: 'set-inertia', value: op.setInertia })
     } else if ('move' in op) {
       // SELF-targeted: the mover is the actor, the target is what it closes on
       // (« Charge : Déplacement [6] puis inflige 💢💢 » — the creature crosses

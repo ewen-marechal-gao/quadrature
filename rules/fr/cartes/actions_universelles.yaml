@@ -126,7 +126,7 @@ cartes:
         condition: "ne pas être **à terre** ou **immobilisé**"
         effet: "🚶 **Marche** — **Inertie 2 ➡️**, déplacement de **3 cases**"
       - id: course
-        nom: "🏃 Course"
+        nom: "Course"
         initiative: 6
         cout: "🌕💧"
         condition: "ne pas être **à genoux**, **à terre**, **entravé**, ni **essoufflé**"

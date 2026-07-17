@@ -256,3 +256,56 @@ actions:
     onSuccess:  { text: { fr: "La cible perd 1 ◇ et est Déstabilisée" }, effect: [{ shiftIfBroken: -1 }, { drainStability: 1 }, { destabilize: true }] }
     onFailure:  { text: { fr: "La cible perd 1 ◇" },                     effect: [{ shiftIfBroken: -1 }, { drainStability: 1 }] }
     onCritical: { text: { fr: "Critique — la cible perd 1 ◇ de plus" }, effect: [{ drainStability: 1 }] }
+
+  # ── Déplacement (§ positions) ────────────────────────────────────────────────
+  # La carte Déplacement porte deux actions moteur : Marche (base) et Course
+  # (option). Sans jet — franchir du terrain ne se rate pas. `movement: true` les
+  # route vers la branche dédiée de resolvePlans (ni garde ni jet d'attaque) :
+  # elles visent la case de l'ennemi sans l'attaquer, posent l'Inertie ➡️, et la
+  # Course s'essouffle. Le budget de Course est dérivé : 5 + Mobilité.
+
+  walk:
+    vaultCard: deplacement          # l'action de base de la carte (pas d'option)
+    name: { fr: "Déplacement" }
+    description: { fr: "Marche : avance de 3 cases sans jet, pose Inertie ➡️ 2. Bande II." }
+    initiative: 4
+    cost: { actions: 1 }
+    tags: [movement, physical]
+    movement: true
+    moveBudget: 3
+    grantsInertia: 2
+    blockedByStatus: [knockdown, entrapped]
+
+  course:
+    vaultCard: deplacement
+    vaultOption: course
+    name: { fr: "Course" }
+    description: { fr: "Course : avance de 5 + Mobilité cases sans jet, pose Inertie ➡️ 3, vous essouffle. Bande II." }
+    initiative: 6
+    cost: { actions: 1, fatigue: 1 }
+    tags: [movement, physical]
+    movement: true
+    moveBudget: { base: 5, addSkill: mobility }
+    grantsInertia: 3
+    grantsStatus: winded
+    blockedByStatus: [winded, knockdown, kneeling, entrapped]
+
+  # ── Charge (§ attribute_actions) ─────────────────────────────────────────────
+  # Attaque de mêlée qui percute au bout de l'élan. Exige Inertie ➡️ 3 (donc une
+  # Course la manche même, Bande II), la consomme (→ 0). Jet Mobilité + Agilité,
+  # avec 🟩. 1💔 en succès / 2💢 en échec = la Frappe brutale du mobile.
+  charge:
+    vaultCard: charge
+    name: { fr: "Charge" }
+    description: { fr: "Charge : percute au bout de l'élan (exige Inertie ➡️ 3). Mobilité + Agilité 🟩. Succès : 1💔, Échec : 2💢. Bande III. Coûte 1💧." }
+    initiative: 7
+    cost: { actions: 1, fatigue: 1 }
+    tags: [offensive, movement, melee, physical, physicalDamage]
+    reach: 1
+    requiresInertia: 3
+    selfAdvantage: 1
+    prerequisite: { skill: mobility, minValue: 1 }
+    roll: { characteristic: agility, skill: mobility }
+    onSuccess: { text: { fr: "Percute — 1💔" }, effect: [{ move: 6 }, { heavyWound: 1 }, { setInertia: 0 }] }
+    onFailure: { text: { fr: "Manque l'élan — 2💢" }, effect: [{ move: 6 }, { wound: 2 }, { setInertia: 0 }] }
+    onFlaw: { text: { fr: "Maladresse — +1💧" }, effect: [{ selfFatigue: 1 }] }

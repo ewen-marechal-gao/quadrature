@@ -39,6 +39,7 @@ export function initCombatant(char: Character): CombatantState {
     stability:         0,   // set below via stabilityPool (needs the built state)
     bleed:             0,
     status:            [],
+    inertia:           0,
     protection:        char.protection ?? 0,
     tempProtection:    0,
     actions:           3,
@@ -92,6 +93,10 @@ export function resetRoundTokens(state: CombatantState): CombatantState {
     lastActionPlayed:  false,
     status:            newStatus,
     reactions:         state.maxReactions + focusedBonus,
+    // L'Inertie ➡️ retombe à 0 en début de manche : l'élan ne se banque pas d'une
+    // manche sur l'autre — la Course de la manche précédente ne charge pas la
+    // Charge de celle-ci.
+    inertia:           0,
     // NB : ◇ Stabilité n'est PAS rechargé chaque manche — c'est un pool de
     // combat (§ Stabilité) fixé à l'initialisation, qui se dépense et ne se
     // régénère pas (aucune règle de récupération pour l'instant).
@@ -153,6 +158,10 @@ export function resetRoundTokensWithLog(
     lastActionPlayed:  false,
     status:            newStatus,
     reactions:         state.maxReactions + focusedBonus,
+    // L'Inertie ➡️ retombe à 0 en début de manche : l'élan ne se banque pas d'une
+    // manche sur l'autre — la Course de la manche précédente ne charge pas la
+    // Charge de celle-ci.
+    inertia:           0,
     // NB : ◇ Stabilité n'est PAS rechargé chaque manche — c'est un pool de
     // combat (§ Stabilité) fixé à l'initialisation, qui se dépense et ne se
     // régénère pas (aucune règle de récupération pour l'instant).
@@ -591,6 +600,7 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'drain-stability':     return { ...s, stability: Math.max(0, s.stability - effect.amount) }
     case 'destabilize':         return s   // le ◇ PJ ne régénère pas → sans effet
     case 'shift-mental-broken': return s.stability > 0 ? s : shiftMentalState(s, effect.direction)
+    case 'set-inertia':         return { ...s, inertia: effect.value }
     case 'move':                return applyMove(s, effect.path)
     // Un intent non détendu (rencontre sans plateau) : rien à appliquer.
     case 'move-toward':         return s

@@ -21,7 +21,7 @@
 import type { CharacteristicName, SkillName } from '../character/types'
 import type { RollParams, RollResult } from '../types'
 import type {
-  ActionId, GuardId, ActionCost, CardTag, MentalState,
+  ActionId, GuardId, ActionCost, CardTag, MentalState, StatusEffect,
   CombatantState, CombatEffect, ResolvedAction,
 } from './types'
 import type { AdversaryCombatant } from '../adversary/combatant'
@@ -73,6 +73,39 @@ export interface ActionDef {
    * ABSENT = ungated (social actions: the rules give no shouting distance).
    */
   reach?:        number
+  /**
+   * Statuts qui INTERDISENT l'action (§ conditions des cartes). La Course est
+   * bloquée par Essoufflé, À terre, À genoux, Entravé, Immobilisé — on ne sprinte
+   * ni essoufflé ni les jambes prises.
+   */
+  blockedByStatus?: StatusEffect[]
+  /**
+   * Inertie ➡️ minimale exigée (Charge/Bousculade : 3). L'action ne peut être
+   * jouée que si le combattant a assez d'élan — c'est ce qui force la Course
+   * juste avant, dans la bande précédente.
+   */
+  requiresInertia?: number
+  /**
+   * Action de DÉPLACEMENT : pas de garde, pas de jet d'attaque. Elle vise une
+   * case-objectif (l'ennemi) mais ne l'attaque pas. Résolue par un chemin
+   * branché sur le plateau (cf. la branche mouvement de resolvePlans).
+   */
+  movement?:     boolean
+  /**
+   * 🟩 que l'action s'accorde à elle-même sur son jet (la Charge est « avec 🟩 »).
+   * Distinct des 🟩 venus de la cible ou de la garde.
+   */
+  selfAdvantage?: number
+  /**
+   * Inertie ➡️ que l'action POSE en se résolvant (Posture 1, Marche 2, Course 3).
+   * Lu par le résolveur de mouvement ET par le planificateur, pour que la Charge
+   * de la bande suivante voie l'élan que la Course vient de donner.
+   */
+  grantsInertia?: number
+  /** Statut que l'action s'inflige (Course → Essoufflé). Miroir de blockedByStatus. */
+  grantsStatus?: StatusEffect
+  /** Budget de déplacement, en cases : fixe, ou dérivé de la Mobilité (Course = 5 + Mobilité). */
+  moveBudget?:   number | ((actor: CombatantState) => number)
   prerequisite?: { skill: SkillName; minValue: number }
   /**
    * Mental states in which this action may be used (consolidation actions gate
@@ -352,7 +385,7 @@ export function resolveAction(
   const guardAdvantage = ctx.guardId != null
     ? (GUARD_DEFS[ctx.guardId].attackerAdvantage ?? 0)
     : 0
-  const totalAdvantages = targetAdvantages + guardAdvantage
+  const totalAdvantages = targetAdvantages + guardAdvantage + (action.selfAdvantage ?? 0)
   // Mental track: an attack is an OFFENSIVE roll (self-targeted actions are neither).
   const mentalMods = action.selfTargeted
     ? { rerolls: 0, disadvantages: 0 }
@@ -392,6 +425,34 @@ export function resolveAction(
   }
 }
 
+/**
+ * Résout une action de DÉPLACEMENT (Marche / Course) — sans jet ni garde.
+ *
+ * Émet une intention `move-toward` vers la case-objectif (le résolveur la
+ * détend en chemin sur le plateau), pose l'Inertie ➡️, et s'inflige son statut
+ * s'il y a lieu (Course → Essoufflé). Le budget peut être fixe (Marche 3) ou
+ * dérivé de la Mobilité (Course 5 + Mobilité).
+ */
+export function resolveMovementAction(
+  actionId: ActionId,
+  actor:    CombatantState,
+  goalId:   string,
+): { effects: CombatEffect[]; notes: string[] } {
+  const def    = ACTION_DEFS[actionId]
+  const budget  = typeof def.moveBudget === 'function' ? def.moveBudget(actor) : (def.moveBudget ?? 0)
+  const effects: CombatEffect[] = [{ targetId: actor.id, kind: 'move-toward', goalId, budget }]
+  const notes:   string[]       = []
+  if (def.grantsInertia != null) {
+    effects.push({ targetId: actor.id, kind: 'set-inertia', value: def.grantsInertia })
+  }
+  if (def.grantsStatus) {
+    effects.push({ targetId: actor.id, kind: 'add-status', status: def.grantsStatus })
+  }
+  notes.push(`▶️ ${def.label} — jusqu'à ${budget} cases, Inertie ➡️ ${def.grantsInertia ?? 0}` +
+    (def.grantsStatus ? `, ${def.grantsStatus === 'winded' ? 'essoufflé 😮‍💨' : def.grantsStatus}` : ''))
+  return { effects, notes }
+}
+
 // ─── Availability checks ──────────────────────────────────────────────────────
 
 /**
@@ -404,6 +465,10 @@ export function canUseAction(state: CombatantState, actionId: ActionId): boolean
   if (def.prerequisite && state.skills[def.prerequisite.skill] < def.prerequisite.minValue) return false
   if (def.mentalConditions.length > 0 && !def.mentalConditions.includes(state.mentalState)) return false
   if (def.requiresFirstAction && state.firstActionPlayed) return false
+  // Un statut bloquant interdit l'action (Course ← Essoufflé, À terre, Entravé…).
+  if (def.blockedByStatus?.some(s => state.status.includes(s))) return false
+  // Élan insuffisant (Charge/Bousculade exigent Inertie ➡️ 3) : il faut avoir couru avant.
+  if (def.requiresInertia != null && state.inertia < def.requiresInertia) return false
   return true
 }
 

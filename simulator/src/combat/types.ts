@@ -108,6 +108,10 @@ export type ActionId =
   | 'unarmed-attack' // Attaque à mains nues — initiative 3, 1 PA
   | 'brutal-strike'  // Frappe brutale   — initiative 6, 2 PA + 1💧
   | 'sharp-strike'   // Frappe vive      — initiative 3, 1 PA + 1💧
+  // Déplacement (§ positions) — la carte Déplacement porte Marche + Course
+  | 'walk'           // Marche 🚶        — initiative 4, 1 PA, 3 cases, Inertie 2
+  | 'course'         // Course 🏃        — initiative 6, 1 PA + 1💧, 5 + Mobilité cases, Inertie 3, essoufflé
+  | 'charge'         // Charge           — initiative 7, 1 PA + 1💧, exige Inertie 3, Mobilité + Agilité 🟩
   | 'respiration'    // Respiration      — initiative 1, 1 PA (🟢 — must be first action)
   | 'stabilize'      // Stabiliser       — initiative 1, 1 PA (🟢 — must be first action)
   // Consolidation mentale (🟢 première action ; DD = 8 + degré d'état mental)
@@ -161,6 +165,14 @@ export interface CombatantState {
   bleed: number
   /** Active status effects */
   status: StatusEffect[]
+  /**
+   * Inertie ➡️ — l'élan accumulé par le dernier déplacement (§ universal_actions.md).
+   * Posé par les actions de mouvement (Posture 1, Marche 2, Course 3), remis à 0
+   * au début de chaque manche. La Bousculade et la Charge l'exigent (≥ 3) et la
+   * consomment (→ 0) : seule la Course la porte assez haut, d'où l'enchaînement
+   * Course (Bande II) → Charge (Bande III) dans une même manche.
+   */
+  inertia: number
   /**
    * Square on the board. **Optional**: a combat without a `board` has no spatial
    * model at all (every actor is assumed in reach of every other), which is how
@@ -224,6 +236,7 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
   | { kind: 'drain-stability';     amount: number }  // retire N ◇ à la cible (plancher 0)
   | { kind: 'destabilize' }                          // « Déstabilisé » : ignore le prochain regain de ◇ (adversaire)
   | { kind: 'shift-mental-broken'; direction: 'toward-terror' | 'toward-rage' }  // ne décale QUE si la cible n'a plus de ◇
+  | { kind: 'set-inertia'; value: number }   // Inertie ➡️ : posée par un déplacement, exigée/consommée par Charge/Bousculade
   // ── Déplacement ─────────────────────────────────────────────────────────────
   /**
    * Move the target along `path` (start excluded; it ends on the last square).

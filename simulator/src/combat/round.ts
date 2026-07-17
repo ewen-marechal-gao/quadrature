@@ -43,7 +43,7 @@ import type {
   ActionId, GuardId, ResolvedAction, MaintenanceEntry,
 } from './types'
 import {
-  resolveAction, type ActionContext,
+  resolveAction, resolveMovementAction, type ActionContext,
   ACTION_DEFS, GUARD_DEFS,
   availableGuards,
 } from './actions'
@@ -279,6 +279,23 @@ function resolvePlans(
         const resolved = resolveAction(actorSnap, plan.action, ctx)
         phaseEffects.push(...resolved.effects)
         actionLogs.push(toActionLogEntry(resolved, preActions, preReactions, plan.battleCry, plan.reasoning))
+        continue
+      }
+
+      // ── Movement actions (Marche / Course) — no roll, no guard ────────────
+      // They aim at the enemy's square (the goal to close on) without attacking
+      // it; the move-toward intent is expanded against the board in step c.
+      if (def.movement) {
+        if (!plan.targetId) continue
+        const { effects, notes } = resolveMovementAction(plan.action, actorSnap, plan.targetId)
+        phaseEffects.push(...effects)
+        actionLogs.push({
+          actorId: plan.actorId, action: plan.action, targetId: plan.targetId,
+          threshold: 0, hit: true, effects, notes,
+          actorActions: preActions, actorReactions: preReactions,
+          ...(plan.battleCry && { battleCry: plan.battleCry }),
+          ...(plan.reasoning && { reasoning: plan.reasoning }),
+        })
         continue
       }
 

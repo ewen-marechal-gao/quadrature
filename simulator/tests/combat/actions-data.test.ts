@@ -19,6 +19,7 @@ const ALL_IDS: ActionId[] = [
   'armed-attack', 'unarmed-attack', 'brutal-strike',
   'sharp-strike', 'respiration', 'stabilize',
   'preservation', 'focalisation', 'resolution', 'meditation',
+  'walk', 'course', 'charge',
 ]
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
