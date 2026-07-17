@@ -56,10 +56,10 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 ---
 
-### 6️⃣ Charge
+### 7️⃣ Charge
 
 **Prérequis :** Mobilité 1  
-**Coût :** 🌕💧  
+**Coût :** 🌗💧  
 🔒 **Condition :** disposer d'un niveau d'**Inertie ➡️ 3** (ou plus)  
 🎲 **Jet :** Mobilité 🟨🟨 + Agilité 🟦, avec 🟩  
 🆚 **Contre :** Garde

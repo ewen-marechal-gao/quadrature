@@ -62,13 +62,18 @@ cartes:
     echec: "la cible subit 1 **blessure 💢**"
     source: core/actions/attribute_actions.md
 
+  # Bande III : elle exige l'Inertie ➡️ 3, que seule la Course donne — et la
+  # Course est en Bande II. À une carte par bande, une Charge en Bande II serait
+  # donc injouable : on ne peut pas courir ET charger dans la même révélation.
+  # En Bande III elle s'enchaîne sur la Course de la Bande II — on prend son
+  # élan, puis on percute. (Même raison pour la Bousculade.)
   - id: charge
     nom: Charge
     type: action
     famille: melee
     categorie: offensive
-    initiative: 6
-    cout: "🌕💧"
+    initiative: 7
+    cout: "🌗💧"
     prerequis: "Mobilité 1"
     condition: "disposer d'un niveau d'**Inertie ➡️ 3** (ou plus)"
     jet: "Mobilité 🟨🟨 + Agilité 🟦, avec 🟩"

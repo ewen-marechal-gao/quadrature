@@ -208,10 +208,20 @@ export function ActionCard({ card }: { card: Card }) {
         {card.cout && <Cost cout={card.cout} />}
       </header>
 
+      {/* La bande grise est TOUJOURS là : sans elle, la pastille déborde sur le
+          corps et décale la première ligne. Le repli n'est pas un pis-aller —
+          les seules cartes sans prérequis ni bandeau sont précisément les
+          universelles (vérifié : 15 sur 15), d'où le libellé. Il suit le type :
+          les gardes sont des réactions, pas des actions. */}
       {card.prerequis && (
         <div className="ac-prereq">Prérequis : {card.prerequis}</div>
       )}
       {card.bandeau && <div className="ac-prereq">{card.bandeau}</div>}
+      {!card.prerequis && !card.bandeau && (
+        <div className="ac-prereq">
+          {card.type === "reaction" ? "Réaction universelle" : "Action universelle"}
+        </div>
+      )}
 
       <div className="ac-body">
         {options ? (

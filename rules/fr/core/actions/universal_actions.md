@@ -146,13 +146,17 @@ Les actions de déplacement consomment des **points d'action** et génèrent par
 
 #### 4️⃣ Déplacement 🚶
 
-**Coût :** 🌕  
-🔒 **Condition :** ne pas être **à terre** ou **immobilisé**
+**Coût :** 🌕
 
+*Choisissez l'un :*
+
+🔒 **Condition :** ne pas être **à terre** ou **immobilisé**  
 ▶️ 🚶 **Marche** — **Inertie 2 ➡️**, déplacement de **3 cases**.
 
-⚒️ **🏃 Course — 6️⃣, coût 🌕💧 :** **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases, puis le personnage est **essoufflé 😮‍💨**.  
-🔒 *Exige de ne pas être* **à genoux**, **à terre**, **entravé**, *ni* **essoufflé**.
+---
+
+🔒 **Condition :** ne pas être **à genoux**, **à terre**, **entravé**, ni **essoufflé**  
+▶️ 🏃 **Course**, dépensez 💧 — **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases. Vous gagnez l'état **essoufflé 😮‍💨**. Cette action sera résolue avec une **initiative de 6️⃣**.
 
 **Aucun jet** — franchir du terrain ne se rate pas, et le combat n'a rien à gagner à ce qu'on lance les dés pour marcher. Forcer l'allure ne se paie pas en dés mais en souffle : courir vous **essouffle**, et un essoufflé ne court plus. On ne sprinte donc pas deux manches d'affilée sans reprendre haleine (**Respiration 🌓**).
 
@@ -160,9 +164,9 @@ Les actions de déplacement consomment des **points d'action** et génèrent par
 
 ---
 
-#### 5️⃣ Bousculade 🏃
+#### 7️⃣ Bousculade 🏃
 
-**Coût :** 🌕  
+**Coût :** 🌗  
 🔒 **Condition :** disposer d'un niveau d'**Inertie ➡️ 3** (ou plus)  
 🎲 **Jet :** Mobilité 🟨🟨 + Agilité 🟦, avec 🟩  
 🆚 **Contre :** Garde (esquive, dérobade)

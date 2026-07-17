@@ -291,12 +291,8 @@
   flex-shrink: 0;
 }
 
-/* Sans ligne de prérequis, le débordement de la pastille empiète sur le corps :
-   on dégage la première ligne. */
-.action-card:not(:has(.ac-prereq)) .ac-body > :first-child {
-  padding-left: 3.7em;
-  min-height: 1.6em;
-}
+/* (La bande de prérequis est désormais toujours rendue — « Action universelle »
+   à défaut — donc plus besoin de dégager la première ligne du corps.) */
 
 .ac-body {
   flex: 1;

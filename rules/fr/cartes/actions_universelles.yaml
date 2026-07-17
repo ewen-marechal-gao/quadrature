@@ -133,13 +133,17 @@ cartes:
         effet: "🏃 **Course**, dépensez 💧 — **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases. Vous gagnez l'état **essoufflé 😮‍💨**. Cette action sera résolue avec une **initiative de 6️⃣**"
     source: core/actions/universal_actions.md
 
+  # Bande III : elle exige l'Inertie ➡️ 3, que seule la Course donne — et la
+  # Course est en Bande II. À une carte par bande, une Bousculade en Bande II
+  # serait donc injouable : on ne peut pas courir ET bousculer dans la même
+  # révélation. En Bande III elle s'enchaîne sur la Course de la Bande II.
   - id: bousculade
     nom: Bousculade
     type: action
     famille: mouvement
     categorie: offensive
-    initiative: 5
-    cout: "🌕"
+    initiative: 7
+    cout: "🌗"
     condition: "disposer d'un niveau d'**Inertie ➡️ 3** (ou plus)"
     jet: "Mobilité 🟨🟨 + Agilité 🟦, avec 🟩"
     contre: "Garde (esquive, dérobade)"
