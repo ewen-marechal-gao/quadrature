@@ -60,6 +60,8 @@ interface RawPlayerAction {
   grantsInertia?: number
   /** Statut auto-infligé (Course → winded). */
   grantsStatus?: StatusEffect
+  /** Statut levé à coup sûr (Respiration → winded), pour le planificateur. */
+  clearsStatus?: StatusEffect
   /** Statuts qui interdisent l'action. */
   blockedByStatus?: StatusEffect[]
   /** Inertie ➡️ minimale requise (Charge/Bousculade : 3). */
@@ -117,6 +119,7 @@ function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string): Action
     ...(moveBudget != null && { moveBudget }),
     ...(raw.grantsInertia != null && { grantsInertia: raw.grantsInertia }),
     ...(raw.grantsStatus && { grantsStatus: raw.grantsStatus }),
+    ...(raw.clearsStatus && { clearsStatus: raw.clearsStatus }),
     ...(raw.blockedByStatus && { blockedByStatus: raw.blockedByStatus }),
     ...(raw.requiresInertia != null && { requiresInertia: raw.requiresInertia }),
     ...(raw.selfAdvantage != null && { selfAdvantage: raw.selfAdvantage }),

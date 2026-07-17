@@ -104,6 +104,12 @@ export interface ActionDef {
   grantsInertia?: number
   /** Statut que l'action s'inflige (Course → Essoufflé). Miroir de blockedByStatus. */
   grantsStatus?: StatusEffect
+  /**
+   * Statut que l'action lève à coup sûr (Respiration → winded). Déclaratif, pour
+   * que le PLANIFICATEUR sache qu'une Respiration en Bande I rend la Course
+   * jouable en Bande II — le résolveur le fait déjà dans son code.
+   */
+  clearsStatus?: StatusEffect
   /** Budget de déplacement, en cases : fixe, ou dérivé de la Mobilité (Course = 5 + Mobilité). */
   moveBudget?:   number | ((actor: CombatantState) => number)
   prerequisite?: { skill: SkillName; minValue: number }

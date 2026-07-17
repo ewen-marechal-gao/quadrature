@@ -138,6 +138,7 @@ actions:
     roll: { characteristic: vigor, skill: endurance }
     selfTargeted: true
     resolver: respiration
+    clearsStatus: winded    # le planificateur sait qu'une Respiration lève l'essoufflement
 
   stabilize:
     vaultCard: stabiliser

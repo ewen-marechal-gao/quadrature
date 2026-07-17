@@ -31,7 +31,10 @@ factions:
       - sheet: characterSheets/Duelist_precise.yaml
         persona: opportunist
         pos: { x: 2, y: 2 }
-    allowedActions: ["sharp-strike", "respiration", "stabilize", "preservation"]
+    # Même trousse que faucheur-vs-precis (la ligne de base 0 %), PLUS le
+    # déplacement : Course (Bande II) pour approcher, Charge (Bande III) pour
+    # percuter — l'attaque de Précision qui lui manquait en Bande II/III.
+    allowedActions: ["sharp-strike", "armed-attack", "respiration", "stabilize", "preservation", "provocation", "course", "charge"]
 
   - name: Faune d'Aeonir
     characters:

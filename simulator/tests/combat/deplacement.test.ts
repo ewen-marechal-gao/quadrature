@@ -112,3 +112,42 @@ describe('données', () => {
     expect(ACTION_DEFS['charge'].reach).toBe(1)
   })
 })
+
+// ─── Agent : s'approcher et charger (§ heuristique focalisée #17f) ────────────
+
+import { planRoundActions, type AgentConfig } from '../../src/combat/agent'
+
+const cfg = (extra: Partial<AgentConfig> = {}): AgentConfig => ({
+  persona: 'opportunist', targetId: 'foe',
+  allowedActions: ['sharp-strike', 'course', 'charge', 'respiration'],
+  ...extra,
+})
+
+/** Un adversaire minimal réduit à sa position (l'agent n'en lit que pos + défaite). */
+const foeAt = (x: number, y: number) => ({ ...makeCombatant('foe'), pos: at(x, y) })
+
+describe('planRoundActions — approche', () => {
+  it('hors de portée, court (Bande II) puis charge (Bande III)', () => {
+    const self = { ...makeCombatant('PC'), pos: at(0, 5) }
+    const plans = planRoundActions(self, foeAt(9, 5), cfg())
+    expect(plans.map(p => p.action)).toEqual(['course', 'charge'])
+  })
+
+  it('au contact, ne court pas — il frappe (comportement d\'avant les positions)', () => {
+    const self = { ...makeCombatant('PC'), pos: at(8, 5) }
+    const plans = planRoundActions(self, foeAt(9, 5), cfg())
+    expect(plans.some(p => p.action === 'course')).toBe(false)
+    expect(plans.some(p => p.action === 'sharp-strike')).toBe(true)
+  })
+
+  it('trop loin pour percuter, il court sans gâcher la Charge', () => {
+    const self = { ...makeCombatant('PC'), pos: at(0, 5) }
+    const plans = planRoundActions(self, foeAt(19, 5), cfg())
+    expect(plans.map(p => p.action)).toEqual(['course'])   // course seule, pas de charge
+  })
+
+  it('sans position (pas de plateau), retombe sur le comportement d\'avant', () => {
+    const plans = planRoundActions(makeCombatant('PC'), makeCombatant('foe'), cfg())
+    expect(plans.some(p => p.action === 'course')).toBe(false)
+  })
+})

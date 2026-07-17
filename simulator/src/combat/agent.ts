@@ -29,6 +29,7 @@ import type { PlannedAction, GuardProvider } from './round'
 import { ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction, availableGuards } from './actions'
 import { spendActionCost, effChar, isDefeated, mentalDegree } from './combatant'
 import { bandOf, type Band } from './bands'
+import { distance } from './position'
 import { STATUS_DEFS } from './status'
 import { type Actor, isAdversaryActor, actorDefeated } from '../adversary/actor'
 import { isPartDestroyed } from '../adversary/combatant'
@@ -207,6 +208,11 @@ export function planRoundActions(
    * Commit an action to the round, unless its band is already taken: only one
    * card per band (§ combat.md). Every band is thus a choice — soigner OU
    * frapper. Returns false when the band is spoken for.
+   *
+   * The local `state` is advanced not just by PA spend but by the action's
+   * SELF-EFFECTS that later bands gate on — the élan a Course grants, the winded
+   * it inflicts, the winded a Respiration clears. Without this the planner could
+   * not see that a Course in Bande II unlocks the Charge in Bande III.
    */
   const commit = (id: ActionId, targetId?: string): boolean => {
     const band = bandOf(ACTION_DEFS[id].initiative)
@@ -215,8 +221,49 @@ export function planRoundActions(
     plans.push(targetId === undefined
       ? { actorId: self.id, action: id }
       : { actorId: self.id, action: id, targetId })
-    state = spendActionCost(state, ACTION_DEFS[id].cost)
+    state = simulateSelfEffects(spendActionCost(state, ACTION_DEFS[id].cost), id)
     return true
+  }
+
+  const canPlay = (id: ActionId): boolean =>
+    isActionAllowed(id, config) && canUseAction(state, id) && canAffordAction(state, id)
+
+  // ── Approche (§ positions) : hors de portée de mêlée, on court plutôt que de
+  //    frapper dans le vide. Se déclenche sur un plateau (positions connues) si
+  //    le combattant a de quoi se rapprocher — sinon on retombe sur le
+  //    comportement d'avant les positions.
+  //
+  //    Heuristique FOCALISÉE, pas l'agent tactique général (todo #19) : elle ne
+  //    connaît qu'un motif — s'approcher et charger —, parce que c'est tout
+  //    l'intérêt de donner la Charge à un duelliste sans Puissance. Un kiter
+  //    voudrait l'instinct inverse ; c'est différé. ──────────────────────────
+  const MELEE_REACH = 1
+  const gap = state.pos && opponent.pos && !actorDefeated(opponent)
+    ? distance(state.pos, opponent.pos)
+    : null
+
+  if (gap !== null && gap > MELEE_REACH &&
+      (canPlay('course') || canPlay('walk') || state.status.includes('winded'))) {
+    // Bande I : d'abord se soigner. Une Respiration ici lève l'essoufflement de
+    // la Course de la manche précédente — c'est ce qui rouvre la Course.
+    const selfA = selectSelfAction(state, config)
+    if (selfA !== null && bandOf(ACTION_DEFS[selfA].initiative) === 'I') commit(selfA)
+
+    // Bande II : on court (Course) si possible, sinon Marche.
+    const mover: ActionId | null = canPlay('course') ? 'course' : canPlay('walk') ? 'walk' : null
+    if (mover !== null) {
+      const budget = moveBudgetOf(mover, state)
+      commit(mover, config.targetId)
+
+      // Bande III : charger seulement si le bond porterait — sinon les 💧 sont
+      // gâchées. `state` porte à présent l'élan que la Course vient de donner.
+      if (canPlay('charge')) {
+        const postGap    = Math.max(MELEE_REACH, gap - budget)
+        const chargeMove = moveBudgetOf('charge', state) || 6
+        if (postGap <= MELEE_REACH + chargeMove) commit('charge', config.targetId)
+      }
+      return plans
+    }
   }
 
   // ── Phase A: Self-care (Bande I) ────────────────────────────────────────
@@ -235,6 +282,29 @@ export function planRoundActions(
   }
 
   return plans
+}
+
+/**
+ * Apply an action's SELF-EFFECTS to a planning-time state — only the fields a
+ * later band gates on. Not a resolution: no rolls, no target, no board. It just
+ * keeps `canUseAction` honest across the round (élan for the Charge, winded for
+ * the Course, and Respiration clearing it).
+ */
+function simulateSelfEffects(state: CombatantState, id: ActionId): CombatantState {
+  const def = ACTION_DEFS[id]
+  let s = state
+  if (def.grantsInertia != null) s = { ...s, inertia: def.grantsInertia }
+  if (def.grantsStatus && !s.status.includes(def.grantsStatus)) {
+    s = { ...s, status: [...s.status, def.grantsStatus] }
+  }
+  if (def.clearsStatus) s = { ...s, status: s.status.filter(x => x !== def.clearsStatus) }
+  return s
+}
+
+/** A movement action's budget in cases, resolved against the actor. */
+function moveBudgetOf(id: ActionId, actor: CombatantState): number {
+  const b = ACTION_DEFS[id].moveBudget
+  return typeof b === 'function' ? b(actor) : (b ?? 0)
 }
 
 /**
@@ -559,14 +629,18 @@ function selectOffensiveAction(
       break
 
     case 'opportunist':
+      // Frappe vive d'abord — c'est l'attaque de Précision, fiable et bon marché ;
+      // l'Attaque armée vient EN PLUS, pour couvrir une seconde bande (le duelliste
+      // Précis à Puissance 0 la rate souvent, mais le plancher de dégâts d'échec
+      // la rend rentable — c'est ce qui remplit sa bande vide).
       if (shouldGamble(opponent)) {
         candidates = lowOnFatigue
-          ? ['armed-attack', 'sharp-strike', 'unarmed-attack']
-          : ['brutal-strike', 'armed-attack', 'sharp-strike', 'unarmed-attack']
+          ? ['sharp-strike', 'armed-attack', 'unarmed-attack']
+          : ['brutal-strike', 'sharp-strike', 'armed-attack', 'unarmed-attack']
       } else {
         candidates = lowOnFatigue
           ? ['armed-attack', 'unarmed-attack']
-          : ['armed-attack', 'sharp-strike', 'unarmed-attack']
+          : ['sharp-strike', 'armed-attack', 'unarmed-attack']
       }
       break
 
