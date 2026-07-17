@@ -186,7 +186,12 @@ async function simulate(): Promise<void> {
   const timestamp  = new Date().toISOString()
   const batchId    = makeBatchId(timestamp, runCount, encounter.name, factionNames[0], factionNames[1])
   const batchReport = buildBatchReport(batchId, timestamp, encounter.name, logs, factionNames[0], factionNames[1])
-  const reportPath  = path.join(REPORTS_DIR, `${batchId}.json`)
+  // Suffixe `.batch.json` VOLONTAIRE (pas un simple `.json`) : il rend la nature
+  // du rapport STRUCTURELLE plutôt que devinée d'après un `xN` dans le nom. Un
+  // batch (jusqu'à ~90 Mo) n'a vocation qu'aux statistiques — jamais à être
+  // chargé ni rejoué ; c'est le suffixe que l'indexeur web exclut (cf.
+  // web/scripts/generate-combat-index.mjs). Seuls les rapports 1-run sont visualisés.
+  const reportPath  = path.join(REPORTS_DIR, `${batchId}.batch.json`)
   await writeFile(reportPath, JSON.stringify(batchReport, null, 2), 'utf-8')
 
   const stats     = computeStats(logs)
