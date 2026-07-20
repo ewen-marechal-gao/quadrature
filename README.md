@@ -31,9 +31,12 @@ de worldbuilding.
   score = `1 meilleur 🟦 + 2 meilleurs 🟨 + 1 aléa`, soit **0 à 20**.
 - **Critique ✴️** si un 🟨 conservé montre 5 ; **défaut ⚠️** s'il montre 0.
 - **10 caractéristiques** (5 Corps / 5 Esprit) × **2 compétences** chacune.
-- **Combat** tactique : points d'action, **réactions ⚡**, système de **gardes**
-  (seuil de défense persistant et dégradable), piste mentale à 7 états, double
-  échelle de blessures (légères 💢 / graves 💔).
+- **Combat** tactique : la manche se joue en **trois bandes d'initiative**
+  (Ouverture / Manœuvre / Fermeture), avec points d'action, **réactions ⚡** et un
+  système de **gardes** (seuil de défense persistant et dégradable). **Déplacement
+  sur grille** (Marche / Course / Charge, et l'élan ➡️), piste mentale à 7 états,
+  double échelle de blessures **physiques** (💢 légères / 💔 graves) **et mentales**
+  (traumas — perte de caractéristique aux extrêmes de la piste).
 
 Détail complet : ouvrir le vault `rules/` (entrée [`fr/_index.md`](rules/fr/_index.md))
 ou lire le site (`web/`).
@@ -94,9 +97,15 @@ npm run build          # export statique → web/out/
 npm run generate-pdf   # génère le PDF du livre (Puppeteer + pdf-lib)
 ```
 Rubriques notables : `/fr` (accueil), `/fr/volumen/<livre>` (lecture paginée),
-`/fr/cartes` (cartes d'action imprimables), `/fr/personnage` (feuille de personnage
-interactive : édition, sauvegarde locale multi-personnages, export/import JSON,
-impression PDF).
+`/fr/cartes` (cartes d'action imprimables), `/fr/adversaires` (fiches de bestiaire),
+`/fr/evolution` (cladogramme), `/fr/personnage` (feuille de personnage interactive :
+édition, sauvegarde locale multi-personnages, export/import JSON, impression PDF).
+
+`/fr/combat` est un **outil local** de mise au point : il rejoue un rapport du
+simulateur **manche par manche** (plateau et trajectoires, log par bandes façon
+chat, dés et effets, vitaux physique/mental). Les rapports vivant dans
+`simulator/combatReports/` (non versionné), la rubrique reste vide sur un build
+déployé et n'apparaît pas dans la navigation publique.
 
 ### Simulateur (`simulator/`)
 ```bash
@@ -104,8 +113,13 @@ cd simulator
 npm install
 npx jest --no-coverage                                   # suite de tests
 npx ts-node src/simulate.ts encounters/duel-arme.yaml 400 --quiet
+npx ts-node src/simulate.ts encounters/approche-faucheur.yaml         # 1 run AVEC plateau (positions)
 npx ts-node src/optimize.ts                              # équilibrage (grid search)
 ```
+Un run unique écrit un **rapport rejouable** dans `combatReports/` (rejouable dans
+`/fr/combat`) ; un run multiple (`… 400`) écrit un rapport agrégé `*.batch.json`
+réservé aux **statistiques**. Une rencontre peut déclarer un `board` et des `pos`
+de départ : le combat se joue alors sur une **grille** (déplacements, portées).
 Les agents pilotés par LLM utilisent l'API **Mistral** — renseigner `MISTRAL_API_KEY`
 dans un `.env` (cf. `.env.example`). Les agents scriptés n'en ont pas besoin.
 

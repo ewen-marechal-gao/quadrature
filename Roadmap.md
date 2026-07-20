@@ -49,6 +49,7 @@ Conlang générative d'Aeonir ([`rules/fr/univers/language.md`](rules/fr/univers
 - [ ] Armes d'hast — Tier 3 ; Échomancie (étoffer) ; puis Impact et Choromancie (sortir du carnet).
 
 ## Site web 🟠 / 🟡
+- [x] ✅ **Visualiseur de combat** `/fr/combat` (**outil local**) : rejeu manche par manche d'un rapport du simulateur — plateau et trajectoires, log par bandes (façon chat, PJ/adversaires opposés), dés et effets détaillés au survol, vitaux physique / mental.
 - [ ] 🟠 Aligner l'inventaire de la feuille de personnage sur `equipement.md` (Dos/Taille) ; embarquer la police.
 - [ ] 🟡 **Créateur de personnage** pas-à-pas (s'appuie sur le modèle d'état `web/src/lib/character/`).
 - [ ] 🟡 **Simulateur de rencontre** intégré ; mode « apprendre à jouer » (la rubrique Bestiaire `/adversaires` existe — cf. § *Bestiaire & adversaires*).
@@ -56,8 +57,12 @@ Conlang générative d'Aeonir ([`rules/fr/univers/language.md`](rules/fr/univers
 
 ## Simulateur 🟡
 - [x] ✅ Fatigue initiale des personnages = 1 ; **dérivation des caractéristiques** (`value = f(compétences)`) — fiches robustes, incohérence impossible.
+- [x] ✅ **Bandes d'initiative** : la manche se joue en 3 bandes révélées (Ouverture / Manœuvre / Fermeture), **une carte par bande** ; coûts des cartes en **phases de lune** (remplacent les 3 PA colorés).
+- [x] ✅ **Positions et déplacement** : grille (métrique de Chebyshev, tapis 34×22), actions **Marche / Course / Charge** et l'**Inertie ➡️**, **portées** ; l'effet de déplacement porte le chemin complet ; agent qui sait s'approcher puis charger.
+- [x] ✅ **Traumas** (blessures mentales) aux extrêmes de la piste mentale ; **snapshots auto-suffisants** (seuils, capacités, maxes ◇/🫁, armure, parties) pour le visualiseur web.
 - [ ] README documentant les écarts règles ↔ simulation.
-- [ ] Rapprocher des règles : défaut ⚠️ sur le dé 🟪 ; **positionnement / déplacements** (la vitesse des créatures est chargée mais pas encore exploitée en combat).
+- [ ] Rapprocher des règles : défaut ⚠️ sur le dé 🟪.
+- [ ] 🟠 **Armes des PJ** (`finesse`) : la portée et le jet de dégâts sont aujourd'hui codés en dur dans l'action, pas tirés de l'arme — bloquant pour la jouabilité du duelliste Précis (cf. *Bestiaire*, intégration des armes).
 
 ## Infrastructure
 - [x] ✅ Consolidation en monorepo (historique préservé) — *0.1.0*.

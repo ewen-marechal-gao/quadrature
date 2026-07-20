@@ -7,6 +7,25 @@ versionnage [sémantique](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Bandes d'initiative** : la phase d'actions se joue en **trois bandes** révélées
+  successivement — I / II / III, soit *Ouverture / Manœuvre / Fermeture* —, résolues
+  à l'initiative fine 1–10 dans chaque bande, avec **une carte par bande au plus**.
+  Les coûts des cartes s'expriment en **phases de lune** (glyphe de bande + nombre de
+  points d'action), remplaçant les trois PA colorés 🟢⚫🔴.
+- **Positions et déplacement** : modèle spatial (optionnel) sur **grille** — métrique
+  de Chebyshev, tapis 34×22. Actions **Marche / Course / Charge**, l'**Inertie ➡️**
+  (élan requis puis consommé par la Charge) et les **portées** d'attaque. L'effet de
+  déplacement enregistre le **chemin complet** parcouru (socle des futures réactions
+  d'allonge).
+- **Traumas (blessures mentales)** : aux extrêmes de la piste mentale (Enragé /
+  Terrifié), un choc de trop retire un point de **caractéristique mentale** et fait
+  rebondir la piste d'un cran vers le centre.
+- **Web — visualiseur de combat** (`/fr/combat`, **outil local**) : rejeu **manche
+  par manche** d'un rapport du simulateur — plateau et trajectoires, log par bandes
+  façon chat (PJ à droite, adversaires à gauche), dés et effets détaillés au survol,
+  vitaux physique / mental. Lit directement les rapports 1-run de
+  `simulator/combatReports/` ; les agrégats `*.batch.json` restent réservés aux
+  statistiques.
 - **Système d'adversaires** intégré au simulateur : résolution asymétrique
   (4 dés sommés vs garde du PJ), corps en **parties à blocs** (chaque bloc confère
   une capacité tant qu'il est intact), **ressources régénérantes** (🫁 endurance,
