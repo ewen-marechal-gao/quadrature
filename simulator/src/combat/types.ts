@@ -163,6 +163,13 @@ export interface CombatantState {
    * saignement), puis le reste s'ajoute aux blessures légères en perçant l'armure.
    */
   bleed: number
+  /**
+   * Traumas — blessures mentales cumulées (§ Ressources / États extrêmes). Chaque
+   * trauma retire un point à une caractéristique MENTALE (dans `characteristics`,
+   * comme les 💔 sur les physiques). Posé quand un choc mental pousse au-delà
+   * d'Enragé/Terrifié, ◇ épuisé : la piste rebondit d'un cran et un trauma tombe.
+   */
+  mentalWounds: number
   /** Active status effects */
   status: StatusEffect[]
   /**
@@ -307,11 +314,21 @@ export interface MaintenanceEntry {
 export interface CombatantSnapshot {
   id:             string
   lightWounds:    number
+  /** Seuil de Résistance ♥️ (= Vigueur) : au-delà, les 💢 se convertissent en 💔 */
+  resistance:     number
   heavyWounds:    number
+  /** Capacité de blessures graves = Σ caractéristiques physiques (portes de la Mort à ce total) */
+  heavyCapacity:  number
   fatigue:        number
   mentalState:    MentalState
   /** Stability tokens ◇ remaining at this moment (mental-shock buffer) */
   stability:      number
+  /** Réserve ◇ maximale (= Ténacité + Discipline) */
+  stabilityMax:   number
+  /** Traumas — blessures mentales cumulées (§ États extrêmes) */
+  mentalWounds:   number
+  /** Capacité de traumas = Σ caractéristiques mentales */
+  mentalCapacity: number
   /** 🩸 Hémorragie : jetons cumulés à cet instant */
   bleed:          number
   status:         StatusEffect[]

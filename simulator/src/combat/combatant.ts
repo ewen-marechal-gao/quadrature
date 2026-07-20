@@ -15,7 +15,7 @@ import type {
 } from './types'
 import { STATUS_DEFS } from './status'
 import { applyMove } from './position'
-import { PHYSICAL_CHARACTERISTICS } from '../character/data'
+import { PHYSICAL_CHARACTERISTICS, MENTAL_CHARACTERISTICS } from '../character/data'
 import { MENTAL_STATES } from './types'
 import { roll, buildPool } from '../dieSystem'
 
@@ -38,6 +38,7 @@ export function initCombatant(char: Character): CombatantState {
     mentalState:       'focused',
     stability:         0,   // set below via stabilityPool (needs the built state)
     bleed:             0,
+    mentalWounds:      0,
     status:            [],
     inertia:           0,
     protection:        char.protection ?? 0,
@@ -326,6 +327,30 @@ export function applyHeavyWound(state: CombatantState, bypassProtection = false)
 }
 
 /**
+ * Apply one **trauma** (§ Ressources — Condition Mentale) : retire un point à une
+ * caractéristique MENTALE encore capable, et incrémente le compteur de traumas.
+ * Miroir mental de `applyHeavyWound` (mais aucune Protection ne s'applique aux
+ * chocs psychiques). Choix de la caractéristique aléatoire parmi les éligibles.
+ */
+export function applyTrauma(state: CombatantState): CombatantState {
+  const eligible = MENTAL_CHARACTERISTICS.filter(name => {
+    const c = state.characteristics[name]
+    return c.value - c.wounds > 0
+  })
+  const pool       = eligible.length > 0 ? eligible : MENTAL_CHARACTERISTICS
+  const targetName = pool[Math.floor(Math.random() * pool.length)]
+  const current    = state.characteristics[targetName]
+  return {
+    ...state,
+    mentalWounds: state.mentalWounds + 1,
+    characteristics: {
+      ...state.characteristics,
+      [targetName]: { ...current, wounds: current.wounds + 1 },
+    },
+  }
+}
+
+/**
  * End-of-round processing (prototype — modèle blessures unifié) :
  *  1. Saignée 🩸 : les jetons décroissent d'abord de la Récupération ✫ (résistance
  *     passive), puis le reste s'ajoute aux blessures légères — ces 💢 percent
@@ -431,6 +456,11 @@ export function removeFatigue(state: CombatantState, amount: number): CombatantS
  * A 🔻/🔺 shock is first ABSORBED by a Stability token ◇ when available: the
  * character spends one ◇ instead of moving the track. Recovery (toward-focused)
  * is never buffered.
+ *
+ * § États extrêmes : un cran de trop AU-DELÀ d'Enragé/Terrifié (◇ épuisé) ne
+ * peut plus déplacer la piste — il inflige alors un **trauma** (perte d'1 caract.
+ * mentale) et la piste **rebondit** d'un cran vers le centre. (« 🔥 Enragé + 🔺 →
+ * trauma et 🔻 » ; « ❄️ Terrifié + 🔻 → trauma et 🔺 ».)
  */
 export function shiftMentalState(
   state:     CombatantState,
@@ -450,7 +480,11 @@ export function shiftMentalState(
   }
 
   const step = direction === 'toward-terror' ? 1 : -1
-  const next = Math.max(0, Math.min(MENTAL_STATES.length - 1, idx + step))
+  const next = idx + step
+  // Hors piste = déjà à l'extrême, poussé plus loin → trauma + rebond d'un cran.
+  if (next < 0 || next > MENTAL_STATES.length - 1) {
+    return applyTrauma({ ...state, mentalState: MENTAL_STATES[idx - step] })
+  }
   return { ...state, mentalState: MENTAL_STATES[next] }
 }
 
@@ -633,13 +667,23 @@ export function toCombatantSnapshot(state: CombatantState): CombatantSnapshot {
     const w = state.characteristics[name].wounds
     if (w > 0) charWounds[name] = w
   }
+  // Capacités = somme des valeurs de base (les blessures se comptent à part) —
+  // calculées ici pour que le snapshot soit AUTO-SUFFISANT (la page n'a rien à
+  // dériver), avec les mêmes fonctions/listes que le moteur.
+  const sum = (names: CharacteristicName[]) =>
+    names.reduce((n, name) => n + state.characteristics[name].value, 0)
   return {
     id:             state.id,
     lightWounds:    state.lightWounds,
+    resistance:     resistanceThreshold(state),
     heavyWounds:    state.heavyWounds,
+    heavyCapacity:  sum(PHYSICAL_CHARACTERISTICS),
     fatigue:        state.fatigue,
     mentalState:    state.mentalState,
     stability:      state.stability,
+    stabilityMax:   stabilityPool(state),
+    mentalWounds:   state.mentalWounds,
+    mentalCapacity: sum(MENTAL_CHARACTERISTICS),
     bleed:          state.bleed,
     status:         [...state.status],
     charWounds,

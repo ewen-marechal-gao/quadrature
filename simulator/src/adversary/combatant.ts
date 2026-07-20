@@ -500,9 +500,15 @@ export interface AdversarySnapshot {
   fatigue:     number
   /** Size of the fatigue death clock (sheet.fatigue). */
   fatigueMax:  number
+  /** 🫁 Endurance restante ce round (tampon de fatigue). */
   endurance:   number
+  /** 🫁 Endurance maximale (rechargée chaque manche par les blocs intacts). */
+  enduranceMax: number
   evasion:     number
+  /** ◇ Stabilité restante. */
   stability:   number
+  /** ◇ Stabilité maximale (conférée par les blocs intacts). */
+  stabilityMax: number
   mentalState: AdversaryMental
   /** Sonné 🫨 this round (Evasion 🍀 disabled). */
   stunned:     boolean
@@ -512,29 +518,58 @@ export interface AdversarySnapshot {
   bleed:       number
   /** « Déstabilisé » : sautera son prochain regain de ◇. */
   destabilized: boolean
-  /** Per-part damage: marked cases / total cases, and destroyed flag. */
-  parts: Array<{ type: string; marked: number; total: number; destroyed: boolean }>
+  /** 🛡️ Armure totale restante (somme sur les parties, consommée par les 💔). */
+  armorTotal:  number
+  /** Per-part damage: marked/total cases, destroyed flag, remaining armor, and what it confers. */
+  parts: Array<{ type: string; marked: number; total: number; destroyed: boolean; armor: number; confers: string[] }>
 }
 
 /** Produce a compact AdversarySnapshot suitable for round-end logging. */
+/**
+ * Ce qu'une partie « confère » — résumé lisible des grants de ses blocs (pour
+ * l'onOver des parties : voir ce qu'on perd quand elle tombe). Chaîne pré-formée
+ * ici pour que le snapshot soit auto-suffisant côté affichage.
+ */
+export function partConfers(part: PartState): string[] {
+  const out: string[] = []
+  for (const b of part.blocks) {
+    const g = b.grant
+    if (g.grantsCard)   out.push(`carte ${g.grantsCard}`)
+    if (g.resource)     out.push(`${g.amount ?? 1}${g.resource === 'stability' ? '◇' : g.resource === 'endurance' ? '🫁' : '🍀'}`)
+    if (g.armorAll)     out.push(`+${g.armorAll}🛡️ (autres parties)`)
+    if (g.guard)        out.push(`+${g.guard} garde`)
+    if (g.immunity)     out.push(`immunité ${g.immunity}`)
+    if (g.cardCost)     out.push(`coût ${g.cardCost.card}→${g.cardCost.cost}⚫`)
+    if (g.trait)        out.push(`trait ${g.trait.name}`)
+  }
+  return out
+}
+
 export function toAdversarySnapshot(c: AdversaryCombatant): AdversarySnapshot {
+  const allParts = [...c.parts, ...c.weapons]
   return {
     id:          c.id,
     fatigue:     c.fatigue,
     fatigueMax:  c.sheet.fatigue,
     endurance:   c.endurance,
+    enduranceMax: grantedResource(c, 'endurance'),
     evasion:     c.evasion,
     stability:   c.stability,
+    stabilityMax: grantedResource(c, 'stability'),
     mentalState: c.mentalState,
     stunned:     c.stunned,
     winded:      isAdversaryWinded(c),
     bleed:       c.bleed,
     destabilized: c.destabilized,
-    parts: [...c.parts, ...c.weapons].map(p => ({
+    /** Armure totale = somme de l'armure RESTANTE des parties (consommée par les 💔). */
+    armorTotal:  allParts.reduce((s, p) => s + p.armor, 0),
+    parts: allParts.map(p => ({
       type:      p.type,
       marked:    p.blocks.reduce((s, b) => s + b.damage, 0),
       total:     p.blocks.reduce((s, b) => s + b.cases, 0),
       destroyed: isPartDestroyed(p),
+      armor:     p.armor,
+      confers:   partConfers(p),
     })),
   }
 }

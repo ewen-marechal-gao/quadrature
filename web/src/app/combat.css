@@ -33,7 +33,7 @@
 
 /* ── Rejeu ──────────────────────────────────────────────────────────────── */
 .cbv {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1.25rem 1.5rem 3rem;
   color: var(--panel-text);
@@ -41,18 +41,41 @@
 }
 .cbv-back { color: var(--brass); text-decoration: none; font-size: .9rem; }
 .cbv-back:hover { color: var(--brass-bright); }
-.cbv-empty, .cbv-noboard { color: var(--panel-muted); padding: 2rem; text-align: center; }
+.cbv-empty { color: var(--panel-muted); padding: 1.5rem; text-align: center; }
 
-.cbv-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 1rem; }
-.cbv-head h1 { color: var(--brass-bright); margin: 0; font-size: 1.4rem; }
-.cbv-locus { display: flex; gap: .5rem; align-items: center; font-size: .9rem; }
-.cbv-locus span { padding: .12rem .5rem; border-radius: 999px; border: 1px solid var(--brass-border); }
-.cbv-locus__band { color: var(--brass-bright); border-color: var(--brass-subtle); }
-.cbv-locus__init { color: var(--panel-muted); }
+.cbv-head h1 { color: var(--brass-bright); margin: .4rem 0 .75rem; font-size: 1.4rem; }
 
-/* Scène : plateau à gauche, journal + vitaux à droite */
-.cbv-stage { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
-@media (max-width: 800px) { .cbv-stage { grid-template-columns: 1fr; } }
+/* Boutons de manche ------------------------------------------------------- */
+.cbv-rounds {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .35rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: .9rem;
+  border-bottom: 1px solid var(--brass-border);
+}
+.cbv-rounds__label {
+  color: var(--panel-muted); font-size: .8rem; text-transform: uppercase;
+  letter-spacing: .05em; margin-right: .3rem;
+}
+.cbv-round {
+  min-width: 2rem; height: 2rem; padding: 0 .5rem;
+  border: 1px solid var(--brass-border); border-radius: 6px;
+  background: var(--brass-faint); color: var(--panel-text);
+  cursor: pointer; font-family: var(--font-ui); font-size: .95rem;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.cbv-round:hover { background: var(--brass-glow); border-color: var(--brass-subtle); }
+.cbv-round.is-active {
+  background: var(--brass); color: var(--on-brass);
+  border-color: var(--brass-bright); font-weight: 700;
+}
+.cbv-round--enc { min-width: auto; padding: 0 .7rem; font-variant: small-caps; }
+
+/* Scène : plateau + acteurs à gauche, log à droite ------------------------ */
+.cbv-stage { display: grid; grid-template-columns: minmax(300px, 38%) 1fr; gap: 1.5rem; align-items: start; }
+.cbv-stage--noboard { grid-template-columns: 1fr; }
+@media (max-width: 820px) { .cbv-stage { grid-template-columns: 1fr; } }
+
+.cbv-left { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 1rem; }
 
 .cbv-boardwrap {
   border: 1px solid var(--brass-border);
@@ -63,36 +86,90 @@
 .cbv-board { width: 100%; height: auto; display: block; }
 .cbv-board-bg { fill: #1c160e; }
 .cbv-grid { stroke: rgba(196,154,69,0.14); stroke-width: 0.02; }
-
-.cbv-trail { fill: none; stroke-width: 0.12; stroke-linejoin: round; stroke-linecap: round; opacity: .8; stroke-dasharray: 0.28 0.2; }
-
+.cbv-trail { fill: none; stroke-width: 0.12; stroke-linejoin: round; stroke-linecap: round; opacity: .85; stroke-dasharray: 0.28 0.2; }
 .cbv-token-label { fill: #fff; font-size: 0.42px; text-anchor: middle; dominant-baseline: central; font-family: var(--font-ui); pointer-events: none; }
-.cbv-token-ring { fill: none; stroke: var(--brass-bright); stroke-width: 0.06; }
 
-/* Journal de phase */
-.cbv-side { display: flex; flex-direction: column; gap: .75rem; }
-.cbv-acts { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+/* Acteurs (sous le plateau) ---------------------------------------------- */
+.cbv-actors { display: flex; flex-direction: column; gap: .5rem; }
+.cbv-actors__head { color: var(--panel-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+.cbv-actor { border: 1px solid var(--brass-border); border-radius: 6px; padding: .45rem .6rem; background: var(--brass-faint); }
+.cbv-actor__name { font-weight: 600; margin-bottom: .3rem; }
+
+/* Deux colonnes : physique | mental, séparées d'un filet */
+.cbv-actor__cols { display: grid; grid-template-columns: 1fr 1fr; gap: .1rem; }
+.cbv-actor__col { display: flex; flex-direction: column; gap: .15rem; font-size: .88rem; padding-right: .6rem; }
+.cbv-actor__col--mental { border-left: 1px solid var(--brass-border); padding-left: .6rem; padding-right: 0; }
+.cbv-actor__legend { color: var(--panel-muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; }
+
+.cbv-actor__parts { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
+.cbv-part {
+  font-size: .74rem; padding: .05rem .4rem; border-radius: 4px;
+  background: rgba(196,154,69,0.10); border: 1px solid var(--brass-border); color: var(--panel-text);
+}
+.cbv-part.is-destroyed { text-decoration: line-through; color: var(--panel-muted); opacity: .7; border-style: dashed; }
+.cbv-parts-pop b { text-transform: capitalize; }
+
+.cbv-actor__states { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; }
+.cbv-actor__status { font-size: .78rem; color: var(--card-offensive); }
+
+/* Bulle de détail au survol (dés, parties) ------------------------------- */
+.cbv-hint { position: relative; cursor: help; border-bottom: 1px dotted var(--brass-subtle); }
+.cbv-hint__pop {
+  position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 20;
+  min-width: 12rem; max-width: 20rem;
+  padding: .5rem .65rem; border-radius: 6px;
+  background: #241c10; border: 1px solid var(--brass-subtle);
+  color: var(--panel-text); font-size: .82rem; line-height: 1.4;
+  box-shadow: 0 6px 20px rgba(0,0,0,.5);
+  opacity: 0; visibility: hidden; transition: opacity .12s;
+  pointer-events: none; white-space: normal;
+}
+.cbv-hint:hover .cbv-hint__pop, .cbv-hint:focus .cbv-hint__pop { opacity: 1; visibility: visible; }
+.cbv-dice { display: flex; flex-direction: column; gap: .15rem; }
+.cbv-roll--hint { cursor: help; }
+
+/* Log de manche (colonne droite) ----------------------------------------- */
+.cbv-log { display: flex; flex-direction: column; }
+.cbv-band { margin-bottom: .4rem; }
+
+/* Séparateur de bande : trait — nom centré — trait */
+.cbv-bandsep { display: flex; align-items: center; text-align: center; margin: .9rem 0 .5rem; }
+.cbv-bandsep::before, .cbv-bandsep::after { content: ""; flex: 1; height: 1px; background: var(--brass-mid); }
+.cbv-bandsep span {
+  padding: 0 .8rem; color: var(--brass-bright);
+  font-size: .82rem; text-transform: uppercase; letter-spacing: .08em;
+}
+
+/* Message (aligné par faction, façon chat) */
+.cbv-msg { display: flex; margin: .4rem 0; }
+.cbv-msg--pc  { justify-content: flex-end; }
+.cbv-msg--adv { justify-content: flex-start; }
+
 .cbv-act {
+  max-width: 80%;
   border: 1px solid var(--brass-border);
-  border-left: 3px solid var(--brass-subtle);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: .55rem .7rem;
   background: var(--brass-faint);
 }
+.cbv-msg--pc  .cbv-act { border-right: 3px solid var(--accent); border-top-right-radius: 3px; }
+.cbv-msg--adv .cbv-act { border-left: 3px solid var(--accent); border-top-left-radius: 3px; }
+
 .cbv-act__head { display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
 .cbv-act__actor { font-weight: 600; }
 .cbv-act__verb { color: var(--brass-bright); }
 .cbv-act__target { color: var(--panel-muted); font-size: .9rem; }
-.cbv-act__result { margin-left: auto; font-size: .8rem; padding: .05rem .45rem; border-radius: 999px; }
-.cbv-act__result.is-hit { color: #d6f5c0; background: rgba(62,127,68,0.22); }
-.cbv-act__result.is-miss { color: var(--panel-muted); background: rgba(160,138,105,0.12); }
+.cbv-act__init { margin-left: auto; font-size: .8rem; color: var(--panel-muted); white-space: nowrap; }
 
-.cbv-act__rolls { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .35rem; font-size: .88rem; }
+.cbv-act__rolls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: baseline; margin-top: .35rem; font-size: .88rem; }
 .cbv-roll { color: var(--panel-text); }
 .cbv-vs { color: var(--panel-muted); }
 .cbv-flag.is-crit { color: var(--brass-bright); }
 .cbv-flag.is-flaw { color: var(--card-offensive); }
 .cbv-guard { color: var(--card-defensive); }
+.cbv-result { font-size: .8rem; padding: .05rem .45rem; border-radius: 999px; }
+.cbv-result.is-hit { color: #d6f5c0; background: rgba(62,127,68,0.22); }
+.cbv-result.is-miss { color: var(--panel-muted); background: rgba(160,138,105,0.12); }
 
 .cbv-act__chips { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
 .cbv-chip {
@@ -100,24 +177,3 @@
   background: rgba(196,154,69,0.12); border: 1px solid var(--brass-border); color: var(--panel-text);
 }
 .cbv-act__notes { margin: .4rem 0 0; padding-left: 1.1rem; color: var(--panel-muted); font-size: .82rem; }
-
-/* Vitaux */
-.cbv-vitals-head { color: var(--panel-muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; margin-top: .5rem; }
-.cbv-vitals { display: grid; gap: .5rem; }
-.cbv-vital { border: 1px solid var(--brass-border); border-radius: 6px; padding: .45rem .6rem; background: var(--brass-faint); }
-.cbv-vital__name { font-weight: 600; margin-bottom: .2rem; }
-.cbv-vital__row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; font-size: .9rem; }
-.cbv-vital__status { font-size: .8rem; color: var(--card-offensive); }
-
-/* Contrôles */
-.cbv-controls { display: flex; align-items: center; gap: .5rem; margin-top: 1.25rem; }
-.cbv-controls button {
-  min-width: 2.2rem; height: 2.2rem;
-  border: 1px solid var(--brass-border); border-radius: 6px;
-  background: var(--brass-faint); color: var(--brass-bright);
-  cursor: pointer; font-size: 1rem;
-}
-.cbv-controls button:hover:not(:disabled) { background: var(--brass-glow); border-color: var(--brass-strong); }
-.cbv-controls button:disabled { opacity: .35; cursor: default; }
-.cbv-scrub { flex: 1; accent-color: var(--brass); }
-.cbv-counter { color: var(--panel-muted); font-size: .85rem; min-width: 4rem; text-align: right; }

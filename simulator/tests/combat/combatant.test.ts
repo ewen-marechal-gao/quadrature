@@ -7,6 +7,7 @@ import {
 } from '../../src/combat/combatant'
 import type { CombatantState } from '../../src/combat/types'
 import { makeCharacter, makeCombatant } from '../helpers/fixtures'
+import { MENTAL_CHARACTERISTICS } from '../../src/character/data'
 
 // ─── initCombatant ────────────────────────────────────────────────────────────
 
@@ -431,16 +432,30 @@ describe('shiftMentalState', () => {
     expect(s.mentalState).toBe('aggressive')
   })
 
-  it('caps at terrified after repeated toward-terror', () => {
+  it('reaches terrified in three shocks, then a further 🔻 traumatises and bounces (🔺)', () => {
+    // § États extrêmes : à Terrifié, un cran de trop inflige un trauma et la
+    // piste rebondit d'un cran vers le centre (Paniqué).
     let s = shaken()
-    for (let i = 0; i < 10; i++) s = shiftMentalState({ ...s, stability: 0 }, 'toward-terror')
+    for (let i = 0; i < 3; i++) s = shiftMentalState({ ...s, stability: 0 }, 'toward-terror')
     expect(s.mentalState).toBe('terrified')
+    expect(s.mentalWounds).toBe(0)
+
+    const t = shiftMentalState({ ...s, stability: 0 }, 'toward-terror')
+    expect(t.mentalWounds).toBe(1)
+    expect(t.mentalState).toBe('panicked')
+    // le trauma a bien retiré un point à UNE caractéristique mentale
+    const woundedMental = MENTAL_CHARACTERISTICS.reduce((n, c) => n + t.characteristics[c].wounds, 0)
+    expect(woundedMental).toBe(1)
   })
 
-  it('caps at enraged after repeated toward-rage', () => {
+  it('at enraged, a further 🔺 traumatises and bounces one step back (🔻)', () => {
     let s = shaken()
-    for (let i = 0; i < 10; i++) s = shiftMentalState({ ...s, stability: 0 }, 'toward-rage')
+    for (let i = 0; i < 3; i++) s = shiftMentalState({ ...s, stability: 0 }, 'toward-rage')
     expect(s.mentalState).toBe('enraged')
+
+    const t = shiftMentalState({ ...s, stability: 0 }, 'toward-rage')
+    expect(t.mentalWounds).toBe(1)
+    expect(t.mentalState).toBe('furious')
   })
 
   // ── Stability ◇ buffer (§ Stabilité) ──────────────────────────────────────

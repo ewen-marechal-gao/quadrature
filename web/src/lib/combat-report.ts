@@ -39,16 +39,25 @@ export interface CombatEffect {
   [k: string]: unknown;
 }
 
+/** Un dé lancé : son type (characteristic / skill / wild / weakened…) et sa valeur. */
+export interface Die { type: string; value: number }
+
 export interface RollResult {
   total: number;
   critical?: boolean;
   flaw?: boolean;
   wild?: string;
+  /** Tous les dés lancés, par catégorie (pour le détail onOver). */
+  rolls?: { characteristic?: Die[]; skill?: Die[]; wild?: Die[] };
+  /** Les dés retenus (4 gardés). */
+  kept?: { characteristic?: Die; skill?: Die[]; wild?: Die };
   [k: string]: unknown;
 }
 
 export interface AdversaryRollResult {
+  /** Faces qualitatives des 4 dés sommés (danger/threat/…). */
   dice?: string[];
+  /** Valeurs numériques correspondantes. */
   values?: number[];
   total?: number;
   [k: string]: unknown;
@@ -85,10 +94,20 @@ export interface PhaseLog {
 export interface CombatantSnapshot {
   id: string;
   lightWounds: number;
+  /** Seuil de Résistance ♥️ (Vigueur effective). Absent des rapports antérieurs. */
+  resistance?: number;
   heavyWounds: number;
+  /** Capacité de graves (Σ caract. physiques). Absent des rapports antérieurs. */
+  heavyCapacity?: number;
   fatigue: number;
   mentalState: string;
   stability: number;
+  /** Réserve ◇ max (Ténacité + Discipline). Absent des rapports antérieurs. */
+  stabilityMax?: number;
+  /** Traumas — blessures mentales. Absent des rapports antérieurs. */
+  mentalWounds?: number;
+  /** Capacité de traumas (Σ caract. mentales). Absent des rapports antérieurs. */
+  mentalCapacity?: number;
   bleed: number;
   status: string[];
   charWounds: Record<string, number>;
@@ -101,14 +120,26 @@ export interface AdversarySnapshot {
   fatigue: number;
   fatigueMax: number;
   endurance: number;
+  /** 🫁 max (blocs intacts). Absent des rapports antérieurs. */
+  enduranceMax?: number;
   evasion: number;
   stability: number;
+  /** ◇ max (blocs intacts). Absent des rapports antérieurs. */
+  stabilityMax?: number;
   mentalState: string;
   stunned: boolean;
   winded: boolean;
   bleed: number;
   destabilized: boolean;
-  parts: Array<{ type: string; marked: number; total: number; destroyed: boolean }>;
+  /** 🛡️ armure totale restante. Absent des rapports antérieurs. */
+  armorTotal?: number;
+  parts: Array<{
+    type: string; marked: number; total: number; destroyed: boolean;
+    /** Armure restante de la partie. Absent des rapports antérieurs. */
+    armor?: number;
+    /** Ce que la partie confère (pour l'onOver). Absent des rapports antérieurs. */
+    confers?: string[];
+  }>;
 }
 
 export interface RoundLog {
