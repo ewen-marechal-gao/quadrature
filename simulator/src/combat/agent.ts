@@ -26,13 +26,14 @@ import type { CombatantState }    from './types'
 import type { ActionId, GuardId } from './types'
 import type { PhaseLog }          from './types'
 import type { PlannedAction, GuardProvider } from './round'
-import { ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction, availableGuards } from './actions'
-import { spendActionCost, effChar, isDefeated, mentalDegree } from './combatant'
-import { bandOf, type Band } from './bands'
+import { ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction } from './actions'
+import { spendActionCost, effChar, isDefeated } from './combatant'
 import { distance } from './position'
 import { STATUS_DEFS } from './status'
-import { type Actor, isAdversaryActor, actorDefeated } from '../adversary/actor'
-import { isPartDestroyed } from '../adversary/combatant'
+import { type Actor, actorDefeated } from '../adversary/actor'
+import {
+  planRoundUtility, bestActionForBand, simulateSelfEffects, type PlannerConfig,
+} from '../planner/planner'
 
 export type { GuardProvider }
 
@@ -141,57 +142,39 @@ export function recordOpponentActions(
 
 /**
  * Plan the next single action for a combatant (scripted, synchronous).
- *
- * Intended for wave-based round loops: called each wave with the current state,
- * returns exactly one PlannedAction (or null if the combatant cannot act).
- *
- * Decision order:
- *  1. Self-care (Respiration / Stabiliser), if warranted by persona
- *  2. Offensive action, if opponent is not defeated
- *  3. null — combatant passes (no PA, or nothing sensible to do)
+ * Thin wrapper over the utility planner: the first action of the best round
+ * plan. Kept for API compatibility with wave-based callers.
  */
 export function planNextAction(
   self:     CombatantState,
   opponent: Actor,
   config:   AgentConfig,
 ): PlannedAction | null {
-  if (isDefeated(self)) return null
+  return planRoundActions(self, opponent, config)[0] ?? null
+}
 
-  const selfAction = selectSelfAction(self, config)
-  if (selfAction !== null) {
-    return { actorId: self.id, action: selfAction }
+/** Bridge the agent's public config to the planner's dependency-free mirror. */
+function toPlannerConfig(config: AgentConfig): PlannerConfig {
+  return {
+    persona:  config.persona,
+    targetId: config.targetId,
+    ...(config.allowedActions && { allowedActions: config.allowedActions }),
   }
-
-  if (!actorDefeated(opponent)) {
-    const offAction = selectOffensiveAction(self, opponent, config)
-    if (offAction !== null) {
-      return { actorId: self.id, action: offAction, targetId: config.targetId }
-    }
-  }
-
-  return null
 }
 
 /**
  * Plan a combatant's whole round at once (scripted, synchronous).
  *
- * Returns 0–3 PlannedActions depending on available PA and strategy. The caller
+ * Returns 0–3 PlannedActions depending on available PA and utility. The caller
  * hands the lot to resolveRoundBands, which reveals them band by band.
  *
- * Why plan the round as a whole rather than one band at a time: a combatant must
- * RESERVE its PA. Spending greedily band after band would strand the late cards —
- * a Frappe brutale (Bande III, 2 PA) would never fire once bands I and II had
- * drained the pool. Committing the round up front means giving up the
- * inter-band adaptation the rules allow, which a scripted agent would not
- * exploit anyway.
- *
- * Local state is simulated via `spendActionCost` to track resource consumption
- * across multiple planned actions — the real CombatantState is never mutated.
- *
- * Round structure:
- *  Phase A  — Self-targeted action (Bande I), if warranted by persona
- *  Phase B  — Primary offensive action
- *  Phase C  — Second offensive action (aggressive / opportunist only)
+ * Two régimes:
+ *  - Out of melee reach on a board → the APPROACH pattern (below) owns the
+ *    round: close the gap, charge if the leap connects. It is the one
+ *    hand-written motif left; the positional-value étape absorbs it.
+ *  - Otherwise → the utility planner (src/planner): every legal action priced
+ *    by exact outcome probabilities × effect worth, best band assignment wins.
+ *    Personas are weight vectors, not candidate lists.
  */
 export function planRoundActions(
   self:     CombatantState,
@@ -200,29 +183,15 @@ export function planRoundActions(
 ): PlannedAction[] {
   if (isDefeated(self)) return []
 
+  const plannerCfg = toPlannerConfig(config)
   const plans: PlannedAction[] = []
-  const usedBands = new Set<Band>()
   let state = self   // local simulation — real state is never mutated
 
-  /**
-   * Commit an action to the round, unless its band is already taken: only one
-   * card per band (§ combat.md). Every band is thus a choice — soigner OU
-   * frapper. Returns false when the band is spoken for.
-   *
-   * The local `state` is advanced not just by PA spend but by the action's
-   * SELF-EFFECTS that later bands gate on — the élan a Course grants, the winded
-   * it inflicts, the winded a Respiration clears. Without this the planner could
-   * not see that a Course in Bande II unlocks the Charge in Bande III.
-   */
-  const commit = (id: ActionId, targetId?: string): boolean => {
-    const band = bandOf(ACTION_DEFS[id].initiative)
-    if (band === null || usedBands.has(band)) return false
-    usedBands.add(band)
+  const commit = (id: ActionId, targetId?: string): void => {
     plans.push(targetId === undefined
       ? { actorId: self.id, action: id }
       : { actorId: self.id, action: id, targetId })
     state = simulateSelfEffects(spendActionCost(state, ACTION_DEFS[id].cost), id)
-    return true
   }
 
   const canPlay = (id: ActionId): boolean =>
@@ -231,12 +200,11 @@ export function planRoundActions(
   // ── Approche (§ positions) : hors de portée de mêlée, on court plutôt que de
   //    frapper dans le vide. Se déclenche sur un plateau (positions connues) si
   //    le combattant a de quoi se rapprocher — sinon on retombe sur le
-  //    comportement d'avant les positions.
+  //    comportement hors plateau.
   //
-  //    Heuristique FOCALISÉE, pas l'agent tactique général (todo #19) : elle ne
-  //    connaît qu'un motif — s'approcher et charger —, parce que c'est tout
-  //    l'intérêt de donner la Charge à un duelliste sans Puissance. Un kiter
-  //    voudrait l'instinct inverse ; c'est différé. ──────────────────────────
+  //    Heuristique FOCALISÉE : elle ne connaît qu'un motif — s'approcher et
+  //    charger. Le kiting et le maintien à distance viennent avec la valeur
+  //    positionnelle (étape 4), qui remplacera ce bloc. ────────────────────────
   const MELEE_REACH = 1
   const gap = state.pos && opponent.pos && !actorDefeated(opponent)
     ? distance(state.pos, opponent.pos)
@@ -244,10 +212,11 @@ export function planRoundActions(
 
   if (gap !== null && gap > MELEE_REACH &&
       (canPlay('course') || canPlay('walk') || state.status.includes('winded'))) {
-    // Bande I : d'abord se soigner. Une Respiration ici lève l'essoufflement de
-    // la Course de la manche précédente — c'est ce qui rouvre la Course.
-    const selfA = selectSelfAction(state, config)
-    if (selfA !== null && bandOf(ACTION_DEFS[selfA].initiative) === 'I') commit(selfA)
+    // Bande I : la meilleure action de Bande I selon le planificateur (une
+    // Respiration ici lève l'essoufflement qui rouvre la Course).
+    const selfA = bestActionForBand(state, 'I', opponent, plannerCfg)
+    if (selfA !== null && canPlay(selfA)) commit(selfA,
+      ACTION_DEFS[selfA].selfTargeted ? undefined : config.targetId)
 
     // Bande II : on court (Course) si possible, sinon Marche.
     const mover: ActionId | null = canPlay('course') ? 'course' : canPlay('walk') ? 'walk' : null
@@ -266,39 +235,8 @@ export function planRoundActions(
     }
   }
 
-  // ── Phase A: Self-care (Bande I) ────────────────────────────────────────
-  const selfAction = selectSelfAction(state, config)
-  if (selfAction !== null) commit(selfAction)
-
-  // ── Phase B: Primary offensive action ───────────────────────────────────
-  const offAction = selectOffensiveAction(state, opponent, config)
-  if (offAction !== null) commit(offAction, config.targetId)
-
-  // ── Phase C: Second offensive action, in ANOTHER band ───────────────────
-  if (config.persona === 'aggressive' || config.persona === 'opportunist') {
-    const played = new Set<ActionId>(plans.map(p => p.action))
-    const secondAction = selectOffensiveAction(state, opponent, config, played)
-    if (secondAction !== null) commit(secondAction, config.targetId)
-  }
-
-  return plans
-}
-
-/**
- * Apply an action's SELF-EFFECTS to a planning-time state — only the fields a
- * later band gates on. Not a resolution: no rolls, no target, no board. It just
- * keeps `canUseAction` honest across the round (élan for the Charge, winded for
- * the Course, and Respiration clearing it).
- */
-function simulateSelfEffects(state: CombatantState, id: ActionId): CombatantState {
-  const def = ACTION_DEFS[id]
-  let s = state
-  if (def.grantsInertia != null) s = { ...s, inertia: def.grantsInertia }
-  if (def.grantsStatus && !s.status.includes(def.grantsStatus)) {
-    s = { ...s, status: [...s.status, def.grantsStatus] }
-  }
-  if (def.clearsStatus) s = { ...s, status: s.status.filter(x => x !== def.clearsStatus) }
-  return s
+  // ── In reach (or no board): the utility planner owns the whole round ──────
+  return [...plans, ...planRoundUtility(state, opponent, plannerCfg)]
 }
 
 /** A movement action's budget in cases, resolved against the actor. */
@@ -513,183 +451,6 @@ function selectGuardByStats(
 
   // absorb (initiative 0) always passes the filter, so eligible is never empty
   return eligible[0]?.id ?? 'absorb'
-}
-
-// ─── Self-action selection (scripted) ────────────────────────────────────────
-
-/**
- * Decide whether to use a first-action (🟢) self-targeted action.
- * Returns the ActionId if warranted, null otherwise.
- *
- * Priority: Respiration first (restores 🔴 access), then Stabiliser.
- *
- * Thresholds by persona — lower threshold = act sooner:
- *  aggressive:    fatigue ≥ 15, heavy wounds ≥ 4   (only in extremis)
- *  cautious:      fatigue ≥ 8,  heavy wounds ≥ 1   (early and often)
- *  opportunist:   fatigue ≥ 10, heavy wounds ≥ 2   (moderate)
- *  inexperienced: fatigue ≥ 20, heavy wounds ≥ 3   (barely notices)
- */
-function selectSelfAction(
-  state:  CombatantState,
-  config: AgentConfig,
-): ActionId | null {
-  const { persona } = config
-
-  const fatigueThresholdDefault: Record<AgentPersona, number> = {
-    aggressive:    10,
-    cautious:       8,
-    opportunist:    8,
-    inexperienced: 20,  // cap — never triggers from fatigue alone
-  }
-  const heavyWoundThreshold: Record<AgentPersona, number> = {
-    aggressive:     4,
-    cautious:       1,
-    opportunist:    2,
-    inexperienced:  3,
-  }
-
-  const fatigueThreshold = config.respirationThreshold ?? fatigueThresholdDefault[persona]
-
-  // Consolidation mentale (🟢) : dès que l'état mental est pénalisant (degré ≥ 2 :
-  // Paniqué/Terrifié → 🟥 offensif + plus de réactions ; Furieux/Enragé → 🟥 défensif
-  // + fatigue), tenter de se recentrer. Priorité Focalisation > Résolution >
-  // Préservation (la première utilisable selon les compétences du personnage).
-  if (mentalDegree(state.mentalState) >= 2) {
-    for (const id of ['focalisation', 'resolution', 'preservation'] as ActionId[]) {
-      if (isActionAllowed(id, config) && canUseAction(state, id) && canAffordAction(state, id)) {
-        return id
-      }
-    }
-  }
-
-  // Respiration: clears winded or reduces fatigue
-  const wantRespiration =
-    state.status.includes('winded') ||
-    state.fatigue >= fatigueThreshold
-
-  if (wantRespiration
-    && isActionAllowed('respiration', config)
-    && canUseAction(state, 'respiration')
-    && canAffordAction(state, 'respiration')
-  ) {
-    return 'respiration'
-  }
-
-  // Stabiliser: clears hemorrhage or heals light wounds
-  const wantStabilize =
-    state.bleed > 0 ||
-    state.heavyWounds >= heavyWoundThreshold[persona]
-
-  if (wantStabilize
-    && isActionAllowed('stabilize', config)
-    && canUseAction(state, 'stabilize')
-    && canAffordAction(state, 'stabilize')
-  ) {
-    return 'stabilize'
-  }
-
-  return null
-}
-
-// ─── Offensive action selection (scripted) ───────────────────────────────────
-
-/**
- * Pick the best offensive action given current state and persona.
- * Returns null if no action is usable or affordable.
- *
- * Fatigue safety: if fatigue ≥ 14, skip fatigue-costing actions (brutal/sharp)
- * regardless of persona — prevents accidental self-incapacitation.
- *
- * Persona candidate lists (highest priority first):
- *  aggressive:    brutal-strike → armed-attack → sharp-strike → unarmed-attack
- *  cautious:      armed-attack → unarmed-attack → sharp-strike
- *  opportunist:   gambles on brutal-strike when opponent is vulnerable
- *  inexperienced: unarmed-attack → armed-attack (simple, low-commitment)
- */
-function selectOffensiveAction(
-  state:    CombatantState,
-  opponent: Actor,
-  config:   AgentConfig,
-  exclude:  ReadonlySet<ActionId> = new Set(),
-): ActionId | null {
-  const { persona } = config
-  const lowOnFatigue = state.fatigue >= 14
-
-  let candidates: ActionId[]
-
-  switch (persona) {
-    case 'aggressive':
-      candidates = lowOnFatigue
-        ? ['armed-attack', 'unarmed-attack']
-        : ['brutal-strike', 'armed-attack', 'sharp-strike', 'unarmed-attack']
-      break
-
-    case 'cautious':
-      candidates = ['armed-attack', 'unarmed-attack']
-      break
-
-    case 'opportunist':
-      // Frappe vive d'abord — c'est l'attaque de Précision, fiable et bon marché ;
-      // l'Attaque armée vient EN PLUS, pour couvrir une seconde bande (le duelliste
-      // Précis à Puissance 0 la rate souvent, mais le plancher de dégâts d'échec
-      // la rend rentable — c'est ce qui remplit sa bande vide).
-      if (shouldGamble(opponent)) {
-        candidates = lowOnFatigue
-          ? ['sharp-strike', 'armed-attack', 'unarmed-attack']
-          : ['brutal-strike', 'sharp-strike', 'armed-attack', 'unarmed-attack']
-      } else {
-        candidates = lowOnFatigue
-          ? ['armed-attack', 'unarmed-attack']
-          : ['sharp-strike', 'armed-attack', 'unarmed-attack']
-      }
-      break
-
-    case 'inexperienced':
-      candidates = ['unarmed-attack', 'armed-attack']
-      break
-  }
-
-  // Whitelist du scénario, puis cartes déjà engagées cette manche (une carte ne
-  // peut être jouée qu'une fois par bande, et son initiative la fixe à une bande)
-  const allowed = candidates.filter(id => isActionAllowed(id, config) && !exclude.has(id))
-
-  for (const actionId of allowed) {
-    if (canUseAction(state, actionId) && canAffordAction(state, actionId)) {
-      return actionId
-    }
-  }
-
-  // Repli social : aucune attaque du persona n'est jouable (ex. un « meneur »
-  // dont l'encounter n'autorise que les actions sociales). Pousse l'état mental
-  // de la cible — Intimidation (🔻) avant Provocation (🔺) par défaut ; la
-  // whitelist de l'encounter choisit laquelle est réellement disponible.
-  for (const social of ['intimidation', 'provocation'] as ActionId[]) {
-    if (isActionAllowed(social, config) && !exclude.has(social)
-      && canUseAction(state, social) && canAffordAction(state, social)) {
-      return social
-    }
-  }
-  return null
-}
-
-// ─── Internal helpers ─────────────────────────────────────────────────────────
-
-/**
- * True when the opponent is vulnerable enough to justify gambling on
- * brutal-strike (1💔 hit vs 2💢 miss).
- *
- * PC opponent: ≥ 2 heavy wounds, or a status that costs them PA next round.
- * Adversary opponent: a destroyed body part, or half its fatigue clock filled.
- */
-function shouldGamble(opponent: Actor): boolean {
-  if (isAdversaryActor(opponent)) {
-    return opponent.parts.some(isPartDestroyed)
-        || opponent.fatigue * 2 >= opponent.sheet.fatigue
-  }
-  return opponent.heavyWounds >= 2
-      || opponent.bleed > 0
-      || opponent.status.includes('stunned')
-      || opponent.status.includes('knockdown')
 }
 
 // ─── AI helpers ───────────────────────────────────────────────────────────────

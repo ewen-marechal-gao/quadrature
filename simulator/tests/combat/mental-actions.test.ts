@@ -8,6 +8,8 @@ import { ACTION_DEFS, canUseAction } from '../../src/combat/actions'
 import type { OutcomeFlags } from '../../src/combat/actions'
 import { applyEffectToState, stabilityPool } from '../../src/combat/combatant'
 import { planNextAction } from '../../src/combat/agent'
+import { scorePlayerAction } from '../../src/planner/planner'
+import { PERSONA_WEIGHTS } from '../../src/planner/value'
 import { makeCombatant } from '../helpers/fixtures'
 import type { CombatantState, MentalState } from '../../src/combat/types'
 import type { AgentConfig } from '../../src/combat/agent'
@@ -120,8 +122,13 @@ describe('mentalCondition gate', () => {
 })
 
 // ─── Agent : récupération quand l'état mental est pénalisant ─────────────────────
+//
+// Le planificateur par utilité n'a pas de seuil « degré ≥ 2 » : la consolidation
+// est jouée quand ce qu'elle rachète (états pénalisants, ◇, +1⚡ de Concentré)
+// vaut la Bande I. À degré 1 (Prudent), recentrer reste rationnel — c'est un
+// petit gain, plus un ◇ — mais ne doit jamais évincer une urgence.
 
-describe('scripted agent uses consolidation when off-centre (degré ≥ 2)', () => {
+describe('scripted agent uses consolidation when off-centre', () => {
   const cfg: AgentConfig = { persona: 'cautious', targetId: 'B' }
 
   it('a terrified mentalist recentres (Focalisation) before attacking', () => {
@@ -129,8 +136,23 @@ describe('scripted agent uses consolidation when off-centre (degré ≥ 2)', () 
     expect(plan?.action).toBe('focalisation')  // universelle, priorité
   })
 
-  it('a merely cautious combatant does NOT consolidate (degré 1 is fine)', () => {
-    const plan = planNextAction(mentalist('cautious', 0), makeCombatant('B'), cfg)
-    expect(plan?.action).not.toBe('focalisation')
+  it('recentring from the extreme outweighs recentring from degré 1', () => {
+    // La valeur du recentrage doit CROÎTRE avec la dégradation de l'état :
+    // c'est la forme de la fonction de valeur, pas un seuil arbitraire.
+    const at = (state: 'cautious' | 'panicked' | 'terrified') =>
+      scorePlayerAction('focalisation', mentalist(state, 0), makeCombatant('B'), {
+        selfId: 'A', isEnemy: id => id === 'B',
+        getActor: () => undefined, weights: PERSONA_WEIGHTS.cautious,
+      })
+    // getActor sur soi est câblé par scorePlayerAction ; l'ennemi est sans objet ici.
+    expect(at('terrified')).toBeGreaterThan(at('panicked'))
+    expect(at('panicked')).toBeGreaterThan(at('cautious'))
+  })
+
+  it('an urgent recovery still beats a comfort consolidation (degré 1)', () => {
+    // Prudent + fatigue haute : la Respiration doit primer sur la Focalisation.
+    const winded = { ...mentalist('cautious', 0), fatigue: 12 }
+    const plan = planNextAction(winded, makeCombatant('B'), cfg)
+    expect(plan?.action).toBe('respiration')
   })
 })

@@ -364,6 +364,43 @@ export const GUARD_DEFS: Record<GuardId, GuardDef> = {
   },
 }
 
+// ─── Check-roll parameters (single source, shared with the planner) ───────────
+
+/**
+ * Build the EXACT RollParams an action check would use — the one arithmetic of
+ * advantages (target statuses À terre/Inconscient, guard choice Encaisser,
+ * selfAdvantage de la Charge) and mental-track modifiers, factored out of
+ * resolveAction so the utility planner prices the same roll it will make.
+ */
+export function checkRollParams(
+  actorSnapshot: CombatantState,
+  actionId:      ActionId,
+  target?:       AttackTarget,
+  guardId?:      GuardId,
+): RollParams {
+  const action = ACTION_DEFS[actionId]
+
+  // Accumulate 🟩 advantages from the target's statuses (e.g. À terre 🙏, Inconscient 😵‍💫).
+  // Adversary targets have no status list (parts + 4-state mental track) → 0.
+  const targetAdvantages = target && 'status' in target
+    ? target.status.reduce((sum, id) => sum + (STATUS_DEFS[id]?.attackerAdvantage ?? 0), 0)
+    : 0
+  // Accumulate 🟩 advantages from the guard choice (Encaisser grants 1 advantage to the attacker)
+  const guardAdvantage = guardId != null
+    ? (GUARD_DEFS[guardId].attackerAdvantage ?? 0)
+    : 0
+  const totalAdvantages = targetAdvantages + guardAdvantage + (action.selfAdvantage ?? 0)
+  // Mental track: an attack is an OFFENSIVE roll (self-targeted actions are neither).
+  const mentalMods = action.selfTargeted
+    ? { rerolls: 0, disadvantages: 0 }
+    : mentalRollModifiers(actorSnapshot.mentalState, 'offensive')
+  return rollParamsFrom(actorSnapshot, action.rollChar, action.rollSkill, {
+    ...(totalAdvantages > 0 ? { advantages: totalAdvantages } : {}),
+    ...(mentalMods.disadvantages > 0 ? { disadvantages: mentalMods.disadvantages } : {}),
+    ...(mentalMods.rerolls > 0 ? { rerolls: mentalMods.rerolls } : {}),
+  })
+}
+
 // ─── Unified action resolution ────────────────────────────────────────────────
 
 /**
@@ -381,26 +418,10 @@ export function resolveAction(
   ctx:           ActionContext,
 ): ResolvedAction {
   const action = ACTION_DEFS[actionId]
-
-  // Accumulate 🟩 advantages from the target's statuses (e.g. À terre 🙏, Inconscient 😵‍💫).
-  // Adversary targets have no status list (parts + 3-state mental track) → 0.
-  const targetAdvantages = ctx.target && 'status' in ctx.target
-    ? ctx.target.status.reduce((sum, id) => sum + (STATUS_DEFS[id]?.attackerAdvantage ?? 0), 0)
-    : 0
-  // Accumulate 🟩 advantages from the guard choice (Encaisser grants 1 advantage to the attacker)
+  const params = checkRollParams(actorSnapshot, actionId, ctx.target, ctx.guardId)
   const guardAdvantage = ctx.guardId != null
     ? (GUARD_DEFS[ctx.guardId].attackerAdvantage ?? 0)
     : 0
-  const totalAdvantages = targetAdvantages + guardAdvantage + (action.selfAdvantage ?? 0)
-  // Mental track: an attack is an OFFENSIVE roll (self-targeted actions are neither).
-  const mentalMods = action.selfTargeted
-    ? { rerolls: 0, disadvantages: 0 }
-    : mentalRollModifiers(actorSnapshot.mentalState, 'offensive')
-  const params = rollParamsFrom(actorSnapshot, action.rollChar, action.rollSkill, {
-    ...(totalAdvantages > 0 ? { advantages: totalAdvantages } : {}),
-    ...(mentalMods.disadvantages > 0 ? { disadvantages: mentalMods.disadvantages } : {}),
-    ...(mentalMods.rerolls > 0 ? { rerolls: mentalMods.rerolls } : {}),
-  })
   const checkRoll = roll(buildPool(params), params.rerolls ?? 0)
 
   const hit      = checkRoll.total >= ctx.dc

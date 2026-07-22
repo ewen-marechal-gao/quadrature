@@ -28,32 +28,43 @@ describe('planRoundActions — defeated combatant', () => {
   })
 })
 
-// ─── Self-action triggers ─────────────────────────────────────────────────────
+// ─── Self-care emerges from the pricing (no thresholds) ──────────────────────
+//
+// The utility planner has no per-persona trigger tables: Respiration and
+// Stabiliser are picked when the recovery they buy is WORTH the Bande I slot
+// they occupy. The tests assert the pricing's shape, not hand-set thresholds.
 
-describe('planRoundActions — self-action triggers', () => {
-  it('winded → respiration planned as first action (any persona)', () => {
+describe('planRoundActions — self-care emerges from the pricing', () => {
+  it('winded at high fatigue → respiration opens the round (every persona)', () => {
     for (const cfg of [cfgAggressive, cfgCautious, cfgOpportunist]) {
-      const s = addStatus(makeCombatant('A'), 'winded')
+      const s = { ...addStatus(makeCombatant('A'), 'winded'), fatigue: 12 }
       const plans = planRoundActions(s, opponent, cfg)
       expect(plans[0]?.action).toBe('respiration')
     }
   })
 
-  it('hemorrhage (bleed 🩸) → stabilize planned as first action (cautious persona)', () => {
-    const s = { ...makeCombatant('A'), bleed: 1 }
+  it('a heavy bleed 🩸 stock (beyond Récupération) → stabilize is planned', () => {
+    // recovery 2 : un stock de 6 déposera 4+2 💢 — le vider vaut la Bande I.
+    const s = { ...makeCombatant('A'), bleed: 6 }
     const plans = planRoundActions(s, opponent, cfgCautious)
     expect(plans.some(p => p.action === 'stabilize')).toBe(true)
   })
 
-  it('respiration takes priority over stabilize when both conditions are met', () => {
-    const s = { ...addStatus(makeCombatant('A'), 'winded'), bleed: 1 }
+  it('a trivial bleed (below Récupération) is NOT worth a Bande I slot', () => {
+    // recovery 2 ≥ stock 1 : la plaie se referme seule, Stabiliser ne rapporte rien.
+    const s = { ...makeCombatant('A'), bleed: 1 }
     const plans = planRoundActions(s, opponent, cfgCautious)
-    // respiration must be the first planned action
+    expect(plans.every(p => p.action !== 'stabilize')).toBe(true)
+  })
+
+  it('respiration outweighs stabilize when both are on the table', () => {
+    const s = { ...addStatus(makeCombatant('A'), 'winded'), fatigue: 12, bleed: 3 }
+    const plans = planRoundActions(s, opponent, cfgCautious)
     expect(plans[0]?.action).toBe('respiration')
   })
 
   it('no self-care needed → first plan is an offensive action', () => {
-    const s = makeCombatant('A')  // fatigue=0, no status
+    const s = makeCombatant('A')  // fatigue=1, no status
     const plans = planRoundActions(s, opponent, cfgCautious)
     expect(plans.length).toBeGreaterThan(0)
     const def = ACTION_DEFS[plans[0].action]
@@ -61,7 +72,7 @@ describe('planRoundActions — self-action triggers', () => {
   })
 })
 
-// ─── Persona behaviour ────────────────────────────────────────────────────────
+// ─── Persona behaviour: weights, not candidate lists ──────────────────────────
 
 describe('planRoundActions — persona behaviour', () => {
   it('aggressive persona plans at least 2 offensive actions with full PA', () => {
@@ -71,28 +82,42 @@ describe('planRoundActions — persona behaviour', () => {
     expect(offensive.length).toBeGreaterThanOrEqual(2)
   })
 
-  it('cautious persona never plans brutal-strike (avoids fatigue costs)', () => {
-    const s = makeCombatant('A')
-    const plans = planRoundActions(s, opponent, cfgCautious)
-    expect(plans.every(p => p.action !== 'brutal-strike')).toBe(true)
+  it('cautious cares for itself sooner than aggressive (weight crossover)', () => {
+    // Même état — fatigue montante : le prudent bascule sur la Respiration
+    // avant l'agressif, parce que caution × récupération croise plus tôt la
+    // valeur d'une attaque. On cherche la fatigue de bascule de chacun.
+    const crossover = (cfg: { persona: 'aggressive' | 'cautious'; targetId: string }): number => {
+      for (let f = 1; f <= 19; f++) {
+        const s = { ...makeCombatant('A'), fatigue: f }
+        const plans = planRoundActions(s, opponent, cfg)
+        if (plans.some(p => p.action === 'respiration')) return f
+      }
+      return 20
+    }
+    expect(crossover(cfgCautious)).toBeLessThanOrEqual(crossover(cfgAggressive))
   })
 
-  it('cautious persona never plans sharp-strike (avoids fatigue costs)', () => {
+  it('deterministic personas (noise 0) produce stable plans', () => {
     const s = makeCombatant('A')
-    const plans = planRoundActions(s, opponent, cfgCautious)
-    expect(plans.every(p => p.action !== 'sharp-strike')).toBe(true)
+    const a = planRoundActions(s, opponent, cfgOpportunist).map(p => p.action)
+    const b = planRoundActions(s, opponent, cfgOpportunist).map(p => p.action)
+    expect(a).toEqual(b)
   })
 
-  it('inexperienced persona plans exactly 1 action (no Phase C, no self-care)', () => {
-    const s = makeCombatant('A')  // fatigue=0, no status
-    const plans = planRoundActions(s, opponent, cfgInexperienced)
-    expect(plans).toHaveLength(1)
-  })
-
-  it('inexperienced persona uses unarmed-attack as first choice', () => {
-    const s = makeCombatant('A')
-    const plans = planRoundActions(s, opponent, cfgInexperienced)
-    expect(plans[0]?.action).toBe('unarmed-attack')
+  it('inexperienced (noisy softmax) still yields only legal, affordable plans', () => {
+    const seen = new Set<string>()
+    for (let i = 0; i < 40; i++) {
+      const s = makeCombatant('A')
+      const plans = planRoundActions(s, opponent, cfgInexperienced)
+      seen.add(plans.map(p => p.action).join('+'))
+      const totalPA = plans.reduce((sum, p) => sum + ACTION_DEFS[p.action].cost.actions, 0)
+      expect(totalPA).toBeLessThanOrEqual(3)
+      // one card per band, at most
+      const bands = plans.map(p => ACTION_DEFS[p.action].initiative)
+      expect(new Set(bands.map(i => i <= 3 ? 'I' : i <= 6 ? 'II' : 'III')).size).toBe(plans.length)
+    }
+    // Le bruit se voit : plusieurs ouvertures distinctes sur 40 tirages.
+    expect(seen.size).toBeGreaterThanOrEqual(2)
   })
 })
 
