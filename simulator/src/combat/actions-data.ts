@@ -43,8 +43,20 @@ interface RawPlayerAction {
   initiative:   number
   cost:         { actions: number; reactions?: number; fatigue?: number; endPlayerRound?: boolean }
   tags:         CardTag[]
-  /** Portée du coup, en cases. Absent = non gâté (cf. ActionDef.reach). */
+  /** Portée MAX du coup, en cases. Absent = non gâté (cf. ActionDef.reach). */
   reach?:       number
+  /**
+   * Portée MAX d'un tir, en cases (§ equipement — « jusqu'à leur Portée sans
+   * pénalité »). Synonyme de `reach` pour les actions à distance ; les deux
+   * mappent sur ActionDef.reach. Sera dérivé de l'arme (chantier armes #18).
+   */
+  effectiveRange?: number
+  /**
+   * Portée MIN, en cases : un tir ne part pas si la cible est plus proche
+   * (§ equipement — « Pas d'attaque si engagé » pour un arc). minRange 1 →
+   * distance > 1 requise (pas de tir au contact).
+   */
+  minRange?:    number
   prerequisite?: { skill: SkillName; minValue: number }
   /** Mental states allowing this action (empty/absent = no constraint). */
   mentalConditions?: MentalState[]
@@ -107,7 +119,10 @@ function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string): Action
     initiative:  raw.initiative,
     cost,
     tags:        raw.tags,
-    ...(raw.reach != null && { reach: raw.reach }),
+    // Portée MAX : `reach` (mêlée) ou `effectiveRange` (tir — future dérivée de l'arme).
+    ...((raw.reach ?? raw.effectiveRange) != null && { reach: raw.reach ?? raw.effectiveRange }),
+    // Portée MIN : un tir ne part pas au contact (§ equipement — arc engagé).
+    ...(raw.minRange != null && { minRange: raw.minRange }),
     ...(raw.prerequisite && { prerequisite: raw.prerequisite }),
     mentalConditions: raw.mentalConditions ?? [],
     requiresFirstAction: raw.requiresFirstAction ?? false,

@@ -88,9 +88,15 @@ export function isAdjacent(a: Position, b: Position): boolean {
   return distance(a, b) === 1
 }
 
-/** True when `target` is within `reach` cases of `from` (reach 1 = adjacent). */
-export function inReach(from: Position, target: Position, reach: number): boolean {
-  return distance(from, target) <= reach
+/**
+ * True when `target` sits in the weapon's effective range band from `from`:
+ * beyond `minRange` (a ranged weapon can't fire when engaged, minRange 1 →
+ * distance > 1) and within `reach` (its maximum). Melee keeps minRange 0, so
+ * `distance ≤ reach` alone — adjacent connects exactly as before.
+ */
+export function inReach(from: Position, target: Position, reach: number, minRange = 0): boolean {
+  const d = distance(from, target)
+  return d > minRange && d <= reach
 }
 
 /**

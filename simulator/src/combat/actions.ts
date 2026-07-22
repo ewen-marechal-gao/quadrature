@@ -74,6 +74,12 @@ export interface ActionDef {
    */
   reach?:        number
   /**
+   * Minimum distance the weapon needs, in cases (§ equipement). A bow can't fire
+   * when engaged: minRange 1 → the target must be strictly farther than 1 case.
+   * Absent / 0 = no minimum (melee connects at adjacency). Future: from the weapon.
+   */
+  minRange?:     number
+  /**
    * Statuts qui INTERDISENT l'action (§ conditions des cartes). La Course est
    * bloquée par Essoufflé, À terre, À genoux, Entravé, Immobilisé — on ne sprinte
    * ni essoufflé ni les jambes prises.

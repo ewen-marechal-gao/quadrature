@@ -135,13 +135,14 @@ actions:
     name: { fr: "Tir rapide", en: "Quick Shot" }
     description:
       {
-        fr: "Tir d'instinct à distance. Succès : 2💢, Échec : 1💢. Critique : +1💢. Défaut : +1💧 pour toi. Coûte 1💧 en plus du PA. Portée 8.",
-        en: "Instinctive ranged shot. Hit: 2💢, miss: 1💢. Crit: +1💢. Flaw: +1💧 self. Reach 8.",
+        fr: "Tir d'instinct à distance. Succès : 2💢, Échec : 1💢. Critique : +1💢. Défaut : +1💧 pour toi. Coûte 1💧 en plus du PA. Portée 24 ; pas de tir au contact.",
+        en: "Instinctive ranged shot. Hit: 2💢, miss: 1💢. Crit: +1💢. Flaw: +1💧 self. Range 24; no shot when engaged.",
       }
     initiative: 3
     cost: { actions: 1, fatigue: 1 }
     tags: [offensive, ranged, physical, physicalDamage]
-    reach: 8
+    minRange: 1              # pas de tir si engagé (§ equipement — arc)
+    effectiveRange: 24       # portée sans pénalité (future : dérivée de l'arme)
     prerequisite: { skill: intuition, minValue: 1 }
     roll: { characteristic: lucidity, skill: intuition }
     onSuccess: { text: { fr: "Touché — 2💢" }, effect: [{ wound: 2 }] }
@@ -158,13 +159,14 @@ actions:
     name: { fr: "Tir ciblé", en: "Aimed Shot" }
     description:
       {
-        fr: "Tir ajusté et patient. Succès : 1💔 blessure grave, Échec : 2💢. Critique : hémorragie 🩸. Défaut : +1💧 pour toi. Coûte 1💧 en plus des PA. Portée 12.",
-        en: "Patient aimed shot. Hit: 1💔, miss: 2💢. Crit: hemorrhage 🩸. Flaw: +1💧 self. Reach 12.",
+        fr: "Tir ajusté et patient. Succès : 1💔 blessure grave, Échec : 2💢. Critique : hémorragie 🩸. Défaut : +1💧 pour toi. Coûte 1💧 en plus des PA. Portée 24 ; pas de tir au contact.",
+        en: "Patient aimed shot. Hit: 1💔, miss: 2💢. Crit: hemorrhage 🩸. Flaw: +1💧 self. Range 24; no shot when engaged.",
       }
     initiative: 8
     cost: { actions: 2, fatigue: 1 }
     tags: [offensive, ranged, physical, physicalDamage]
-    reach: 12
+    minRange: 1              # pas de tir si engagé (§ equipement — arc)
+    effectiveRange: 24       # portée sans pénalité (future : dérivée de l'arme)
     prerequisite: { skill: observation, minValue: 1 }
     roll: { characteristic: acuity, skill: observation }
     onSuccess: { text: { fr: "Touché — 1💔 blessure grave" }, effect: [{ heavyWound: 1 }] }

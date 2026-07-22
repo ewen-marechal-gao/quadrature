@@ -324,7 +324,7 @@ function resolvePlans(
           ...(targetPart && { targetPart }),
         }
         actionLogs.push(entry)
-        if (def.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: def.reach })
+        if (def.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: def.reach, minRange: def.minRange })
         continue
       }
 
@@ -346,7 +346,7 @@ function resolvePlans(
       phaseEffects.push(...resolved.effects)
       const entry = toActionLogEntry(resolved, preActions, preReactions, plan.battleCry, plan.reasoning)
       actionLogs.push(entry)
-      if (def.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: def.reach })
+      if (def.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: def.reach, minRange: def.minRange })
     }
 
     // c. Expand move intents, then apply everything at once.
@@ -568,6 +568,8 @@ interface ReachCheck {
   entry:    ActionLogEntry
   targetId: string
   reach:    number
+  /** Minimum distance the weapon needs — a bow can't fire when engaged (1). */
+  minRange?: number
 }
 
 /**
@@ -592,13 +594,17 @@ function gateByReach(
   positions: ReadonlyMap<string, Position>,
 ): Set<CombatEffect> {
   const dropped = new Set<CombatEffect>()
-  for (const { entry, targetId, reach } of checks) {
+  for (const { entry, targetId, reach, minRange = 0 } of checks) {
     const from = positions.get(entry.actorId)
     const to   = positions.get(targetId)
-    if (!from || !to || inReach(from, to, reach)) continue
+    if (!from || !to || inReach(from, to, reach, minRange)) continue
 
     entry.hit = false
-    entry.notes.push(`⊘ Hors d'atteinte — ${distance(from, to)} cases, portée ${reach}`)
+    const d = distance(from, to)
+    // Too CLOSE (engaged, under minRange) reads differently from too far.
+    entry.notes.push(d <= minRange
+      ? `⊘ Engagé — ${d} case${d > 1 ? 's' : ''}, tir impossible sous ${minRange + 1}`
+      : `⊘ Hors d'atteinte — ${d} cases, portée ${reach}`)
     for (const e of entry.effects) if (e.targetId === targetId) dropped.add(e)
     entry.effects = entry.effects.filter(e => !dropped.has(e))
   }

@@ -21,6 +21,7 @@ const at = (x: number, y: number): Position => ({ x, y })
 const alwaysDodge: GuardProvider = () => 'dodge'
 
 const OUT_OF_REACH = /Hors d'atteinte/
+const ENGAGED      = /Engagé/
 
 /** PC at the origin, Faucheur `gap` cases to its right. */
 async function facingOff(gap: number | null): Promise<Map<string, Actor>> {
@@ -113,6 +114,53 @@ describe('reach and movement resolve in the right order', () => {
     expect(pc.lightWounds + pc.heavyWounds).toBe(0)
     // …mais le terrain est bel et bien parcouru : le déplacement, lui, tient.
     expect(after.get('faucheur')!.pos).not.toEqual(at(8, 5))
+  })
+})
+
+describe('ranged range band — minRange (engagement) and effectiveRange', () => {
+  // Un archer (Intuition/Observation 2, Mobilité 3) débloque les tirs.
+  const archer = () => ({
+    ...makeCombatant('Archer', { skills: {
+      ...makeCombatant('Archer').char.skills, intuition: 2, observation: 2,
+    } }),
+    pos: at(0, 5),
+  })
+  const shoot = (action: 'quick-shot' | 'aimed-shot' = 'aimed-shot') =>
+    (): Plan[] => [{ actorId: 'Archer', action, targetId: 'faucheur', targetPart: 'sickles' }]
+
+  const facingArcher = async (gap: number): Promise<Map<string, Actor>> => {
+    const fau = initAdversary(await loadAdversary('faucheur'))
+    return new Map<string, Actor>([['Archer', archer()], [fau.id, { ...fau, pos: at(gap, 5) }]])
+  }
+
+  it('the shots carry a range band: minRange 1, effectiveRange 24 (→ reach 24)', () => {
+    for (const id of ['quick-shot', 'aimed-shot'] as const) {
+      expect(ACTION_DEFS[id].reach).toBe(24)
+      expect(ACTION_DEFS[id].minRange).toBe(1)
+    }
+  })
+
+  it('a shot lands at range (10 cases)', async () => {
+    const { log } = await resolveRoundBands(await facingArcher(10), 1, alwaysDodge, [], shoot())
+    const entry = entries(log)[0]
+    expect(entry.notes.some(n => OUT_OF_REACH.test(n) || ENGAGED.test(n))).toBe(false)
+    expect(entry.effects.length).toBeGreaterThan(0)
+  })
+
+  it('a shot at an ENGAGED (adjacent) target is blocked — no bow point-blank', async () => {
+    const { states: after, log } = await resolveRoundBands(await facingArcher(1), 1, alwaysDodge, [], shoot())
+    const entry = entries(log)[0]
+    expect(entry.hit).toBe(false)
+    expect(entry.notes.some(n => ENGAGED.test(n))).toBe(true)
+    // La créature n'a rien pris : le tir au contact ne part pas.
+    const sickles = (after.get('faucheur') as never as { parts: Array<{ type: string; blocks: Array<{ damage: number }> }> })
+      .parts.find(p => p.type === 'sickles')!
+    expect(sickles.blocks.every(b => b.damage === 0)).toBe(true)
+  })
+
+  it('a shot beyond effectiveRange (25 cases) is out of reach', async () => {
+    const { log } = await resolveRoundBands(await facingArcher(25), 1, alwaysDodge, [], shoot())
+    expect(entries(log)[0].notes.some(n => OUT_OF_REACH.test(n))).toBe(true)
   })
 })
 

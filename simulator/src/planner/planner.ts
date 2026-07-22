@@ -199,8 +199,11 @@ export function scorePlayerAction(
   if (actorDefeated(opponent)) return score
 
   // Reach gate (§ portée): a blow that cannot connect pays its costs for nothing.
+  // A ranged weapon has a range BAND — too close (engaged, under minRange) counts
+  // as out of range just as much as too far.
   const gap = actor.pos && opponent.pos ? distance(actor.pos, opponent.pos) : null
-  const connects = gap === null || def.reach == null || gap <= def.reach
+  const connects = gap === null || def.reach == null
+    || (gap > (def.minRange ?? 0) && gap <= def.reach)
   if (!connects) return score
 
   if (isAdversaryActor(opponent)) {
