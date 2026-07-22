@@ -33,7 +33,8 @@ import { distance } from './position'
 import { STATUS_DEFS } from './status'
 import { type Actor, actorDefeated } from '../adversary/actor'
 import {
-  planRoundUtility, bestActionForBand, simulateSelfEffects, type PlannerConfig,
+  planRoundUtility, bestActionForBand, simulateSelfEffects, selectGuardByEV,
+  type PlannerConfig,
 } from '../planner/planner'
 
 export type { GuardProvider }
@@ -259,19 +260,17 @@ function moveBudgetOf(id: ActionId, actor: CombatantState): number {
 /**
  * Build a GuardProvider for a scripted agent.
  *
- * Guard selection is stats-optimal and initiative-aware:
- *  1. Filter: keep only guards whose `initiative < attack.initiative`
- *     (the guard must react faster than the incoming attack).
- *     `absorb` (initiative 0) always passes — it is the passive fallback.
- *  2. Score: for each eligible guard compute
- *     `effChar(state, guard.rollChar) + state.skills[guard.rollSkill]`
- *  3. Pick: highest score. Ties are broken by preferring active guards
- *     (dodge > parry > block > absorb) — equal pool quality, but active
- *     guards can improve with extra reactions.
+ * Guard selection is by EXPECTED VALUE (src/planner): among the guards fast
+ * enough to react (initiative < attack.initiative — `absorb` at 0 always
+ * passes), pick the one whose expected roll best protects the defender, net of
+ * the free 🟩 Encaisser hands the attacker. Reads the same exact distributions
+ * the attacker's planner uses, so both sides agree on the guard that will be
+ * rolled.
  */
 export function makeGuardProvider(_config: AgentConfig): GuardProvider {
   return (_targetId, state, available, _attackerId, actionId, attackInitiative) => {
-    return selectGuardByStats(state, available, actionId, attackInitiative)
+    const init = attackInitiative ?? ACTION_DEFS[actionId as ActionId]?.initiative ?? 99
+    return selectGuardByEV(state, available, init).guardId
   }
 }
 
@@ -419,50 +418,6 @@ function isActionAllowed(actionId: ActionId, config: AgentConfig): boolean {
 }
 
 // ─── Guard selection (scripted) ───────────────────────────────────────────────
-
-/**
- * Select the guard with the best expected dice pool against a specific attack.
- *
- * Step 1 — Initiative filter:
- *   Only guards with `guardDef.initiative < attackDef.initiative` are eligible.
- *   `absorb` (initiative 0) always passes and acts as the last-resort fallback.
- *
- * Step 2 — Stat score:
- *   Score = effChar(state, guard.rollChar) + state.skills[guard.rollSkill]
- *   Higher score → larger pool → better expected guard roll.
- *
- * Step 3 — Tiebreak:
- *   Equal scores: prefer active guards (dodge > parry > block > absorb).
- *   Active guards benefit from future reaction bonuses; absorb never does.
- */
-function selectGuardByStats(
-  state:     CombatantState,
-  available: GuardId[],
-  attackId:  ActionId | string,
-  attackInitiative?: number,
-): GuardId {
-  // Adversary card ids are not in ACTION_DEFS: their initiative arrives explicitly.
-  const attackInit = attackInitiative
-    ?? ACTION_DEFS[attackId as ActionId]?.initiative
-    ?? 99  // unknown attack: every guard may react
-
-  // Canonical priority for tiebreaking (active guards first)
-  const TIEBREAK_ORDER: GuardId[] = ['dodge', 'parry', 'block', 'absorb']
-
-  // Filter by initiative, then score
-  const eligible = available
-    .filter(id => GUARD_DEFS[id].initiative < attackInit)
-    .map(id => {
-      const gd    = GUARD_DEFS[id]
-      const score = effChar(state, gd.rollChar) + state.skills[gd.rollSkill]
-      const rank  = TIEBREAK_ORDER.indexOf(id)   // lower rank = higher priority
-      return { id, score, rank }
-    })
-    .sort((a, b) => b.score - a.score || a.rank - b.rank)
-
-  // absorb (initiative 0) always passes the filter, so eligible is never empty
-  return eligible[0]?.id ?? 'absorb'
-}
 
 // ─── AI helpers ───────────────────────────────────────────────────────────────
 

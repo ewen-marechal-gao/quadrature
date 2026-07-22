@@ -44,7 +44,8 @@ import { effectiveGuard } from '../adversary/combatant'
 import { selectTargetPart } from '../adversary/agent'
 import { checkDistribution, evOver } from './prob'
 import {
-  scoreEffects, PERSONA_WEIGHTS, type Weights, type ScoreContext, type PlannerPersona,
+  scoreEffects, PERSONA_WEIGHTS, PRICE,
+  type Weights, type ScoreContext, type PlannerPersona,
 } from './value'
 
 // ─── Configuration (mirror of AgentConfig, dependency-free) ───────────────────
@@ -257,37 +258,60 @@ function payoffFor(
 interface PayoffCache { actor: CombatantState; target: Actor | undefined; values: Array<number | undefined> }
 const payoffCache = new Map<ActionId, PayoffCache>()
 
-// ─── Guard estimation (PC defender) ───────────────────────────────────────────
+// ─── Guard selection by expected value ─────────────────────────────────────────
 
-/**
- * The guard a stat-optimal defender would choose against an attack of this
- * initiative, and the expected total of its roll — the planner's DC estimate.
- * Mirrors makeGuardProvider: initiative filter, best char+skill pool, active
- * guards preferred on ties, absorb as the floor.
- */
-export function estimateGuard(
-  defender:         CombatantState,
-  attackInitiative: number,
-): { dc: number; guardId: GuardId } {
-  const TIEBREAK_ORDER: GuardId[] = ['dodge', 'parry', 'block', 'absorb']
-  const eligible = availableGuards(defender)
-    .filter(gid => GUARD_DEFS[gid].initiative < attackInitiative)
-    .map(gid => {
-      const gd = GUARD_DEFS[gid]
-      const score = rollParamsFrom(defender, gd.rollChar, gd.rollSkill).characteristic
-                  + defender.skills[gd.rollSkill]
-      return { gid, score, rank: TIEBREAK_ORDER.indexOf(gid) }
-    })
-    .sort((a, b) => b.score - a.score || a.rank - b.rank)
-
-  const guardId = eligible[0]?.gid ?? 'absorb'
-  const gd = GUARD_DEFS[guardId]
+/** Expected DC of a guard's roll (mental-state aware, via the exact distribution). */
+function guardExpectedDC(defender: CombatantState, guardId: GuardId): number {
+  const gd   = GUARD_DEFS[guardId]
   const mods = mentalRollModifiers(defender.mentalState, 'defensive')
   const params = rollParamsFrom(defender, gd.rollChar, gd.rollSkill,
     mods.disadvantages > 0 ? { disadvantages: mods.disadvantages, rerolls: mods.rerolls }
                            : { rerolls: mods.rerolls })
-  return { dc: Math.round(checkDistribution(params).mean), guardId }
+  return checkDistribution(params).mean
 }
+
+/**
+ * Pick the guard that best protects the defender against an attack of this
+ * initiative, by EXPECTED VALUE rather than a raw stat sum.
+ *
+ * The score of a guard is its **effective DC** — the mean roll it would set as
+ * the threshold — minus the advantage it hands the attacker: Encaisser grants
+ * the attacker a free 🟩 (worth ~1 point on their roll), the active guards none.
+ * So a tanky Vigueur/Récupération pool still wins on Encaisser, but a coin-flip
+ * between an active guard and Encaisser breaks toward the active one, which the
+ * attacker cannot exploit.
+ *
+ * The ⚡ an active guard spends carries no opportunity cost here: a guard is
+ * rolled once per round and reactions have no other use — when the defender is
+ * out of ⚡, only Encaisser is `available` in the first place, so availability,
+ * not the score, rations reactions.
+ *
+ * Returns both the chosen guard and its (rounded) expected DC, so the attacker's
+ * planner can price against the very guard the defender will roll.
+ */
+export function selectGuardByEV(
+  defender:         CombatantState,
+  available:        GuardId[],
+  attackInitiative: number,
+): { dc: number; guardId: GuardId } {
+  const TIEBREAK_ORDER: GuardId[] = ['dodge', 'parry', 'block', 'absorb']
+  const scored = available
+    .filter(gid => GUARD_DEFS[gid].initiative < attackInitiative)
+    .map(gid => {
+      const dc      = guardExpectedDC(defender, gid)
+      const penalty = (GUARD_DEFS[gid].attackerAdvantage ?? 0) * PRICE.dieMod
+      return { gid, dc, value: dc - penalty, rank: TIEBREAK_ORDER.indexOf(gid) }
+    })
+    .sort((a, b) => b.value - a.value || a.rank - b.rank)
+
+  const best = scored[0]
+  if (!best) return { dc: Math.round(guardExpectedDC(defender, 'absorb')), guardId: 'absorb' }
+  return { dc: Math.round(best.dc), guardId: best.gid }
+}
+
+/** Back-compat alias — the planner's DC estimate is the guard the defender picks. */
+export const estimateGuard = (defender: CombatantState, attackInitiative: number) =>
+  selectGuardByEV(defender, availableGuards(defender), attackInitiative)
 
 // ─── Plan-level helpers ───────────────────────────────────────────────────────
 
