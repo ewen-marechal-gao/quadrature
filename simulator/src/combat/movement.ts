@@ -34,6 +34,12 @@ export interface ApproachOptions {
   reach?: number
   /** Squares it may not enter. The mover's own square is never blocked. */
   isBlocked?: Blocked
+  /**
+   * RETREAT instead of approach: spend the budget to get as FAR from the goal as
+   * the board and blocks allow (kiting — a ranged attacker opening distance).
+   * `reach` is ignored in this mode.
+   */
+  away?: boolean
 }
 
 export interface MovePlan {
@@ -84,35 +90,38 @@ export function planApproach(
   board: Board,
   from:  Position,
   goal:  Position,
-  { budget, reach = 1, isBlocked = () => false }: ApproachOptions,
+  { budget, reach = 1, isBlocked = () => false, away = false }: ApproachOptions,
 ): MovePlan {
   const stay: MovePlan = {
     path: [], to: from, spent: 0, reached: gapTo(from, goal, reach) === 0,
   }
-  // Already in reach, or no legs to spend: hold position.
-  if (stay.reached || budget <= 0) return stay
+  // Already in reach (approach) / no legs to spend: hold position. A retreat is
+  // never "already done" — it always wants MORE distance if the budget allows.
+  if ((!away && stay.reached) || budget <= 0) return stay
 
   // BFS over free squares, at most `budget` deep. `prev` reconstructs the path.
   const prev    = new Map<string, Position | null>([[key(from), null]])
   const seen    = new Set<string>([key(from)])
   let   frontier: Position[] = [from]
 
-  // The mover wants, in this order: to get as close as the rules allow (gap),
-  // without running further than needed (steps), along the straightest line
-  // available (straightness). BFS explores in a fixed order, so the first
-  // square found wins any remaining tie — same inputs, same path, always.
-  let best = { pos: from, gap: gapTo(from, goal, reach), steps: 0, line: straightness(from, goal) }
+  // Approach minimises the gap to the goal; retreat maximises the raw distance
+  // from it. In both, `straightness` breaks ties toward the cleaner line (a
+  // straight run in, or straight away). BFS explores in a fixed order so the
+  // first square found wins any remaining tie — same inputs, same path, always.
+  const scoreOf = (p: Position) => away
+    ? { key: -distance(p, goal), line: -straightness(p, goal) }   // want FAR (min of negatives)
+    : { key: gapTo(p, goal, reach), line: straightness(p, goal) } // want CLOSE
+  let best = { pos: from, steps: 0, ...scoreOf(from) }
 
   for (let step = 1; step <= budget && frontier.length > 0; step++) {
     const next: Position[] = []
     for (const p of frontier) {
-      // Expand toward the goal first. BFS records a square's parent the first
-      // time it sees it, so discovery order IS the path that gets walked: fan
-      // out blindly and the route wanders even when the destination is right.
-      // Sorting costs nothing (8 squares) and makes the drawn path the one a
-      // player would have taken.
-      const steps = [...neighbours(board, p)].sort(
-        (a, b) => straightness(a, goal) - straightness(b, goal))
+      // Sort neighbours toward the objective first (goal for approach, away from
+      // it for retreat). BFS records a square's parent on first sighting, so
+      // discovery order IS the walked path — sorting makes it the sensible route.
+      const steps = [...neighbours(board, p)].sort((a, b) => away
+        ? straightness(b, goal) - straightness(a, goal)
+        : straightness(a, goal) - straightness(b, goal))
       for (const n of steps) {
         const k = key(n)
         if (seen.has(k) || isBlocked(n)) continue
@@ -120,17 +129,16 @@ export function planApproach(
         prev.set(k, p)
         next.push(n)
 
-        const cand = { pos: n, gap: gapTo(n, goal, reach), steps: step, line: straightness(n, goal) }
-        if (cand.gap < best.gap ||
-           (cand.gap === best.gap && cand.steps === best.steps && cand.line < best.line)) {
-          best = cand
+        const s = scoreOf(n)
+        if (s.key < best.key || (s.key === best.key && step === best.steps && s.line < best.line)) {
+          best = { pos: n, steps: step, ...s }
         }
       }
     }
     frontier = next
   }
 
-  return { ...toPlan(prev, from, best.pos), reached: best.gap === 0 }
+  return { ...toPlan(prev, from, best.pos), reached: !away && gapTo(best.pos, goal, reach) === 0 }
 }
 
 /** Walk `prev` back from `end` to `from`, yielding the forward path (start excluded). */
@@ -212,6 +220,7 @@ export function expandMoves(
       budget:    intent.budget,
       reach:     intent.reach ?? 1,
       isBlocked: occupiedBy(others),
+      ...(intent.away && { away: true }),
     })
     paths.set(intent, plan.path)
     claimed.set(intent.targetId, plan.to)

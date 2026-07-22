@@ -151,3 +151,42 @@ describe('planRoundActions — approche', () => {
     expect(plans.some(p => p.action === 'course')).toBe(false)
   })
 })
+
+// ─── Agent : kiting — un tirailleur qui OUTPORTE l'ennemi recule (§ étape 4) ───
+
+describe('planRoundActions — kiting', () => {
+  // Un tirailleur : Intuition 2 débloque le Tir rapide (portée 24). Il outporte
+  // largement un ennemi de mêlée (portée 1 + Course ~7).
+  const archer = (x: number) => ({
+    ...makeCombatant('Archer', { skills: {
+      ...makeCombatant('Archer').char.skills, intuition: 2,
+    } }),
+    pos: at(x, 5),
+  })
+  const rangedCfg: AgentConfig = {
+    persona: 'cautious', targetId: 'foe',
+    allowedActions: ['quick-shot', 'aimed-shot', 'course', 'walk', 'respiration'],
+  }
+
+  it('ennemi au contact (dans sa menace) → il recule (Course away)', () => {
+    const plans = planRoundActions(archer(4), foeAt(5, 5), rangedCfg)   // gap 1 : engagé
+    const move = plans.find(p => p.action === 'course' || p.action === 'walk')
+    expect(move).toBeDefined()
+    expect(move!.retreat).toBe(true)
+  })
+
+  it('ennemi à bonne distance (dans sa portée, hors menace) → il tient et tire', () => {
+    // gap 15 : hors de la menace du foe (~8), dans la portée du tir (24).
+    const plans = planRoundActions(archer(0), foeAt(15, 5), rangedCfg)
+    expect(plans.every(p => p.action !== 'course' && p.action !== 'walk')).toBe(true)
+    expect(plans.some(p => p.action === 'aimed-shot' || p.action === 'quick-shot')).toBe(true)
+  })
+
+  it('un combattant de mêlée ne kite jamais (il n\'outporte personne)', () => {
+    // Même gap 1, mais trousse de mêlée : il frappe, il ne recule pas.
+    const meleeCfg: AgentConfig = { persona: 'cautious', targetId: 'foe',
+      allowedActions: ['sharp-strike', 'course', 'charge'] }
+    const plans = planRoundActions({ ...makeCombatant('PC'), pos: at(4, 5) }, foeAt(5, 5), meleeCfg)
+    expect(plans.every(p => !p.retreat)).toBe(true)
+  })
+})

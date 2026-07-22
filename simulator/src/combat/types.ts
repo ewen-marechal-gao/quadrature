@@ -269,7 +269,7 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
    * An unexpanded move-toward is a no-op, which is what a positionless
    * encounter wants.
    */
-  | { kind: 'move-toward'; goalId: string; budget: number; reach?: number }
+  | { kind: 'move-toward'; goalId: string; budget: number; reach?: number; away?: boolean }
 )
 
 // ─── Resolution records ───────────────────────────────────────────────────────

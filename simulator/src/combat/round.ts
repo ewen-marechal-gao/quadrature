@@ -80,6 +80,8 @@ export interface PlannedAction {
   targetId?:  string
   /** Declared body part when the target is an adversary (§ Cibler une partie). */
   targetPart?: string
+  /** Movement action only: move AWAY from `targetId` (kiting) instead of toward it. */
+  retreat?:   boolean
   /** Cri de guerre ou réaction émotionnelle — visible dans les logs (agent LLM) */
   battleCry?: string
   /** Raisonnement interne de l'agent — non transmis à l'adversaire (agent LLM) */
@@ -287,7 +289,7 @@ function resolvePlans(
       // it; the move-toward intent is expanded against the board in step c.
       if (def.movement) {
         if (!plan.targetId) continue
-        const { effects, notes } = resolveMovementAction(plan.action, actorSnap, plan.targetId)
+        const { effects, notes } = resolveMovementAction(plan.action, actorSnap, plan.targetId, plan.retreat)
         phaseEffects.push(...effects)
         actionLogs.push({
           actorId: plan.actorId, action: plan.action, targetId: plan.targetId,

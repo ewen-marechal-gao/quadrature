@@ -81,23 +81,25 @@ const ALL_ACTION_IDS = Object.keys(ACTION_DEFS) as ActionId[]
  * pattern in combat/agent.ts still owns it until the positional-value étape.
  */
 export function planRoundUtility(
-  self:     CombatantState,
-  opponent: Actor,
-  config:   PlannerConfig,
-  fromBand: Band = 'I',
+  self:      CombatantState,
+  opponent:  Actor,
+  config:    PlannerConfig,
+  fromBand:  Band = 'I',
+  usedBands: ReadonlySet<Band> = new Set(),
 ): PlannedAction[] {
   const weights = config.weights ?? PERSONA_WEIGHTS[config.persona]
   const ctx = makeContext(self, opponent, weights, config)
   const startIdx = BANDS.indexOf(fromBand)
 
   // Candidate actions, partitioned by the band their initiative pins them to.
+  // `usedBands` are already spoken for (positioning committed a move there).
   const byBand = new Map<Band, ActionId[]>()
   for (const id of ALL_ACTION_IDS) {
     const def = ACTION_DEFS[id]
-    if (def.movement) continue                      // approach pattern's turf (étape 4)
+    if (def.movement) continue                      // positioning's turf (planPositioning)
     if (!isAllowed(id, config)) continue
     const band = bandOf(def.initiative)
-    if (band === null || BANDS.indexOf(band) < startIdx) continue
+    if (band === null || BANDS.indexOf(band) < startIdx || usedBands.has(band)) continue
     byBand.set(band, [...(byBand.get(band) ?? []), id])
   }
 
@@ -114,6 +116,7 @@ export function planRoundUtility(
     const band = BANDS[bandIdx]
     // Passing the band is always an option (and the only one when dry).
     dfs(bandIdx + 1, state, plan, score)
+    if (usedBands.has(band)) return                 // band taken by a committed move
     for (const id of byBand.get(band) ?? []) {
       if (!canUseAction(state, id) || !canAffordAction(state, id)) continue
       const s = scorePlayerAction(id, state, opponent, ctx)

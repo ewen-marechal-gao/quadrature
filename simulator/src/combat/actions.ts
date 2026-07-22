@@ -470,10 +470,13 @@ export function resolveMovementAction(
   actionId: ActionId,
   actor:    CombatantState,
   goalId:   string,
+  away = false,
 ): { effects: CombatEffect[]; notes: string[] } {
   const def    = ACTION_DEFS[actionId]
   const budget  = typeof def.moveBudget === 'function' ? def.moveBudget(actor) : (def.moveBudget ?? 0)
-  const effects: CombatEffect[] = [{ targetId: actor.id, kind: 'move-toward', goalId, budget }]
+  const effects: CombatEffect[] = [
+    { targetId: actor.id, kind: 'move-toward', goalId, budget, ...(away && { away: true }) },
+  ]
   const notes:   string[]       = []
   if (def.grantsInertia != null) {
     effects.push({ targetId: actor.id, kind: 'set-inertia', value: def.grantsInertia })
@@ -481,7 +484,8 @@ export function resolveMovementAction(
   if (def.grantsStatus) {
     effects.push({ targetId: actor.id, kind: 'add-status', status: def.grantsStatus })
   }
-  notes.push(`▶️ ${def.label} — jusqu'à ${budget} cases, Inertie ➡️ ${def.grantsInertia ?? 0}` +
+  notes.push(`▶️ ${def.label} — ${away ? 'recul' : 'approche'} jusqu'à ${budget} cases, ` +
+    `Inertie ➡️ ${def.grantsInertia ?? 0}` +
     (def.grantsStatus ? `, ${def.grantsStatus === 'winded' ? 'essoufflé 😮‍💨' : def.grantsStatus}` : ''))
   return { effects, notes }
 }

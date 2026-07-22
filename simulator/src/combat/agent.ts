@@ -31,9 +31,10 @@ import { spendActionCost, effChar, isDefeated } from './combatant'
 import { bandOf, BANDS, type Band } from './bands'
 import { distance } from './position'
 import { STATUS_DEFS } from './status'
-import { type Actor, actorDefeated } from '../adversary/actor'
+import { type Actor, actorDefeated, isAdversaryActor } from '../adversary/actor'
+import { cardMoveBudget } from '../adversary/agent'
 import {
-  planRoundUtility, bestActionForBand, simulateSelfEffects, selectGuardByEV,
+  planRoundUtility, simulateSelfEffects, selectGuardByEV,
   type PlannerConfig,
 } from '../planner/planner'
 
@@ -175,13 +176,11 @@ function toPlannerConfig(config: AgentConfig): PlannerConfig {
  * `fromBand` (default 'I') is the first still-open band: earlier bands are
  * already resolved and never re-planned (their PA is spent in the live state).
  *
- * Two régimes:
- *  - Out of melee reach on a board → the APPROACH pattern (below) owns the
- *    round: close the gap, charge if the leap connects. It is the one
- *    hand-written motif left; the positional-value étape absorbs it.
- *  - Otherwise → the utility planner (src/planner): every legal action priced
- *    by exact outcome probabilities × effect worth, best band assignment wins.
- *    Personas are weight vectors, not candidate lists.
+ * Positioning (on a board) is decided first — approach to get in range, KITE to
+ * open distance when the actor outranges the enemy, or hold. The committed move
+ * takes its band; the utility planner (src/planner) then fills the remaining
+ * bands, pricing every legal action by exact outcome probabilities × effect
+ * worth. Personas are weight vectors, not candidate lists.
  */
 export function planRoundActions(
   self:     CombatantState,
@@ -194,61 +193,125 @@ export function planRoundActions(
   const plannerCfg = toPlannerConfig(config)
   const fromIdx = BANDS.indexOf(fromBand)
   const plans: PlannedAction[] = []
+  const usedBands = new Set<Band>()
   let state = self   // local simulation — real state is never mutated
 
-  /** Commit an action only if its band is still open (≥ fromBand). */
-  const commit = (id: ActionId, targetId?: string): void => {
+  /** Commit a positioning move; only emits if its band is still open (≥ fromBand). */
+  const commit = (id: ActionId, retreat: boolean): void => {
     const band = bandOf(ACTION_DEFS[id].initiative)
     state = simulateSelfEffects(spendActionCost(state, ACTION_DEFS[id].cost), id)
-    if (band === null || BANDS.indexOf(band) < fromIdx) return  // resolved band: simulate, don't emit
-    plans.push(targetId === undefined
-      ? { actorId: self.id, action: id }
-      : { actorId: self.id, action: id, targetId })
+    if (band === null || BANDS.indexOf(band) < fromIdx) return
+    usedBands.add(band)
+    const p: PlannedAction = { actorId: self.id, action: id, targetId: config.targetId }
+    if (retreat) p.retreat = true
+    plans.push(p)
   }
 
   const canPlay = (id: ActionId): boolean =>
     isActionAllowed(id, config) && canUseAction(state, id) && canAffordAction(state, id)
 
-  // ── Approche (§ positions) : hors de portée de mêlée, on court plutôt que de
-  //    frapper dans le vide. Se déclenche sur un plateau (positions connues) si
-  //    le combattant a de quoi se rapprocher — sinon on retombe sur le
-  //    comportement hors plateau.
-  //
-  //    Heuristique FOCALISÉE : elle ne connaît qu'un motif — s'approcher et
-  //    charger. Le kiting et le maintien à distance viennent avec la valeur
-  //    positionnelle (étape 4), qui remplacera ce bloc. ────────────────────────
-  const MELEE_REACH = 1
+  // ── Positionnement (§ positions) — approcher, kiter, ou tenir ────────────────
+  for (const move of planPositioning(state, opponent, config, canPlay)) {
+    commit(move.action, move.retreat)
+  }
+
+  // The utility planner fills every band positioning did not claim.
+  return [...plans, ...planRoundUtility(state, opponent, plannerCfg, fromBand, usedBands)]
+}
+
+/** A movement the positioning layer wants to commit this round. */
+interface PositioningMove { action: ActionId; retreat: boolean }
+
+/**
+ * Decide the round's MOVEMENT on a board: approach to get in range, kite to open
+ * distance, or hold (no move). Returns the moves to commit (≤ course + charge);
+ * an empty list means "hold — the utility planner attacks from here".
+ *
+ * The decision reads the actor's own weapon reach against the enemy's threat:
+ *  - Out of my attack's max range → APPROACH (Course, then Charge for a melee
+ *    finisher when the leap would connect).
+ *  - I OUTRANGE the enemy and it sits within the ground it covers next turn (or
+ *    I'm too close to shoot) → KITE (Course/Marche away — the archer opening the
+ *    band it needs). A melee fighter never outranges anyone, so it never kites.
+ *  - Otherwise → hold.
+ */
+function planPositioning(
+  state:    CombatantState,
+  opponent: Actor,
+  config:   AgentConfig,
+  canPlay:  (id: ActionId) => boolean,
+): PositioningMove[] {
   const gap = state.pos && opponent.pos && !actorDefeated(opponent)
     ? distance(state.pos, opponent.pos)
     : null
+  if (gap === null) return []                          // positionless → no move, utility does all
 
-  if (gap !== null && gap > MELEE_REACH &&
-      (canPlay('course') || canPlay('walk') || state.status.includes('winded'))) {
-    // Bande I : la meilleure action de Bande I selon le planificateur (une
-    // Respiration ici lève l'essoufflement qui rouvre la Course).
-    const selfA = bestActionForBand(state, 'I', opponent, plannerCfg)
-    if (selfA !== null && canPlay(selfA)) commit(selfA,
-      ACTION_DEFS[selfA].selfTargeted ? undefined : config.targetId)
+  const { maxReach, canHitHere } = offensiveEnvelope(state, opponent, config, gap)
+  const enemyThreat = enemyReachThreat(opponent)       // how close the enemy gets next turn
+  const mover: ActionId | null = canPlay('course') ? 'course' : canPlay('walk') ? 'walk' : null
 
-    // Bande II : on court (Course) si possible, sinon Marche.
-    const mover: ActionId | null = canPlay('course') ? 'course' : canPlay('walk') ? 'walk' : null
-    if (mover !== null) {
-      const budget = moveBudgetOf(mover, state)
-      commit(mover, config.targetId)
-
-      // Bande III : charger seulement si le bond porterait — sinon les 💧 sont
-      // gâchées. `state` porte à présent l'élan que la Course vient de donner.
-      if (canPlay('charge')) {
-        const postGap    = Math.max(MELEE_REACH, gap - budget)
-        const chargeMove = moveBudgetOf('charge', state) || 6
-        if (postGap <= MELEE_REACH + chargeMove) commit('charge', config.targetId)
-      }
-      return plans
+  // ── Approach: my best blow can't reach — close the ground ──────────────────
+  if (gap > maxReach) {
+    if (mover === null) return []
+    const moves: PositioningMove[] = [{ action: mover, retreat: false }]
+    // Melee finisher: Charge if the leap would land it. The Course grants the
+    // Inertia the Charge needs, so check the Charge against the POST-Course state.
+    const afterMove = simulateSelfEffects(spendActionCost(state, ACTION_DEFS[mover].cost), mover)
+    if (isActionAllowed('charge', config)
+      && canUseAction(afterMove, 'charge') && canAffordAction(afterMove, 'charge')) {
+      const budget     = moveBudgetOf(mover, state)
+      const chargeMove = moveBudgetOf('charge', afterMove) || 6
+      if (Math.max(1, gap - budget) <= 1 + chargeMove) moves.push({ action: 'charge', retreat: false })
     }
+    return moves
   }
 
-  // ── In reach (or no board): the utility planner owns the open bands ───────
-  return [...plans, ...planRoundUtility(state, opponent, plannerCfg, fromBand)]
+  // ── Kite: I outrange the enemy and it is within striking distance (or I'm too
+  //    close to fire) — open the gap. Melee fighters (maxReach ≤ threat) skip. ──
+  if (maxReach > enemyThreat && (gap <= enemyThreat || !canHitHere)) {
+    return mover === null ? [] : [{ action: mover, retreat: true }]
+  }
+
+  return []                                             // in the sweet spot → hold and shoot
+}
+
+/**
+ * The actor's offensive range envelope against this enemy: the widest max reach
+ * among the attacks it can currently play, and whether any of them connects from
+ * the present gap (minRange < gap ≤ reach). Falls back to melee reach 1 when the
+ * actor has no usable offensive action (it still wants to be adjacent).
+ */
+function offensiveEnvelope(
+  state:    CombatantState,
+  opponent: Actor,
+  config:   AgentConfig,
+  gap:      number,
+): { maxReach: number; canHitHere: boolean } {
+  let maxReach = 0
+  let canHitHere = false
+  for (const id of ALL_ACTION_IDS) {
+    const def = ACTION_DEFS[id]
+    if (def.movement || def.selfTargeted || def.reach == null) continue
+    if (!isActionAllowed(id, config) || !canUseAction(state, id)) continue
+    maxReach = Math.max(maxReach, def.reach)
+    if (gap > (def.minRange ?? 0) && gap <= def.reach) canHitHere = true
+  }
+  return maxReach === 0 ? { maxReach: 1, canHitHere: gap <= 1 } : { maxReach, canHitHere }
+}
+
+/**
+ * How close the enemy can bring a blow next turn — its attack reach plus the
+ * ground it can cover. For a creature, the longest move across its deck; for a
+ * PC, a Course. This is the distance a kiter must stay beyond.
+ */
+function enemyReachThreat(opponent: Actor): number {
+  if (isAdversaryActor(opponent)) {
+    const move = Math.max(0, ...opponent.sheet.cards.map(cardMoveBudget))
+    const reach = Math.max(1, ...opponent.sheet.cards.map(c => c.reach ?? 1))
+    return reach + move
+  }
+  // PC enemy: a Course closes 5 + Mobilité, melee reach 1.
+  return 1 + (5 + opponent.skills.mobility)
 }
 
 /** A movement action's budget in cases, resolved against the actor. */
