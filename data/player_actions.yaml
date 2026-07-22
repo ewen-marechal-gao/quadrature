@@ -336,14 +336,16 @@ actions:
     vaultCard: deplacement
     vaultOption: course
     name: { fr: "Course" }
-    description: { fr: "Course : avance de 5 + Mobilité cases sans jet, pose Inertie ➡️ 3, vous essouffle. Bande II." }
+    description: { fr: "Course : avance de 5 + Mobilité cases sans jet, pose Inertie ➡️ 3. Bande II." }
     initiative: 6
     cost: { actions: 1, fatigue: 1 }
     tags: [movement, physical]
     movement: true
     moveBudget: { base: 5, addSkill: mobility }
     grantsInertia: 3
-    grantsStatus: winded
+    # Essoufflement retiré de la Course (test d'équilibrage — jugé trop punitif,
+    # il forçait une Respiration entre deux Courses et cassait le kiting soutenu).
+    # L'Essoufflé ne vient plus que de l'échec au test d'Endurance (fatigue ≥ 10).
     blockedByStatus: [winded, knockdown, kneeling, entrapped]
 
   # ── Charge (§ attribute_actions) ─────────────────────────────────────────────

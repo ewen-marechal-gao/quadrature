@@ -36,13 +36,14 @@ describe('élan — la Charge exige d\'avoir couru', () => {
 })
 
 describe('resolveMovementAction', () => {
-  it('la Course avance de 5 + Mobilité, pose Inertie 3 et essouffle', () => {
+  it('la Course avance de 5 + Mobilité et pose Inertie 3 (sans essouffler)', () => {
     const pc = makeCombatant('PC')                         // mobilité 2 → budget 7
     const { effects } = resolveMovementAction('course', pc, 'foe')
     const move = effects.find(e => e.kind === 'move-toward')!
     expect(move).toMatchObject({ goalId: 'foe', budget: 5 + pc.skills.mobility })
     expect(effects).toContainEqual({ targetId: 'PC', kind: 'set-inertia', value: 3 })
-    expect(effects).toContainEqual({ targetId: 'PC', kind: 'add-status', status: 'winded' })
+    // Essoufflement retiré de la Course (équilibrage) : plus de statut auto-infligé.
+    expect(effects.some(e => e.kind === 'add-status')).toBe(false)
   })
 
   it('la Marche avance de 3 et pose Inertie 2, sans essouffler', () => {
@@ -77,7 +78,7 @@ describe('Course → Charge dans une manche', () => {
 
     const pc = after.get('PC') as Extract<Actor, { inertia: number }>
     expect(pc.inertia).toBe(0)                 // la Charge a consommé l'élan
-    expect(pc.status).toContain('winded')      // la Course a essoufflé
+    expect(pc.status).not.toContain('winded')  // la Course n'essouffle plus (équilibrage)
     // Parti de 0, la Course l'amène à 6, la Charge finit au contact du Faucheur (9).
     expect(pc.pos).toEqual(at(8, 5))
   })
