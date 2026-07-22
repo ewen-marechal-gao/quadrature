@@ -68,7 +68,14 @@ const ALL_ACTION_IDS = Object.keys(ACTION_DEFS) as ActionId[]
 // ─── Public entry point ───────────────────────────────────────────────────────
 
 /**
- * Plan a full round: at most one action per band, PA-reserved, utility-best.
+ * Plan the round from `fromBand` onward: at most one action per remaining band,
+ * PA-reserved across them, utility-best.
+ *
+ * `fromBand` is the band-by-band adaptation hook (§ resolveRoundBands): called
+ * again at each reveal with the current state, it re-optimises the bands still
+ * open — it never re-assigns a resolved band (their PA is already spent in the
+ * live state). Default 'I' plans the whole round (optimiser / tests).
+ *
  * Movement (Marche/Course/Charge) is NOT planned here yet — the approach
  * pattern in combat/agent.ts still owns it until the positional-value étape.
  */
@@ -76,9 +83,11 @@ export function planRoundUtility(
   self:     CombatantState,
   opponent: Actor,
   config:   PlannerConfig,
+  fromBand: Band = 'I',
 ): PlannedAction[] {
   const weights = config.weights ?? PERSONA_WEIGHTS[config.persona]
   const ctx = makeContext(self, opponent, weights, config)
+  const startIdx = BANDS.indexOf(fromBand)
 
   // Candidate actions, partitioned by the band their initiative pins them to.
   const byBand = new Map<Band, ActionId[]>()
@@ -87,44 +96,38 @@ export function planRoundUtility(
     if (def.movement) continue                      // approach pattern's turf (étape 4)
     if (!isAllowed(id, config)) continue
     const band = bandOf(def.initiative)
-    if (band === null) continue
+    if (band === null || BANDS.indexOf(band) < startIdx) continue
     byBand.set(band, [...(byBand.get(band) ?? []), id])
   }
 
-  // Exhaustive sweep of the band assignments (≤ ~100 leaves), reserving PA and
-  // simulating self-effects so later bands see what earlier ones set up.
-  interface Node { plan: Array<ActionId | null>; score: number }
+  // Exhaustive sweep of the open bands' assignments (≤ ~100 leaves), reserving
+  // PA and simulating self-effects so later bands see what earlier ones set up.
+  interface Node { plan: Array<{ band: Band; id: ActionId }>; score: number }
   const complete: Node[] = []
 
-  const dfs = (bandIdx: number, state: CombatantState, plan: Array<ActionId | null>, score: number): void => {
+  const dfs = (bandIdx: number, state: CombatantState, plan: Node['plan'], score: number): void => {
     if (bandIdx === BANDS.length) {
       complete.push({ plan, score })
       return
     }
     const band = BANDS[bandIdx]
     // Passing the band is always an option (and the only one when dry).
-    dfs(bandIdx + 1, state, [...plan, null], score)
+    dfs(bandIdx + 1, state, plan, score)
     for (const id of byBand.get(band) ?? []) {
       if (!canUseAction(state, id) || !canAffordAction(state, id)) continue
       const s = scorePlayerAction(id, state, opponent, ctx)
       const next = simulateSelfEffects(spendActionCost(state, ACTION_DEFS[id].cost), id)
-      dfs(bandIdx + 1, next, [...plan, id], score + s)
+      dfs(bandIdx + 1, next, [...plan, { band, id }], score + s)
     }
   }
-  dfs(0, self, [], 0)
+  dfs(startIdx, self, [], 0)
 
   const chosen = pickPlan(complete, weights.noise)
   if (!chosen) return []
 
-  const plans: PlannedAction[] = []
-  chosen.plan.forEach(id => {
-    if (id === null) return
-    const def = ACTION_DEFS[id]
-    plans.push(def.selfTargeted
-      ? { actorId: self.id, action: id }
-      : { actorId: self.id, action: id, targetId: config.targetId })
-  })
-  return plans
+  return chosen.plan.map(({ id }) => ACTION_DEFS[id].selfTargeted
+    ? { actorId: self.id, action: id }
+    : { actorId: self.id, action: id, targetId: config.targetId })
 }
 
 /**

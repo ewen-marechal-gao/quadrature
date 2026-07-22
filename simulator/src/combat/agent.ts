@@ -28,6 +28,7 @@ import type { PhaseLog }          from './types'
 import type { PlannedAction, GuardProvider } from './round'
 import { ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction } from './actions'
 import { spendActionCost, effChar, isDefeated } from './combatant'
+import { bandOf, BANDS, type Band } from './bands'
 import { distance } from './position'
 import { STATUS_DEFS } from './status'
 import { type Actor, actorDefeated } from '../adversary/actor'
@@ -163,10 +164,15 @@ function toPlannerConfig(config: AgentConfig): PlannerConfig {
 }
 
 /**
- * Plan a combatant's whole round at once (scripted, synchronous).
+ * Plan a combatant's round from `fromBand` onward (scripted, synchronous).
  *
- * Returns 0–3 PlannedActions depending on available PA and utility. The caller
- * hands the lot to resolveRoundBands, which reveals them band by band.
+ * Returns the actions committed to the still-open bands (≤ one per band). The
+ * caller hands the lot to resolveRoundBands, which filters to the band it is
+ * resolving. Called once per band with the CURRENT state, it adapts — a target
+ * that fell, a gap the last band closed, a guard just revealed.
+ *
+ * `fromBand` (default 'I') is the first still-open band: earlier bands are
+ * already resolved and never re-planned (their PA is spent in the live state).
  *
  * Two régimes:
  *  - Out of melee reach on a board → the APPROACH pattern (below) owns the
@@ -180,18 +186,23 @@ export function planRoundActions(
   self:     CombatantState,
   opponent: Actor,
   config:   AgentConfig,
+  fromBand: Band = 'I',
 ): PlannedAction[] {
   if (isDefeated(self)) return []
 
   const plannerCfg = toPlannerConfig(config)
+  const fromIdx = BANDS.indexOf(fromBand)
   const plans: PlannedAction[] = []
   let state = self   // local simulation — real state is never mutated
 
+  /** Commit an action only if its band is still open (≥ fromBand). */
   const commit = (id: ActionId, targetId?: string): void => {
+    const band = bandOf(ACTION_DEFS[id].initiative)
+    state = simulateSelfEffects(spendActionCost(state, ACTION_DEFS[id].cost), id)
+    if (band === null || BANDS.indexOf(band) < fromIdx) return  // resolved band: simulate, don't emit
     plans.push(targetId === undefined
       ? { actorId: self.id, action: id }
       : { actorId: self.id, action: id, targetId })
-    state = simulateSelfEffects(spendActionCost(state, ACTION_DEFS[id].cost), id)
   }
 
   const canPlay = (id: ActionId): boolean =>
@@ -235,8 +246,8 @@ export function planRoundActions(
     }
   }
 
-  // ── In reach (or no board): the utility planner owns the whole round ──────
-  return [...plans, ...planRoundUtility(state, opponent, plannerCfg)]
+  // ── In reach (or no board): the utility planner owns the open bands ───────
+  return [...plans, ...planRoundUtility(state, opponent, plannerCfg, fromBand)]
 }
 
 /** A movement action's budget in cases, resolved against the actor. */

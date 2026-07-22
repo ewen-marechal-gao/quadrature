@@ -28,7 +28,7 @@ import {
   initCombatant, resetRoundTokensWithLog, effChar, resistanceThreshold,
 } from './combat/combatant'
 import { resolveRoundBands } from './combat/round'
-import { bandOf, BAND_MOON, type Band } from './combat/bands'
+import { bandOf, BANDS, BAND_MOON, type Band } from './combat/bands'
 import { distance, type Position } from './combat/position'
 import type { GuardProvider, PlannedAction, Plan } from './combat/round'
 
@@ -366,23 +366,37 @@ async function runCombat(
 
     callbacks?.onRoundStart?.(roundNumber, maintenanceEntries)
 
-    // Chaque combattant engage sa manche entière (il doit réserver ses PA, sinon
-    // ses cartes de Bande III ne partiraient jamais), puis resolveRoundBands la
-    // révèle bande par bande — il ne retient de ce plan que la bande courante.
+    // Agents LLM : planifiés UNE fois par manche (une action / manche, session
+    // persistante — replanifier par bande triplerait le coût d'API). Leur plan
+    // est servi à chaque bande, resolveRoundBands le filtre sur la bonne.
     const t0 = Date.now()
-    // Tous les planners tournent en parallèle (gain de latence en mode LLM)
-    const roundPlan = (await Promise.all(
-      participants.map(p => plansForParticipant(p, participants, states, sessions.get(p.side.id))),
+    const llmPlans = (await Promise.all(
+      participants
+        .filter(p => p.side.kind === 'pc' && p.side.agentType === 'llm')
+        .map(p => plansForParticipant(p, participants, states, sessions.get(p.side.id))),
     )).flat()
-    // Rate limit : si les appels ont été plus rapides que le seuil, on attend le reste
     if (rateLimitMs > 0) {
       const elapsed = Date.now() - t0
       if (elapsed < rateLimitMs) await new Promise<void>(r => setTimeout(r, rateLimitMs - elapsed))
     }
 
+    // Agents scriptés (PJ) et créatures : plan de manche ENTIÈRE arrêté au début,
+    // sur l'état de début de manche — la réservation des PA reste optimale et le
+    // combat garde son mordant (une replanification par bande depuis l'état réel
+    // mi-manche s'était révélée plus timorée, cf. le duel Précis/Puissant serré).
+    // resolveRoundBands filtre ce plan sur la bande qu'il résout.
+    const roundPlan = scriptedRoundPlan(participants, states)
+
+    // La replanification par bande est réservée à l'ADAPTATION qui compte : quand
+    // la cible visée au début de manche tombe entre deux bandes, on rejoue le
+    // planning de l'acteur concerné sur l'état courant (re-ciblage — combats de
+    // groupe). La portée, elle, est déjà filtrée à la résolution (gateByReach).
     const { states: next, log } = await resolveRoundBands(
       states, roundNumber, getGuard, maintenanceEntries,
-      () => roundPlan,
+      (currentStates, band) => [
+        ...llmPlans,
+        ...adaptRoundPlan(roundPlan, participants, currentStates, band),
+      ],
       (_band, phaseLogs) => {
         // Mise à jour du contexte LLM avec les actions adverses (avant la prochaine bande)
         for (const p of participants) {
@@ -433,16 +447,33 @@ async function runCombat(
 
 // ─── Agent planner helpers ────────────────────────────────────────────────────
 
+/** The first still-living enemy of a participant's faction (focus-fire). */
+function firstLivingEnemy(
+  p:            Participant,
+  participants: Participant[],
+  states:       ReadonlyMap<string, Actor>,
+): Participant | undefined {
+  return participants.find(q => {
+    if (q.faction === p.faction) return false
+    const s = states.get(q.side.id)
+    return s !== undefined && !actorDefeated(s)
+  })
+}
+
 /**
- * Plan one participant's action for the current wave.
- *
- * Target = the first still-living combatant of the opposing faction (focus-fire;
- * moves on to the next once one falls). Nothing to do when the participant is
- * defeated or its faction has no living enemy left.
- *
- * - Adversary → scripted deck heuristic (planAdversaryCard).
- * - PC        → planFor (scripted or LLM); when the target is an adversary, the
- *   declared body part (melee priority) is attached to each offensive plan.
+ * Attach the declared body part (melee priority) to offensive plans aimed at an
+ * adversary — routed downstream to the block the wounds land on.
+ */
+function withTargetPart(plans: PlannedAction[], enemyId: string, target: Actor): PlannedAction[] {
+  if (!isAdversaryActor(target)) return plans
+  return plans.map(pl => pl.targetId === enemyId
+    ? { ...pl, targetPart: pl.targetPart ?? selectTargetPart(target, 'melee')?.type }
+    : pl)
+}
+
+/**
+ * Plan an LLM participant's action for the whole round (one action / round,
+ * async, session-carrying). Target = first living enemy. Called once per round.
  */
 async function plansForParticipant(
   p:            Participant,
@@ -450,71 +481,118 @@ async function plansForParticipant(
   states:       ReadonlyMap<string, Actor>,
   session?:     LLMAgentSession,
 ): Promise<Plan[]> {
+  if (p.side.kind !== 'pc') return []
   const self = states.get(p.side.id)
-  if (!self || actorDefeated(self)) return []
+  if (!self || actorDefeated(self) || isAdversaryActor(self)) return []
 
-  // First living enemy (opposing faction)
-  const enemy = participants.find(q => {
-    if (q.faction === p.faction) return false
-    const s = states.get(q.side.id)
-    return s !== undefined && !actorDefeated(s)
-  })
+  const enemy = firstLivingEnemy(p, participants, states)
   if (!enemy) return []
+  const target = states.get(enemy.side.id)!
+
+  p.side.cfg.targetId = enemy.side.id
+  // LLM vs adversaire : bloqué en amont dans simulate() (prompt PC-shaped).
+  const plans = await planRoundAI(self, target as CombatantState, p.side.cfg, session)
+  return withTargetPart(plans, enemy.side.id, target)
+}
+
+/** One scripted participant's whole-round plan, plus who it was aimed at. */
+interface ActorRoundPlan {
+  actorId:  string
+  targetId: string
+  plans:    Plan[]
+}
+
+/**
+ * Whole-round plan for every scripted participant (créatures + PJ scriptés),
+ * decided from the START-of-round state. The PA reservation is optimal and the
+ * plan keeps its bite (planning band by band from the real mid-round state
+ * proved more timid — the fragile Précis/Puissant duel tipped into stalemate).
+ * Movement heuristics (approach) read the start-of-round gap; the resolution
+ * layer re-gates reach after feet move (gateByReach).
+ */
+function scriptedRoundPlan(
+  participants: Participant[],
+  states:       ReadonlyMap<string, Actor>,
+): ActorRoundPlan[] {
+  const out: ActorRoundPlan[] = []
+
+  for (const p of participants) {
+    if (p.side.kind === 'pc' && p.side.agentType === 'llm') continue  // planned elsewhere
+    const self = states.get(p.side.id)
+    if (!self || actorDefeated(self)) continue
+
+    const enemy = firstLivingEnemy(p, participants, states)
+    if (!enemy) continue
+
+    out.push({ actorId: p.side.id, targetId: enemy.side.id, plans: planParticipantRound(p, self, enemy, states) })
+  }
+  return out
+}
+
+/** Full-round plan for one scripted participant against a chosen enemy. */
+function planParticipantRound(
+  p:      Participant,
+  self:   Actor,
+  enemy:  Participant,
+  states: ReadonlyMap<string, Actor>,
+): Plan[] {
   const target = states.get(enemy.side.id)!
 
   if (p.side.kind === 'adversary') {
     if (!isAdversaryActor(self)) return []
-    // La créature engage sa manche entière : on rejoue son heuristique sur un
-    // état simulé jusqu'à épuisement de ses ⚫ (l'état réel n'est pas muté).
-    // `used` fait respecter « une carte par bande » : une seule carte par palier.
-    const plans: Plan[] = []
+    // Rejoue l'heuristique sur un état simulé jusqu'à épuisement des ⚫ ; `used`
+    // fait respecter « une carte par bande ».
+    const out: Plan[] = []
     const used = new Set<Band>()
-    // Distance à la cible — indéfinie hors plateau, et l'heuristique retombe
-    // alors sur son comportement d'origine.
     const gap = self.pos && target.pos ? distance(self.pos, target.pos) : undefined
     let sim = self
     for (let i = 0; i < MAX_CARDS_PER_ROUND; i++) {
       const plan = planAdversaryCard(sim, enemy.side.id, used, gap)
       if (!plan) break
-      plans.push(plan)
+      out.push(plan)
       const card = sim.sheet.cards.find(k => k.id === plan.card)
-      const band = card ? bandOf(card.initiative) : null
-      if (band) used.add(band)
+      const b = card ? bandOf(card.initiative) : null
+      if (b) used.add(b)
       sim = spendCardCost(sim, plan.card)
     }
-    return plans
+    return out
   }
 
-  if (isAdversaryActor(self)) return []  // defensive — a pc side holds a PC state
-  p.side.cfg.targetId = enemy.side.id    // (re)aim at the chosen enemy this round
-  const plans = await planFor(p.side.agentType, self, target, p.side.cfg, session)
-  if (isAdversaryActor(target)) {
-    return plans.map(pl => pl.targetId === enemy.side.id
-      ? { ...pl, targetPart: pl.targetPart ?? selectTargetPart(target, 'melee')?.type }
-      : pl)
-  }
-  return plans
+  if (isAdversaryActor(self) || p.side.kind !== 'pc') return []  // defensive
+  p.side.cfg.targetId = enemy.side.id
+  return withTargetPart(planRoundActions(self, target, p.side.cfg), enemy.side.id, target)
 }
 
 /**
- * Dispatch action planning to the appropriate agent implementation.
- * Always returns a Promise<PlannedAction[]> for a uniform async interface.
+ * Serve the round plan, re-planning a participant ON THE FLY only when the enemy
+ * it was aimed at has fallen since the round began — the band-by-band adaptation
+ * that matters (re-ciblage in group fights). Everyone else keeps their
+ * start-of-round plan; resolveRoundBands filters the lot to the band it resolves.
  *
- * - 'scripted'  → planNextAction (sync, wrapped in Promise.resolve)
- * - 'llm'       → planRoundAI with persistent session
+ * The 1v1 case never triggers a re-plan (a fight ends when one side falls), so
+ * this preserves the whole-round planner's proven behaviour there exactly.
  */
-async function planFor(
-  agentType: AgentType,
-  self:      CombatantState,
-  opponent:  Actor,
-  cfg:       AgentConfig,
-  session?:  LLMAgentSession,
-): Promise<PlannedAction[]> {
-  if (agentType === 'llm') {
-    // LLM vs adversaire : bloqué en amont dans simulate() (prompt PC-shaped)
-    return planRoundAI(self, opponent as CombatantState, cfg, session)
+function adaptRoundPlan(
+  roundPlan:    ActorRoundPlan[],
+  participants: Participant[],
+  states:       ReadonlyMap<string, Actor>,
+  _band:        Band,
+): Plan[] {
+  const out: Plan[] = []
+  for (const rp of roundPlan) {
+    const self = states.get(rp.actorId)
+    if (!self || actorDefeated(self)) continue
+
+    const targetDown = actorDefeated(states.get(rp.targetId)!)
+    if (!targetDown) { out.push(...rp.plans); continue }
+
+    // Cible tombée → re-cibler sur le prochain ennemi vivant, s'il en reste un.
+    const p = participants.find(q => q.side.id === rp.actorId)!
+    const enemy = firstLivingEnemy(p, participants, states)
+    if (!enemy) continue
+    out.push(...planParticipantRound(p, self, enemy, states))
   }
-  return planRoundActions(self, opponent, cfg)
+  return out
 }
 
 // ─── Console display — mode 1 run ─────────────────────────────────────────────
