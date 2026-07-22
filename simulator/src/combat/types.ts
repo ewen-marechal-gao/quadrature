@@ -108,6 +108,9 @@ export type ActionId =
   | 'unarmed-attack' // Attaque à mains nues — initiative 3, 1 PA
   | 'brutal-strike'  // Frappe brutale   — initiative 6, 2 PA + 1💧
   | 'sharp-strike'   // Frappe vive      — initiative 3, 1 PA + 1💧
+  // Attaques à distance (§ attribute_actions.md) — portée > 1 (tir)
+  | 'quick-shot'     // Tir rapide  — initiative 3, 1 PA + 1💧, Intuition+Lucidité, portée
+  | 'aimed-shot'     // Tir ciblé   — initiative 8, 2 PA + 1💧, Observation+Acuité, portée
   // Déplacement (§ positions) — la carte Déplacement porte Marche + Course
   | 'walk'           // Marche 🚶        — initiative 4, 1 PA, 3 cases, Inertie 2
   | 'course'         // Course 🏃        — initiative 6, 1 PA + 1💧, 5 + Mobilité cases, Inertie 3, essoufflé

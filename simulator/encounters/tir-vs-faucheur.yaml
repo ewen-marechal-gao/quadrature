@@ -1,0 +1,39 @@
+# Banc d'essai du POSITIONNEL — un tirailleur à distance face à une créature de
+# mêlée. C'est le scénario qui donne un sens à la valeur positionnelle (étape 4) :
+# l'archer a intérêt à MAINTENIR la distance (kiter), le Faucheur à la fermer.
+#
+# Mise en place : un long couloir. L'archer commence à 12 cases — juste dans la
+# portée de son Tir ciblé (12), hors de portée du Tir rapide (8). Le Faucheur doit
+# traverser ; à chaque manche où il n'est pas au contact, il perd du terrain sous
+# le feu.
+#
+# ⚠️ Tant que les agents ne savent pas RECULER (le déplacement ne modélise que
+# « s'approcher d'un acteur », pas « s'en éloigner »), l'archer tirera sur place
+# et finira rattrapé. C'est exactement la limite que l'étape 4 (menace projetée
+# + recul) doit lever — ce scénario sert à la mesurer.
+name: Tir — tenir la distance
+description: >-
+  Un couloir dégagé. Un tirailleur repère le Faucheur au loin et l'arrose de
+  flèches ; toute la question est de savoir s'il peut l'empêcher d'arriver au
+  contact.
+maxRounds: 30
+
+# Couloir long et étroit : la longueur laisse de la place pour kiter, la faible
+# hauteur rend le va-et-vient lisible.
+board: { width: 34, height: 5 }
+
+factions:
+  - name: Aventuriers
+    characters:
+      - sheet: characterSheets/Ranged_skirmisher.yaml
+        persona: cautious          # veut survivre : idéal pour tester le kiting
+        pos: { x: 3, y: 2 }
+    # Trousse à distance PLUS le déplacement — pas de mêlée : le tirailleur ne
+    # veut pas du corps à corps, c'est tout l'intérêt du profil.
+    allowedActions: ["quick-shot", "aimed-shot", "course", "walk", "respiration", "stabilize"]
+
+  - name: Faune d'Aeonir
+    characters:
+      - adversary: faucheur
+        pos: { x: 15, y: 2 }
+    allowedActions: []

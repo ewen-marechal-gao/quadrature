@@ -123,6 +123,59 @@ actions:
         effect: [{ selfFatigue: 1 }],
       }
 
+  # ── Attaques à distance (§ attribute_actions.md « Actions offensives (distance) ») ──
+  # La PORTÉE est un choix de simulation (comme la portée 1 des attaques de mêlée) :
+  # les règles ne chiffrent pas de distance de tir, et la vraie portée viendra de
+  # l'arme équipée (chantier armes #18). En attendant, on pose des valeurs jouables
+  # sur le tapis 34×22 — assez pour que le kiting ait un sens face à une Course (~8).
+  # Non modélisés ici (⚒️/nuances) : « avantage 🟩 contre Parade », le mode réactif
+  # du Tir rapide, la relance 🟦 du Tir ajusté.
+  quick-shot:
+    vaultCard: tir-rapide
+    name: { fr: "Tir rapide", en: "Quick Shot" }
+    description:
+      {
+        fr: "Tir d'instinct à distance. Succès : 2💢, Échec : 1💢. Critique : +1💢. Défaut : +1💧 pour toi. Coûte 1💧 en plus du PA. Portée 8.",
+        en: "Instinctive ranged shot. Hit: 2💢, miss: 1💢. Crit: +1💢. Flaw: +1💧 self. Reach 8.",
+      }
+    initiative: 3
+    cost: { actions: 1, fatigue: 1 }
+    tags: [offensive, ranged, physical, physicalDamage]
+    reach: 8
+    prerequisite: { skill: intuition, minValue: 1 }
+    roll: { characteristic: lucidity, skill: intuition }
+    onSuccess: { text: { fr: "Touché — 2💢" }, effect: [{ wound: 2 }] }
+    onFailure: { text: { fr: "Effleuré — 1💢" }, effect: [{ wound: 1 }] }
+    onCritical: { text: { fr: "Critique — 1💢 de plus" }, effect: [{ wound: 1 }] }
+    onFlaw:
+      {
+        text: { fr: "Tir précipité — attaquant +1💧" },
+        effect: [{ selfFatigue: 1 }],
+      }
+
+  aimed-shot:
+    vaultCard: tir-cible
+    name: { fr: "Tir ciblé", en: "Aimed Shot" }
+    description:
+      {
+        fr: "Tir ajusté et patient. Succès : 1💔 blessure grave, Échec : 2💢. Critique : hémorragie 🩸. Défaut : +1💧 pour toi. Coûte 1💧 en plus des PA. Portée 12.",
+        en: "Patient aimed shot. Hit: 1💔, miss: 2💢. Crit: hemorrhage 🩸. Flaw: +1💧 self. Reach 12.",
+      }
+    initiative: 8
+    cost: { actions: 2, fatigue: 1 }
+    tags: [offensive, ranged, physical, physicalDamage]
+    reach: 12
+    prerequisite: { skill: observation, minValue: 1 }
+    roll: { characteristic: acuity, skill: observation }
+    onSuccess: { text: { fr: "Touché — 1💔 blessure grave" }, effect: [{ heavyWound: 1 }] }
+    onFailure: { text: { fr: "Manqué — 2💢" }, effect: [{ wound: 2 }] }
+    onCritical: { text: { fr: "Critique — hémorragie 🩸" }, effect: [{ status: hemorrhage }] }
+    onFlaw:
+      {
+        text: { fr: "Tir gâché — attaquant +1💧" },
+        effect: [{ selfFatigue: 1 }],
+      }
+
   respiration:
     vaultCard: respiration
     name: { fr: "Respiration" }

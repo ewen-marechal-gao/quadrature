@@ -1,0 +1,57 @@
+name: "Ranged Skirmisher"
+# Tirailleur à distance : Intuition (Tir rapide) + Mobilité (Course/kiting),
+# Observation modérée (Tir ciblé). Force faible — il ne veut pas le corps à corps.
+# Arme non intégrée : arc court (la portée vient de l'action, chantier armes #18).
+inventory:
+  protection: 0
+characteristics:
+  strength:
+    value: 1          # dérivé
+    wounds: 0
+    power: 0
+    robustness: 0
+  agility:
+    value: 2          # dérivé : mobility 3 → jalon rang 2
+    wounds: 0
+    precision: 1
+    mobility: 3       # Course = 5 + 3 = 8 cases ; kiting
+  vigor:
+    value: 2          # dérivé : endurance 2 → jalon rang 2
+    wounds: 0
+    endurance: 2      # gère la fatigue des tirs (+1💧) et de la Course
+    recovery: 1       # Stabiliser
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 2          # dérivé : observation 2 → jalon rang 2
+    wounds: 0
+    observation: 2    # Tir ciblé (prérequis + jet)
+    vigilance: 1
+  willpower:
+    value: 1
+    wounds: 0
+    authority: 0
+    discipline: 1     # ◇ Stabilité
+  intelligence:
+    value: 1
+    wounds: 0
+    logic: 0
+    reactivity: 1     # 1 réaction (garde active)
+  tenacity:
+    value: 1
+    wounds: 0
+    conviction: 0
+    resilience: 0
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 2          # dérivé : intuition 2 → jalon rang 2
+    wounds: 0
+    foresight: 0
+    intuition: 2      # Tir rapide (prérequis + jet)
