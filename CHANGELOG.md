@@ -7,6 +7,22 @@ versionnage [sémantique](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Simulateur — planificateur par utilité** : les agents scriptés ne choisissent
+  plus leurs actions par listes de priorité codées en dur mais par **espérance
+  d'utilité** (sans LLM). Probabilités **exactes** des jets, valorisation générique
+  des effets en équivalents-💢, recherche du meilleur plan de manche (une carte par
+  bande, PA réservés). Les **personas** deviennent des vecteurs de poids ; la
+  **garde** se choisit aussi à l'espérance. Replanification par bande avec
+  **re-ciblage** quand la cible tombe.
+- **Attaques à distance** : **Tir rapide** (Bande I, Intuition + Lucidité) et
+  **Tir ciblé** (Bande III, Observation + Acuité), avec une **bande de portée**
+  `[minRange, effectiveRange]` — pas de tir **au contact** (§ equipement — arc
+  engagé), portée max sans pénalité. Profil **tirailleur** et scénario de test.
+- **Positionnement — kiting** : le déplacement sait désormais **reculer** (et plus
+  seulement approcher). Les agents décident *approche / kite / tenir* selon leur
+  portée face à la menace de l'ennemi : un tirailleur qui **outporte** son
+  adversaire ouvre la distance et tire en reculant ; un combattant de mêlée ferme
+  toujours le contact.
 - **Bandes d'initiative** : la phase d'actions se joue en **trois bandes** révélées
   successivement — I / II / III, soit *Ouverture / Manœuvre / Fermeture* —, résolues
   à l'initiative fine 1–10 dans chaque bande, avec **une carte par bande au plus**.
@@ -46,6 +62,11 @@ versionnage [sémantique](https://semver.org/lang/fr/).
   Cimes, Cuirassard, Happe-fond, Évoluant.
 
 ### Modifié
+- **La Course n'essouffle plus directement** (équilibrage) : elle creuse la
+  fatigue 💧, et l'**Essoufflé** ne survient que par l'échec au **test d'Endurance**
+  (fatigue ≥ 10). L'essoufflement auto-infligé était trop punitif — il interdisait
+  de courir deux manches d'affilée et cassait le kiting soutenu. Vault
+  resynchronisé (`universal_actions.md`, cartes).
 - **Caractéristiques dérivées des compétences** (`value = 1 + rangs 2/4`) : le
   simulateur ne lit plus la valeur écrite sur la fiche, il la **calcule** — une
   fiche ne peut plus diverger de ses rangs (corrige des fiches qui gonflaient les dés).

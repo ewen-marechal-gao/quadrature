@@ -34,7 +34,8 @@ de worldbuilding.
 - **Combat** tactique : la manche se joue en **trois bandes d'initiative**
   (Ouverture / Manœuvre / Fermeture), avec points d'action, **réactions ⚡** et un
   système de **gardes** (seuil de défense persistant et dégradable). **Déplacement
-  sur grille** (Marche / Course / Charge, et l'élan ➡️), piste mentale à 7 états,
+  sur grille** (Marche / Course / Charge, et l'élan ➡️), attaques de mêlée **et à
+  distance** (bande de portée : pas de tir au contact), piste mentale à 7 états,
   double échelle de blessures **physiques** (💢 légères / 💔 graves) **et mentales**
   (traumas — perte de caractéristique aux extrêmes de la piste).
 
@@ -113,13 +114,16 @@ cd simulator
 npm install
 npx jest --no-coverage                                   # suite de tests
 npx ts-node src/simulate.ts encounters/duel-arme.yaml 400 --quiet
-npx ts-node src/simulate.ts encounters/approche-faucheur.yaml         # 1 run AVEC plateau (positions)
+npx ts-node src/simulate.ts encounters/approche-faucheur.yaml         # 1 run AVEC plateau (approche + charge)
+npx ts-node src/simulate.ts encounters/tir-vs-faucheur.yaml 100 --quiet  # tirailleur qui kite (recul + tir)
 npx ts-node src/optimize.ts                              # équilibrage (grid search)
 ```
 Un run unique écrit un **rapport rejouable** dans `combatReports/` (rejouable dans
 `/fr/combat`) ; un run multiple (`… 400`) écrit un rapport agrégé `*.batch.json`
 réservé aux **statistiques**. Une rencontre peut déclarer un `board` et des `pos`
-de départ : le combat se joue alors sur une **grille** (déplacements, portées).
+de départ : le combat se joue alors sur une **grille** (déplacements, **portées**,
+attaques **à distance**). Les agents scriptés décident par **espérance d'utilité**
+(actions, garde, positionnement — approche, kiting, tenir).
 Les agents pilotés par LLM utilisent l'API **Mistral** — renseigner `MISTRAL_API_KEY`
 dans un `.env` (cf. `.env.example`). Les agents scriptés n'en ont pas besoin.
 

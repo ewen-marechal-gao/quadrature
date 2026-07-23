@@ -58,8 +58,11 @@ Conlang générative d'Aeonir ([`rules/fr/univers/language.md`](rules/fr/univers
 ## Simulateur 🟡
 - [x] ✅ Fatigue initiale des personnages = 1 ; **dérivation des caractéristiques** (`value = f(compétences)`) — fiches robustes, incohérence impossible.
 - [x] ✅ **Bandes d'initiative** : la manche se joue en 3 bandes révélées (Ouverture / Manœuvre / Fermeture), **une carte par bande** ; coûts des cartes en **phases de lune** (remplacent les 3 PA colorés).
-- [x] ✅ **Positions et déplacement** : grille (métrique de Chebyshev, tapis 34×22), actions **Marche / Course / Charge** et l'**Inertie ➡️**, **portées** ; l'effet de déplacement porte le chemin complet ; agent qui sait s'approcher puis charger.
+- [x] ✅ **Positions et déplacement** : grille (métrique de Chebyshev, tapis 34×22), actions **Marche / Course / Charge** et l'**Inertie ➡️**, **portées** ; l'effet de déplacement porte le chemin complet.
 - [x] ✅ **Traumas** (blessures mentales) aux extrêmes de la piste mentale ; **snapshots auto-suffisants** (seuils, capacités, maxes ◇/🫁, armure, parties) pour le visualiseur web.
+- [x] ✅ **Planificateur par utilité** (remplace les heuristiques scriptées) : probabilités exactes des jets, valorisation générique des effets, meilleur plan de manche (PA réservés) ; personas = poids ; garde à l'espérance ; replanification par bande + re-ciblage. Sélection de partie EV *écartée* (le tag-priority reste meilleur).
+- [x] ✅ **Attaques à distance** (Tir rapide / Tir ciblé) avec **bande de portée** `[minRange, effectiveRange]` (pas de tir au contact) ; profil tirailleur + scénario.
+- [x] ✅ **Kiting** : le déplacement sait **reculer** ; positionnement *approche / kite / tenir* selon les portées (un tirailleur qui outporte l'ennemi tient la distance).
 - [ ] README documentant les écarts règles ↔ simulation.
 - [ ] Rapprocher des règles : défaut ⚠️ sur le dé 🟪.
 - [ ] 🟠 **Armes des PJ** (`finesse`) : la portée et le jet de dégâts sont aujourd'hui codés en dur dans l'action, pas tirés de l'arme — bloquant pour la jouabilité du duelliste Précis (cf. *Bestiaire*, intégration des armes).
