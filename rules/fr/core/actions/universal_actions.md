@@ -156,9 +156,9 @@ Les actions de déplacement consomment des **points d'action** et génèrent par
 ---
 
 🔒 **Condition :** ne pas être **à genoux**, **à terre**, **entravé**, ni **essoufflé**  
-▶️ 🏃 **Course**, dépensez 💧 — **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases. Vous gagnez l'état **essoufflé 😮‍💨**. Cette action sera résolue avec une **initiative de 6️⃣**.
+▶️ 🏃 **Course**, dépensez 💧 — **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases. Cette action sera résolue avec une **initiative de 6️⃣**.
 
-**Aucun jet** — franchir du terrain ne se rate pas, et le combat n'a rien à gagner à ce qu'on lance les dés pour marcher. Forcer l'allure ne se paie pas en dés mais en souffle : courir vous **essouffle**, et un essoufflé ne court plus. On ne sprinte donc pas deux manches d'affilée sans reprendre haleine (**Respiration 🌓**).
+**Aucun jet** — franchir du terrain ne se rate pas, et le combat n'a rien à gagner à ce qu'on lance les dés pour marcher. Forcer l'allure ne se paie pas en dés mais en **souffle** 💧 : chaque Course creuse la fatigue, et lorsqu'elle pèse (le **test d'Endurance** de la phase d'entretien), on finit **essoufflé 😮‍💨** — et un essoufflé ne court plus. On peut donc enchaîner les foulées, mais la fatigue finit par rattraper le sprinteur qui ne reprend jamais haleine (**Respiration 🌓**).
 
 *C'est aussi ce qui fait de l'**Inertie ➡️ 3** une ressource rare : seule la Course la donne, et la **Bousculade** comme la **Charge** l'exigent.*
 

@@ -111,9 +111,9 @@ cartes:
   # pas à partager une bande — les decks sont organisationnels, sans fonction
   # mécanique ; ici les deux tombent en Bande II 🌕.
   #
-  # Aucun jet : franchir du terrain ne se rate pas. Le frein n'est plus un ⚠️
-  # Défaut mais l'essoufflement lui-même, qui interdit de courir la manche
-  # suivante — même boucle qu'avant, sans les dés.
+  # Aucun jet : franchir du terrain ne se rate pas. Le frein n'est pas un ⚠️
+  # Défaut mais la fatigue 💧 : chaque Course la creuse, et l'échec au test
+  # d'Endurance (fatigue ≥ 10) laisse essoufflé — un essoufflé ne court plus.
   - id: deplacement
     nom: Déplacement
     type: action
@@ -130,7 +130,7 @@ cartes:
         initiative: 6
         cout: "🌕💧"
         condition: "ne pas être **à genoux**, **à terre**, **entravé**, ni **essoufflé**"
-        effet: "🏃 **Course**, dépensez 💧 — **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases. Vous gagnez l'état **essoufflé 😮‍💨**. Cette action sera résolue avec une **initiative de 6️⃣**"
+        effet: "🏃 **Course**, dépensez 💧 — **Inertie 3 ➡️**, déplacement de **5 + Mobilité ✫** cases. Cette action sera résolue avec une **initiative de 6️⃣**"
     source: core/actions/universal_actions.md
 
   # Bande III : elle exige l'Inertie ➡️ 3, que seule la Course donne — et la
