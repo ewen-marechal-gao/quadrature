@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { LOCALES, resolveLocale } from "@/lib/nav";
 import { reportIds, loadReport } from "@/lib/combat-report";
+import { resolveCombatCards } from "@/lib/combat-cards";
 import { CombatViewer } from "@/components/combat/CombatViewer";
 
 /**
@@ -40,5 +41,7 @@ export default async function CombatReportPage({
   const log = loadReport(report);
   if (!log) notFound();
 
-  return <CombatViewer log={log} locale={locale} />;
+  const cards = resolveCombatCards(log, locale);
+
+  return <CombatViewer log={log} locale={locale} cards={cards} />;
 }

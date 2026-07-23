@@ -15,15 +15,19 @@
  * types de combat-report (import type → aucun node:fs dans le bundle client).
  */
 
-import { useEffect, useMemo, useState, useCallback, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import type { Locale } from "@/lib/nav";
 import type {
   CombatLog, Position, ActionLogEntry, RoundLog,
   CombatantSnapshot, AdversarySnapshot,
 } from "@/lib/combat-report";
+import type { CombatCards } from "@/lib/combat-cards";
+import type { ActionCard as CardData } from "@/lib/cards";
 import { actionLabel, statusLabel, describeEffect, mentalIcon } from "@/lib/combat-labels";
+import { ActionCard } from "@/components/ActionCard";
 import "@/app/combat.css";
+import "@/app/cards.css";
 
 // ─── Constantes d'affichage ───────────────────────────────────────────────────
 
@@ -173,16 +177,51 @@ function Hint({ children, detail }: { children: ReactNode; detail: ReactNode }) 
   );
 }
 
+/**
+ * Nom d'action survolable → carte réelle en médaillon (même composant que /cartes).
+ * Le médaillon s'ouvre AU-DESSUS par défaut, mais bascule EN DESSOUS quand il n'y
+ * a pas assez de place au-dessus (sinon la carte est rognée en haut d'écran).
+ */
+function CardPopover({ card, side, children }: {
+  card: CardData; side: "pc" | "adv"; children: ReactNode;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [place, setPlace] = useState<"top" | "bottom">("top");
+
+  // Hauteur du médaillon = 240px × ratio carte (63.5/88.9) ≈ 336, + marge.
+  const CARD_HEIGHT = 348;
+  const decide = useCallback(() => {
+    const r = ref.current?.getBoundingClientRect();
+    if (r) setPlace(r.top < CARD_HEIGHT ? "bottom" : "top");
+  }, []);
+
+  return (
+    <span
+      ref={ref}
+      className={`cbv-cardwrap cbv-cardwrap--${side} cbv-cardwrap--${place}`}
+      tabIndex={0}
+      onMouseEnter={decide}
+      onFocus={decide}
+    >
+      {children}
+      <span className="cbv-cardpop" role="tooltip">
+        <ActionCard card={card} />
+      </span>
+    </span>
+  );
+}
+
 // ─── Un message (encadré d'action, aligné par faction) ────────────────────────
 
 function ActionMessage({
-  entry, initiative, log, colorOf, side,
+  entry, initiative, log, colorOf, side, card,
 }: {
   entry: ActionLogEntry;
   initiative: number;
   log: CombatLog;
   colorOf: (id: string) => string;
   side: "pc" | "adv";
+  card?: CardData;
 }) {
   const actor = log.combatants.find((c) => c.id === entry.actorId)?.charName ?? entry.actorId;
   const target = entry.targetId
@@ -208,7 +247,14 @@ function ActionMessage({
       <div className="cbv-act" style={{ "--accent": colorOf(entry.actorId) } as CSSProperties}>
         <div className="cbv-act__head">
           <span className="cbv-act__actor" style={{ color: colorOf(entry.actorId) }}>{actor}</span>
-          <span className="cbv-act__verb">{actionLabel(entry.action)}</span>
+          {card ? (
+            <CardPopover card={card} side={side}>
+              {/* Nom de la CARTE réelle : évite d'entretenir un libellé séparé. */}
+              <span className="cbv-act__verb cbv-act__verb--card">{card.nom}</span>
+            </CardPopover>
+          ) : (
+            <span className="cbv-act__verb">{actionLabel(entry.action)}</span>
+          )}
           {target && entry.targetId !== entry.actorId && (
             <span className="cbv-act__target">
               → {target}{entry.targetPart ? ` (${entry.targetPart})` : ""}
@@ -383,7 +429,13 @@ function Actors({
 
 // ─── Composant racine ─────────────────────────────────────────────────────────
 
-export function CombatViewer({ log, locale }: { log: CombatLog; locale: Locale }) {
+export function CombatViewer({
+  log, locale, cards,
+}: {
+  log: CombatLog;
+  locale: Locale;
+  cards?: CombatCards;
+}) {
   const views = useMemo(() => buildRounds(log), [log]);
   // r = -1 → « Rencontre » (état initial) ; 0..N-1 → manche.
   const [r, setR] = useState(0);
@@ -448,16 +500,23 @@ export function CombatViewer({ log, locale }: { log: CombatLog; locale: Locale }
         view!.groups.map((g) => (
           <div key={g.key} className="cbv-band">
             <div className="cbv-bandsep"><span>{g.name}</span></div>
-            {g.entries.map((e, i) => (
-              <ActionMessage
-                key={i}
-                entry={e.entry}
-                initiative={e.initiative}
-                log={log}
-                colorOf={colorOf}
-                side={isAdversary(e.entry.actorId) ? "adv" : "pc"}
-              />
-            ))}
+            {g.entries.map((e, i) => {
+              const side = isAdversary(e.entry.actorId) ? "adv" : "pc";
+              const card = side === "adv"
+                ? cards?.adversary[e.entry.action]
+                : cards?.player[e.entry.action];
+              return (
+                <ActionMessage
+                  key={i}
+                  entry={e.entry}
+                  initiative={e.initiative}
+                  log={log}
+                  colorOf={colorOf}
+                  side={side}
+                  card={card}
+                />
+              );
+            })}
           </div>
         ))
       )}
