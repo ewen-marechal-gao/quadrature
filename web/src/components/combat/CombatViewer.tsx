@@ -606,22 +606,19 @@ export function CombatViewer({
         ))}
       </nav>
 
-      {log.board ? (
-        <div className="cbv-stage">
-          <aside className="cbv-left">
-            <div className="cbv-boardwrap">
-              <Board log={log} positions={boardPositions} trails={boardTrails} colorOf={colorOf} />
-            </div>
-            {actors}
-          </aside>
-          {logBody}
-        </div>
-      ) : (
-        <div className="cbv-stage cbv-stage--noboard">
-          {logBody}
-          {actors}
+      {/* Le plateau, quand il existe, coiffe la page en pleine largeur — un
+          couloir 34×5 y devient lisible. En dessous, le même bloc acteurs + log
+          qu'un combat SANS plateau : layout consistant dans les deux cas. */}
+      {log.board && (
+        <div className="cbv-boardwrap">
+          <Board log={log} positions={boardPositions} trails={boardTrails} colorOf={colorOf} />
         </div>
       )}
+
+      <div className="cbv-stage">
+        <aside className="cbv-side">{actors}</aside>
+        {logBody}
+      </div>
     </main>
   );
 }

@@ -70,24 +70,36 @@
 }
 .cbv-round--enc { min-width: auto; padding: 0 .7rem; font-variant: small-caps; }
 
-/* Scène : plateau + acteurs à gauche, log à droite ------------------------ */
-.cbv-stage { display: grid; grid-template-columns: minmax(300px, 38%) 1fr; gap: 1.5rem; align-items: start; }
-.cbv-stage--noboard { grid-template-columns: 1fr; }
-@media (max-width: 820px) { .cbv-stage { grid-template-columns: 1fr; } }
-
-.cbv-left { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 1rem; }
-
+/* Plateau : bandeau pleine largeur EN TÊTE (un couloir 34×5 y est lisible) ---- */
 .cbv-boardwrap {
   border: 1px solid var(--brass-border);
   border-radius: 8px;
   background: #14100a;
-  padding: .5rem;
+  padding: .6rem;
+  margin-bottom: 1.25rem;
+  /* Centre le plateau et borne sa hauteur : les cartes larges (couloirs) prennent
+     toute la largeur, les plateaux hauts ne débordent pas l'écran. */
+  display: flex;
+  justify-content: center;
 }
-.cbv-board { width: 100%; height: auto; display: block; }
+.cbv-board {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 62vh;
+  /* Un plateau haut est borné par max-height → il rétrécit en largeur avec lui. */
+  max-width: 100%;
+}
 .cbv-board-bg { fill: #1c160e; }
-.cbv-grid { stroke: rgba(196,154,69,0.14); stroke-width: 0.02; }
+.cbv-grid { stroke: rgba(196,154,69,0.18); stroke-width: 0.02; }
 .cbv-trail { fill: none; stroke-width: 0.12; stroke-linejoin: round; stroke-linecap: round; opacity: .85; stroke-dasharray: 0.28 0.2; }
 .cbv-token-label { fill: #fff; font-size: 0.42px; text-anchor: middle; dominant-baseline: central; font-family: var(--font-ui); pointer-events: none; }
+
+/* Scène : acteurs (gauche) + log (droite) — MÊME layout avec ou sans plateau -- */
+.cbv-stage { display: grid; grid-template-columns: minmax(260px, 32%) 1fr; gap: 1.5rem; align-items: start; }
+@media (max-width: 820px) { .cbv-stage { grid-template-columns: 1fr; } }
+
+.cbv-side { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 1rem; }
 
 /* Acteurs (sous le plateau) ---------------------------------------------- */
 .cbv-actors { display: flex; flex-direction: column; gap: .5rem; }
