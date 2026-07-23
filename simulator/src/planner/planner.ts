@@ -28,7 +28,8 @@
  * provider) priced at its expected roll.
  */
 
-import type { CombatantState, ActionId, GuardId } from '../combat/types'
+import type { CombatantState, ActionId, GuardId, RankedPlan } from '../combat/types'
+export type { RankedPlan }
 import {
   ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction, availableGuards,
   checkRollParams, rollParamsFrom,
@@ -36,13 +37,19 @@ import {
 import {
   spendActionCost, mentalRollModifiers, MENTAL_STATE_EFFECTS,
 } from '../combat/combatant'
-import type { PlannedAction } from '../combat/round'
+import type { PlannedAction, PlannedCard } from '../combat/round'
 import { bandOf, BANDS, type Band } from '../combat/bands'
 import { distance } from '../combat/position'
 import { type Actor, isAdversaryActor, actorDefeated } from '../adversary/actor'
-import { effectiveGuard } from '../adversary/combatant'
-import { selectTargetPart } from '../adversary/agent'
-import { checkDistribution, evOver } from './prob'
+import {
+  effectiveGuard, activeDeck, canPlayCard, spendCardCost, isAdversaryDefeated,
+  mentalDieRank, type AdversaryCombatant,
+} from '../adversary/combatant'
+import { selectTargetPart, cardMoveBudget } from '../adversary/agent'
+import { attackAdvantages } from '../adversary/traits'
+import { adversaryEffectToCombatEffects } from '../adversary/effects'
+import type { AdversaryCardDef } from '../adversary/types'
+import { checkDistribution, evOver, adversaryDistribution } from './prob'
 import {
   scoreEffects, PERSONA_WEIGHTS, PRICE,
   type Weights, type ScoreContext, type PlannerPersona,
@@ -66,6 +73,24 @@ const isAllowed = (id: ActionId, config: PlannerConfig): boolean =>
 /** Every action known to the engine, in data/player_actions.yaml order. */
 const ALL_ACTION_IDS = Object.keys(ACTION_DEFS) as ActionId[]
 
+// ─── Plan ranking (for visualisation) ─────────────────────────────────────────
+
+/** Top-N complete plans by score, marking the one chosen. Pure. */
+function toRanking<T extends { plan: Array<{ band: Band; id: string }>; score: number }>(
+  complete: T[],
+  chosen:   T | null,
+  topN =    3,
+): RankedPlan[] {
+  return [...complete]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topN)
+    .map(node => ({
+      actions: node.plan.map(({ band, id }) => ({ band, action: id })),
+      utility: node.score,
+      chosen:  node === chosen,
+    }))
+}
+
 // ─── Public entry point ───────────────────────────────────────────────────────
 
 /**
@@ -86,6 +111,7 @@ export function planRoundUtility(
   config:    PlannerConfig,
   fromBand:  Band = 'I',
   usedBands: ReadonlySet<Band> = new Set(),
+  ranking?:  RankedPlan[],
 ): PlannedAction[] {
   const weights = config.weights ?? PERSONA_WEIGHTS[config.persona]
   const ctx = makeContext(self, opponent, weights, config)
@@ -127,6 +153,7 @@ export function planRoundUtility(
   dfs(startIdx, self, [], 0)
 
   const chosen = pickPlan(complete, weights.noise)
+  if (ranking) ranking.push(...toRanking(complete, chosen))
   if (!chosen) return []
 
   return chosen.plan.map(({ id }) => ACTION_DEFS[id].selfTargeted
@@ -393,4 +420,125 @@ function pushDirectionsFor(config: PlannerConfig): { rage: boolean; terror: bool
     }
   }
   return { rage, terror }
+}
+
+// ─── Adversary utility (unified brain — same value layer as the PC planner) ─────
+
+/** Positional worth of a case closed toward an out-of-reach target, in offense
+ *  units — small enough never to outweigh a real hit, big enough to beat passing
+ *  (so an out-of-range Charge is played to approach). */
+const APPROACH_VALUE = 0.2
+
+/** ScoreContext for a creature planning against a PC (reuses the value layer). */
+function makeAdversaryContext(self: AdversaryCombatant, opponent: CombatantState, weights: Weights): ScoreContext {
+  return {
+    selfId:   self.id,
+    isEnemy:  id => id === opponent.id,
+    getActor: id => id === self.id ? self : id === opponent.id ? opponent : undefined,
+    weights,
+  }
+}
+
+/**
+ * Expected utility of a creature playing `card` now against the PC `opponent` —
+ * the adversary mirror of scorePlayerAction. The attack is asymmetric (summed
+ * dice vs the PC's estimated guard, ⭐ onFives, no ⚠️). Out-of-reach blows keep
+ * the card's own move (positional worth) but lose the damage, exactly like the
+ * engine's gateByReach — so an out-of-range Charge earns the ground it closes.
+ */
+export function scoreAdversaryCard(
+  card:     AdversaryCardDef,
+  self:     AdversaryCombatant,
+  opponent: CombatantState,
+  baseCtx:  ScoreContext,
+): number {
+  // Price self-effects against the SIMULATED creature (mid-round fatigue), not
+  // the round-start snapshot the shared context was built from.
+  const ctx: ScoreContext = { ...baseCtx, getActor: id => id === self.id ? self : baseCtx.getActor(id) }
+
+  // Self-cost: fatigue paid to play (⚫ is rationed by the band budget, not priced).
+  let score = scoreEffects(
+    card.fatigueCost ? [{ targetId: self.id, kind: 'add-fatigue', amount: card.fatigueCost }] : [],
+    ctx,
+  )
+  if (actorDefeated(opponent)) return score
+
+  // Reach gate (§ gateByReach): does the blow connect, its own move included?
+  const gap      = self.pos && opponent.pos ? distance(self.pos, opponent.pos) : null
+  const move     = cardMoveBudget(card)
+  const afterGap = gap === null ? null : Math.max(1, gap - move)
+  const connects = gap === null || card.reach == null || (afterGap !== null && afterGap <= card.reach)
+
+  // Ground closed toward an out-of-reach target still buys next round's reach.
+  if (gap !== null && card.reach != null && move > 0) {
+    const closed = Math.max(0, Math.min(move, gap - card.reach))
+    score += ctx.weights.offense * APPROACH_VALUE * closed
+  }
+  if (!connects) return score
+
+  // Offensive EV: summed dice vs the PC's estimated guard + ⭐ onFives.
+  const { dc } = estimateGuard(opponent, card.initiative)
+  const rank   = mentalDieRank(self.mentalState)
+  const adv    = attackAdvantages(self, card, opponent)
+  const dist   = adversaryDistribution(self.sheet.dice, {
+    advantages:    adv.advantages + Math.max(0, rank),
+    disadvantages: Math.max(0, -rank),
+  })
+  for (const cell of dist.cells) {
+    const base = cell.total >= dc ? card.onSuccess : card.onFailure
+    const eff  = adversaryEffectToCombatEffects(base.effect, opponent.id, self.id)
+    if (card.onFives && cell.fives >= card.onFives.count) {
+      eff.push(...adversaryEffectToCombatEffects(card.onFives.effect, opponent.id, self.id))
+    }
+    score += cell.p * scoreEffects(eff, ctx)
+  }
+  return score
+}
+
+/**
+ * Plan a creature's whole round by UTILITY — the unified brain, mirror of
+ * planRoundUtility. DFS over the open bands' card assignments (one card per
+ * band from the active deck), PA/fatigue reserved across them, utility-best.
+ * Fills `ranking` (top-3) when provided.
+ */
+export function planAdversaryRoundUtility(
+  self:      AdversaryCombatant,
+  opponent:  CombatantState,
+  config:    PlannerConfig,
+  fromBand:  Band = 'I',
+  usedBands: ReadonlySet<Band> = new Set(),
+  ranking?:  RankedPlan[],
+): PlannedCard[] {
+  if (isAdversaryDefeated(self) || actorDefeated(opponent)) return []
+  const weights  = config.weights ?? PERSONA_WEIGHTS[config.persona]
+  const ctx      = makeAdversaryContext(self, opponent, weights)
+  const startIdx = BANDS.indexOf(fromBand)
+
+  // Candidate cards partitioned by the band their initiative pins them to.
+  const byBand = new Map<Band, AdversaryCardDef[]>()
+  for (const card of activeDeck(self)) {
+    const band = bandOf(card.initiative)
+    if (band === null || BANDS.indexOf(band) < startIdx || usedBands.has(band)) continue
+    byBand.set(band, [...(byBand.get(band) ?? []), card])
+  }
+
+  interface Node { plan: Array<{ band: Band; id: string }>; score: number }
+  const complete: Node[] = []
+  const dfs = (bandIdx: number, state: AdversaryCombatant, plan: Node['plan'], score: number): void => {
+    if (bandIdx === BANDS.length) { complete.push({ plan, score }); return }
+    const band = BANDS[bandIdx]
+    dfs(bandIdx + 1, state, plan, score)            // passing the band is always an option
+    if (usedBands.has(band)) return
+    for (const card of byBand.get(band) ?? []) {
+      if (!canPlayCard(state, card.id)) continue
+      const s = scoreAdversaryCard(card, state, opponent, ctx)
+      dfs(bandIdx + 1, spendCardCost(state, card.id), [...plan, { band, id: card.id }], score + s)
+    }
+  }
+  dfs(startIdx, self, [], 0)
+
+  const chosen = pickPlan(complete, weights.noise)
+  if (ranking) ranking.push(...toRanking(complete, chosen))
+  if (!chosen) return []
+  return chosen.plan.map(({ id }) => ({ actorId: self.id, card: id, targetId: config.targetId }))
 }

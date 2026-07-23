@@ -20,7 +20,7 @@ import Link from "next/link";
 import type { Locale } from "@/lib/nav";
 import type {
   CombatLog, Position, ActionLogEntry, RoundLog,
-  CombatantSnapshot, AdversarySnapshot,
+  CombatantSnapshot, AdversarySnapshot, PlanningEntry,
 } from "@/lib/combat-report";
 import type { CombatCards } from "@/lib/combat-cards";
 import type { ActionCard as CardData } from "@/lib/cards";
@@ -397,15 +397,56 @@ function AdvCard({ s }: { s: AdversarySnapshot }) {
   );
 }
 
+/** Nom lisible d'une action d'un plan : nom de carte réel si résolu, sinon libellé. */
+function planActionName(action: string, side: "pc" | "adv", cards?: CombatCards): string {
+  const map = side === "adv" ? cards?.adversary : cards?.player;
+  return map?.[action]?.nom ?? actionLabel(action);
+}
+
+/**
+ * Badge 🧠 (coin supérieur droit d'une fiche) : au survol, les 3 meilleurs plans
+ * que le planificateur a pesés pour cet acteur, avec leur utilité ; le plan
+ * retenu est mis en évidence.
+ */
+function PlanningBadge({
+  entry, side, cards,
+}: {
+  entry: PlanningEntry;
+  side: "pc" | "adv";
+  cards?: CombatCards;
+}) {
+  return (
+    <span className="cbv-plan-badge" tabIndex={0} aria-label="Plans du planificateur">
+      🧠
+      <span className="cbv-plan-pop" role="tooltip">
+        <span className="cbv-plan-pop__title">Plans pesés — meilleure utilité</span>
+        {entry.plans.map((p, i) => (
+          <span key={i} className={p.chosen ? "cbv-plan is-chosen" : "cbv-plan"}>
+            <span className="cbv-plan__util">{p.utility.toFixed(2)}</span>
+            <span className="cbv-plan__acts">
+              {p.actions.length === 0
+                ? "— passe —"
+                : p.actions.map((a) => planActionName(a.action, side, cards)).join(" → ")}
+            </span>
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
 function Actors({
-  log, round, colorOf,
+  log, round, colorOf, isAdversary, cards,
 }: {
   log: CombatLog;
   round: RoundLog | null;
   colorOf: (id: string) => string;
+  isAdversary: (id: string) => boolean;
+  cards?: CombatCards;
 }) {
   const pc = new Map((round?.endOfRound ?? []).map((s) => [s.id, s]));
   const adv = new Map((round?.adversariesEndOfRound ?? []).map((s) => [s.id, s]));
+  const plans = new Map((round?.planning ?? []).map((e) => [e.actorId, e]));
 
   return (
     <div className="cbv-actors">
@@ -415,9 +456,13 @@ function Actors({
       {log.combatants.map((c) => {
         const p = pc.get(c.id);
         const a = adv.get(c.id);
+        const plan = plans.get(c.id);
         return (
           <div key={c.id} className="cbv-actor">
             <div className="cbv-actor__name" style={{ color: colorOf(c.id) }}>{c.charName}</div>
+            {plan && plan.plans.length > 0 && (
+              <PlanningBadge entry={plan} side={isAdversary(c.id) ? "adv" : "pc"} cards={cards} />
+            )}
             {p && <PcCard s={p} />}
             {a && <AdvCard s={a} />}
           </div>
@@ -523,7 +568,15 @@ export function CombatViewer({
     </section>
   );
 
-  const actors = <Actors log={log} round={view ? view.round : null} colorOf={colorOf} />;
+  const actors = (
+    <Actors
+      log={log}
+      round={view ? view.round : null}
+      colorOf={colorOf}
+      isAdversary={isAdversary}
+      cards={cards}
+    />
+  );
 
   return (
     <main className="cbv">

@@ -1,21 +1,19 @@
 /**
- * Adversary decision heuristics.
+ * Adversary decision helpers.
  *
- * Target selection: an attacker picks which of the creature's parts to strike
- * based on its own combat style and the parts' functional tags. A melee fighter
- * favours disabling weapons first (offensive), a ranged one favours cutting off
- * escape (mobility). Untagged parts rank last; destroyed / block-less parts are
- * not eligible.
+ * Card SELECTION is no longer here: creatures now plan and decide by UTILITY,
+ * through the same planner as the PCs (planAdversaryRoundUtility in
+ * src/planner/planner.ts). What remains is orthogonal to that choice:
+ *
+ *  - Target-PART selection: which of the creature's parts an ATTACKER strikes,
+ *    by combat style and the parts' functional tags (a melee fighter disables
+ *    weapons first, a ranged one cuts off escape).
+ *  - `cardMoveBudget`: the ground a card covers, read by the planner (positional
+ *    value) and by the PC positioning layer (enemy threat range).
  */
 
 import type { PartTag, AdversaryCardDef } from './types'
-import type { CardTag } from '../combat/types'
-import type { PlannedCard } from '../combat/round'
-import { bandOf, type Band } from '../combat/bands'
-import {
-  isPartDestroyed, activeDeck, canPlayCard, isAdversaryDefeated,
-  type AdversaryCombatant, type PartState,
-} from './combatant'
+import { isPartDestroyed, type AdversaryCombatant, type PartState } from './combatant'
 
 /** Combat style of the attacker choosing a target part. */
 export type CombatStyle = 'melee' | 'ranged'
@@ -53,90 +51,8 @@ export function selectTargetPart(c: AdversaryCombatant, style: CombatStyle): Par
   return targetPriority(c, style)[0]
 }
 
-// ─── Card selection ───────────────────────────────────────────────────────────
-
-/**
- * Card-preference tiers, most → least attractive (read from the shared card
- * tags, never inferred). A predator commits to attacks that draw blood
- * (physicalDamage) before other offensive actions (mental screams, sweeps),
- * and offensive actions before anything else. Within a tier the base cost
- * breaks ties (power proxy), then deck order.
- */
-export const CARD_PRIORITY: CardTag[] = ['physicalDamage', 'offensive']
-
-/** Rank of a card within CARD_PRIORITY (lower = preferred); unmatched last. */
-export function cardRank(card: AdversaryCardDef): number {
-  for (let i = 0; i < CARD_PRIORITY.length; i++) {
-    if (card.tags.includes(CARD_PRIORITY[i])) return i
-  }
-  return CARD_PRIORITY.length
-}
-
 /** Ground a card covers, in cases — the biggest `move` op across its outcomes. */
 export function cardMoveBudget(card: AdversaryCardDef): number {
   const ops = [...card.onSuccess.effect, ...card.onFailure.effect]
   return ops.reduce((max, op) => 'move' in op ? Math.max(max, op.move) : max, 0)
-}
-
-/** True when the blow could land from `gap` cases away, movement included. */
-function canConnect(card: AdversaryCardDef, gap: number): boolean {
-  if (card.reach == null) return true          // ungated (cri, tir) : porte toujours
-  return gap <= card.reach + cardMoveBudget(card)
-}
-
-/**
- * Plan the creature's next card play for one wave (scripted, synchronous).
- *
- * Heuristic: among the currently playable cards (in the deck AND affordable at
- * their current cost), prefer wound-dealers, then the highest BASE cost as a
- * power proxy (a cost-override block makes a strong card cheap, not weak), then
- * deck order. Returns null when the creature cannot (or need not) act.
- *
- * `usedBands` carries the bands the creature has already committed to this
- * round: it lays down a single card per band (§ combat.md), so a band once used
- * is closed. Pass the growing set when planning a whole round card by card.
- *
- * `gap` is the distance to the target, in cases, when both stand on a board.
- * It makes the creature answer the only question that matters at range: *can I
- * hit — and if not, can I get closer?* Without it a Faucheur would rake the air
- * at twelve cases, round after round, because Frappe faucheuse outranks Charge
- * on paper. It only ever ADDS a preference: a positionless fight passes no gap
- * and keeps the historical behaviour exactly.
- */
-export function planAdversaryCard(
-  c:         AdversaryCombatant,
-  targetId:  string,
-  usedBands: ReadonlySet<Band> = new Set(),
-  gap?:      number,
-): PlannedCard | null {
-  if (isAdversaryDefeated(c)) return null
-  const playable = activeDeck(c).filter(card => {
-    const band = bandOf(card.initiative)
-    return band !== null && !usedBands.has(band) && canPlayCard(c, card.id)
-  })
-  if (playable.length === 0) return null
-
-  const byPreference = (cards: AdversaryCardDef[]): AdversaryCardDef =>
-    [...cards]
-      .map((card, i) => ({ card, i }))
-      .sort((a, b) =>
-        cardRank(a.card) - cardRank(b.card) ||  // wound-dealers first
-        b.card.cost - a.card.cost ||            // then power proxy
-        a.i - b.i)                              // then deck order
-      [0].card
-
-  // Fight if you can, else advance, else do whatever is left. The middle tier is
-  // what an approach IS: from twelve cases even a Charge cannot connect, yet it
-  // is plainly the right card — it buys the ground the next one needs.
-  let best: AdversaryCardDef
-  if (gap === undefined) {
-    best = byPreference(playable)
-  } else {
-    const connecting = playable.filter(card => canConnect(card, gap))
-    const closing    = playable.filter(card => cardMoveBudget(card) > 0)
-    best = connecting.length > 0 ? byPreference(connecting)
-         : closing.length    > 0 ? [...closing].sort((a, b) => cardMoveBudget(b) - cardMoveBudget(a))[0]
-         : byPreference(playable)
-  }
-  return { actorId: c.id, card: best.id, targetId }
 }

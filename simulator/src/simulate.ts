@@ -28,27 +28,28 @@ import {
   initCombatant, resetRoundTokensWithLog, effChar, resistanceThreshold,
 } from './combat/combatant'
 import { resolveRoundBands } from './combat/round'
-import { bandOf, BANDS, BAND_MOON, type Band } from './combat/bands'
-import { distance, type Position } from './combat/position'
+import { BANDS, BAND_MOON, type Band } from './combat/bands'
+import { type Position } from './combat/position'
 import type { GuardProvider, PlannedAction, Plan } from './combat/round'
 
 import { loadAdversary } from './adversary/io'
 import type { AdversarySheet } from './adversary/types'
 import {
-  initAdversary, DEFAULT_ADVERSARY_ACTIONS, ADVERSARY_MENTAL_ICONS, spendCardCost,
+  initAdversary, DEFAULT_ADVERSARY_ACTIONS, ADVERSARY_MENTAL_ICONS,
   type AdversarySnapshot,
 } from './adversary/combatant'
 import { ADVERSARY_EMOJI, type AdversaryRollResult } from './adversary/dice'
-import { planAdversaryCard, selectTargetPart } from './adversary/agent'
+import { selectTargetPart } from './adversary/agent'
 import { type Actor, isAdversaryActor, actorDefeated, actorStartRound } from './adversary/actor'
 import {
   planRoundActions, planRoundAI, makeGuardProvider,
   createAgentSession, recordOpponentActions,
 } from './combat/agent'
 import type { AgentConfig, LLMAgentSession } from './combat/agent'
+import { planAdversaryRoundUtility, type RankedPlan } from './planner/planner'
 import type {
   CombatantState, CombatLog, CombatantSummary, RoundLog, PhaseLog,
-  CombatOutcome, ActionLogEntry, MaintenanceEntry, CombatantSnapshot,
+  CombatOutcome, ActionLogEntry, MaintenanceEntry, CombatantSnapshot, PlanningEntry,
 } from './combat/types'
 import { MENTAL_ICONS } from './combat/types'
 import {RollResult} from './types'
@@ -60,8 +61,6 @@ import { computeStats, printStats } from './stats'
 const REPORTS_DIR    = path.resolve(__dirname, '..', 'combatReports')
 const ENCOUNTERS_DIR = path.resolve(__dirname, '..', 'encounters')
 
-/** Garde-fou de la boucle de planification d'une créature (elle s'arrête à court de ⚫). */
-const MAX_CARDS_PER_ROUND = 8
 
 // ─── Batch report type ────────────────────────────────────────────────────────
 
@@ -411,6 +410,13 @@ async function runCombat(
       encounter.board,
     )
     states = next
+
+    // Raisonnement du planificateur : top-3 plans/utilités par acteur scripté.
+    const planning: PlanningEntry[] = roundPlan
+      .filter(rp => rp.ranking.length > 0)
+      .map(rp => ({ actorId: rp.actorId, plans: rp.ranking }))
+    if (planning.length > 0) log.planning = planning
+
     roundLogs.push(log)
 
     callbacks?.onRoundEnd?.(log.endOfRound, log.adversariesEndOfRound)
@@ -500,6 +506,8 @@ interface ActorRoundPlan {
   actorId:  string
   targetId: string
   plans:    Plan[]
+  /** Top-3 candidate plans by utility (empty for LLM agents). For the log. */
+  ranking:  RankedPlan[]
 }
 
 /**
@@ -524,43 +532,34 @@ function scriptedRoundPlan(
     const enemy = firstLivingEnemy(p, participants, states)
     if (!enemy) continue
 
-    out.push({ actorId: p.side.id, targetId: enemy.side.id, plans: planParticipantRound(p, self, enemy, states) })
+    const ranking: RankedPlan[] = []
+    const plans = planParticipantRound(p, self, enemy, states, ranking)
+    out.push({ actorId: p.side.id, targetId: enemy.side.id, plans, ranking })
   }
   return out
 }
 
 /** Full-round plan for one scripted participant against a chosen enemy. */
 function planParticipantRound(
-  p:      Participant,
-  self:   Actor,
-  enemy:  Participant,
-  states: ReadonlyMap<string, Actor>,
+  p:       Participant,
+  self:    Actor,
+  enemy:   Participant,
+  states:  ReadonlyMap<string, Actor>,
+  ranking: RankedPlan[],
 ): Plan[] {
   const target = states.get(enemy.side.id)!
 
+  // Créature : planificateur par utilité UNIFIÉ (même moteur que les PJ).
   if (p.side.kind === 'adversary') {
-    if (!isAdversaryActor(self)) return []
-    // Rejoue l'heuristique sur un état simulé jusqu'à épuisement des ⚫ ; `used`
-    // fait respecter « une carte par bande ».
-    const out: Plan[] = []
-    const used = new Set<Band>()
-    const gap = self.pos && target.pos ? distance(self.pos, target.pos) : undefined
-    let sim = self
-    for (let i = 0; i < MAX_CARDS_PER_ROUND; i++) {
-      const plan = planAdversaryCard(sim, enemy.side.id, used, gap)
-      if (!plan) break
-      out.push(plan)
-      const card = sim.sheet.cards.find(k => k.id === plan.card)
-      const b = card ? bandOf(card.initiative) : null
-      if (b) used.add(b)
-      sim = spendCardCost(sim, plan.card)
-    }
-    return out
+    if (!isAdversaryActor(self) || isAdversaryActor(target)) return []
+    return planAdversaryRoundUtility(
+      self, target, { persona: 'aggressive', targetId: enemy.side.id }, 'I', new Set(), ranking,
+    )
   }
 
   if (isAdversaryActor(self) || p.side.kind !== 'pc') return []  // defensive
   p.side.cfg.targetId = enemy.side.id
-  return withTargetPart(planRoundActions(self, target, p.side.cfg), enemy.side.id, target)
+  return withTargetPart(planRoundActions(self, target, p.side.cfg, 'I', ranking), enemy.side.id, target)
 }
 
 /**
@@ -590,7 +589,8 @@ function adaptRoundPlan(
     const p = participants.find(q => q.side.id === rp.actorId)!
     const enemy = firstLivingEnemy(p, participants, states)
     if (!enemy) continue
-    out.push(...planParticipantRound(p, self, enemy, states))
+    // Re-ciblage mi-manche : le classement (start-of-round) est déjà journalisé.
+    out.push(...planParticipantRound(p, self, enemy, states, []))
   }
   return out
 }

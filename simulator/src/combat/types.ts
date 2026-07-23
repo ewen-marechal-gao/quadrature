@@ -395,6 +395,24 @@ export interface PhaseLog {
 }
 
 /** Complete log of one round */
+/**
+ * A complete candidate round plan the planner weighed, with its total utility —
+ * the raw material of the reasoning viewer. `action` is a player ActionId or an
+ * adversary card id.
+ */
+export interface RankedPlan {
+  actions: Array<{ band: Band; action: string }>
+  utility: number
+  /** True for the plan the agent actually committed to. */
+  chosen:  boolean
+}
+
+/** One actor's start-of-round planning: its top-N candidate plans by utility. */
+export interface PlanningEntry {
+  actorId: string
+  plans:   RankedPlan[]
+}
+
 export interface RoundLog {
   round:       number
   /** Phase d'entretien: endurance test entries (one per combatant who triggered it) */
@@ -404,6 +422,8 @@ export interface RoundLog {
   endOfRound:  CombatantSnapshot[]
   /** Adversary vitals at round end (only present in mixed encounters) */
   adversariesEndOfRound?: AdversarySnapshot[]
+  /** Top-3 plans each scripted actor weighed at round start (utility planner). */
+  planning?:   PlanningEntry[]
 }
 
 // ─── Combat log (top-level, written to /combatReports) ───────────────────────

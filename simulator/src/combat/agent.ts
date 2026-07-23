@@ -35,7 +35,7 @@ import { type Actor, actorDefeated, isAdversaryActor } from '../adversary/actor'
 import { cardMoveBudget } from '../adversary/agent'
 import {
   planRoundUtility, simulateSelfEffects, selectGuardByEV,
-  type PlannerConfig,
+  type PlannerConfig, type RankedPlan,
 } from '../planner/planner'
 
 export type { GuardProvider }
@@ -187,6 +187,7 @@ export function planRoundActions(
   opponent: Actor,
   config:   AgentConfig,
   fromBand: Band = 'I',
+  ranking?: RankedPlan[],
 ): PlannedAction[] {
   if (isDefeated(self)) return []
 
@@ -216,7 +217,7 @@ export function planRoundActions(
   }
 
   // The utility planner fills every band positioning did not claim.
-  return [...plans, ...planRoundUtility(state, opponent, plannerCfg, fromBand, usedBands)]
+  return [...plans, ...planRoundUtility(state, opponent, plannerCfg, fromBand, usedBands, ranking)]
 }
 
 /** A movement the positioning layer wants to commit this round. */

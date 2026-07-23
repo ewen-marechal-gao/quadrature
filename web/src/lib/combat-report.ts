@@ -143,12 +143,29 @@ export interface AdversarySnapshot {
   }>;
 }
 
+/** Un plan de manche candidat pesé par le planificateur, et son utilité totale. */
+export interface RankedPlan {
+  /** `action` = ActionId (PJ) ou id de carte (adversaire). */
+  actions: Array<{ band: string; action: string }>;
+  utility: number;
+  /** Vrai pour le plan effectivement retenu. */
+  chosen: boolean;
+}
+
+/** Raisonnement d'un acteur au début de manche : ses meilleurs plans par utilité. */
+export interface PlanningEntry {
+  actorId: string;
+  plans: RankedPlan[];
+}
+
 export interface RoundLog {
   round: number;
   maintenance: unknown[];
   phases: PhaseLog[];
   endOfRound: CombatantSnapshot[];
   adversariesEndOfRound?: AdversarySnapshot[];
+  /** Top-3 plans pesés par chaque acteur scripté en début de manche. */
+  planning?: PlanningEntry[];
 }
 
 export interface CombatantSummary {

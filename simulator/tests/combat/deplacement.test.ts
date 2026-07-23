@@ -18,6 +18,22 @@ const at = (x: number, y: number): Position => ({ x, y })
 const alwaysDodge: GuardProvider = () => 'dodge'
 const board = { width: 20, height: 11 }
 
+/**
+ * Seed Math.random deterministically (mulberry32) for tests whose ASSERTION is a
+ * dice outcome (e.g. a Charge landing). The suite otherwise leaves Math.random
+ * unseeded, so such assertions are order-fragile across files sharing a worker.
+ */
+function seedRandom(seed: number): () => void {
+  let a = seed >>> 0
+  const spy = jest.spyOn(Math, 'random').mockImplementation(() => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  })
+  return () => spy.mockRestore()
+}
+
 describe('élan — la Charge exige d\'avoir couru', () => {
   it('la Charge est injouable sans Inertie 3', () => {
     const pc = makeCombatant('PC')                         // inertia 0 à l'init
@@ -68,6 +84,12 @@ const courseThenCharge = (): Plan[] => [
 ]
 
 describe('Course → Charge dans une manche', () => {
+  // La Charge doit CONNECTER puis GRAVER : on fige les dés pour que l'assertion
+  // porte sur la portée/l'enchaînement, pas sur la chance du jet.
+  let restore: () => void
+  beforeEach(() => { restore = seedRandom(1) })
+  afterEach(() => restore())
+
   it('la Course (Bande II) donne l\'élan que la Charge (Bande III) consomme', async () => {
     const states = await facingOff(9)
     const { states: after, log } = await resolveRoundBands(

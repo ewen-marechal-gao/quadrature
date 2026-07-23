@@ -92,8 +92,38 @@
 /* Acteurs (sous le plateau) ---------------------------------------------- */
 .cbv-actors { display: flex; flex-direction: column; gap: .5rem; }
 .cbv-actors__head { color: var(--panel-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
-.cbv-actor { border: 1px solid var(--brass-border); border-radius: 6px; padding: .45rem .6rem; background: var(--brass-faint); }
+.cbv-actor { position: relative; border: 1px solid var(--brass-border); border-radius: 6px; padding: .45rem .6rem; background: var(--brass-faint); }
 .cbv-actor__name { font-weight: 600; margin-bottom: .3rem; }
+
+/* Badge « plans du planificateur » — coin supérieur droit de la fiche */
+.cbv-plan-badge {
+  position: absolute; top: .3rem; right: .4rem; z-index: 5;
+  font-size: .82rem; line-height: 1; cursor: help;
+  opacity: .55; transition: opacity .12s;
+}
+.cbv-plan-badge:hover, .cbv-plan-badge:focus { opacity: 1; outline: none; }
+.cbv-plan-pop {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 30;
+  width: 15rem; display: flex; flex-direction: column; gap: .2rem;
+  padding: .5rem .55rem; border-radius: 6px;
+  background: #241c10; border: 1px solid var(--brass-subtle);
+  color: var(--panel-text); font-size: .8rem; line-height: 1.35; font-weight: 400;
+  box-shadow: 0 6px 20px rgba(0,0,0,.5);
+  opacity: 0; visibility: hidden; transition: opacity .12s;
+}
+.cbv-plan-badge:hover .cbv-plan-pop, .cbv-plan-badge:focus .cbv-plan-pop { opacity: 1; visibility: visible; }
+.cbv-plan-pop__title {
+  color: var(--panel-muted); font-size: .68rem; text-transform: uppercase;
+  letter-spacing: .04em; margin-bottom: .1rem;
+}
+.cbv-plan { display: flex; gap: .45rem; align-items: baseline; padding: .12rem .2rem; border-radius: 4px; }
+.cbv-plan.is-chosen { background: var(--brass-glow); }
+.cbv-plan.is-chosen .cbv-plan__acts { color: var(--brass-bright); font-weight: 600; }
+.cbv-plan__util {
+  flex-shrink: 0; min-width: 2.2rem; text-align: right;
+  color: var(--card-mouvement); font-variant-numeric: tabular-nums;
+}
+.cbv-plan__acts { flex: 1; }
 
 /* Deux colonnes : physique | mental, séparées d'un filet */
 .cbv-actor__cols { display: grid; grid-template-columns: 1fr 1fr; gap: .1rem; }
