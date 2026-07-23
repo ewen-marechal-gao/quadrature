@@ -94,7 +94,7 @@ Ouvrir le dossier `rules/` comme **vault Obsidian** ; commencer par
 cd web
 npm install
 npm run dev            # serveur de dev sur http://localhost:3000
-npm run build          # export statique → web/out/
+npm run build          # build serveur (.next/) ; servir via `npm run start`
 npm run generate-pdf   # génère le PDF du livre (Puppeteer + pdf-lib)
 ```
 Rubriques notables : `/fr` (accueil), `/fr/volumen/<livre>` (lecture paginée),

@@ -19,8 +19,9 @@
  * dupliquer un type léger vaut mieux qu'un couplage inter-projets fragile.
  */
 
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync, statSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
+import { listEncounters, type EncounterMeta } from "@/lib/encounters";
 
 // ─── Types miroir (simulator/src/combat/types.ts) ─────────────────────────────
 
@@ -184,6 +185,14 @@ export interface ReportSummary {
   outcome: CombatOutcome;
   roundCount: number;
   board: Board | null;
+  /** Taille du fichier sur disque, en octets. */
+  sizeBytes: number;
+}
+
+/** Une rencontre et les rapports 1-run qui lui sont rattachés. */
+export interface EncounterGroup {
+  encounter: EncounterMeta;
+  reports: ReportSummary[];
 }
 
 // ─── Accès disque ─────────────────────────────────────────────────────────────
@@ -240,9 +249,12 @@ export function listReports(): ReportSummary[] {
   const summaries: ReportSummary[] = [];
   for (const name of readdirSync(dir)) {
     if (!isReplayable(name)) continue;
+    const path = join(dir, name);
     let log: CombatLog;
+    let sizeBytes = 0;
     try {
-      log = JSON.parse(readFileSync(join(dir, name), "utf-8")) as CombatLog;
+      sizeBytes = statSync(path).size;
+      log = JSON.parse(readFileSync(path, "utf-8")) as CombatLog;
     } catch {
       continue;
     }
@@ -256,8 +268,72 @@ export function listReports(): ReportSummary[] {
       outcome: log.outcome,
       roundCount: log.rounds.length,
       board: log.board ?? null,
+      sizeBytes,
     });
   }
   summaries.sort((a, b) => (b.timestamp ?? "").localeCompare(a.timestamp ?? ""));
   return summaries;
+}
+
+/**
+ * Regroupe tous les rapports 1-run par rencontre. Le rattachement se fait sur le
+ * SLUG du nom de rencontre : on retire le préfixe horodaté `${date}-${heure}-` de
+ * l'id, puis on rattache à la rencontre dont le slug est le PLUS LONG préfixe du
+ * reste (départage les slugs imbriqués, ex. `duel` vs `duel-arme`). Les rapports
+ * sans rattachement tombent dans un groupe « Autres » (encounter.file === "").
+ */
+export function groupReportsByEncounter(): EncounterGroup[] {
+  const encounters = listEncounters();
+  const reports = listReports();
+
+  // Plus longs slugs d'abord → le premier préfixe qui matche est le plus spécifique.
+  const byLength = [...encounters].sort((a, b) => b.slug.length - a.slug.length);
+  const groups = new Map<string, ReportSummary[]>();
+  for (const e of encounters) groups.set(e.file, []);
+
+  const orphans: ReportSummary[] = [];
+  for (const r of reports) {
+    const rest = r.id.replace(/^\d{8}-\d{6}-/, "");
+    const match = byLength.find((e) => e.slug && rest.startsWith(`${e.slug}-`));
+    if (match) groups.get(match.file)!.push(r);
+    else orphans.push(r);
+  }
+
+  const result: EncounterGroup[] = encounters.map((encounter) => ({
+    encounter,
+    reports: groups.get(encounter.file)!,
+  }));
+  if (orphans.length > 0) {
+    result.push({
+      encounter: {
+        file: "", name: "Autres / non rattachés", slug: "", factions: [],
+      },
+      reports: orphans,
+    });
+  }
+  return result;
+}
+
+/**
+ * Supprime des rapports 1-run par id (outil LOCAL). Refuse tout id contenant un
+ * séparateur de chemin — l'id interne == nom de fichier (garanti par le sim).
+ */
+export function deleteReports(ids: string[]): { deleted: string[]; failed: string[] } {
+  const dir = reportsDir();
+  const deleted: string[] = [];
+  const failed: string[] = [];
+  for (const id of ids) {
+    if (typeof id !== "string" || id.includes("/") || id.includes("\\") || id.includes("..")) {
+      failed.push(id);
+      continue;
+    }
+    const file = join(dir, `${id}.json`);
+    try {
+      unlinkSync(file);
+      deleted.push(id);
+    } catch {
+      failed.push(id);
+    }
+  }
+  return { deleted, failed };
 }

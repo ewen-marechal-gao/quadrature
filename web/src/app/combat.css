@@ -177,3 +177,73 @@
   background: rgba(196,154,69,0.12); border: 1px solid var(--brass-border); color: var(--panel-text);
 }
 .cbv-act__notes { margin: .4rem 0 0; padding-left: 1.1rem; color: var(--panel-muted); font-size: .82rem; }
+
+/* ════ Navigateur de rencontres (/encounters) — maître/détail ════ */
+.enc {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 3rem;
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+}
+.enc-head h1 { color: var(--brass-bright); margin: .2rem 0 .25rem; font-size: 1.5rem; }
+.enc-sub { color: var(--panel-muted); margin: 0 0 1.25rem; font-size: .9rem; }
+.enc-empty { color: var(--panel-muted); padding: 1.5rem; text-align: center; }
+
+.enc-stage { display: grid; grid-template-columns: minmax(220px, 30%) 1fr; gap: 1.5rem; align-items: start; }
+@media (max-width: 820px) { .enc-stage { grid-template-columns: 1fr; } }
+
+/* ── Maître : liste des rencontres ── */
+.enc-master__list { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; position: sticky; top: 1rem; }
+.enc-item {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  padding: .55rem .7rem; border: 1px solid var(--brass-border); border-radius: 7px;
+  background: var(--brass-faint); color: var(--panel-text); cursor: pointer;
+  font-family: var(--font-ui); font-size: .92rem; text-align: left;
+  transition: background .12s, border-color .12s;
+}
+.enc-item:hover { background: var(--brass-glow); border-color: var(--brass-subtle); }
+.enc-item.is-active { background: var(--brass-glow); border-color: var(--brass-bright); }
+.enc-item.is-active .enc-item__name { color: var(--brass-bright); font-weight: 600; }
+.enc-item__name { flex: 1; }
+.enc-item__meta { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
+.enc-item__board { color: var(--card-mouvement); font-size: .74rem; }
+.enc-item__count {
+  min-width: 1.4rem; text-align: center; padding: .05rem .35rem; border-radius: 999px;
+  background: var(--brass); color: var(--on-brass); font-size: .74rem; font-weight: 700;
+}
+.enc-item__count.is-zero { background: rgba(160,138,105,0.18); color: var(--panel-muted); font-weight: 400; }
+
+/* ── Détail : logs de la rencontre ── */
+.enc-detail__head { margin-bottom: 1rem; }
+.enc-detail__head h2 { color: var(--brass-bright); margin: 0 0 .35rem; font-size: 1.2rem; }
+.enc-detail__desc { color: var(--panel-text); margin: 0 0 .5rem; font-size: .9rem; line-height: 1.5; }
+.enc-detail__facts { display: flex; flex-wrap: wrap; gap: .4rem; color: var(--panel-muted); font-size: .85rem; }
+
+.enc-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  margin-bottom: .75rem; padding-bottom: .6rem; border-bottom: 1px solid var(--brass-border);
+}
+.enc-selall { display: flex; align-items: center; gap: .4rem; color: var(--panel-muted); font-size: .85rem; cursor: pointer; }
+.enc-delete {
+  padding: .4rem .8rem; border: 1px solid var(--brass-border); border-radius: 6px;
+  background: var(--brass-faint); color: var(--card-offensive); cursor: pointer;
+  font-family: var(--font-ui); font-size: .85rem; transition: background .12s, border-color .12s, opacity .12s;
+}
+.enc-delete:hover:not(:disabled) { background: rgba(160,58,42,0.18); border-color: var(--card-offensive); }
+.enc-delete:disabled { opacity: .45; cursor: default; }
+
+.enc-logs { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.enc-log {
+  display: flex; align-items: flex-start; gap: .6rem;
+  border: 1px solid var(--brass-border); border-radius: 8px;
+  background: var(--brass-faint); padding: .7rem .85rem;
+  transition: border-color .12s, background .12s;
+}
+.enc-log:hover { border-color: var(--brass-strong); background: var(--brass-glow); }
+.enc-log.is-checked { border-color: var(--brass-bright); background: var(--brass-glow); }
+.enc-log__check { margin-top: .2rem; flex-shrink: 0; }
+.enc-log__link { flex: 1; text-decoration: none; color: inherit; display: block; min-width: 0; }
+.enc-log__title { display: block; color: var(--brass-bright); font-size: 1rem; }
+.enc-log__meta { display: flex; flex-wrap: wrap; gap: .35rem; color: var(--panel-muted); font-size: .82rem; margin-top: .2rem; }
+.enc-log__size { color: var(--panel-muted); }

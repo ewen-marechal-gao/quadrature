@@ -97,6 +97,17 @@ export function LandingPage({ locale }: Props) {
               <span className="landing-book-arrow">→</span>
             </Link>
           )}
+          {localeEnabled && (
+            <Link href={`/${locale}/encounters/`} className="landing-book-card">
+              <span className="landing-book-title">Rencontres</span>
+              <span className="landing-book-subtitle">Outil local</span>
+              <span className="landing-book-desc">
+                Rejouez les combats du simulateur : choisissez une rencontre, puis
+                un de ses logs pour le suivre manche par manche.
+              </span>
+              <span className="landing-book-arrow">→</span>
+            </Link>
+          )}
           {BOOKS.map((book) =>
             localeEnabled ? (
               <Link
