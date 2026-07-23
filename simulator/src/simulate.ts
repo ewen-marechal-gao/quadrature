@@ -39,7 +39,8 @@ import {
   type AdversarySnapshot,
 } from './adversary/combatant'
 import { ADVERSARY_EMOJI, type AdversaryRollResult } from './adversary/dice'
-import { selectTargetPart } from './adversary/agent'
+import { selectTargetPart, cardMoveBudget } from './adversary/agent'
+import { ACTION_DEFS } from './combat/actions'
 import { type Actor, isAdversaryActor, actorDefeated, actorStartRound } from './adversary/actor'
 import {
   planRoundActions, planRoundAI, makeGuardProvider,
@@ -50,6 +51,7 @@ import { planAdversaryRoundUtility, type RankedPlan } from './planner/planner'
 import type {
   CombatantState, CombatLog, CombatantSummary, RoundLog, PhaseLog,
   CombatOutcome, ActionLogEntry, MaintenanceEntry, CombatantSnapshot, PlanningEntry,
+  CombatProfile, ActionId,
 } from './combat/types'
 import { MENTAL_ICONS } from './combat/types'
 import {RollResult} from './types'
@@ -335,6 +337,11 @@ async function runCombat(
 
   let states = new Map<string, Actor>(participants.map(p => [p.side.id, initSide(p.side)]))
 
+  // Profils (portée/déplacement/trousse) figés sur l'état de DÉBUT — statiques.
+  const profileById = new Map<string, CombatProfile>(
+    participants.map(p => [p.side.id, makeProfile(p, states.get(p.side.id)!)]),
+  )
+
   // Le tapis avant le premier coup — les phases n'enregistrent que l'APRÈS.
   const startPositions = encounter.board
     ? Object.fromEntries([...states].flatMap(([id, a]) => a.pos ? [[id, a.pos] as const] : []))
@@ -442,7 +449,10 @@ async function runCombat(
   return {
     id,
     timestamp,
-    combatants: participants.map(makeParticipantSummary),
+    combatants: participants.map(p => ({
+      ...makeParticipantSummary(p),
+      ...(profileById.get(p.side.id) && { profile: profileById.get(p.side.id) }),
+    })),
     ...(encounter.board && { board: encounter.board }),
     ...(startPositions && { startPositions }),
     rounds:     roundLogs,
@@ -991,6 +1001,39 @@ function makeSideSummary(side: Side): CombatantSummary {
 /** Combatant summary tagged with its faction — the unit victory is keyed on. */
 function makeParticipantSummary(p: Participant): CombatantSummary {
   return { ...makeSideSummary(p.side), faction: p.factionName }
+}
+
+/**
+ * Enveloppe spatiale + trousse d'un acteur, pour les zones et la liste d'actions
+ * du viewer. Dérivée de la trousse (allowedActions / deck) et des stats — statique.
+ */
+function makeProfile(p: Participant, state: Actor): CombatProfile {
+  if (isAdversaryActor(state)) {
+    const cards = state.sheet.cards
+    return {
+      actions:  cards.map(c => c.id),
+      reach:    Math.max(1, ...cards.map(c => c.reach ?? 1)),
+      minRange: 0,
+      move:     Math.max(0, ...cards.map(cardMoveBudget)),
+    }
+  }
+  // PJ : enveloppe d'attaque = l'action offensive à la plus large portée.
+  const allowed = (p.side.kind === 'pc' && p.side.cfg.allowedActions?.length
+    ? p.side.cfg.allowedActions
+    : (Object.keys(ACTION_DEFS) as ActionId[]))
+  let reach = 1, minRange = 0
+  for (const id of allowed) {
+    const def = ACTION_DEFS[id]
+    if (!def || def.movement || def.reach == null || !def.tags.includes('offensive')) continue
+    if (def.reach > reach) { reach = def.reach; minRange = def.minRange ?? 0 }
+  }
+  const moveOf = (id: ActionId): number => {
+    const b = ACTION_DEFS[id]?.moveBudget
+    return typeof b === 'function' ? b(state) : (b ?? 0)
+  }
+  const move = allowed.includes('course') ? moveOf('course')
+             : allowed.includes('walk')   ? moveOf('walk') : 0
+  return { actions: [...allowed], reach, minRange, move }
 }
 
 // ─── Entry point ──────────────────────────────────────────────────────────────

@@ -20,7 +20,7 @@ import Link from "next/link";
 import type { Locale } from "@/lib/nav";
 import type {
   CombatLog, Position, ActionLogEntry, RoundLog,
-  CombatantSnapshot, AdversarySnapshot, PlanningEntry,
+  CombatantSnapshot, AdversarySnapshot, PlanningEntry, CombatProfile,
 } from "@/lib/combat-report";
 import type { CombatCards } from "@/lib/combat-cards";
 import type { ActionCard as CardData } from "@/lib/cards";
@@ -93,13 +93,41 @@ function buildRounds(log: CombatLog): RoundView[] {
 
 // ─── Plateau ──────────────────────────────────────────────────────────────────
 
+/** Zones (déplacement + portée) de l'acteur survolé, en distance de Chebyshev. */
+function Zones({
+  board, pos, profile, color,
+}: {
+  board: { width: number; height: number };
+  pos: Position;
+  profile: CombatProfile;
+  color: string;
+}) {
+  const move: ReactNode[] = [];
+  const reach: ReactNode[] = [];
+  for (let x = 0; x < board.width; x++) {
+    for (let y = 0; y < board.height; y++) {
+      const d = Math.max(Math.abs(x - pos.x), Math.abs(y - pos.y));
+      if (d > 0 && d <= profile.move) {
+        move.push(<rect key={`m${x}-${y}`} x={x} y={y} width={1} height={1} fill={color} opacity={0.14} />);
+      }
+      if (d > profile.minRange && d <= profile.reach) {
+        reach.push(<rect key={`r${x}-${y}`} x={x} y={y} width={1} height={1} className="cbv-zone-reach" />);
+      }
+    }
+  }
+  // Déplacement dessous (couleur de faction), portée dessus (teinte danger).
+  return <g>{move}{reach}</g>;
+}
+
 function Board({
-  log, positions, trails, colorOf,
+  log, positions, trails, colorOf, hoveredId, profileOf,
 }: {
   log: CombatLog;
   positions: Record<string, Position>;
   trails: Trail[];
   colorOf: (id: string) => string;
+  hoveredId: string | null;
+  profileOf: (id: string) => CombatProfile | undefined;
 }) {
   const board = log.board!;
   const cx = (p: Position) => p.x + 0.5;
@@ -111,6 +139,9 @@ function Board({
   for (let y = 0; y <= board.height; y++)
     lines.push(<line key={`h${y}`} x1={0} y1={y} x2={board.width} y2={y} className="cbv-grid" />);
 
+  const hoverPos = hoveredId ? positions[hoveredId] : undefined;
+  const hoverProfile = hoveredId ? profileOf(hoveredId) : undefined;
+
   return (
     <svg
       className="cbv-board"
@@ -120,6 +151,9 @@ function Board({
     >
       <rect x={0} y={0} width={board.width} height={board.height} className="cbv-board-bg" />
       {lines}
+      {hoverPos && hoverProfile && (
+        <Zones board={board} pos={hoverPos} profile={hoverProfile} color={colorOf(hoveredId!)} />
+      )}
       {trails.map((t, i) => (
         <polyline
           key={`t${i}`}
@@ -435,14 +469,49 @@ function PlanningBadge({
   );
 }
 
+/** Trousse d'un acteur (step Rencontre) : ses actions + portée/déplacement. */
+function ProfileCard({
+  profile, side, cards, hasBoard,
+}: {
+  profile: CombatProfile;
+  side: "pc" | "adv";
+  cards?: CombatCards;
+  hasBoard: boolean;
+}) {
+  // Plusieurs actions peuvent partager une carte (Marche/Course → Déplacement) :
+  // on dédoublonne par NOM affiché en gardant l'ordre de la trousse.
+  const names = profile.actions.map((id) => planActionName(id, side, cards));
+  const uniqueNames = [...new Set(names)];
+  return (
+    <div className="cbv-profile">
+      <div className="cbv-profile__acts">
+        {uniqueNames.map((name) => (
+          <span key={name} className="cbv-chip">{name}</span>
+        ))}
+      </div>
+      {hasBoard && (
+        <div className="cbv-profile__envelope">
+          <span title="portée d'attaque">
+            🎯 portée {profile.minRange > 0 ? `${profile.minRange + 1}–${profile.reach}` : profile.reach}
+          </span>
+          <span title="déplacement en une manche">🏃 {profile.move} cases</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Actors({
-  log, round, colorOf, isAdversary, cards,
+  log, round, colorOf, isAdversary, cards, atStart, hasBoard, onHover,
 }: {
   log: CombatLog;
   round: RoundLog | null;
   colorOf: (id: string) => string;
   isAdversary: (id: string) => boolean;
   cards?: CombatCards;
+  atStart: boolean;
+  hasBoard: boolean;
+  onHover: (id: string | null) => void;
 }) {
   const pc = new Map((round?.endOfRound ?? []).map((s) => [s.id, s]));
   const adv = new Map((round?.adversariesEndOfRound ?? []).map((s) => [s.id, s]));
@@ -451,20 +520,30 @@ function Actors({
   return (
     <div className="cbv-actors">
       <div className="cbv-actors__head">
-        {round ? `Acteurs — fin de la manche ${round.round}` : "Acteurs — état initial"}
+        {round ? `Acteurs — fin de la manche ${round.round}` : "Acteurs — trousse & positions de départ"}
       </div>
       {log.combatants.map((c) => {
         const p = pc.get(c.id);
         const a = adv.get(c.id);
         const plan = plans.get(c.id);
+        const side = isAdversary(c.id) ? "adv" : "pc";
         return (
-          <div key={c.id} className="cbv-actor">
+          <div
+            key={c.id}
+            className="cbv-actor"
+            onMouseEnter={() => onHover(c.id)}
+            onMouseLeave={() => onHover(null)}
+            onFocus={() => onHover(c.id)}
+            onBlur={() => onHover(null)}
+            tabIndex={hasBoard ? 0 : undefined}
+          >
             <div className="cbv-actor__name" style={{ color: colorOf(c.id) }}>{c.charName}</div>
             {plan && plan.plans.length > 0 && (
-              <PlanningBadge entry={plan} side={isAdversary(c.id) ? "adv" : "pc"} cards={cards} />
+              <PlanningBadge entry={plan} side={side} cards={cards} />
             )}
-            {p && <PcCard s={p} />}
-            {a && <AdvCard s={a} />}
+            {atStart && c.profile
+              ? <ProfileCard profile={c.profile} side={side} cards={cards} hasBoard={hasBoard} />
+              : <>{p && <PcCard s={p} />}{a && <AdvCard s={a} />}</>}
           </div>
         );
       })}
@@ -484,6 +563,13 @@ export function CombatViewer({
   const views = useMemo(() => buildRounds(log), [log]);
   // r = -1 → « Rencontre » (état initial) ; 0..N-1 → manche.
   const [r, setR] = useState(0);
+  // Acteur survolé dans le roster → ses zones (portée/déplacement) sur le plateau.
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  const profileOf = useMemo(() => {
+    const byId = new Map(log.combatants.map((c) => [c.id, c.profile]));
+    return (id: string) => byId.get(id);
+  }, [log]);
 
   const isAdversary = useMemo(() => {
     const ids = new Set<string>();
@@ -575,6 +661,9 @@ export function CombatViewer({
       colorOf={colorOf}
       isAdversary={isAdversary}
       cards={cards}
+      atStart={atStart}
+      hasBoard={!!log.board}
+      onHover={setHoveredId}
     />
   );
 
@@ -611,7 +700,14 @@ export function CombatViewer({
           qu'un combat SANS plateau : layout consistant dans les deux cas. */}
       {log.board && (
         <div className="cbv-boardwrap">
-          <Board log={log} positions={boardPositions} trails={boardTrails} colorOf={colorOf} />
+          <Board
+            log={log}
+            positions={boardPositions}
+            trails={boardTrails}
+            colorOf={colorOf}
+            hoveredId={hoveredId}
+            profileOf={profileOf}
+          />
         </div>
       )}
 

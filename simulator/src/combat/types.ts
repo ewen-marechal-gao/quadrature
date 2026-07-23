@@ -428,6 +428,22 @@ export interface RoundLog {
 
 // ─── Combat log (top-level, written to /combatReports) ───────────────────────
 
+/**
+ * Enveloppe spatiale et trousse d'un acteur, au début du combat — de quoi
+ * dessiner les zones (portée/déplacement) et lister ses actions dans le viewer.
+ * Statique (dérivée de la trousse et des stats, pas de l'état de manche).
+ */
+export interface CombatProfile {
+  /** Actions disponibles : ids d'ActionId (PJ) ou ids de carte (adversaire). */
+  actions:  string[]
+  /** Portée d'attaque max, en cases (mêlée 1-2 ; tir = portée effective). */
+  reach:    number
+  /** Distance minimale (0 = mêlée ; ≥1 = tir, pas de coup au contact). */
+  minRange: number
+  /** Cases franchissables en une manche (Course / meilleur déplacement de carte). */
+  move:     number
+}
+
 export interface CombatantSummary {
   id:       string
   charName: string
@@ -439,6 +455,8 @@ export interface CombatantSummary {
   stats:    Record<CharacteristicName, number>
   /** Skill values at combat start */
   skills:   Record<SkillName, number>
+  /** Enveloppe spatiale + trousse (absent des rapports antérieurs). */
+  profile?: CombatProfile
 }
 
 export type CombatOutcome =

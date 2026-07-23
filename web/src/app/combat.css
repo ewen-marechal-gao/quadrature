@@ -92,6 +92,8 @@
 }
 .cbv-board-bg { fill: #1c160e; }
 .cbv-grid { stroke: rgba(196,154,69,0.18); stroke-width: 0.02; }
+/* Zone de portée (survol d'un acteur) : teinte danger, par-dessus le déplacement. */
+.cbv-zone-reach { fill: var(--card-offensive); opacity: 0.16; }
 .cbv-trail { fill: none; stroke-width: 0.12; stroke-linejoin: round; stroke-linecap: round; opacity: .85; stroke-dasharray: 0.28 0.2; }
 .cbv-token-label { fill: #fff; font-size: 0.42px; text-anchor: middle; dominant-baseline: central; font-family: var(--font-ui); pointer-events: none; }
 
@@ -106,6 +108,12 @@
 .cbv-actors__head { color: var(--panel-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
 .cbv-actor { position: relative; border: 1px solid var(--brass-border); border-radius: 6px; padding: .45rem .6rem; background: var(--brass-faint); }
 .cbv-actor__name { font-weight: 600; margin-bottom: .3rem; }
+.cbv-actor:hover { border-color: var(--brass-subtle); }
+
+/* Trousse (step Rencontre) : actions disponibles + enveloppe portée/déplacement */
+.cbv-profile { display: flex; flex-direction: column; gap: .4rem; }
+.cbv-profile__acts { display: flex; flex-wrap: wrap; gap: .3rem; }
+.cbv-profile__envelope { display: flex; flex-wrap: wrap; gap: .6rem; font-size: .82rem; color: var(--panel-muted); }
 
 /* Badge « plans du planificateur » — coin supérieur droit de la fiche */
 .cbv-plan-badge {

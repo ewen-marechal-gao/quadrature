@@ -168,6 +168,14 @@ export interface RoundLog {
   planning?: PlanningEntry[];
 }
 
+/** Enveloppe spatiale + trousse d'un acteur (pour les zones + la liste d'actions). */
+export interface CombatProfile {
+  actions: string[];
+  reach: number;
+  minRange: number;
+  move: number;
+}
+
 export interface CombatantSummary {
   id: string;
   charName: string;
@@ -176,6 +184,8 @@ export interface CombatantSummary {
   origin?: string;
   stats: Record<string, number>;
   skills: Record<string, number>;
+  /** Enveloppe spatiale + trousse. Absent des rapports antérieurs. */
+  profile?: CombatProfile;
 }
 
 export type CombatOutcome =
