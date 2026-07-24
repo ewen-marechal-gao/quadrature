@@ -16,6 +16,7 @@ import type {
   AdversaryEffectOp,
 } from './types'
 import type { AdversaryDie, PowerTier } from './dice'
+import type { ActionTrigger } from '../combat/types'
 import { localize, type LocalizedString } from '../locale'
 
 // ─── Raw YAML shapes (English keys, Locale strings) ───────────────────────────
@@ -51,6 +52,8 @@ interface RawCard {
   tags?: import('./types').CardTag[]
   ranged?: boolean
   reach?: number
+  /** Déclencheur ⚡ : présent = carte de réaction (gratuite, 1×/manche). */
+  trigger?: ActionTrigger
   onSuccess: RawOutcome
   onFailure: RawOutcome
   onFives?: RawFivesOutcome
@@ -121,6 +124,7 @@ function resolveCard(c: RawCard, locale: string): AdversaryCardDef {
     tags:       c.tags ?? [],
     ...(c.ranged && { ranged: true }),
     ...(c.reach != null && { reach: c.reach }),
+    ...(c.trigger && { trigger: c.trigger }),
     onSuccess:  resolveOutcome(c.onSuccess, locale),
     onFailure:  resolveOutcome(c.onFailure, locale),
     ...(fives && { onFives: fives }),

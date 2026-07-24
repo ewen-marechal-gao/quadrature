@@ -133,6 +133,13 @@ export interface AdversaryCombatant {
    */
   destabilized: boolean
   /**
+   * Cartes de RÉACTION déjà déclenchées cette manche. Les créatures paient leurs
+   * réactions ni en ⚫ ni en ⚡ (décision créateur : rien de plus à suivre pour le
+   * meneur) — la borne est donc « **une fois par manche par carte** ». Vidé au
+   * `startRound`.
+   */
+  usedReactions: string[]
+  /**
    * Square on the board — optional, exactly like a PC's (§ CombatantState.pos):
    * absent means this encounter has no spatial model. Speeds are NOT stored
    * here; they live on the fiche (`sheet.speed`, walk/run in cases), set by the
@@ -189,6 +196,7 @@ export function initAdversary(sheet: AdversarySheet): AdversaryCombatant {
     stunned:     false,
     bleed:       0,
     destabilized: false,
+    usedReactions: [],
   }
   return startRound(base)
 }
@@ -250,6 +258,7 @@ export function startRound(c: AdversaryCombatant): AdversaryCombatant {
     actions:   baseActions(c),
     stunned:   false,        // Sonné se dissipe au début de la manche
     destabilized: false,     // « Déstabilisé » consommé (a sauté ce regain de ◇)
+    usedReactions: [],       // les réactions gratuites se rechargent chaque manche
   }
 }
 

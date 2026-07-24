@@ -22,7 +22,7 @@ import type { CharacteristicName, SkillName } from '../character/types'
 import type { RollParams, RollResult } from '../types'
 import type {
   ActionId, GuardId, ActionCost, CardTag, MentalState, StatusEffect,
-  CombatantState, CombatEffect, ResolvedAction,
+  CombatantState, CombatEffect, ResolvedAction, ActionTrigger,
 } from './types'
 import type { AdversaryCombatant } from '../adversary/combatant'
 import { buildPool, roll } from '../dieSystem'
@@ -79,6 +79,12 @@ export interface ActionDef {
    * Absent / 0 = no minimum (melee connects at adjacency). Future: from the weapon.
    */
   minRange?:     number
+  /**
+   * Déclencheur ⚡ (§ defense_reactions.md). PRÉSENT = l'action est une RÉACTION :
+   * elle ne fait jamais partie du plan de manche, elle est proposée quand
+   * l'événement survient (cf. combat/triggers.ts). Absente = action normale.
+   */
+  trigger?:      ActionTrigger
   /**
    * Statuts qui INTERDISENT l'action (§ conditions des cartes). La Course est
    * bloquée par Essoufflé, À terre, À genoux, Entravé, Immobilisé — on ne sprinte

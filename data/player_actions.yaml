@@ -313,6 +313,32 @@ actions:
     onFailure:  { text: { fr: "La cible perd 1 ◇" },                     effect: [{ shiftIfBroken: -1 }, { drainStability: 1 }] }
     onCritical: { text: { fr: "Critique — la cible perd 1 ◇ de plus" }, effect: [{ drainStability: 1 }] }
 
+  # ── Réactions ⚡ (§ defense_reactions.md) ────────────────────────────────────
+  # Une action porteuse d'un `trigger` n'entre JAMAIS dans le plan de manche : elle
+  # est proposée à son porteur quand l'événement survient (cf. combat/triggers.ts),
+  # se résout immédiatement, puis la bande reprend. Son coût est en ⚡ (pas en ⚫).
+  #
+  # Non implémentés ici (conditionnés par un TRAIT, système absent) : les « modes
+  # réactifs » ⚒️ Opportunisme (Frappe vive), Tir d'instinct (Tir rapide),
+  # Agripper (Saisir), Coagulation rapide (Stabiliser).
+
+  opportunity-strike:
+    vaultCard: frappe-opportuniste
+    name: { fr: "Frappe opportuniste" }
+    description:
+      {
+        fr: "Réaction ⚡ : frappe une créature adjacente qui initie un Déplacement. Succès : 2💢, Échec : 1💧 sur la cible. Critique : 🔻 sur la cible.",
+      }
+    initiative: 2
+    cost: { actions: 0, reactions: 1, fatigue: 1 }
+    tags: [offensive, melee, physical, physicalDamage]
+    reach: 1
+    trigger: { on: movement-initiated, scope: adjacent }
+    roll: { characteristic: intelligence, skill: reactivity }
+    onSuccess: { text: { fr: "Touché — 2💢" }, effect: [{ wound: 2 }] }
+    onFailure: { text: { fr: "Manqué — la cible se fatigue 1💧" }, effect: [{ fatigue: 1 }] }
+    onCritical: { text: { fr: "Critique — la cible subit 🔻" }, effect: [{ mental: -1 }] }
+
   # ── Déplacement (§ positions) ────────────────────────────────────────────────
   # La carte Déplacement porte deux actions moteur : Marche (base) et Course
   # (option). Sans jet — franchir du terrain ne se rate pas. `movement: true` les

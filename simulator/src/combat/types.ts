@@ -125,6 +125,29 @@ export type ActionId =
   // Actions sociales — poussent l'état mental de la CIBLE (créatures)
   | 'provocation'    // Provocation  — Manipulation+Charisme ; inflige 🔺 (vers Colère)
   | 'intimidation'   // Intimidation — Autorité+Volonté ; inflige 🔻 (vers Peur)
+  // Réactions ⚡ (§ defense_reactions.md) — jouées sur un DÉCLENCHEUR, hors plan de manche
+  | 'opportunity-strike' // Frappe opportuniste — init 2, ⚡💧, Réactivité+Intelligence
+
+// ─── Déclencheurs de réaction (§ defense_reactions.md) ────────────────────────
+
+/**
+ * Les quatre familles de déclencheurs du vault. `targeted-vs-guard` est déjà
+ * servi par le système de Garde (GUARD_DEFS) et n'est pas ré-émis ici.
+ */
+export type TriggerKind =
+  | 'movement-initiated'  // une créature à portée initie Marche / Course / Posture
+  | 'heavy-wound-taken'   // immédiatement après avoir reçu une 💔
+  | 'phase-start'         // avant la révélation de la Bande I
+  | 'targeted-vs-guard'   // être la cible d'une action 🆚 Garde (via GUARD_DEFS)
+
+export interface ActionTrigger {
+  on: TriggerKind
+  /**
+   * Qui peut réagir, en distance : `reach` = la portée de l'action réactive
+   * (défaut), `adjacent` = 1 case. Sans plateau, la portée n'est pas gâtée.
+   */
+  scope?: 'reach' | 'adjacent'
+}
 
 export type GuardId =
   | 'absorb' // Encaisser — Récupération + Vigueur    (always available)
@@ -368,6 +391,12 @@ export interface ActionLogEntry {
   battleCry?:     string
   /** Raisonnement interne de l'agent — invisible à l'adversaire, affiché en grisé dans les logs */
   reasoning?:     string
+  /**
+   * Présent quand l'entrée est une RÉACTION ⚡ jouée sur un déclencheur (et non
+   * une action du plan de manche) : quel déclencheur, et quelle action elle a
+   * interrompue. Le viewer s'en sert pour la distinguer visuellement.
+   */
+  reaction?:      { trigger: TriggerKind; interrupted: string }
 }
 
 /** All simultaneous actions sharing the same initiative value */
@@ -407,9 +436,15 @@ export interface RankedPlan {
   chosen:  boolean
 }
 
-/** One actor's start-of-round planning: its top-N candidate plans by utility. */
+/**
+ * Le raisonnement d'un acteur pour une BANDE : ses meilleurs plans par utilité.
+ * La planification est recalculée au début de chaque bande (elle doit intégrer ce
+ * qui s'est passé dans la précédente — réactions comprises), d'où le `band`.
+ */
 export interface PlanningEntry {
   actorId: string
+  /** Bande au début de laquelle ce classement a été calculé. */
+  band?:   Band
   plans:   RankedPlan[]
 }
 

@@ -16,7 +16,7 @@
  */
 
 import type { AdversaryDie, PowerTier } from './dice'
-import type { CardTag } from '../combat/types'
+import type { CardTag, ActionTrigger } from '../combat/types'
 
 export type { AdversaryDie, PowerTier } from './dice'
 export type { CardTag } from '../combat/types'
@@ -173,6 +173,13 @@ export interface AdversaryCardDef {
    * loader's. Only melee is pinned down today.
    */
   reach?:     number
+  /**
+   * Déclencheur ⚡ (§ defense_reactions.md). PRÉSENT = carte de RÉACTION : elle
+   * n'entre pas dans le plan de manche, elle est proposée quand l'événement
+   * survient. Côté créature elle est **GRATUITE** (ni ⚫ ni ⚡ — décision créateur :
+   * rien de plus à suivre pour le meneur), bornée à UNE fois par manche par carte.
+   */
+  trigger?:   ActionTrigger
   onSuccess:  AdversaryOutcome
   onFailure:  AdversaryOutcome
   onFives?:   AdversaryFivesOutcome

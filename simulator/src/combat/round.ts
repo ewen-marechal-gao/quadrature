@@ -65,6 +65,9 @@ import { selectTargetPart } from '../adversary/agent'
 import { BANDS, bandOf, type Band } from './bands'
 import { DEFAULT_BOARD, distance, inReach, type Board, type Position } from './position'
 import { expandMoves } from './movement'
+import {
+  eligibleReactions, type TriggerEvent, type ReactionSupport,
+} from './triggers'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -162,6 +165,7 @@ function resolvePlans(
   getGuard:    GuardProvider,
   guardCache:  Map<string, CachedGuard>,
   board:       Board = DEFAULT_BOARD,
+  reactions?:  ReactionSupport,
 ): { states: Map<string, Actor>; phaseLogs: PhaseLog[] } {
 
   // ── Step 1: Spend action costs ──────────────────────────────────────────────
@@ -289,6 +293,21 @@ function resolvePlans(
       // it; the move-toward intent is expanded against the board in step c.
       if (def.movement) {
         if (!plan.targetId) continue
+
+        // ⚡ Fenêtre de réaction : « une créature à portée initie un Déplacement ».
+        // La réaction se résout D'ABORD (effets appliqués immédiatement), puis le
+        // déplacement suit — sauf si elle vient de mettre le marcheur hors de combat.
+        if (reactions) {
+          const fired = resolveReactionWindow(
+            { kind: 'movement-initiated', actorId: plan.actorId, source: plan.action },
+            states, reactions, getGuard, guardCache,
+          )
+          states = fired.states
+          actionLogs.push(...fired.entries)
+          const live = states.get(plan.actorId)
+          if (!live || actorDefeated(live)) continue
+        }
+
         const { effects, notes } = resolveMovementAction(plan.action, actorSnap, plan.targetId, plan.retreat)
         phaseEffects.push(...effects)
         actionLogs.push({
@@ -472,6 +491,7 @@ export async function resolveRoundBands<A extends Actor>(
   getPlans:        (currentStates: ReadonlyMap<string, A>, band: Band) => Plan[] | Promise<Plan[]>,
   onBandResolved?: (band: Band, phaseLogs: PhaseLog[]) => void,
   board:           Board = DEFAULT_BOARD,
+  reactions?:      ReactionSupport,
 ): Promise<{ states: Map<string, A>; log: RoundLog }> {
 
   const guardCache = new Map<string, CachedGuard>()
@@ -487,7 +507,7 @@ export async function resolveRoundBands<A extends Actor>(
     const plans = oneCardPerActor(declared.filter(p => bandOf(initiativeOf(p, states)) === band))
     if (plans.length === 0) continue
 
-    const { states: next, phaseLogs } = resolvePlans(states, plans, getGuard, guardCache, board)
+    const { states: next, phaseLogs } = resolvePlans(states, plans, getGuard, guardCache, board, reactions)
     states = next
     allPhases.push(...phaseLogs)
 
@@ -650,6 +670,109 @@ function groupByInitiative(
  * Subsequent attacks on the same target (same or later waves):
  *   Cached roll is returned; reaction is empty (no additional cost).
  */
+/**
+ * Ouvre une fenêtre de RÉACTION ⚡ et résout celle que le provider choisit.
+ *
+ * Contrat (décision créateur) : les cartes de la bande sont déjà choisies et ne
+ * changent pas ; l'acteur pouvant réagir consulte le planificateur (c'est le rôle
+ * de `support.choose`), et si la réaction est jouée elle se résout **d'abord** —
+ * ses effets s'appliquent IMMÉDIATEMENT — puis la bande reprend. C'est la même
+ * exception à la simultanéité du groupe d'initiative que la Garde s'octroie déjà.
+ *
+ * PROFONDEUR 1 : la réaction résolue ici n'ouvre elle-même aucune fenêtre.
+ */
+function resolveReactionWindow(
+  event:      TriggerEvent,
+  states:     Map<string, Actor>,
+  support:    ReactionSupport,
+  getGuard:   GuardProvider,
+  guardCache: Map<string, CachedGuard>,
+): { states: Map<string, Actor>; entries: ActionLogEntry[] } {
+  const entries: ActionLogEntry[] = []
+  const options = eligibleReactions(event, states, support)
+  if (options.length === 0) return { states, entries }
+
+  const chosen = support.choose(event, options, states)
+  if (!chosen) return { states, entries }
+
+  const reactor = states.get(chosen.reactorId)
+  const target  = states.get(chosen.targetId)
+  if (!reactor || !target || actorDefeated(reactor) || actorDefeated(target)) return { states, entries }
+
+  const tag = { trigger: event.kind, interrupted: event.source ?? '' }
+  let next = new Map(states)
+
+  // ── Créature qui réagit : carte GRATUITE, bornée à 1×/manche/carte ─────────
+  if (isAdversaryActor(reactor)) {
+    if (isAdversaryActor(target)) return { states, entries }   // adv. vs adv. hors périmètre
+    const card = reactor.sheet.cards.find(c => c.id === chosen.action)
+    if (!card) return { states, entries }
+
+    const { guardId, guardRoll, reaction } = getOrRollGuard(
+      chosen.targetId, target, chosen.reactorId, card.id, card.initiative, getGuard, guardCache,
+    )
+    const traits = attackAdvantages(reactor, card, target)
+    const rank   = mentalDieRank(reactor.mentalState)
+    const result = resolveAdversaryAttack(
+      reactor.sheet.dice, card, guardRoll.total, chosen.targetId,
+      {
+        advantages:    traits.advantages + Math.max(0, rank),
+        disadvantages: Math.max(0, -rank),
+        selfId:        chosen.reactorId,
+      },
+    )
+    const effects = [...reaction.effects, ...result.effects]
+    entries.push({
+      actorId: chosen.reactorId, action: card.id, targetId: chosen.targetId,
+      guardId, guardRoll, adversaryRoll: result.roll,
+      threshold: guardRoll.total, hit: result.hit, effects,
+      notes: [...reaction.notes, ...traits.notes, ...result.notes],
+      actorActions: reactor.actions, actorReactions: 0,
+      reaction: tag,
+    })
+    // La carte est consommée pour la manche (pas de coût, mais une seule fois).
+    next.set(chosen.reactorId, { ...reactor, usedReactions: [...reactor.usedReactions, card.id] })
+    next = applyEffectsToActors(next, effects)
+    return { states: next, entries }
+  }
+
+  // ── PJ qui réagit : l'action coûte ses ⚡ (et sa 💧) ────────────────────────
+  const def = ACTION_DEFS[chosen.action as ActionId]
+  if (!def) return { states, entries }
+  const preActions   = reactor.actions
+  const preReactions = reactor.reactions
+  const spent = spendActionCost(reactor, def.cost)
+
+  let resolved: ResolvedAction
+  let targetPart: string | undefined
+  if (isAdversaryActor(target)) {
+    targetPart = selectTargetPart(target, def.reach != null && def.reach > 1 ? 'ranged' : 'melee')?.type
+    resolved = resolveAction(spent, chosen.action as ActionId, {
+      dc:            effectiveGuard(target),   // garde fixe de la créature
+      guardReaction: { effects: [], notes: [] },
+      target,
+    })
+  } else {
+    const { guardId, guardRoll, reaction } = getOrRollGuard(
+      chosen.targetId, target, chosen.reactorId, chosen.action, def.initiative, getGuard, guardCache,
+    )
+    resolved = resolveAction(spent, chosen.action as ActionId, {
+      dc: guardRoll.total, dcRoll: guardRoll, guardId, guardReaction: reaction, target,
+    })
+  }
+  const routed = targetPart
+    ? resolved.effects.map(e => e.targetId === chosen.targetId ? { ...e, targetPart } : e)
+    : resolved.effects
+  entries.push({
+    ...toActionLogEntry({ ...resolved, effects: routed }, preActions, preReactions),
+    ...(targetPart && { targetPart }),
+    reaction: tag,
+  })
+  next.set(chosen.reactorId, spent)
+  next = applyEffectsToActors(next, routed)
+  return { states: next, entries }
+}
+
 function getOrRollGuard(
   targetId:   string,
   targetSnap: CombatantState,

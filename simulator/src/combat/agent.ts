@@ -292,7 +292,7 @@ function offensiveEnvelope(
   let canHitHere = false
   for (const id of ALL_ACTION_IDS) {
     const def = ACTION_DEFS[id]
-    if (def.movement || def.selfTargeted || def.reach == null) continue
+    if (def.movement || def.selfTargeted || def.trigger || def.reach == null) continue
     if (!isActionAllowed(id, config) || !canUseAction(state, id)) continue
     maxReach = Math.max(maxReach, def.reach)
     if (gap > (def.minRange ?? 0) && gap <= def.reach) canHitHere = true

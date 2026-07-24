@@ -49,6 +49,7 @@ import { selectTargetPart, cardMoveBudget } from '../adversary/agent'
 import { attackAdvantages } from '../adversary/traits'
 import { adversaryEffectToCombatEffects } from '../adversary/effects'
 import type { AdversaryCardDef } from '../adversary/types'
+import type { ReactionProvider, ReactionOption } from '../combat/triggers'
 import { checkDistribution, evOver, adversaryDistribution } from './prob'
 import {
   scoreEffects, PERSONA_WEIGHTS, PRICE,
@@ -123,6 +124,7 @@ export function planRoundUtility(
   for (const id of ALL_ACTION_IDS) {
     const def = ACTION_DEFS[id]
     if (def.movement) continue                      // positioning's turf (planPositioning)
+    if (def.trigger) continue                       // réaction ⚡ : jamais planifiée
     if (!isAllowed(id, config)) continue
     const band = bandOf(def.initiative)
     if (band === null || BANDS.indexOf(band) < startIdx || usedBands.has(band)) continue
@@ -178,7 +180,7 @@ export function bestActionForBand(
   let bestScore = 0                                  // passing scores 0
   for (const id of ALL_ACTION_IDS) {
     const def = ACTION_DEFS[id]
-    if (def.movement || !isAllowed(id, config)) continue
+    if (def.movement || def.trigger || !isAllowed(id, config)) continue
     if (bandOf(def.initiative) !== band) continue
     if (!canUseAction(state, id) || !canAffordAction(state, id)) continue
     const s = scorePlayerAction(id, state, opponent, ctx)
@@ -420,6 +422,48 @@ function pushDirectionsFor(config: PlannerConfig): { rage: boolean; terror: bool
     }
   }
   return { rage, terror }
+}
+
+// ─── Réactions ⚡ : décider si le déclencheur vaut d'être saisi ─────────────────
+
+/**
+ * Provider de réaction *scripté* : note chaque option avec les MÊMES scoreurs que
+ * la planification de manche (`scorePlayerAction` / `scoreAdversaryCard`) et joue
+ * la meilleure si son utilité est positive — « on fait tourner le planificateur
+ * pour savoir si c'est avantageux » (décision créateur). Sinon, on s'abstient :
+ * garder ses ⚡ vaut mieux qu'une réaction qui coûte plus qu'elle ne rapporte.
+ */
+export function makeReactionProvider(
+  configFor: (actorId: string) => PlannerConfig,
+): ReactionProvider {
+  return (_event, options, states) => {
+    let best: { option: ReactionOption; score: number } | null = null
+
+    for (const option of options) {
+      const reactor = states.get(option.reactorId)
+      const target  = states.get(option.targetId)
+      if (!reactor || !target) continue
+
+      const config  = configFor(option.reactorId)
+      const weights = config.weights ?? PERSONA_WEIGHTS[config.persona]
+      let score: number
+
+      if (isAdversaryActor(reactor)) {
+        if (isAdversaryActor(target)) continue          // adv. vs adv. hors périmètre
+        const card = reactor.sheet.cards.find(c => c.id === option.action)
+        if (!card) continue
+        score = scoreAdversaryCard(card, reactor, target, makeAdversaryContext(reactor, target, weights))
+      } else {
+        score = scorePlayerAction(
+          option.action as ActionId, reactor, target,
+          makeContext(reactor, target, weights, config),
+        )
+      }
+
+      if (score > 0 && (!best || score > best.score)) best = { option, score }
+    }
+    return best?.option ?? null
+  }
 }
 
 // ─── Adversary utility (unified brain — same value layer as the PC planner) ─────

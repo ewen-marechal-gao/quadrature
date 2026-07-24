@@ -80,6 +80,11 @@ export interface ActionLogEntry {
   notes: string[];
   actorActions: number;
   actorReactions: number;
+  /**
+   * Présent quand l'entrée est une RÉACTION ⚡ jouée sur un déclencheur (hors plan
+   * de manche) : quel déclencheur, et quelle action elle a interrompue.
+   */
+  reaction?: { trigger: string; interrupted: string };
 }
 
 export type Band = "I" | "II" | "III";
@@ -155,6 +160,8 @@ export interface RankedPlan {
 /** Raisonnement d'un acteur au début de manche : ses meilleurs plans par utilité. */
 export interface PlanningEntry {
   actorId: string;
+  /** Bande au début de laquelle ce classement a été calculé (replanification par bande). */
+  band?: string;
   plans: RankedPlan[];
 }
 

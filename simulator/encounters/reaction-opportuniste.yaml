@@ -1,0 +1,40 @@
+# Banc d'essai des DÉCLENCHEURS ⚡ (§ defense_reactions.md).
+#
+# Mise en place : les deux combattants commencent AU CONTACT. Le tirailleur
+# surclasse son adversaire en portée : sa politique de kiting va le pousser à
+# décrocher (Course) dès la première bande utile. C'est exactement le déclencheur
+# de la Frappe opportuniste — « une créature à portée initie une action de
+# Marche, de Course ou de Posture » — que le duelliste, adjacent, doit saisir.
+#
+# Ce que ça vérifie : la fenêtre de réaction s'ouvre PENDANT la résolution, la
+# réaction se résout AVANT le déplacement, et son coût en ⚡ la borne.
+name: Réaction — la frappe opportuniste
+description: >-
+  Un duelliste colle un tirailleur qui cherche à reprendre ses distances. Chaque
+  décrochage lui offre une ouverture — s'il lui reste une réaction ⚡ à dépenser.
+maxRounds: 12
+
+# Couloir : la longueur laisse le tirailleur décrocher, la faible hauteur rend
+# le va-et-vient lisible.
+board: { width: 24, height: 5 }
+
+factions:
+  - name: Duellistes
+    characters:
+      # La Sentinelle a Réactivité 2 : des ⚡ à dépenser ET le jet qui va avec.
+      # (Avec le Précis — Réactivité 0 — le planificateur REFUSE la réaction, à
+      # juste titre : elle coûterait plus qu'elle ne rapporterait.)
+      - sheet: characterSheets/Sentinel_reactive.yaml
+        persona: opportunist
+        pos: { x: 6, y: 2 }
+    # La trousse porte la RÉACTION en plus de la mêlée : elle n'entre jamais dans
+    # le plan de manche, elle est proposée quand le déclencheur survient.
+    allowedActions:
+      ["sharp-strike", "armed-attack", "opportunity-strike", "respiration", "stabilize", "walk", "course"]
+
+  - name: Tirailleurs
+    characters:
+      - sheet: characterSheets/Ranged_skirmisher.yaml
+        persona: cautious          # veut survivre : il décrochera
+        pos: { x: 7, y: 2 }
+    allowedActions: ["quick-shot", "aimed-shot", "course", "walk", "respiration", "stabilize"]

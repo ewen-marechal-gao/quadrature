@@ -40,6 +40,14 @@ const GUARD_LABELS: Record<string, string> = {
 const BAND_NAME: Record<string, string> = {
   I: "Ouverture", II: "Manœuvre", III: "Fermeture", other: "Hors bande",
 };
+
+/** Familles de déclencheurs ⚡ (§ defense_reactions.md). */
+const TRIGGER_LABEL: Record<string, string> = {
+  "movement-initiated": "déplacement initié",
+  "heavy-wound-taken":  "blessure grave reçue",
+  "phase-start":        "avant la Bande I",
+  "targeted-vs-guard":  "ciblé contre la Garde",
+};
 const BAND_ORDER = ["I", "II", "III", "other"];
 
 /** "x / y", en omettant "/ y" quand le max est absent (vieux rapports). */
@@ -278,7 +286,17 @@ function ActionMessage({
 
   return (
     <div className={`cbv-msg cbv-msg--${side}`}>
-      <div className="cbv-act" style={{ "--accent": colorOf(entry.actorId) } as CSSProperties}>
+      <div
+        className={entry.reaction ? "cbv-act is-reaction" : "cbv-act"}
+        style={{ "--accent": colorOf(entry.actorId) } as CSSProperties}
+      >
+        {/* Réaction ⚡ : hors plan de manche, déclenchée par l'action d'autrui. */}
+        {entry.reaction && (
+          <div className="cbv-act__trigger">
+            ⚡ réaction — {TRIGGER_LABEL[entry.reaction.trigger] ?? entry.reaction.trigger}
+            {entry.reaction.interrupted && <> ({actionLabel(entry.reaction.interrupted)})</>}
+          </div>
+        )}
         <div className="cbv-act__head">
           <span className="cbv-act__actor" style={{ color: colorOf(entry.actorId) }}>{actor}</span>
           {card ? (
@@ -443,9 +461,9 @@ function planActionName(action: string, side: "pc" | "adv", cards?: CombatCards)
  * retenu est mis en évidence.
  */
 function PlanningBadge({
-  entry, side, cards,
+  entries, side, cards,
 }: {
-  entry: PlanningEntry;
+  entries: PlanningEntry[];
   side: "pc" | "adv";
   cards?: CombatCards;
 }) {
@@ -454,14 +472,22 @@ function PlanningBadge({
       🧠
       <span className="cbv-plan-pop" role="tooltip">
         <span className="cbv-plan-pop__title">Plans pesés — meilleure utilité</span>
-        {entry.plans.map((p, i) => (
-          <span key={i} className={p.chosen ? "cbv-plan is-chosen" : "cbv-plan"}>
-            <span className="cbv-plan__util">{p.utility.toFixed(2)}</span>
-            <span className="cbv-plan__acts">
-              {p.actions.length === 0
-                ? "— passe —"
-                : p.actions.map((a) => planActionName(a.action, side, cards)).join(" → ")}
-            </span>
+        {entries.map((entry, ei) => (
+          <span key={ei} className="cbv-plan-group">
+            {/* Le planificateur tourne au début de CHAQUE bande : on montre laquelle. */}
+            {entry.band && (
+              <span className="cbv-plan-group__band">{BAND_NAME[entry.band] ?? entry.band}</span>
+            )}
+            {entry.plans.map((p, i) => (
+              <span key={i} className={p.chosen ? "cbv-plan is-chosen" : "cbv-plan"}>
+                <span className="cbv-plan__util">{p.utility.toFixed(2)}</span>
+                <span className="cbv-plan__acts">
+                  {p.actions.length === 0
+                    ? "— passe —"
+                    : p.actions.map((a) => planActionName(a.action, side, cards)).join(" → ")}
+                </span>
+              </span>
+            ))}
           </span>
         ))}
       </span>
@@ -515,7 +541,11 @@ function Actors({
 }) {
   const pc = new Map((round?.endOfRound ?? []).map((s) => [s.id, s]));
   const adv = new Map((round?.adversariesEndOfRound ?? []).map((s) => [s.id, s]));
-  const plans = new Map((round?.planning ?? []).map((e) => [e.actorId, e]));
+  // La planification est recalculée par bande → plusieurs entrées par acteur.
+  const plans = new Map<string, PlanningEntry[]>();
+  for (const e of round?.planning ?? []) {
+    plans.set(e.actorId, [...(plans.get(e.actorId) ?? []), e]);
+  }
 
   return (
     <div className="cbv-actors">
@@ -538,8 +568,8 @@ function Actors({
             tabIndex={hasBoard ? 0 : undefined}
           >
             <div className="cbv-actor__name" style={{ color: colorOf(c.id) }}>{c.charName}</div>
-            {plan && plan.plans.length > 0 && (
-              <PlanningBadge entry={plan} side={side} cards={cards} />
+            {plan && plan.some((e) => e.plans.length > 0) && (
+              <PlanningBadge entries={plan} side={side} cards={cards} />
             )}
             {atStart && c.profile
               ? <ProfileCard profile={c.profile} side={side} cards={cards} hasBoard={hasBoard} />

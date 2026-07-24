@@ -47,7 +47,8 @@ import {
   createAgentSession, recordOpponentActions,
 } from './combat/agent'
 import type { AgentConfig, LLMAgentSession } from './combat/agent'
-import { planAdversaryRoundUtility, type RankedPlan } from './planner/planner'
+import { planAdversaryRoundUtility, makeReactionProvider, type RankedPlan } from './planner/planner'
+import type { ReactionSupport } from './combat/triggers'
 import type {
   CombatantState, CombatLog, CombatantSummary, RoundLog, PhaseLog,
   CombatOutcome, ActionLogEntry, MaintenanceEntry, CombatantSnapshot, PlanningEntry,
@@ -342,6 +343,22 @@ async function runCombat(
     participants.map(p => [p.side.id, makeProfile(p, states.get(p.side.id)!)]),
   )
 
+  // ── Réactions ⚡ : ce que le moteur doit savoir pour ouvrir une fenêtre ──────
+  const factionOf = new Map(participants.map(p => [p.side.id, p.faction]))
+  const reactionSupport: ReactionSupport = {
+    isEnemy: (a, b) => {
+      const fa = factionOf.get(a), fb = factionOf.get(b)
+      return fa !== undefined && fb !== undefined && fa !== fb
+    },
+    kitOf:  id => profileById.get(id)?.actions ?? [],
+    choose: makeReactionProvider(id => {
+      const p = participants.find(q => q.side.id === id)
+      return p?.side.kind === 'pc'
+        ? { persona: p.side.cfg.persona, targetId: p.side.cfg.targetId, allowedActions: p.side.cfg.allowedActions }
+        : { persona: 'aggressive', targetId: '' }
+    }),
+  }
+
   // Le tapis avant le premier coup — les phases n'enregistrent que l'APRÈS.
   const startPositions = encounter.board
     ? Object.fromEntries([...states].flatMap(([id, a]) => a.pos ? [[id, a.pos] as const] : []))
@@ -386,23 +403,22 @@ async function runCombat(
       if (elapsed < rateLimitMs) await new Promise<void>(r => setTimeout(r, rateLimitMs - elapsed))
     }
 
-    // Agents scriptés (PJ) et créatures : plan de manche ENTIÈRE arrêté au début,
-    // sur l'état de début de manche — la réservation des PA reste optimale et le
-    // combat garde son mordant (une replanification par bande depuis l'état réel
-    // mi-manche s'était révélée plus timorée, cf. le duel Précis/Puissant serré).
-    // resolveRoundBands filtre ce plan sur la bande qu'il résout.
-    const roundPlan = scriptedRoundPlan(participants, states)
-
-    // La replanification par bande est réservée à l'ADAPTATION qui compte : quand
-    // la cible visée au début de manche tombe entre deux bandes, on rejoue le
-    // planning de l'acteur concerné sur l'état courant (re-ciblage — combats de
-    // groupe). La portée, elle, est déjà filtrée à la résolution (gateByReach).
+    // Agents scriptés (PJ) et créatures : plan RECALCULÉ au début de CHAQUE bande
+    // (décision créateur). Les cartes d'une bande en cours ne changent plus une
+    // fois révélées, mais chaque bande repart de l'état réel — ce qui est
+    // indispensable dès qu'une RÉACTION ⚡ a pu se déclencher dans la précédente.
+    // `fromBand` fait que la réservation de PA reste optimale sur les bandes
+    // restantes. (Renversement assumé du choix « plan de manche entière ».)
+    const planning: PlanningEntry[] = []
     const { states: next, log } = await resolveRoundBands(
       states, roundNumber, getGuard, maintenanceEntries,
-      (currentStates, band) => [
-        ...llmPlans,
-        ...adaptRoundPlan(roundPlan, participants, currentStates, band),
-      ],
+      (currentStates, band) => {
+        const banded = scriptedRoundPlan(participants, currentStates, band)
+        for (const rp of banded) {
+          if (rp.ranking.length > 0) planning.push({ actorId: rp.actorId, band, plans: rp.ranking })
+        }
+        return [...llmPlans, ...banded.flatMap(rp => rp.plans)]
+      },
       (_band, phaseLogs) => {
         // Mise à jour du contexte LLM avec les actions adverses (avant la prochaine bande)
         for (const p of participants) {
@@ -415,13 +431,11 @@ async function runCombat(
         callbacks?.onWave?.(phaseLogs)
       },
       encounter.board,
+      reactionSupport,
     )
     states = next
 
-    // Raisonnement du planificateur : top-3 plans/utilités par acteur scripté.
-    const planning: PlanningEntry[] = roundPlan
-      .filter(rp => rp.ranking.length > 0)
-      .map(rp => ({ actorId: rp.actorId, plans: rp.ranking }))
+    // Raisonnement du planificateur : top-3 plans/utilités par acteur ET par bande.
     if (planning.length > 0) log.planning = planning
 
     roundLogs.push(log)
@@ -531,6 +545,7 @@ interface ActorRoundPlan {
 function scriptedRoundPlan(
   participants: Participant[],
   states:       ReadonlyMap<string, Actor>,
+  fromBand:     Band = 'I',
 ): ActorRoundPlan[] {
   const out: ActorRoundPlan[] = []
 
@@ -543,7 +558,7 @@ function scriptedRoundPlan(
     if (!enemy) continue
 
     const ranking: RankedPlan[] = []
-    const plans = planParticipantRound(p, self, enemy, states, ranking)
+    const plans = planParticipantRound(p, self, enemy, states, ranking, fromBand)
     out.push({ actorId: p.side.id, targetId: enemy.side.id, plans, ranking })
   }
   return out
@@ -551,11 +566,12 @@ function scriptedRoundPlan(
 
 /** Full-round plan for one scripted participant against a chosen enemy. */
 function planParticipantRound(
-  p:       Participant,
-  self:    Actor,
-  enemy:   Participant,
-  states:  ReadonlyMap<string, Actor>,
-  ranking: RankedPlan[],
+  p:        Participant,
+  self:     Actor,
+  enemy:    Participant,
+  states:   ReadonlyMap<string, Actor>,
+  ranking:  RankedPlan[],
+  fromBand: Band = 'I',
 ): Plan[] {
   const target = states.get(enemy.side.id)!
 
@@ -563,46 +579,13 @@ function planParticipantRound(
   if (p.side.kind === 'adversary') {
     if (!isAdversaryActor(self) || isAdversaryActor(target)) return []
     return planAdversaryRoundUtility(
-      self, target, { persona: 'aggressive', targetId: enemy.side.id }, 'I', new Set(), ranking,
+      self, target, { persona: 'aggressive', targetId: enemy.side.id }, fromBand, new Set(), ranking,
     )
   }
 
   if (isAdversaryActor(self) || p.side.kind !== 'pc') return []  // defensive
   p.side.cfg.targetId = enemy.side.id
-  return withTargetPart(planRoundActions(self, target, p.side.cfg, 'I', ranking), enemy.side.id, target)
-}
-
-/**
- * Serve the round plan, re-planning a participant ON THE FLY only when the enemy
- * it was aimed at has fallen since the round began — the band-by-band adaptation
- * that matters (re-ciblage in group fights). Everyone else keeps their
- * start-of-round plan; resolveRoundBands filters the lot to the band it resolves.
- *
- * The 1v1 case never triggers a re-plan (a fight ends when one side falls), so
- * this preserves the whole-round planner's proven behaviour there exactly.
- */
-function adaptRoundPlan(
-  roundPlan:    ActorRoundPlan[],
-  participants: Participant[],
-  states:       ReadonlyMap<string, Actor>,
-  _band:        Band,
-): Plan[] {
-  const out: Plan[] = []
-  for (const rp of roundPlan) {
-    const self = states.get(rp.actorId)
-    if (!self || actorDefeated(self)) continue
-
-    const targetDown = actorDefeated(states.get(rp.targetId)!)
-    if (!targetDown) { out.push(...rp.plans); continue }
-
-    // Cible tombée → re-cibler sur le prochain ennemi vivant, s'il en reste un.
-    const p = participants.find(q => q.side.id === rp.actorId)!
-    const enemy = firstLivingEnemy(p, participants, states)
-    if (!enemy) continue
-    // Re-ciblage mi-manche : le classement (start-of-round) est déjà journalisé.
-    out.push(...planParticipantRound(p, self, enemy, states, []))
-  }
-  return out
+  return withTargetPart(planRoundActions(self, target, p.side.cfg, fromBand, ranking), enemy.side.id, target)
 }
 
 // ─── Console display — mode 1 run ─────────────────────────────────────────────
@@ -1024,7 +1007,8 @@ function makeProfile(p: Participant, state: Actor): CombatProfile {
   let reach = 1, minRange = 0
   for (const id of allowed) {
     const def = ACTION_DEFS[id]
-    if (!def || def.movement || def.reach == null || !def.tags.includes('offensive')) continue
+    // Les réactions ⚡ ne définissent pas l'enveloppe d'attaque « en action ».
+    if (!def || def.movement || def.trigger || def.reach == null || !def.tags.includes('offensive')) continue
     if (def.reach > reach) { reach = def.reach; minRange = def.minRange ?? 0 }
   }
   const moveOf = (id: ActionId): number => {

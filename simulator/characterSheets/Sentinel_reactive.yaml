@@ -1,0 +1,60 @@
+# Profil SENTINELLE — bâti pour les réactions ⚡ (banc d'essai des déclencheurs).
+#
+# Là où le Précis a Réactivité 0 (ses ⚡ ne viennent que du bonus « concentré »),
+# la Sentinelle investit dans la Réactivité : elle a des ⚡ à dépenser ET le jet
+# qui va avec (Frappe opportuniste = Réactivité 🟨🟨 + Intelligence 🟦). C'est le
+# personnage qui rend le déclencheur « déplacement initié » réellement payant.
+name: "Reactive Sentinel"
+inventory:
+  protection: 1
+characteristics:
+  strength:
+    value: 1
+    wounds: 0
+    power: 0
+    robustness: 0
+  agility:
+    value: 2          # dérivé : precision 2 → rang 2
+    wounds: 0
+    precision: 2
+    mobility: 1
+  vigor:
+    value: 2          # dérivé : endurance 2 → rang 2
+    wounds: 0
+    endurance: 2
+    recovery: 1
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 1
+    wounds: 0
+    observation: 0
+    vigilance: 1
+  willpower:
+    value: 1
+    wounds: 0
+    authority: 0
+    discipline: 1
+  intelligence:
+    value: 2          # dérivé : reactivity 2 → rang 2 (le 🟦 de la Frappe opportuniste)
+    wounds: 0
+    logic: 0
+    reactivity: 2     # 2 ⚡ par manche, et les 🟨🟨 du jet de réaction
+  tenacity:
+    value: 1
+    wounds: 0
+    conviction: 0
+    resilience: 0
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 1
+    wounds: 0
+    foresight: 0
+    intuition: 0
