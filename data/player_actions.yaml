@@ -202,10 +202,12 @@ actions:
     name: { fr: "Stabiliser" }
     description:
       {
-        fr: "Premiers soins (première action uniquement). Retire Hémorragie 🩸 toujours. Succès : soigne (1 + Récupération)💢. Critique : +1⚡. Échec : soigne 1💢. Défaut : perd 1 PA. DD = 8 + blessures graves.",
+        fr: "Premiers soins (première action uniquement). Retire Hémorragie 🩸 toujours. Succès : soigne (1 + Récupération)💢. Critique : +1 ◇. Échec : soigne 1💢. Défaut : hémorragie résolue immédiatement (1💢). DD = 8 + blessures graves.",
       }
     initiative: 1
-    cost: { actions: 1 }
+    # 1💧 : soigner sous le feu épuise. Auto-limite le sustain — répété, le soin
+    # gonfle la fatigue jusqu'au test d'Endurance, là où un usage ponctuel ne coûte rien.
+    cost: { actions: 1, fatigue: 1 }
     tags: [support, healing, physical]
     prerequisite: { skill: recovery, minValue: 1 }
     requiresFirstAction: true

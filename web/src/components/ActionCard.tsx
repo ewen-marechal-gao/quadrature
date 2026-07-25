@@ -272,7 +272,8 @@ export function ActionCard({ card }: { card: Card }) {
               {
                 has: !!(
                   card.repere || card.effet || card.effet_duree || card.succes ||
-                  card.echec || card.table || ups("effet").length
+                  card.echec || card.table || card.concession || card.contrecoup ||
+                  ups("effet").length
                 ),
                 nodes: [
                   <Field key="r" icon="⭐" text={card.repere} />,
@@ -280,6 +281,11 @@ export function ActionCard({ card }: { card: Card }) {
                   <Field key="du" icon="⏳" text={card.effet_duree} />,
                   <Field key="s" icon="✅" text={card.succes} />,
                   <Field key="x" icon="❌" text={card.echec} />,
+                  // Gardes : la Concession et le Contrecoup décrivent l'APRÈS-jet,
+                  // pas le jet — d'où leur place en fin de bloc effet.
+                  // ‼️ est PROVISOIRE — un bouclier brisé viendra avec les icônes custom.
+                  <Field key="concession" icon="‼️" text={card.concession} />,
+                  <Field key="contrecoup" icon="↩️" text={card.contrecoup} />,
                   ...ups("effet"),
                   card.table ? (
                     <div key="tbl" className="ac-table">

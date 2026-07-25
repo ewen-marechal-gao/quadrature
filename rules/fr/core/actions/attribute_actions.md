@@ -268,7 +268,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 *Vous exercez une pression ferme sur la plaie ou improvisez un bandage pour stopper l'hémorragie.*
 
 **Prérequis :** Récupération 1  
-**Coût :** 🌓  
+**Coût :** 🌓💧  
 🎲 **Jet :** Récupération 🟨🟨 + Vigueur 🟦  
 🆚 **Contre :** DD = 8 + nombre de 💔
 

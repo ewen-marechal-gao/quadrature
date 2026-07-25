@@ -53,7 +53,7 @@ export const ACTION_RESOLVERS: Record<ActionResolverId, CustomActionResolver> = 
       // ⚠️ puis ✴️ avant l'effet : la plaie gicle d'abord, et le soin qui suit
       // doit en éponger une partie.
       if (flaw)     reopenWound(o, actor, '⚠️ La plaie se rouvre — hémorragie résolue immédiatement (1💢)')
-      if (critical) gainReaction(o, actor.id, 1, '✴️ Critique — gagne 1⚡')
+      if (critical) gainStability(o, actor.id, 1, '✴️ Critique — gagne 1 ◇')
 
       o.fx.push({ targetId: actor.id, kind: 'remove-status', status: 'hemorrhage' })
       const healed = hit ? 1 + actor.skills.recovery : 1

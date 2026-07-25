@@ -206,10 +206,11 @@ describe('stabilize resolve', () => {
     expect(effects).toContainEqual({ targetId: 'A', kind: 'heal-wounds', amount: 1 })
   })
 
-  it('critical → gain 1 reaction token', () => {
+  it('critical → gain 1 stability ◇ (aligné sur la carte du vault)', () => {
     const { effects } = ACTION_DEFS['stabilize'].resolve(
       { hit: true, critical: true, flaw: false }, makeCombatant('A'))
-    expect(effects).toContainEqual({ targetId: 'A', kind: 'add-reaction', amount: 1 })
+    expect(effects).toContainEqual({ targetId: 'A', kind: 'add-stability', amount: 1 })
+    expect(effects.some(e => e.kind === 'add-reaction')).toBe(false)
   })
 
   // Le défaut résout l'hémorragie SUR-LE-CHAMP au lieu d'attendre la fin de

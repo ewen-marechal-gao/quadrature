@@ -309,7 +309,7 @@ cartes:
     famille: physique
     categorie: guerison
     initiative: 1
-    cout: "🌓"
+    cout: "🌓💧"
     description: "Vous exercez une pression ferme sur la plaie ou improvisez un bandage pour stopper l'hémorragie."
     prerequis: "Récupération 1"
     jet: "Récupération 🟨🟨 + Vigueur 🟦"

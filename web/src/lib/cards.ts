@@ -113,6 +113,10 @@ export interface ActionCard {
   cible?: string;
   jet?: string;
   contre?: string;
+  /** 🟩 concédé à l'attaquant, et contre quoi (Gardes — cf. reactions_defense.yaml). */
+  concession?: string;
+  /** ↩️ Contrecoup : prix payé à chaque attaque qui échoue contre la Garde (Gardes). */
+  contrecoup?: string;
   /** Effet ⭐ « Repérez X 5 » — déclencheur de lecture des dés (cartes d'adversaires). */
   repere?: string;
   ameliorations?: CardUpgrade[];
