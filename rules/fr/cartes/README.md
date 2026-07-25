@@ -38,6 +38,9 @@ cartes:
     cible: ""                   # 🎯 cible et portée
     jet: "Puissance 🟨🟨 + Force 🟦"   # 🎲
     contre: "Garde"             # 🆚 DD fixe ou jet opposé
+    concession: ""              # 🟩 offert à l'attaquant, et contre quoi (Gardes)
+    contrecoup: ""              # ↩️ prix payé à chaque attaque qui ÉCHOUE contre
+                                #   la Garde — propre à chaque Garde (Gardes)
     ameliorations:              # ⚒️ effets conditionnés à un trait
       - nom: Momentum
         effet: "réduit d'un point le coût en fatigue 💧"
@@ -75,6 +78,7 @@ tags ; ils ne sont **jamais inférés des effets**.
 | :--- | :--- | :--- |
 | Intention | `offensive` `defensive` `movement` `support` `healing` `enhancement` | ce que la carte cherche à faire |
 | Domaine | `melee` `ranged` `mental` `physical` `social` | par quel vecteur |
+| Forme | `zone` | frappe plusieurs cases ou plusieurs cibles — lu par la concession de l'**Esquive** |
 | Marqueur d'effet | `physicalDamage` | inflige des blessures 💢/💔 |
 | | `mentalDamage` | inflige 🔻/🔺 ou une perte de Stabilité ◇ |
 | | `fatigueDamage` | inflige de la Fatigue 💧 |

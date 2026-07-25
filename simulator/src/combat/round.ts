@@ -44,7 +44,7 @@ import type {
 } from './types'
 import {
   resolveAction, resolveMovementAction, type ActionContext,
-  ACTION_DEFS, GUARD_DEFS,
+  ACTION_DEFS, GUARD_DEFS, defFor,
   availableGuards,
 } from './actions'
 import {
@@ -176,7 +176,8 @@ function resolvePlans(
     if (isCardPlan(plan)) {
       if (isAdversaryActor(s)) states.set(plan.actorId, spendCardCost(s, plan.card))
     } else if (!isAdversaryActor(s)) {
-      states.set(plan.actorId, spendActionCost(s, ACTION_DEFS[plan.action].cost))
+      // Le PRIX passe par la def effective : un trait ⚒️ peut l'ajuster (Momentum).
+      states.set(plan.actorId, spendActionCost(s, defFor(s, plan.action).cost))
     }
   }
 
@@ -186,6 +187,15 @@ function resolvePlans(
       .map(plan => ({ plan, initiative: initiativeOf(plan, inputStates) }))
       .sort((a, b) => a.initiative - b.initiative),
   )
+
+  // Le décalage d'initiative ne vaut que pour UNE action : il est consommé par
+  // celle qu'on vient d'ordonner, qu'elle réussisse ou non.
+  for (const plan of plans) {
+    const a = states.get(plan.actorId)
+    if (a && !isAdversaryActor(a) && a.initiativeDelay > 0) {
+      states.set(plan.actorId, { ...a, initiativeDelay: 0 })
+    }
+  }
 
   const phaseLogs: PhaseLog[] = []
 
@@ -634,15 +644,24 @@ function gateByReach(
 }
 
 /** Initiative of a plan: ACTION_DEFS for a PC action, the card's for an adversary play. */
+/**
+ * Initiative de résolution d'un plan — celle de la carte, PLUS le décalage que
+ * son acteur traîne (§ ⚠️ Défaut de la Méditation).
+ *
+ * La carte ne change pas de bande : elle est déjà engagée, on la résout
+ * simplement plus tard dans la résolution fine de sa bande.
+ */
 function initiativeOf(plan: Plan, states: ReadonlyMap<string, Actor>): number {
+  const actor = states.get(plan.actorId)
+  const delay = actor && !isAdversaryActor(actor) ? actor.initiativeDelay : 0
+
   if (isCardPlan(plan)) {
-    const a = states.get(plan.actorId)
-    if (a && isAdversaryActor(a)) {
-      return a.sheet.cards.find(c => c.id === plan.card)?.initiative ?? 99
+    if (actor && isAdversaryActor(actor)) {
+      return actor.sheet.cards.find(c => c.id === plan.card)?.initiative ?? 99
     }
     return 99
   }
-  return ACTION_DEFS[plan.action].initiative
+  return ACTION_DEFS[plan.action].initiative + delay
 }
 
 /** Group consecutive plans sharing the same (pre-computed) initiative value. */
@@ -737,7 +756,10 @@ function resolveReactionWindow(
   }
 
   // ── PJ qui réagit : l'action coûte ses ⚡ (et sa 💧) ────────────────────────
-  const def = ACTION_DEFS[chosen.action as ActionId]
+  // La def vient de l'OPTION : c'est la variante réactive quand un trait ⚒️ la
+  // confère (Opportunisme → Frappe vive à ⚡💧). La RÉSOLUTION, elle, reste celle
+  // de l'action de base — un mode réactif change le prix, pas les issues.
+  const def = chosen.def ?? ACTION_DEFS[chosen.action as ActionId]
   if (!def) return { states, entries }
   const preActions   = reactor.actions
   const preReactions = reactor.reactions

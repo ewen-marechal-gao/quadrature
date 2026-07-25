@@ -1,0 +1,66 @@
+# Tirailleur INSTINCTIF — le Ranged Skirmisher, poussé d'un rang en Intuition
+# pour porter le trait ⚒️ Tir d'instinct (§ traits.md — Lucidité / Intuition).
+#
+# Pourquoi une fiche séparée plutôt que modifier le tirailleur de base : ce
+# dernier sert de référence d'équilibrage dans `tir-vs-faucheur.yaml`, et le
+# simple passage d'Intuition 2 à 3 y déplace les Aventuriers de 59 % à 88 %
+# (mesuré, 100 runs). Un banc d'essai de trait ne doit pas déplacer un étalon.
+#
+# Le trait rend son Tir rapide jouable en Réaction ⚡💧 quand une créature à
+# portée initie un déplacement : là où le tirailleur de base subit l'approche, il
+# tire pendant qu'on vient sur lui.
+name: "Instinctive Skirmisher"
+traits: [tir-dinstinct]
+inventory:
+  protection: 0
+characteristics:
+  strength:
+    value: 1          # dérivé
+    wounds: 0
+    power: 0
+    robustness: 0
+  agility:
+    value: 2          # dérivé : mobility 3 → jalon rang 2
+    wounds: 0
+    precision: 1
+    mobility: 3       # Course = 5 + 3 = 8 cases ; kiting
+  vigor:
+    value: 2          # dérivé : endurance 2 → jalon rang 2
+    wounds: 0
+    endurance: 2      # gère la fatigue des tirs (+1💧) et de la Course
+    recovery: 1       # Stabiliser
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 2          # dérivé : observation 2 → jalon rang 2
+    wounds: 0
+    observation: 2    # Tir ciblé (prérequis + jet)
+    vigilance: 1
+  willpower:
+    value: 1
+    wounds: 0
+    authority: 0
+    discipline: 1     # ◇ Stabilité
+  intelligence:
+    value: 1
+    wounds: 0
+    logic: 0
+    reactivity: 1     # 1 réaction (garde active OU Tir d'instinct : il faut choisir)
+  tenacity:
+    value: 1
+    wounds: 0
+    conviction: 0
+    resilience: 0
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 2          # dérivé : intuition 3 → un seul jalon (rang 2) franchi
+    wounds: 0
+    foresight: 0
+    intuition: 3      # rang 3 : ouvre un emplacement de trait → Tir d'instinct

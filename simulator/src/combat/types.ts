@@ -78,6 +78,9 @@ export type StatusEffect =
 export type CardTag =
   | 'offensive' | 'defensive' | 'movement' | 'support' | 'healing' | 'enhancement'
   | 'melee' | 'ranged' | 'mental' | 'physical' | 'social'
+  // forme : frappe plusieurs cases/cibles — lu par la concession de l'Esquive.
+  // Aucune action ne le porte encore (première prévue : Frappe circulaire).
+  | 'zone'
   | 'physicalDamage' | 'mentalDamage' | 'fatigueDamage'
 
 // ─── Action economy ───────────────────────────────────────────────────────────
@@ -149,11 +152,19 @@ export interface ActionTrigger {
   scope?: 'reach' | 'adjacent'
 }
 
+/**
+ * Les cinq Gardes du vault (§ defense_reactions.md). Définitions dans
+ * `data/guards.yaml` — ce type n'est que la clé.
+ *
+ * L'initiative d'une Garde est sa VITESSE : elle ne répond qu'aux actions dont
+ * l'initiative est ≥ à la sienne, sinon le personnage Encaisse.
+ */
 export type GuardId =
-  | 'absorb' // Encaisser — Récupération + Vigueur    (always available)
-  | 'dodge'  // Esquive   — Mobilité + Agilité         (blocked if entrapped)
-  | 'parry'  // Parade    — Vigilance + Acuité          (needs weapon)
-  | 'block'  // Blocage   — Robustesse + Force          (needs shield)
+  | 'absorb' // 1️⃣ Encaisser — Robustesse + Force   (gratuite, toujours dispo, inbrisable)
+  | 'parry'  // 2️⃣ Parade    — Vigilance + Acuité   (arme en main ; 🟩 concédé aux tirs)
+  | 'dodge'  // 3️⃣ Esquive   — Mobilité + Agilité   (ni entravé ni immobilisé)
+  | 'evade'  // 3️⃣ Dérobade  — Mascarade + Grâce    (case occultée 🌑 — jamais dispo aujourd'hui)
+  | 'block'  // 4️⃣ Blocage   — Endurance + Vigueur  (bouclier)
 
 // ─── Combatant in-combat state ─────────────────────────────────────────────────
 
@@ -167,6 +178,13 @@ export interface CombatantState {
   characteristics: Record<CharacteristicName, CharacteristicState>
   /** Working copy of skill values */
   skills: Record<SkillName, number>
+  /**
+   * Traits portés, par id (§ traits.md). Recopiés de la fiche à l'initialisation
+   * — un trait ne se gagne ni ne se perd en combat. Consommés par combat/traits.ts
+   * (variantes réactives, ajustements de coût) ; une liste vide = comportement
+   * historique strictement inchangé.
+   */
+  traits: string[]
   /** Light wounds accumulated this round 💢 */
   lightWounds: number
   /** Running total of heavy wounds received 💔 (for log + DC calculations) */
@@ -189,6 +207,27 @@ export interface CombatantState {
    * saignement), puis le reste s'ajoute aux blessures légères en perçant l'armure.
    */
   bleed: number
+  /**
+   * 😩 Épuisé : marqueurs cumulatifs (§ etats.md). Ils posent un PLANCHER à la
+   * Fatigue 💧 — elle ne descend jamais en dessous de leur nombre, ni par le
+   * repos ni par la Respiration.
+   *
+   * C'est le seul effet du système qui DÉBORDE du combat : ni une action, ni un
+   * bivouac ne les retirent, seule une nuit en Havre en enlève un. Le simulateur
+   * ne joue qu'un combat à la fois, donc il n'en voit que la part immédiate —
+   * le vrai prix se paie sur les séances suivantes.
+   */
+  exhaustion: number
+  /**
+   * Décalage d'initiative en attente, appliqué à la PROCHAINE action jouée puis
+   * consommé (§ ⚠️ Défaut de la Méditation : « +2 initiative »).
+   *
+   * L'action garde sa BANDE — la carte est déjà engagée — mais se résout plus
+   * tard dans la résolution fine : l'esprit met un temps à redescendre. C'est
+   * volontairement une règle jouable à la table (on décale un jeton d'initiative)
+   * et non un report de résolution.
+   */
+  initiativeDelay: number
   /**
    * Traumas — blessures mentales cumulées (§ Ressources / États extrêmes). Chaque
    * trauma retire un point à une caractéristique MENTALE (dans `characteristics`,
@@ -262,7 +301,19 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
   | { kind: 'add-reaction';   amount: number }
   | { kind: 'spend-reaction' }                  // defender uses a guard (costs 1 ⚡)
   | { kind: 'shift-mental';        direction: 'toward-terror' | 'toward-rage' | 'toward-focused' }
-  | { kind: 'set-mental';          state: MentalState }  // décalage VOLONTAIRE (consolidation) — ne passe pas par le ◇
+  | { kind: 'set-mental';          state: MentalState }  // décalage VOLONTAIRE absolu — ne passe pas par le ◇
+  /**
+   * Décalage VOLONTAIRE RELATIF : `steps` crans vers `toward`, sans jamais le
+   * dépasser, et sans passer par le ◇ (on se reprend délibérément).
+   *
+   * Relatif et non absolu, parce qu'une même action peut déplacer la piste DEUX
+   * fois : le ⚠️ Défaut d'une consolidation inflige un 🔻/🔺 subi, et l'issue
+   * déplace ensuite. Une destination calculée depuis l'état d'AVANT l'action
+   * effacerait le décalage du défaut ; calculée à l'application, elle s'y ajoute.
+   */
+  | { kind: 'step-mental';         toward: MentalState; steps: number }
+  | { kind: 'add-exhaustion';      amount: number }  // 😩 marqueurs — plancher de fatigue, persiste hors combat
+  | { kind: 'delay-next-action';   amount: number }  // +N à l'initiative de la prochaine action, puis consommé
   | { kind: 'add-temp-protection'; amount: number }
   | { kind: 'add-stability';       amount: number }  // ◇ : PJ (consolidation, plafonné au pool) ou adversaire (op de carte)
   // ── Assaut mental (Provocation / Intimidation) ──────────────────────────────
@@ -357,6 +408,8 @@ export interface CombatantSnapshot {
   mentalCapacity: number
   /** 🩸 Hémorragie : jetons cumulés à cet instant */
   bleed:          number
+  /** 😩 Épuisé : marqueurs cumulés — plancher de la Fatigue 💧 */
+  exhaustion:     number
   status:         StatusEffect[]
   /** Only characteristics that have at least 1 wound (saves space) */
   charWounds:     Partial<Record<CharacteristicName, number>>

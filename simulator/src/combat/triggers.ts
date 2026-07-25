@@ -17,7 +17,8 @@
 import type { Actor } from '../adversary/actor'
 import { isAdversaryActor, actorDefeated } from '../adversary/actor'
 import type { ActionId, TriggerKind } from './types'
-import { ACTION_DEFS } from './actions'
+import { ACTION_DEFS, canUseAction, type ActionDef } from './actions'
+import { reactionDefs } from './traits'
 import { canReact } from './combatant'
 import { distance } from './position'
 
@@ -38,6 +39,14 @@ export interface ReactionOption {
   /** Cible de la réaction : l'acteur qui a déclenché. */
   targetId:  string
   kind:      'pc' | 'adversary'
+  /**
+   * PJ uniquement — la def **sous laquelle** la réaction se joue. C'est la def de
+   * base quand l'action porte un déclencheur natif (Frappe opportuniste), et la
+   * VARIANTE conférée par un trait ⚒️ quand c'est un mode réactif (Opportunisme :
+   * la Frappe vive à ⚡💧 au lieu de ⚫💧). Le coût et le déclencheur en viennent —
+   * la lire depuis `ACTION_DEFS` facturerait le prix de l'action normale.
+   */
+  def?:      ActionDef
 }
 
 /**
@@ -60,10 +69,22 @@ export type ReactionProvider = (
   states:  ReadonlyMap<string, Actor>,
 ) => ReactionOption | null
 
-/** Portée d'éligibilité d'une réaction, en cases. */
-function triggerRange(scope: 'reach' | 'adjacent' | undefined, reach: number | undefined): number {
-  if (scope === 'adjacent') return 1
-  return reach ?? 1
+/**
+ * La réaction peut-elle atteindre le déclencheur, à `gap` cases ?
+ *
+ * `scope: adjacent` force la case unique ; sinon c'est la portée de l'action —
+ * y compris sa portée MINIMALE : un arc ne tire pas au contact (§ equipement),
+ * pas plus en réaction qu'en action normale. `gap === null` = pas de plateau,
+ * la portée n'est alors pas gâtée (comportement historique).
+ */
+function reactionConnects(
+  gap:   number | null,
+  scope: 'reach' | 'adjacent' | undefined,
+  def:   { reach?: number; minRange?: number },
+): boolean {
+  if (gap === null) return true
+  if (scope === 'adjacent') return gap <= 1
+  return gap > (def.minRange ?? 0) && gap <= (def.reach ?? 1)
 }
 
 /**
@@ -93,7 +114,7 @@ export function eligibleReactions(
       for (const card of actor.sheet.cards) {
         if (card.trigger?.on !== event.kind) continue
         if (actor.usedReactions?.includes(card.id)) continue   // 1×/manche/carte
-        if (gap !== null && gap > triggerRange(card.trigger.scope, card.reach)) continue
+        if (!reactionConnects(gap, card.trigger.scope, card)) continue
         options.push({ reactorId: id, action: card.id, targetId: event.actorId, kind: 'adversary' })
       }
       continue
@@ -102,11 +123,19 @@ export function eligibleReactions(
     // PJ : le déclencheur doit être dans sa trousse, et les ⚡ payés.
     if (!canReact(actor)) continue
     for (const actionId of support.kitOf(id)) {
-      const def = ACTION_DEFS[actionId as ActionId]
-      if (!def?.trigger || def.trigger.on !== event.kind) continue
-      if (actor.reactions < (def.cost.reactions ?? 0)) continue
-      if (gap !== null && gap > triggerRange(def.trigger.scope, def.reach)) continue
-      options.push({ reactorId: id, action: actionId, targetId: event.actorId, kind: 'pc' })
+      const base = ACTION_DEFS[actionId as ActionId]
+      if (!base) continue
+      // Prérequis, conditions mentales, statuts bloquants : une réaction est une
+      // action, elle obéit aux mêmes conditions d'emploi.
+      if (!canUseAction(actor, actionId as ActionId)) continue
+      // Déclencheur natif (Frappe opportuniste) ET variantes conférées par un
+      // trait ⚒️ (Opportunisme → Frappe vive en réaction).
+      for (const def of reactionDefs(actor, base)) {
+        if (def.trigger!.on !== event.kind) continue
+        if (actor.reactions < (def.cost.reactions ?? 0)) continue
+        if (!reactionConnects(gap, def.trigger!.scope, def)) continue
+        options.push({ reactorId: id, action: actionId, targetId: event.actorId, kind: 'pc', def })
+      }
     }
   }
   return options

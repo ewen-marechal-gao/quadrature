@@ -142,7 +142,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 **⚒️ Sentinelle :** peut être jouée en **Bande III** (🌗) au lieu de la Bande I ; gagnez alors **deux Réactions ⚡** au lieu d'une.
 
-▶️ **Effet :** gagnez une **Réaction ⚡**. Vous bénéficiez de 🟩 sur votre prochain jet de Garde, et votre score de Garde ne diminue pas à chaque échec de vos adversaires.
+▶️ **Effet :** gagnez une **Réaction ⚡**. Vous bénéficiez de 🟩 sur votre prochain jet de Garde.
 
 ---
 
@@ -180,7 +180,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 **⚒️ Précaution :** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet de Garde.
 
-⚠️ **Défaut :** vous perdez un point d'action **⚫**  
+⚠️ **Défaut :** **🔻** — un décalage **subi** (absorbable par un jeton de **Stabilité ◇**), qui s'ajoute au déplacement de l'issue  
 ✴️ **Critique :** vous pouvez **🔻** (jamais en dessous de **Prudent**)  
 ✅ **Succès :** **🔻** (jamais en dessous de **Prudent**) et gagnez un **Stabilité ◇**  
 ❌ **Échec :** gagnez un **Stabilité ◇**
@@ -198,7 +198,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 **⚒️ Incantation :** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence.
 
-⚠️ **Défaut :** vous perdez un point d'action **⚫**  
+⚠️ **Défaut :** vous perdez une **Réaction ⚡**  
 ✴️ **Critique :** déplacement supplémentaire (**🔺 ou 🔻**) vers **Concentré**  
 ✅ **Succès :** déplacez (**🔺 ou 🔻**) vers **Concentré** et gagnez un **Stabilité ◇**  
 ❌ **Échec :** gagnez un **Stabilité ◇**
@@ -217,7 +217,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 **⚒️ Militant :** peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de +1 relance 🟦 sur votre prochaine action.
 
-⚠️ **Défaut :** vous perdez un point d'action **⚫**  
+⚠️ **Défaut :** **🔺** — un décalage **subi** (absorbable par un jeton de **Stabilité ◇**), qui s'ajoute au déplacement de l'issue  
 ✴️ **Critique :** déplacement **🔺** supplémentaire (jamais au-dessus d'**Agressif**)  
 ✅ **Succès :** **🔺** (jamais au-dessus d'**Agressif**) et gagnez un **Stabilité ◇**  
 ❌ **Échec :** gagnez un **Stabilité ◇**
@@ -236,7 +236,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 **⚒️ Tranquillité :** en cas de succès, diminuez également votre **fatigue 💧** de deux points.
 
-⚠️ **Défaut :** vous perdez un point d'action **⚫**  
+⚠️ **Défaut :** vous remontez trop lentement : votre **prochaine action** se résout avec **+2 d'initiative**  
 ✴️ **Critique :** vous bénéficiez de 🟩 sur votre prochaine **Réaction ⚡**  
 ✅ **Succès :** gagnez un **Stabilité ◇** par point en **Résilience**  
 ❌ **Échec :** gagnez un **Stabilité ◇**
@@ -254,7 +254,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 **⚒️ Accalmie :** en cas de succès, déplacez (**🔺 ou 🔻**) vers **Concentré**.
 
-⚠️ **Défaut :** vous perdez un point d'action **⚫**  
+⚠️ **Défaut :** vous gagnez un marqueur **Épuisé 😩** — le plancher de votre Fatigue 💧 monte d'un point  
 ✴️ **Critique :** ↘️ votre **fatigue 💧** d'un point supplémentaire
 
 ▶️ **Effet :** met fin à l'état **essoufflé 😮‍💨**  
@@ -274,7 +274,7 @@ Ces actions sont débloquées lorsqu'un personnage atteint le rang 1 dans la com
 
 **⚒️ Coagulation rapide — Mode réactif :** peut être jouée en **Réaction ⚡** (coût : ⚡◇) immédiatement après avoir reçu une **blessure grave 💔**. Avant la résolution, ajoutez immédiatement 3💢 supplémentaires et annulez la **blessure grave 💔**.
 
-⚠️ **Défaut :** vous perdez un point d'action **⚫**  
+⚠️ **Défaut :** votre **Hémorragie 🩸** se résout immédiatement au lieu d'attendre la fin de manche (maximum **1 blessure 💢**)  
 ✴️ **Critique :** gagnez un **Stabilité ◇**
 
 ▶️ **Effet :** met fin à l'état **hémorragie 🩸**  

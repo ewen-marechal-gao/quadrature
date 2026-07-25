@@ -207,32 +207,37 @@ describe('makeGuardProvider', () => {
     expect(chosen).toBe('dodge')
   })
 
-  it('excludes parry vs sharp-strike (parry initiative 4 ≥ sharp-strike initiative 3)', () => {
-    // Only dodge(2) and absorb(0) pass the initiative filter for sharp-strike(3)
-    // TestFighter: dodge score=5 > absorb score=5, tiebreak → dodge
+  it('exclut le Blocage face à une Frappe vive (4️⃣ contre 3️⃣ : trop lent)', () => {
+    // 🕐 Vitesse de Garde : la Frappe vive (3️⃣) laisse Encaisser 1️⃣, Parade 2️⃣
+    // et Esquive 3️⃣ ; le Blocage 4️⃣ arrive après le coup.
     const provider = makeGuardProvider(cfgOpportunist)
     const b = makeCombatant('B')
-    const available = availableGuards(b)
-    const chosen = provider('B', b, available, 'A', 'sharp-strike')
-    expect(chosen).toBe('dodge')
-    expect(chosen).not.toBe('parry')  // parry is too slow for sharp-strike
+    const chosen = provider('B', b, availableGuards(b), 'A', 'sharp-strike')
+    expect(chosen).not.toBe('block')
   })
 
-  it('picks absorb when stats favour it (high VIG+recovery, low AGI)', () => {
-    // Force a combatant with VIG 5 recovery 2, AGI 0, mobility 0
-    const lowAgi = makeCombatant('B', {
+  it('picks absorb when stats favour it (Encaisser roule Robustesse + Force)', () => {
+    // Force 5 / Robustesse 1, Agilité 0 / Mobilité 0, Puissance 0.
+    // Puissance 0 ferme la Parade (« arme en main »), Robustesse 1 ferme le
+    // Blocage (« bouclier ») : il ne reste qu'Encaisser et une Esquive à zéro.
+    const brawler = makeCombatant('B', {
       characteristics: {
         ...makeCharacter().characteristics,
-        agility: { value: 0, wounds: 0 },
-        vigor:   { value: 5, wounds: 0 },
+        agility:  { value: 0, wounds: 0 },
+        strength: { value: 5, wounds: 0 },
       },
-      skills: { ...makeCharacter().skills, mobility: 0, recovery: 2 },
+      skills: { ...makeCharacter().skills, mobility: 0, power: 0, robustness: 1 },
     })
-    const provider = makeGuardProvider(cfgAggressive)
-    const available = availableGuards(lowAgi)
-    const chosen = provider('B', lowAgi, available, 'A', 'armed-attack')
-    // absorb: VIG5+rec2=7 ; dodge: AGI0+mob0=0 → absorb wins
-    expect(chosen).toBe('absorb')
+    const provider  = makeGuardProvider(cfgAggressive)
+    const available = availableGuards(brawler)
+    expect(available).toEqual(['absorb', 'dodge'])
+    // absorb: FOR5 + rob1 ; dodge: AGI0 + mob0 → Encaisser gagne même en
+    // concédant son 🟩.
+    expect(provider('B', brawler, available, 'A', 'armed-attack')).toBe('absorb')
+  })
+
+  it("la Dérobade est déclarée mais jamais disponible (aucune case occultée 🌑)", () => {
+    expect(availableGuards(makeCombatant('B'))).not.toContain('evade')
   })
 
   it('falls back to absorb when only absorb passes the initiative filter', () => {

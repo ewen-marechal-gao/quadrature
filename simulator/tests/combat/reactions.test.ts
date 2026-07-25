@@ -11,7 +11,8 @@ import type { ReactionSupport } from '../../src/combat/triggers'
 import { eligibleReactions } from '../../src/combat/triggers'
 import { type Actor } from '../../src/adversary/actor'
 import type { Position } from '../../src/combat/position'
-import { makeCombatant } from '../helpers/fixtures'
+import type { Character } from '../../src/character/types'
+import { makeCharacter, makeCombatant } from '../helpers/fixtures'
 
 const at = (x: number, y: number): Position => ({ x, y })
 const alwaysDodge: GuardProvider = () => 'dodge'
@@ -118,5 +119,92 @@ describe('résolution d\'une réaction pendant une bande', () => {
       states, 1, alwaysDodge, [], moverWalks, undefined, board, support(alwaysReact))
     const strikes = log.phases.flatMap(p => p.actions).filter(a => a.action === 'opportunity-strike')
     expect(strikes).toHaveLength(1)
+  })
+})
+
+// ─── Réactions ouvertes par un TRAIT ⚒️ (§ traits.md — modes réactifs) ─────────
+//
+// Même machinerie, mais la réaction ne vient plus d'une action à déclencheur
+// natif : c'est une action ORDINAIRE de la trousse qu'un trait rend jouable en
+// réaction. Ce que ça doit prouver : l'option est bien proposée, et c'est le
+// coût de la VARIANTE qui est débité — pas celui de l'action normale.
+
+describe('modes réactifs conférés par un trait', () => {
+  const OPPORTUNIST = { traits: ['opportunisme'], skills: { ...makeCharacter().skills, precision: 3 } }
+
+  /** Le guetteur porte Opportunisme ; sa trousse ne contient QUE la Frappe vive. */
+  async function facingWithTrait(gap: number, over: Partial<Character> = OPPORTUNIST) {
+    const mover: Actor = { ...makeCombatant('MOVER'), pos: at(5, 5) }
+    const watcher: Actor = { ...makeCombatant('WATCHER', over), pos: at(5 + gap, 5) }
+    const states = new Map<string, Actor>([['MOVER', mover], ['WATCHER', watcher]])
+    const kit: ReactionSupport = {
+      isEnemy: (a, b) => a !== b,
+      kitOf:   () => ['sharp-strike'],
+      choose:  alwaysReact,
+    }
+    return { states, kit, watcher }
+  }
+
+  it('propose la Frappe vive en réaction au porteur du trait', async () => {
+    const { states, kit } = await facingWithTrait(1)
+    const [option, ...rest] = eligibleReactions(
+      { kind: 'movement-initiated', actorId: 'MOVER' }, states, kit)
+    expect(rest).toHaveLength(0)
+    expect(option).toMatchObject({ reactorId: 'WATCHER', action: 'sharp-strike' })
+    // L'option porte la def RÉACTIVE : c'est elle qui sera facturée.
+    expect(option.def?.cost).toMatchObject({ actions: 0, reactions: 1, fatigue: 1 })
+  })
+
+  it('ne propose rien au même personnage sans le trait', async () => {
+    const { states, kit } = await facingWithTrait(1, {})
+    expect(eligibleReactions(
+      { kind: 'movement-initiated', actorId: 'MOVER' }, states, kit)).toHaveLength(0)
+  })
+
+  it('se résout AVANT le déplacement, comme un déclencheur natif', async () => {
+    const { states, kit } = await facingWithTrait(1)
+    const { log } = await resolveRoundBands(
+      states, 1, alwaysDodge, [], moverWalks, undefined, board, kit)
+    const actions = log.phases.flatMap(p => p.actions)
+    const strike  = actions.findIndex(a => a.action === 'sharp-strike')
+    expect(strike).toBeGreaterThanOrEqual(0)
+    expect(strike).toBeLessThan(actions.findIndex(a => a.action === 'walk'))
+    expect(actions[strike].reaction).toMatchObject({ trigger: 'movement-initiated' })
+  })
+
+  it('débite le coût de la VARIANTE : 1⚡ et aucun ⚫ (la Frappe vive coûte 1⚫ en action)', async () => {
+    const { states, kit } = await facingWithTrait(1)
+    const before = states.get('WATCHER') as Extract<Actor, { reactions: number }>
+    const { states: after } = await resolveRoundBands(
+      states, 1, alwaysDodge, [], moverWalks, undefined, board, kit)
+    const watcher = after.get('WATCHER') as Extract<Actor, { actions: number; reactions: number }>
+    expect(watcher.reactions).toBe(before.reactions - 1)
+    expect(watcher.actions).toBe(before.actions)          // aucun PA consommé
+  })
+
+  it('respecte les conditions d\'emploi de l\'action (prérequis de compétence)', async () => {
+    // Précision 0 : la Frappe vive est hors de portée du personnage… mais un
+    // rang 3 est requis pour porter le trait. On teste donc le garde-fou moteur.
+    const { states, kit } = await facingWithTrait(1)
+    const watcher = states.get('WATCHER') as Extract<Actor, { skills: Record<string, number> }>
+    states.set('WATCHER', { ...watcher, skills: { ...watcher.skills, precision: 0 } } as Actor)
+    expect(eligibleReactions(
+      { kind: 'movement-initiated', actorId: 'MOVER' }, states, kit)).toHaveLength(0)
+  })
+
+  it('gâte la portée MINIMALE : un arc ne tire pas au contact, même en réaction', async () => {
+    const INSTINCT = { traits: ['tir-dinstinct'], skills: { ...makeCharacter().skills, intuition: 3 } }
+    const shooter = (gap: number) => {
+      const mover: Actor = { ...makeCombatant('MOVER'), pos: at(5, 5) }
+      const watcher: Actor = { ...makeCombatant('WATCHER', INSTINCT), pos: at(5 + gap, 5) }
+      return new Map<string, Actor>([['MOVER', mover], ['WATCHER', watcher]])
+    }
+    const kit: ReactionSupport = {
+      isEnemy: (a, b) => a !== b, kitOf: () => ['quick-shot'], choose: alwaysReact,
+    }
+    const at1 = eligibleReactions({ kind: 'movement-initiated', actorId: 'MOVER' }, shooter(1), kit)
+    const at6 = eligibleReactions({ kind: 'movement-initiated', actorId: 'MOVER' }, shooter(6), kit)
+    expect(at1).toHaveLength(0)          // engagé : pas de tir (minRange 1)
+    expect(at6).toHaveLength(1)          // à distance : le tir part
   })
 })

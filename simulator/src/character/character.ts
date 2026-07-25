@@ -5,6 +5,7 @@ import type {
 } from './types'
 import type { RollParams } from '../types'
 import { SKILL_PARENT, ALL_CHARACTERISTICS, ALL_SKILLS, BASE_CHARACTER, PHYSICAL_CHARACTERISTICS } from './data'
+import { validateTraits } from './traits'
 
 // ─── Construction ────────────────────────────────────────────────────────────
 
@@ -134,7 +135,12 @@ export function computeDerived(char: Character): DerivedStats {
 
 // ─── Validation ──────────────────────────────────────────────────────────────
 
-/** Validates all characteristic and skill values are within [0, 5]. */
+/**
+ * Validates all characteristic and skill values are within [0, 5], and that the
+ * traits carried are ones the progression actually opens (§ traits.md — rangs 3
+ * et 5). Même exigence que le reste du loader : une fiche ne peut pas être
+ * incohérente.
+ */
 export function validateCharacter(char: Character): ValidationResult {
   const errors: string[] = []
 
@@ -151,6 +157,8 @@ export function validateCharacter(char: Character): ValidationResult {
     if (!Number.isInteger(v) || v < 0 || v > 5)
       errors.push(`Skill "${s}" value ${v} is out of range [0, 5]`)
   }
+
+  errors.push(...validateTraits(char.traits ?? [], char.skills))
 
   return { valid: errors.length === 0, errors }
 }

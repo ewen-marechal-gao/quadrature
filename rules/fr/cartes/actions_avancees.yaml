@@ -172,7 +172,7 @@ cartes:
     ameliorations:
       - nom: Sentinelle
         effet: "peut être jouée en **Bande III** (🌗) au lieu de la Bande I ; gagnez alors **deux Réactions ⚡** au lieu d'une"
-    effet: "gagnez une **Réaction ⚡**. Vous bénéficiez de 🟩 sur votre prochain jet de Garde, et votre score de Garde ne diminue pas à chaque échec de vos adversaires"
+    effet: "gagnez une **Réaction ⚡**. Vous bénéficiez de 🟩 sur votre prochain jet de Garde"
     source: core/actions/attribute_actions.md
 
   - id: prediction
@@ -213,7 +213,7 @@ cartes:
     ameliorations:
       - nom: Précaution
         effet: "peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet de Garde"
-    defaut: "vous perdez un point d'action **⚫**"
+    defaut: "**🔻** — un décalage **subi** (absorbable par un jeton de **Stabilité ◇**), qui s'ajoute au déplacement de l'issue"
     critique: "vous pouvez **🔻** (jamais en dessous de **Prudent**)"
     succes: "**🔻** (jamais en dessous de **Prudent**) et gagnez un **Stabilité ◇**"
     echec: "gagnez un **Stabilité ◇**"
@@ -233,7 +233,7 @@ cartes:
     ameliorations:
       - nom: Incantation
         effet: "peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence"
-    defaut: "vous perdez un point d'action **⚫**"
+    defaut: "vous perdez une **Réaction ⚡**"
     critique: "déplacement supplémentaire (**🔺 ou 🔻**) vers **Concentré**"
     succes: "déplacez (**🔺 ou 🔻**) vers **Concentré** et gagnez un **Stabilité ◇**"
     echec: "gagnez un **Stabilité ◇**"
@@ -254,7 +254,7 @@ cartes:
     ameliorations:
       - nom: Militant
         effet: "peut être jouée en **Bande III** (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de +1 relance 🟦 sur votre prochaine action"
-    defaut: "vous perdez un point d'action **⚫**"
+    defaut: "**🔺** — un décalage **subi** (absorbable par un jeton de **Stabilité ◇**), qui s'ajoute au déplacement de l'issue"
     critique: "déplacement **🔺** supplémentaire (jamais au-dessus d'**Agressif**)"
     succes: "**🔺** (jamais au-dessus d'**Agressif**) et gagnez un **Stabilité ◇**"
     echec: "gagnez un **Stabilité ◇**"
@@ -275,7 +275,7 @@ cartes:
     ameliorations:
       - nom: Tranquillité
         effet: "en cas de succès, diminuez également votre **fatigue 💧** de deux points"
-    defaut: "vous perdez un point d'action **⚫**"
+    defaut: "vous remontez trop lentement : votre **prochaine action** se résout avec **+2 d'initiative**"
     critique: "vous bénéficiez de 🟩 sur votre prochaine **Réaction ⚡**"
     succes: "gagnez un **Stabilité ◇** par point en **Résilience**"
     echec: "gagnez un **Stabilité ◇**"
@@ -296,7 +296,7 @@ cartes:
     ameliorations:
       - nom: Accalmie
         effet: "en cas de succès, déplacez (**🔺 ou 🔻**) vers **Concentré**"
-    defaut: "vous perdez un point d'action **⚫**"
+    defaut: "vous gagnez un marqueur **Épuisé 😩** — le plancher de votre Fatigue 💧 monte d'un point"
     critique: "↘️ votre **fatigue 💧** d'un point supplémentaire"
     effet: "met fin à l'état **essoufflé 😮‍💨**"
     succes: "↘️ votre **fatigue 💧** d'un point plus votre valeur d'**Endurance**"
@@ -317,7 +317,7 @@ cartes:
     ameliorations:
       - nom: Coagulation rapide — Mode réactif
         effet: "peut être jouée en **Réaction ⚡** (coût : ⚡◇) immédiatement après avoir reçu une **blessure grave 💔**. Avant la résolution, ajoutez immédiatement 3💢 supplémentaires et annulez la **blessure grave 💔**"
-    defaut: "vous perdez un point d'action **⚫**"
+    defaut: "votre **Hémorragie 🩸** se résout immédiatement au lieu d'attendre la fin de manche (maximum **1 blessure 💢**)"
     critique: "gagnez un **Stabilité ◇**"
     effet: "met fin à l'état **hémorragie 🩸**"
     succes: "guérissez 1 + votre **Récupération blessures 💢**"

@@ -1,0 +1,283 @@
+/* ════ Traits de personnage (/traits) ════
+ *
+ * Deux registres visuels, volontairement distincts :
+ *  · la PROSE du trait — parchemin, ce qui est imprimé sur la carte ;
+ *  · le bloc MÉCANIQUE — grille technique en laiton, ce que le moteur lit.
+ * Un trait sans mécanique porte une note discrète : c'est l'état du chantier,
+ * pas un trou d'affichage.
+ */
+
+.trt {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+}
+
+/* ── En-tête ─────────────────────────────────────────────────────────────── */
+.trt-head h1 { color: var(--brass-bright); margin: 0 0 .4rem; }
+.trt-sub {
+  color: var(--panel-muted);
+  margin: 0 0 .35rem;
+  max-width: 68ch;
+  line-height: 1.55;
+}
+.trt-sub--wired { color: var(--panel-muted); }
+
+/* ── Barre de filtres ────────────────────────────────────────────────────── */
+.trt-filters {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+  margin: 1.25rem 0 1rem;
+  padding: .7rem 0;
+  border-top: 1px solid var(--brass-border);
+  border-bottom: 1px solid var(--brass-border);
+  background: var(--book-bg);
+}
+.trt-search {
+  flex: 1 1 18rem;
+  min-width: 12rem;
+  padding: .45rem .7rem;
+  border: 1px solid var(--brass-border);
+  border-radius: 6px;
+  background: var(--brass-faint);
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+  font-size: .95rem;
+}
+.trt-search::placeholder { color: var(--panel-muted); }
+.trt-search:focus { outline: none; border-color: var(--brass-strong); }
+
+.trt-kinds { display: flex; gap: .3rem; }
+.trt-kind {
+  padding: .4rem .7rem;
+  border: 1px solid var(--brass-border);
+  border-radius: 6px;
+  background: var(--brass-faint);
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+  font-size: .9rem;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.trt-kind:hover { background: var(--brass-glow); border-color: var(--brass-subtle); }
+.trt-kind.is-on {
+  background: var(--brass);
+  color: var(--on-brass);
+  border-color: var(--brass-bright);
+  font-weight: 700;
+}
+
+.trt-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  color: var(--panel-muted);
+  font-size: .9rem;
+  cursor: pointer;
+}
+.trt-toggle input { accent-color: var(--brass); }
+
+.trt-count {
+  margin-left: auto;
+  color: var(--panel-muted);
+  font-family: var(--font-mono);
+  font-size: .85rem;
+}
+
+/* ── Accès rapide aux caractéristiques ───────────────────────────────────── */
+.trt-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem .5rem;
+  margin-bottom: 1.5rem;
+}
+.trt-jump__link {
+  color: var(--brass);
+  text-decoration: none;
+  font-size: .85rem;
+  padding: .15rem .5rem;
+  border: 1px solid transparent;
+  border-radius: 5px;
+}
+.trt-jump__link:hover {
+  color: var(--brass-bright);
+  border-color: var(--brass-border);
+  background: var(--brass-faint);
+}
+
+.trt-empty { color: var(--panel-muted); padding: 2rem; text-align: center; }
+
+/* ── Caractéristique ─────────────────────────────────────────────────────── */
+.trt-char { margin-bottom: 2.25rem; scroll-margin-top: 5rem; }
+.trt-char__title {
+  display: flex;
+  align-items: baseline;
+  gap: .6rem;
+  margin: 0 0 .9rem;
+  padding-bottom: .35rem;
+  border-bottom: 1px solid var(--brass-mid);
+  color: var(--brass-bright);
+  font-size: 1.25rem;
+}
+.trt-char__group {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: .1rem .45rem;
+  border-radius: 999px;
+  border: 1px solid var(--brass-border);
+  color: var(--panel-muted);
+}
+.trt-char__group--corps  { color: var(--card-mouvement); border-color: color-mix(in srgb, var(--card-mouvement) 45%, transparent); }
+.trt-char__group--esprit { color: var(--card-amelioration); border-color: color-mix(in srgb, var(--card-amelioration) 55%, transparent); }
+
+/* ── Compétence ──────────────────────────────────────────────────────────── */
+.trt-skill { margin-bottom: 1.25rem; }
+.trt-skill__title {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  margin: 0 0 .5rem;
+  color: var(--panel-text);
+  font-size: 1rem;
+  font-variant: small-caps;
+  letter-spacing: .03em;
+}
+.trt-skill__hint {
+  color: var(--panel-muted);
+  font-size: .75rem;
+  font-variant: normal;
+}
+
+.trt-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: .75rem;
+}
+
+/* ── Carte de trait ──────────────────────────────────────────────────────── */
+.trt-card {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding: .8rem .95rem;
+  border: 1px solid var(--brass-border);
+  border-left: 3px solid var(--brass-subtle);
+  border-radius: 8px;
+  background: var(--brass-faint);
+}
+/* Branché dans le simulateur : liseré jaune, celui des réactions. */
+.trt-card.is-wired { border-left-color: var(--card-reaction); }
+
+.trt-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .45rem;
+}
+.trt-card__glyph { font-size: .95rem; }
+.trt-card__name {
+  color: var(--brass-bright);
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+.trt-card__action {
+  color: var(--panel-muted);
+  font-size: .8rem;
+}
+.trt-card__action strong { color: var(--panel-text); font-weight: 600; }
+/* Action que le simulateur ne connaît pas encore : le nom reste l'id brut. */
+.trt-card__action--unknown strong {
+  color: var(--panel-muted);
+  font-family: var(--font-mono);
+  font-weight: 400;
+}
+
+.trt-card__effect {
+  margin: 0;
+  line-height: 1.55;
+  font-size: .92rem;
+  color: var(--panel-text);
+}
+
+.trt-card__todo {
+  margin: 0;
+  color: var(--panel-muted);
+  font-size: .78rem;
+  font-style: italic;
+}
+
+/* ── Bloc mécanique ──────────────────────────────────────────────────────── */
+.trt-mech {
+  margin: 0;
+  padding: .55rem .7rem;
+  border: 1px solid var(--brass-border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: .82rem;
+}
+.trt-mech__row {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: .5rem;
+  align-items: baseline;
+  padding: .12rem 0;
+}
+.trt-mech dt {
+  color: var(--panel-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-size: .68rem;
+}
+.trt-mech dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .35rem;
+  color: var(--panel-text);
+}
+.trt-mech__note {
+  color: var(--panel-muted);
+  font-size: .74rem;
+  font-style: italic;
+}
+
+.trt-tag {
+  padding: .05rem .4rem;
+  border-radius: 4px;
+  font-size: .75rem;
+  font-weight: 600;
+}
+.trt-tag--reaction {
+  background: color-mix(in srgb, var(--card-reaction) 25%, transparent);
+  color: var(--card-reaction);
+  border: 1px solid color-mix(in srgb, var(--card-reaction) 45%, transparent);
+}
+
+.trt-pill {
+  padding: .05rem .4rem;
+  border: 1px solid var(--brass-border);
+  border-radius: 4px;
+  background: var(--brass-faint);
+  font-family: var(--font-mono);
+  font-size: .78rem;
+}
+.trt-pill--delta { color: var(--brass-bright); border-color: var(--brass-subtle); }
+
+/* ── Étroit ──────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .trt { padding: 1.25rem 1rem 3rem; }
+  .trt-count { margin-left: 0; }
+  .trt-mech__row { grid-template-columns: 1fr; gap: .1rem; }
+}

@@ -4,7 +4,14 @@
 # la Sentinelle investit dans la Réactivité : elle a des ⚡ à dépenser ET le jet
 # qui va avec (Frappe opportuniste = Réactivité 🟨🟨 + Intelligence 🟦). C'est le
 # personnage qui rend le déclencheur « déplacement initié » réellement payant.
+#
+# TRAIT — Opportunisme (Précision, rang 3) : sa Frappe vive devient jouable en
+# Réaction ⚡💧 sur le même déclencheur. Elle frappe donc avec son MEILLEUR jet
+# (Précision 🟨🟨🟨 + Agilité) au lieu du jet de Réactivité de la Frappe
+# opportuniste — et garde la Frappe vive dans son plan de manche : le trait
+# AJOUTE un mode, il n'enlève rien.
 name: "Reactive Sentinel"
+traits: [opportunisme]
 inventory:
   protection: 1
 characteristics:
@@ -14,9 +21,9 @@ characteristics:
     power: 0
     robustness: 0
   agility:
-    value: 2          # dérivé : precision 2 → rang 2
+    value: 2          # dérivé : precision 3 → un seul jalon (rang 2) franchi
     wounds: 0
-    precision: 2
+    precision: 3      # rang 3 : ouvre un emplacement de trait → Opportunisme
     mobility: 1
   vigor:
     value: 2          # dérivé : endurance 2 → rang 2

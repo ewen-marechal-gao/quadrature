@@ -28,11 +28,11 @@
  * provider) priced at its expected roll.
  */
 
-import type { CombatantState, ActionId, GuardId, RankedPlan } from '../combat/types'
+import type { CombatantState, ActionId, GuardId, CardTag, RankedPlan } from '../combat/types'
 export type { RankedPlan }
 import {
   ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction, availableGuards,
-  checkRollParams, rollParamsFrom,
+  checkRollParams, rollParamsFrom, defFor, guardConcession, guardAnswers, type ActionDef,
 } from '../combat/actions'
 import {
   spendActionCost, mentalRollModifiers, MENTAL_STATE_EFFECTS,
@@ -148,7 +148,7 @@ export function planRoundUtility(
     for (const id of byBand.get(band) ?? []) {
       if (!canUseAction(state, id) || !canAffordAction(state, id)) continue
       const s = scorePlayerAction(id, state, opponent, ctx)
-      const next = simulateSelfEffects(spendActionCost(state, ACTION_DEFS[id].cost), id)
+      const next = simulateSelfEffects(spendActionCost(state, defFor(state, id).cost), id)
       dfs(bandIdx + 1, next, [...plan, { band, id }], score + s)
     }
   }
@@ -202,8 +202,15 @@ export function scorePlayerAction(
   actor:    CombatantState,
   opponent: Actor,
   baseCtx:  ScoreContext,
+  /**
+   * Def sous laquelle l'action est jouée. Défaut : celle du porteur (traits ⚒️
+   * compris). Le provider de réaction passe ici la VARIANTE réactive — sans
+   * quoi il facturerait le ⚫ de l'action normale au lieu du ⚡ réel, et
+   * déciderait sur un prix qui n'est pas celui qu'il paiera.
+   */
+  override?: ActionDef,
 ): number {
-  const def = ACTION_DEFS[id]
+  const def = override ?? defFor(actor, id)
   // Price self-effects against the SIMULATED state (mid-round fatigue, statuses),
   // not the round-start snapshot the shared context was built from.
   const ctx: ScoreContext = {
@@ -328,13 +335,17 @@ export function selectGuardByEV(
   defender:         CombatantState,
   available:        GuardId[],
   attackInitiative: number,
+  attackTags?:      readonly CardTag[],
 ): { dc: number; guardId: GuardId } {
-  const TIEBREAK_ORDER: GuardId[] = ['dodge', 'parry', 'block', 'absorb']
+  const TIEBREAK_ORDER: GuardId[] = ['dodge', 'parry', 'block', 'evade', 'absorb']
   const scored = available
-    .filter(gid => GUARD_DEFS[gid].initiative < attackInitiative)
+    // 🕐 Vitesse de Garde : la Garde doit être au moins aussi rapide que l'action.
+    .filter(gid => guardAnswers(gid, attackInitiative))
     .map(gid => {
       const dc      = guardExpectedDC(defender, gid)
-      const penalty = (GUARD_DEFS[gid].attackerAdvantage ?? 0) * PRICE.dieMod
+      // La concession n'est facturée que si elle s'applique VRAIMENT à cette
+      // action : la Parade ne concède rien à une lame, tout à une flèche.
+      const penalty = guardConcession(gid, attackTags) * PRICE.dieMod
       return { gid, dc, value: dc - penalty, rank: TIEBREAK_ORDER.indexOf(gid) }
     })
     .sort((a, b) => b.value - a.value || a.rank - b.rank)
@@ -454,9 +465,12 @@ export function makeReactionProvider(
         if (!card) continue
         score = scoreAdversaryCard(card, reactor, target, makeAdversaryContext(reactor, target, weights))
       } else {
+        // `option.def` = la def RÉACTIVE (variante de trait ⚒️ ou déclencheur
+        // natif) : c'est son prix qu'il faut peser, pas celui de l'action normale.
         score = scorePlayerAction(
           option.action as ActionId, reactor, target,
           makeContext(reactor, target, weights, config),
+          option.def,
         )
       }
 

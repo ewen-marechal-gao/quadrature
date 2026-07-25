@@ -41,6 +41,12 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 | ✅ **Succès** | Effet si résultat ≥ DD ou jet opposé |
 | ❌ **Échec** | Effet si résultat < DD ou jet opposé |
 
+**Ordre de résolution :** les champs se résolvent **dans l'ordre où ils sont imprimés** — ⚠️ Défaut, puis ✴️ Critique, puis l'effet et l'issue ✅/❌.
+
+Ce n'est pas cosmétique. Beaucoup d'effets sont plafonnés (un soin ne retire pas plus de blessures qu'il n'y en a), absorbés (un décalage mental **subi** peut se payer en ◇) ou conditionnés à l'état courant : leur rang change le résultat. Un jeton **◇** accordé par l'issue d'une action n'amortit donc **pas** le décalage infligé par son propre Défaut — la réserve qui l'absorbe est celle d'avant l'action.
+
+Corollaire : un déplacement de l'issue s'applique **depuis l'état où le Défaut a laissé la piste**, et s'y ajoute. Une Préservation ratée depuis **Enragé** décale d'abord de force d'un cran (🔻, absorbable), puis l'issue déplace d'un cran de plus vers Prudent — deux crans au total, dont un seul choisi.
+
 **Grammaire symbolique :**
 
 - ↗️X ⚪ : **Gagner, augmenter** de X le nombre de jetons ⚪ (💧/💢/◇)

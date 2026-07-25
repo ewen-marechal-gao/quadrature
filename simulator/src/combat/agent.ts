@@ -26,7 +26,7 @@ import type { CombatantState }    from './types'
 import type { ActionId, GuardId } from './types'
 import type { PhaseLog }          from './types'
 import type { PlannedAction, GuardProvider } from './round'
-import { ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction } from './actions'
+import { ACTION_DEFS, GUARD_DEFS, canUseAction, canAffordAction, defFor } from './actions'
 import { spendActionCost, effChar, isDefeated } from './combatant'
 import { bandOf, BANDS, type Band } from './bands'
 import { distance } from './position'
@@ -200,7 +200,7 @@ export function planRoundActions(
   /** Commit a positioning move; only emits if its band is still open (≥ fromBand). */
   const commit = (id: ActionId, retreat: boolean): void => {
     const band = bandOf(ACTION_DEFS[id].initiative)
-    state = simulateSelfEffects(spendActionCost(state, ACTION_DEFS[id].cost), id)
+    state = simulateSelfEffects(spendActionCost(state, defFor(state, id).cost), id)
     if (band === null || BANDS.indexOf(band) < fromIdx) return
     usedBands.add(band)
     const p: PlannedAction = { actorId: self.id, action: id, targetId: config.targetId }
@@ -257,7 +257,7 @@ function planPositioning(
     const moves: PositioningMove[] = [{ action: mover, retreat: false }]
     // Melee finisher: Charge if the leap would land it. The Course grants the
     // Inertia the Charge needs, so check the Charge against the POST-Course state.
-    const afterMove = simulateSelfEffects(spendActionCost(state, ACTION_DEFS[mover].cost), mover)
+    const afterMove = simulateSelfEffects(spendActionCost(state, defFor(state, mover).cost), mover)
     if (isActionAllowed('charge', config)
       && canUseAction(afterMove, 'charge') && canAffordAction(afterMove, 'charge')) {
       const budget     = moveBudgetOf(mover, state)
@@ -333,8 +333,12 @@ function moveBudgetOf(id: ActionId, actor: CombatantState): number {
  */
 export function makeGuardProvider(_config: AgentConfig): GuardProvider {
   return (_targetId, state, available, _attackerId, actionId, attackInitiative) => {
-    const init = attackInitiative ?? ACTION_DEFS[actionId as ActionId]?.initiative ?? 99
-    return selectGuardByEV(state, available, init).guardId
+    const def  = ACTION_DEFS[actionId as ActionId]        // undefined pour une carte d'adversaire
+    const init = attackInitiative ?? def?.initiative ?? 99
+    // Les tags disent si une concession conditionnelle s'applique (la Parade ne
+    // concède rien à une lame, un 🟩 à une flèche). Inconnus pour une carte
+    // d'adversaire → aucune concession conditionnelle n'est facturée.
+    return selectGuardByEV(state, available, init, def?.tags).guardId
   }
 }
 

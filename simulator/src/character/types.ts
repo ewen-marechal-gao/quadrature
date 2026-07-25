@@ -64,6 +64,12 @@ export interface Character {
   characteristics: Record<CharacteristicName, CharacteristicState>
   skills:          Record<SkillName, number>
   /**
+   * Traits portés, par id (§ traits.md — débloqués aux rangs 3 et 5 d'une
+   * compétence). Les défs vivent dans data/traits.yaml (character/traits.ts) ;
+   * `validateCharacter` vérifie que la progression les autorise.
+   */
+  traits?: string[]
+  /**
    * Base protection 🛡️ from armor / equipment.
    * Each point absorbs one incoming heavy wound 💔; defaults to 0 if absent.
    * Hemorrhage bypasses this protection entirely.

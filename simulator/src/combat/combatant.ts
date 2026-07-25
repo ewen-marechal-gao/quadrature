@@ -32,12 +32,15 @@ export function initCombatant(char: Character): CombatantState {
     char,
     characteristics:   structuredClone(char.characteristics),
     skills:            structuredClone(char.skills),
+    traits:            [...(char.traits ?? [])],
     lightWounds:       0,
     heavyWounds:       0,
     fatigue:           1,   // § Fatigue : débute à 1, jamais sous 1
     mentalState:       'focused',
     stability:         0,   // set below via stabilityPool (needs the built state)
     bleed:             0,
+    exhaustion:        0,
+    initiativeDelay:   0,
     mentalWounds:      0,
     status:            [],
     inertia:           0,
@@ -439,8 +442,25 @@ export function addFatigue(state: CombatantState, amount: number): CombatantStat
 }
 
 /** Remove fatigue — § Fatigue : ne descend jamais sous 1. */
+/**
+ * Plancher de la Fatigue 💧 : 1 par défaut (§ ressources.md — « ne peut jamais
+ * descendre sous 1 »), relevé au nombre de marqueurs 😩 Épuisé (§ etats.md).
+ *
+ * Un seul marqueur est donc inerte en combat — le plancher vaut déjà 1. C'est à
+ * partir du second que le corps ne redescend plus, et c'est voulu : l'épuisement
+ * est une dette qui se paie sur la durée, pas une pénalité de manche.
+ */
+export function fatigueFloor(state: CombatantState): number {
+  return Math.max(1, state.exhaustion)
+}
+
 export function removeFatigue(state: CombatantState, amount: number): CombatantState {
-  return { ...state, fatigue: Math.max(1, state.fatigue - amount) }
+  return { ...state, fatigue: Math.max(fatigueFloor(state), state.fatigue - amount) }
+}
+
+/** Ajoute N marqueurs 😩 Épuisé (aucune action ne les retire — seule une nuit en Havre). */
+export function addExhaustion(state: CombatantState, amount: number): CombatantState {
+  return { ...state, exhaustion: state.exhaustion + amount }
 }
 
 // ─── Mental state ─────────────────────────────────────────────────────────────
@@ -627,6 +647,10 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'spend-reaction':      return spendReaction(s)
     case 'shift-mental':        return shiftMentalState(s, effect.direction)
     case 'set-mental':          return { ...s, mentalState: effect.state }
+    // Relatif : lu sur l'état COURANT, donc après ce que le défaut a déjà fait.
+    case 'step-mental':         return { ...s, mentalState: stepMentalToward(s.mentalState, MENTAL_STATES.indexOf(effect.toward), effect.steps) }
+    case 'add-exhaustion':      return addExhaustion(s, effect.amount)
+    case 'delay-next-action':   return { ...s, initiativeDelay: s.initiativeDelay + effect.amount }
     case 'add-temp-protection': return { ...s, tempProtection: s.tempProtection + effect.amount }
     // ◇ regagné (consolidation) — plafonné à la réserve Ténacité + Discipline.
     case 'add-stability':       return { ...s, stability: Math.min(stabilityPool(s), s.stability + effect.amount) }
@@ -685,6 +709,7 @@ export function toCombatantSnapshot(state: CombatantState): CombatantSnapshot {
     mentalWounds:   state.mentalWounds,
     mentalCapacity: sum(MENTAL_CHARACTERISTICS),
     bleed:          state.bleed,
+    exhaustion:     state.exhaustion,
     status:         [...state.status],
     charWounds,
     protection:     state.protection,

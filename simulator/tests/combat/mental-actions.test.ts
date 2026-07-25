@@ -2,9 +2,11 @@
  * Actions de consolidation mentale (§ attribute_actions.md) — Préservation /
  * Focalisation / Résolution / Méditation. Tronc commun : DD = 8 + degré ;
  * ✅/❌ regagnent du ◇ (plafonné au pool) ; ✅ déplacement volontaire plafonné ;
- * ⚠️ Défaut = −1 PA. Garde de condition mentale.
+ * chacune son ⚠️ Défaut (dépassement de piste, ⚡ perdue, initiative retardée).
+ * Garde de condition mentale.
  */
 import { ACTION_DEFS, canUseAction } from '../../src/combat/actions'
+import { MENTAL_STATES } from '../../src/combat/types'
 import type { OutcomeFlags } from '../../src/combat/actions'
 import { applyEffectToState, stabilityPool } from '../../src/combat/combatant'
 import { planNextAction } from '../../src/combat/agent'
@@ -91,11 +93,64 @@ describe('Méditation — +1 ◇ par Résilience (plafonné au pool)', () => {
   })
 })
 
-describe('Défaut ⚠️ — perd 1 PA', () => {
-  it('a flaw spends one action', () => {
-    const before = mentalist('terrified', 0)
+/**
+ * ⚠️ Défauts des consolidations — propres à chacune, et aucun ne coûte de PA.
+ * Préservation et Résolution infligent un décalage SUBI (absorbable par un ◇) qui
+ * s'ajoute au déplacement de l'issue ; Focalisation coûte une Réaction ⚡.
+ */
+describe('Défaut ⚠️ — propre à chaque consolidation, jamais un PA', () => {
+  it("aucune ne retire de point d'action", () => {
+    for (const id of ['preservation', 'resolution', 'focalisation', 'meditation'] as const) {
+      const before = mentalist('focused', 5)
+      const after  = resolve(before, id, { hit: true, critical: false, flaw: true })
+      expect(`${id}: ${after.actions}`).toBe(`${id}: ${before.actions}`)
+    }
+  })
+
+  it("Résolution dépasse : 🔺 au-delà de la cible, payé par un ◇ s'il en reste", () => {
+    const before = mentalist('terrified', 5)
     const after  = resolve(before, 'resolution', { hit: true, critical: false, flaw: true })
-    expect(after.actions).toBe(before.actions - 1)
+    expect(after.stability).toBeLessThan(before.stability + 1)   // le ◇ gagné a servi d'amortisseur
+  })
+
+  /**
+   * Le ⚠️ Défaut est un décalage SUBI qui tombe AVANT l'issue, et le déplacement
+   * de l'issue s'applique DEPUIS l'état qu'il laisse — les deux s'additionnent.
+   * Le ◇ que l'action accorde vient en dernier : il ne peut pas amortir le
+   * décalage de son propre Défaut.
+   */
+  it("le décalage subi s'ajoute au déplacement de l'issue", () => {
+    const before = mentalist('enraged', 0)         // aucune réserve pour amortir
+    const after  = resolve(before, 'preservation', { hit: true, critical: false, flaw: true })
+    expect(after.mentalState).toBe('aggressive')   // furious (succès) + 1 cran (dépassement)
+    expect(after.stability).toBe(1)                // le ◇ de l'action est bien acquis
+  })
+
+  it("le ◇ que l'action accorde n'amortit pas son propre Défaut", () => {
+    const before = mentalist('enraged', 0)
+    const after  = resolve(before, 'preservation', { hit: true, critical: false, flaw: true })
+    // Sans la règle d'ordre, le ◇ aurait absorbé le décalage et la piste serait
+    // restée à 'furious' — le défaut n'aurait alors rien coûté.
+    expect(after.mentalState).not.toBe('furious')
+  })
+
+  it('une réserve ANTÉRIEURE, elle, absorbe le décalage subi', () => {
+    const before = mentalist('enraged', 2)
+    const after  = resolve(before, 'preservation', { hit: true, critical: false, flaw: true })
+    expect(after.mentalState).toBe('furious')      // le décalage subi est payé en ◇
+    expect(after.stability).toBeLessThan(2 + 1)    // un jeton y est passé
+  })
+
+  it('Focalisation coûte une Réaction ⚡', () => {
+    const before = mentalist('terrified', 0)
+    const after  = resolve(before, 'focalisation', { hit: true, critical: false, flaw: true })
+    expect(after.reactions).toBe(Math.max(0, before.reactions - 1))
+  })
+
+  it("Méditation ralentit la prochaine action de 2 crans d'initiative", () => {
+    const before = mentalist('focused', 0)
+    const after  = resolve(before, 'meditation', { hit: true, critical: false, flaw: true })
+    expect(after.initiativeDelay).toBe(2)
   })
 })
 
@@ -131,9 +186,15 @@ describe('mentalCondition gate', () => {
 describe('scripted agent uses consolidation when off-centre', () => {
   const cfg: AgentConfig = { persona: 'cautious', targetId: 'B' }
 
-  it('a terrified mentalist recentres (Focalisation) before attacking', () => {
+  /**
+   * Un terrorisé se recentre avant de frapper. Il choisit désormais RÉSOLUTION
+   * plutôt que Focalisation : les deux le ramènent d'un cran vers le centre,
+   * mais le ⚠️ Défaut de la Résolution (dépassement 🔺) va dans la direction
+   * qu'il souhaite, là où celui de la Focalisation lui coûte une ⚡.
+   */
+  it('a terrified mentalist recentres before attacking', () => {
     const plan = planNextAction(mentalist('terrified', 0), makeCombatant('B'), cfg)
-    expect(plan?.action).toBe('focalisation')  // universelle, priorité
+    expect(['resolution', 'focalisation']).toContain(plan?.action)
   })
 
   it('recentring from the extreme outweighs recentring from degré 1', () => {

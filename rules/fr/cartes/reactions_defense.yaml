@@ -3,7 +3,14 @@
 # Schéma : voir README.md
 #
 # Note : toutes les réactions de Garde fixent le score de Garde du défenseur ;
-# la carte reste en jeu jusqu'à la fin de la manche.
+# la carte reste en jeu jusqu'à la fin de la manche, et vaut contre TOUS les
+# assaillants (un seul jet, quel que soit le nombre d'attaques).
+#
+# Deux champs propres aux Gardes :
+#   concession — 🟩 offert à l'attaquant, et contre quoi
+#   contrecoup — ↩️ prix payé CHAQUE FOIS qu'une attaque échoue contre la Garde
+# L'initiative d'une Garde est sa VITESSE : elle ne répond qu'aux actions dont
+# l'initiative est ≥ à la sienne ; à défaut, le personnage Encaisse.
 
 cartes:
   - id: frappe-opportuniste
@@ -34,7 +41,9 @@ cartes:
     bandeau: "toujours disponible, sans coût ; ne peut pas être brisée"
     declencheur: "être la cible d'une action **contre 🆚** votre **Garde**"
     jet: "Robustesse 🟨🟨 + Force 🟦"
-    defaut: "augmentez votre Fatigue 💧 de 1 point"
+    concession: "l'attaquant bénéficie de 🟩 — vous ne résistez pas activement"
+    contrecoup: "vous gagnez 1 jeton d'**hémorragie 🩸**"
+    defaut: "vous subissez **🔻**"
     critique: "vous gagnez une Réduction (1) applicable sur toutes les blessures légères 💢 subies jusqu'à la fin de la manche"
     effet: "le résultat du jet fixe votre score de **Garde**"
     source: core/actions/defense_reactions.md
@@ -50,8 +59,10 @@ cartes:
     declencheur: "être la cible d'une action **contre 🆚** votre **Garde** (Parade)"
     condition: "avoir une arme en main"
     jet: "Vigilance 🟨🟨 + Acuité 🟦"
-    defaut: "augmentez votre Fatigue 💧 de 1 point"
-    critique: "votre prochaine attaque contre l'attaquant bénéficie de +🟩"
+    concession: "l'attaquant bénéficie de 🟩 sur les **attaques à projectile** — une arme de mêlée à allonge reste parable"
+    contrecoup: "votre score de **Garde** diminue de 1 point"
+    defaut: "l'initiative de votre Garde augmente de **2** jusqu'à la fin de la manche"
+    critique: "vous gagnez une **Réaction ⚡**"
     effet: "le résultat du jet fixe votre score de **Garde**"
     source: core/actions/defense_reactions.md
 
@@ -66,11 +77,13 @@ cartes:
     declencheur: "être la cible d'une action **contre 🆚** votre **Garde** (Esquive)"
     condition: "ne pas être **entravé 🕸️** ou **immobilisé 🔗**"
     jet: "Mobilité 🟨🟨 + Agilité 🟦"
+    concession: "l'attaquant bénéficie de 🟩 sur les **attaques de zone**"
+    contrecoup: "augmentez votre **Fatigue 💧** de 1 point"
     ameliorations:
       - nom: Esquive plongeante
         effet: "si vous êtes **debout 🧍** ou **à genoux 🧎**, vous pouvez ignorer le coût ⚡ de cette Esquive. Vous vous retrouvez **À terre 🙏**"
     defaut: "augmentez votre Fatigue 💧 de 1 point"
-    critique: "votre score de Garde ne diminue que d'un point à chaque échec de vos adversaires"
+    critique: "déplacez-vous **immédiatement** d'une case ; si l'attaque ne peut plus vous atteindre, elle est **perdue**"
     effet: "le résultat du jet fixe votre score de **Garde**"
     source: core/actions/defense_reactions.md
 
@@ -85,7 +98,8 @@ cartes:
     declencheur: "être la cible d'une action **contre 🆚** votre **Garde** (Dérobade)"
     condition: "ne pas être **immobilisé 🔗**, et se trouver sur (ou adjacent à) une case **occultée 🌑**"
     jet: "Mascarade 🟨🟨 + Grâce 🟦"
-    defaut: "augmentez votre Fatigue 💧 de 1 point"
+    contrecoup: "la Garde est **perdue** — vous **Encaissez** les attaques suivantes de la manche"
+    defaut: "aucun déplacement — vous ne quittez pas votre case"
     critique: "vous disparaissez totalement. Vous devenez immédiatement **Dissimulé 😶‍🌫️**"
     effet: "déplacez-vous sur une case **occultée 🌑**. Le résultat du jet fixe votre score de **Garde**"
     source: core/actions/defense_reactions.md
@@ -101,7 +115,8 @@ cartes:
     declencheur: "être la cible d'une action **contre 🆚** votre **Garde** (Blocage)"
     condition: "avoir un bouclier adapté, ou improvisé (avec -🟥)"
     jet: "Endurance 🟨🟨 + Vigueur 🟦"
-    defaut: "augmentez votre Fatigue 💧 de 1 point"
-    critique: "le bouclier absorbe le choc. Vous gagnez 1 point de Protection temporaire 🛡️"
+    contrecoup: "l'initiative de votre Garde augmente de **1** jusqu'à la fin de la manche"
+    defaut: "l'initiative de votre Garde augmente de **1** jusqu'à la fin de la manche"
+    critique: "l'initiative de votre Garde diminue de **1** jusqu'à la fin de la manche"
     effet: "le résultat du jet fixe votre score de **Garde**"
     source: core/actions/defense_reactions.md

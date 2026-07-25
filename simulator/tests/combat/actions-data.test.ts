@@ -15,12 +15,15 @@ import {
 } from '../../src/combat/actions-data'
 import type { ActionId } from '../../src/combat/types'
 
-const ALL_IDS: ActionId[] = [
-  'armed-attack', 'unarmed-attack', 'brutal-strike',
-  'sharp-strike', 'respiration', 'stabilize',
-  'preservation', 'focalisation', 'resolution', 'meditation',
-  'walk', 'course', 'charge',
-]
+/**
+ * Toutes les actions du fichier — DÉRIVÉES, jamais listées à la main.
+ *
+ * Cette liste a été codée en dur, et six actions ajoutées après coup (les deux
+ * tirs, les deux sociales, la Frappe opportuniste) ont traversé le garde-fou sans
+ * être vues : c'est ce qui a laissé passer un Tir ciblé à l'initiative 8 côté
+ * moteur pour 7 côté vault. Une action qui existe DOIT être vérifiée.
+ */
+const ALL_IDS = Object.keys(readRawPlayerActions()) as ActionId[]
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
 
@@ -62,7 +65,9 @@ interface VaultCard {
 function loadVaultCards(): Map<string, VaultCard> {
   const dir = path.resolve(path.dirname(PLAYER_ACTIONS_FILE), '..', 'rules', 'fr', 'cartes')
   const cards = new Map<string, VaultCard>()
-  for (const file of ['actions_universelles.yaml', 'actions_avancees.yaml']) {
+  // Les TROIS jeux de cartes : oublier reactions_defense.yaml rendait toute
+  // réaction ⚡ invérifiable (elle n'a pas de carte dans les deux autres).
+  for (const file of ['actions_universelles.yaml', 'actions_avancees.yaml', 'reactions_defense.yaml']) {
     const doc = parse(fs.readFileSync(path.join(dir, file), 'utf-8')) as { cartes?: VaultCard[] }
     for (const c of doc.cartes ?? []) cards.set(c.id, c)
   }

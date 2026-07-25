@@ -1,0 +1,318 @@
+# Traits de personnage — SOURCE STRUCTURÉE du simulateur.
+#
+# Projection de rules/fr/core/traits.md. Mêmes conventions que player_actions.yaml :
+# clés anglaises, chaînes en Locale { fr, en? }. Les identifiants, eux, restent en
+# kebab FR — comme les `vaultCard` (frappe-vive, attaque-armee) et comme le trait
+# d'adversaire `sanguinaire`, dont ce fichier reprend le contrat exact :
+#
+#   · `effect`  = prose MJ. JAMAIS parsée. C'est ce que lit un humain.
+#   · `grants`  = bloc STRUCTURÉ, seul branchement moteur. ABSENT = trait
+#                 prose-only, sans effet mécanique — exactement comme un trait
+#                 d'adversaire sans `id` (cf. simulator/src/adversary/traits.ts).
+#
+# Les 35 traits du vault sont ici ; seuls quelques-uns portent un `grants`. Le
+# fichier est donc complet côté CONTENU dès maintenant, et le branchement avance
+# trait par trait sans jamais retoucher la liste.
+#
+# ── Accès ────────────────────────────────────────────────────────────────────
+# Un trait s'achète aux RANGS 3 et 5 de sa compétence (§ personnages.md). Le vault
+# ne dit pas lequel vient au rang 3 et lequel au rang 5 — et plusieurs compétences
+# en proposent 3 pour 2 emplacements : le joueur CHOISIT. On ne code donc que ce
+# qui est écrit (`skill`), et la validation en déduit le plafond :
+#     nb de traits pris dans une compétence ≤ (rang ≥ 3 ? 1 : 0) + (rang ≥ 5 ? 1 : 0)
+#
+# ── Vocabulaire des `grants` (familles d'effet) ──────────────────────────────
+#   reactiveMode: { on, scope, cost }
+#       « L'action X peut être utilisée en Réaction ⚡ lorsque … ». AJOUTE une
+#       variante réactive de `action` ; l'action reste jouable normalement dans la
+#       manche (le vault dit « peut », pas « devient »).
+#   costDelta: { actions?, reactions?, fatigue? }
+#       Modifie le coût de `action` (deltas signés, plancher 0).
+#
+# ⚠️ Noms de compétences : `composure` = Prestance, `disguise` = Mascarade,
+# `foresight` = Clairvoyance. Décalage connu, à résorber par le chantier « fusion
+# des structures de personnage » (le vocabulaire web fait foi) — pas ici.
+
+traits:
+
+  # ══ FORCE ═══════════════════════════════════════════════════════════════════
+
+  # ── Puissance (3 traits pour 2 emplacements : le joueur choisit) ────────────
+  momentum:
+    name:   { fr: "Momentum" }
+    kind:   active
+    skill:  power
+    action: brutal-strike
+    effect: { fr: "Réduit d'un point le coût en fatigue 💧 de votre Frappe brutale." }
+    grants:
+      costDelta: { fatigue: -1 }
+
+  poings-de-fer:
+    name:   { fr: "Poings de fer" }
+    kind:   active
+    skill:  power
+    action: unarmed-attack
+    effect: { fr: "En cas de succès, votre attaque à mains nues inflige également une blessure 💢." }
+
+  garde-ecrasante:
+    name:   { fr: "Garde écrasante" }
+    kind:   passive
+    skill:  power
+    effect: { fr: "Lorsqu'un adversaire échoue une attaque contre votre Parade ou votre Blocage, il subit une fatigue 💧 après résolution de son action." }
+
+  # ── Robustesse ──────────────────────────────────────────────────────────────
+  # Agripper est un mode réactif, mais l'action Saisir n'existe pas dans le sim.
+  agripper:
+    name:   { fr: "Agripper" }
+    kind:   active
+    skill:  robustness
+    effect: { fr: "Mode réactif : l'action Saisir peut être utilisée en Réaction ⚡ lorsqu'une créature adjacente initie une action de Marche, de Course ou de Posture. Le coût devient ⚡💧 au lieu de ⚫." }
+
+  cle-articulaire:
+    name:   { fr: "Clé articulaire" }
+    kind:   active
+    skill:  robustness
+    effect: { fr: "En cas de succès, l'action Lutte ne met plus fin à votre tour." }
+
+  # ══ AGILITÉ ═════════════════════════════════════════════════════════════════
+
+  # ── Précision ───────────────────────────────────────────────────────────────
+  # LOT 1 — le premier mode réactif câblé. Son déclencheur (movement-initiated)
+  # est déjà émis par le moteur, et la Frappe vive existe déjà.
+  opportunisme:
+    name:   { fr: "Opportunisme" }
+    kind:   active
+    skill:  precision
+    action: sharp-strike
+    effect: { fr: "Mode réactif : l'action Frappe vive peut être utilisée en Réaction ⚡💧 lorsqu'une créature à portée effectue une action de Marche, de Course ou de Posture." }
+    grants:
+      reactiveMode:
+        on:    movement-initiated
+        scope: reach
+        cost:  { actions: 0, reactions: 1, fatigue: 1 }
+
+  # ── Mobilité ────────────────────────────────────────────────────────────────
+  charge-terrifiante:
+    name:   { fr: "Charge terrifiante" }
+    kind:   active
+    skill:  mobility
+    action: charge
+    effect: { fr: "En cas de succès, l'action Charge inflige également 🔻 à sa cible et à toutes les créatures adjacentes à celle-ci." }
+
+  esquive-plongeante:
+    name:   { fr: "Esquive plongeante" }
+    kind:   active
+    skill:  mobility
+    effect: { fr: "Si vous êtes debout 🧍 ou à genoux 🧎, vous pouvez ignorer le coût en Réaction ⚡ de votre Esquive. Vous vous retrouvez À terre 🙏." }
+
+  # ══ VIGUEUR ═════════════════════════════════════════════════════════════════
+
+  # ── Endurance ───────────────────────────────────────────────────────────────
+  accalmie:
+    name:   { fr: "Accalmie" }
+    kind:   active
+    skill:  endurance
+    action: respiration
+    effect: { fr: "En cas de succès, déplacez (🔺 ou 🔻) vers Concentré." }
+
+  second-souffle:
+    name:   { fr: "Second souffle" }
+    kind:   active
+    skill:  endurance
+    effect: { fr: "Une fois par combat, lorsque vous échouez à un test d'Endurance, vous pouvez le considérer comme réussi." }
+
+  # ── Récupération ────────────────────────────────────────────────────────────
+  # Mode réactif sur la famille heavy-wound-taken : point d'émission non câblé, et
+  # le réacteur est SOI (eligibleReactions filtre aujourd'hui sur isEnemy).
+  coagulation-rapide:
+    name:   { fr: "Coagulation rapide" }
+    kind:   active
+    skill:  recovery
+    action: stabilize
+    effect: { fr: "Mode réactif : Stabiliser peut être jouée en Réaction ⚡ pour un coût de ⚡◇ immédiatement après avoir reçu une blessure grave 💔. Avant la résolution de l'action, ajoutez immédiatement 3 💢 supplémentaires et annulez la blessure grave 💔." }
+
+  # ══ GRÂCE ═══════════════════════════════════════════════════════════════════
+
+  # ── Prestance (composure) ───────────────────────────────────────────────────
+  surprise:
+    name:   { fr: "Surprise" }
+    kind:   active
+    skill:  composure
+    effect: { fr: "L'action choisie est jouée avec son initiative normale, et bénéficie de 🟩 sur son jet si applicable." }
+
+  esquives-choregraphiees:
+    name:   { fr: "Esquives chorégraphiées" }
+    kind:   active
+    skill:  composure
+    effect: { fr: "Vous pouvez utiliser Prestance à la place de Mobilité pour effectuer vos jets d'Esquive." }
+
+  # ── Mascarade (disguise) ────────────────────────────────────────────────────
+  pas-de-velours:
+    name:   { fr: "Pas de velours" }
+    kind:   active
+    skill:  disguise
+    effect: { fr: "L'option Course furtive ⛞ de votre Furtivité 🥷 ne coûte plus de fatigue 💧." }
+
+  frappe-de-lombre:
+    name:   { fr: "Frappe de l'ombre" }
+    kind:   passive
+    skill:  disguise
+    effect: { fr: "Lorsque vous quittez l'état Dissimulé 😶‍🌫️ par une action offensive, celle-ci inflige une blessure 💢 supplémentaire en cas de succès." }
+
+  # ══ ACUITÉ ══════════════════════════════════════════════════════════════════
+
+  # ── Observation ─────────────────────────────────────────────────────────────
+  tir-ajuste:
+    name:   { fr: "Tir ajusté" }
+    kind:   active
+    skill:  observation
+    action: aimed-shot
+    effect: { fr: "Lorsque vous effectuez un Tir ciblé, vous pouvez relancer un 🟦." }
+
+  # ── Vigilance ───────────────────────────────────────────────────────────────
+  sentinelle:
+    name:   { fr: "Sentinelle" }
+    kind:   active
+    skill:  vigilance
+    effect: { fr: "L'action Protection peut être jouée en Bande III (🌗) au lieu de la Bande I ; gagnez alors deux Réactions ⚡ au lieu d'une." }
+
+  toujours-en-eveil:
+    name:   { fr: "Toujours en éveil" }
+    kind:   passive
+    skill:  vigilance
+    effect: { fr: "Vous ne subissez jamais le Désavantage 🟥 de défense pour avoir été pris pour cible par une créature Dissimulée 😶‍🌫️." }
+
+  # ══ VOLONTÉ ═════════════════════════════════════════════════════════════════
+
+  # ── Autorité ────────────────────────────────────────────────────────────────
+  emprise:
+    name:   { fr: "Emprise" }
+    kind:   active
+    skill:  authority
+    effect: { fr: "L'action Injonction gagne : en cas de succès, la prochaine injonction contre la même cible ne souffre pas le désavantage 🟥." }
+
+  # ── Discipline ──────────────────────────────────────────────────────────────
+  precaution:
+    name:   { fr: "Précaution" }
+    kind:   active
+    skill:  discipline
+    action: preservation
+    effect: { fr: "L'action Préservation peut être jouée en Bande III (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet de Garde." }
+
+  # ══ INTELLIGENCE ════════════════════════════════════════════════════════════
+
+  # ── Logique ─────────────────────────────────────────────────────────────────
+  incantation:
+    name:   { fr: "Incantation" }
+    kind:   active
+    skill:  logic
+    action: focalisation
+    effect: { fr: "L'action Focalisation peut être jouée en Bande III (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de 🟩 sur votre prochain jet utilisant l'Intelligence." }
+
+  vision-tactique:
+    name:   { fr: "Vision tactique" }
+    kind:   passive
+    skill:  logic
+    effect: { fr: "Une fois par combat, vous pouvez renforcer ⬆ un dé d'aléa (🟩 ou 🟥)." }
+
+  # ── Réactivité ──────────────────────────────────────────────────────────────
+  anticipation:
+    name:   { fr: "Anticipation" }
+    kind:   active
+    skill:  reactivity
+    effect: { fr: "L'action Préparation peut être jouée en Bande III (🌗) au lieu de la Bande I. Vous conservez un nombre de Réactions ⚡ égal à votre Réactivité pour la manche suivante." }
+
+  # ══ TÉNACITÉ ════════════════════════════════════════════════════════════════
+
+  # ── Conviction (3 traits pour 2 emplacements) ───────────────────────────────
+  militant:
+    name:   { fr: "Militant" }
+    kind:   active
+    skill:  conviction
+    action: resolution
+    effect: { fr: "L'action Résolution peut être jouée en Bande III (🌗) au lieu de la Bande I. En cas de succès, vous bénéficiez de +1 ⟳🟦 sur votre prochaine action." }
+
+  eliminer-les-faibles:
+    name:   { fr: "Éliminer les faibles" }
+    kind:   passive
+    skill:  conviction
+    effect: { fr: "Toutes vos actions et réactions infligeant des blessures 💢 infligent une blessure 💢 supplémentaire aux adversaires à terre ou essoufflés." }
+
+  pression-constante:
+    name:   { fr: "Pression constante" }
+    kind:   passive
+    skill:  conviction
+    effect: { fr: "Lorsqu'une action inflige au moins trois blessures 💢 à une cible unique, celle-ci subit également un point de fatigue 💧." }
+
+  # ── Résilience ──────────────────────────────────────────────────────────────
+  tranquillite:
+    name:   { fr: "Tranquillité" }
+    kind:   active
+    skill:  resilience
+    action: meditation
+    effect: { fr: "En cas de succès de votre action Méditation, diminuez également votre fatigue 💧 de deux points." }
+
+  # ══ CHARISME ════════════════════════════════════════════════════════════════
+
+  # ── Éloquence ───────────────────────────────────────────────────────────────
+  tribun:
+    name:   { fr: "Tribun" }
+    kind:   active
+    skill:  eloquence
+    effect: { fr: "En cas de succès de votre Inspiration, un second allié à portée auditive gagne 1 point d'inspiration." }
+
+  beau-parleur:
+    name:   { fr: "Beau parleur" }
+    kind:   passive
+    skill:  eloquence
+    effect: { fr: "Après une conversation posée avec un interlocuteur, vous bénéficiez de 🟩 sur vos jets d'Éloquence pour obtenir de lui une faveur ou une information." }
+
+  # ── Manipulation ────────────────────────────────────────────────────────────
+  sous-la-peau:
+    name:   { fr: "Sous la peau" }
+    kind:   active
+    skill:  manipulation
+    action: provocation
+    effect: { fr: "L'effet ▶️ 🔺 de votre Provocation s'applique deux fois." }
+
+  langue-de-vipere:
+    name:   { fr: "Langue de vipère" }
+    kind:   passive
+    skill:  manipulation
+    effect: { fr: "Vous bénéficiez de 🟩 sur vos jets de Manipulation pour bluffer ou mentir." }
+
+  # ══ LUCIDITÉ ════════════════════════════════════════════════════════════════
+
+  # ── Clairvoyance (foresight) ────────────────────────────────────────────────
+  coup-davance:
+    name:   { fr: "Coup d'avance" }
+    kind:   active
+    skill:  foresight
+    effect: { fr: "En cas de succès de votre Prédiction, l'action que vous jouez en remplacement bénéficie de 🟩 sur son jet." }
+
+  lire-a-livre-ouvert:
+    name:   { fr: "Lire à livre ouvert" }
+    kind:   passive
+    skill:  foresight
+    effect: { fr: "Vous pouvez dépenser un Stabilité ◇ pour deviner exactement ce qu'un interlocuteur attend de vous afin de vous accorder sa confiance." }
+
+  # ── Intuition ───────────────────────────────────────────────────────────────
+  # LOT 1 — le même mode réactif, mais sur une action À DISTANCE : le tirailleur
+  # cesse d'être une proie passive quand on vient le coller.
+  tir-dinstinct:
+    name:   { fr: "Tir d'instinct" }
+    kind:   active
+    skill:  intuition
+    action: quick-shot
+    effect: { fr: "Mode réactif : l'action Tir rapide peut être utilisée en Réaction ⚡💧 lorsqu'une créature à portée effectue une action de Marche, de Course ou de Posture." }
+    grants:
+      reactiveMode:
+        on:    movement-initiated
+        scope: reach
+        cost:  { actions: 0, reactions: 1, fatigue: 1 }
+
+  pressentiment:
+    name:   { fr: "Pressentiment" }
+    kind:   passive
+    skill:  intuition
+    effect: { fr: "Vous bénéficiez de 🟩 sur vos jets d'Intuition pour pressentir un piège ou une embuscade, et vous agissez normalement dès la première manche d'un combat même si vous êtes pris par surprise." }

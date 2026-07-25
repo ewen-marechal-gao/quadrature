@@ -1,0 +1,160 @@
+# ⚡ Gardes — source machine
+#
+# Projection de rules/fr/core/actions/defense_reactions.md § Le système de Garde,
+# et des cartes rules/fr/cartes/reactions_defense.yaml (lien `vaultCard`).
+# Mêmes conventions que player_actions.yaml : clés anglaises, chaînes Locale.
+#
+# ── Ce qu'une Garde EST ──────────────────────────────────────────────────────
+# Une Garde est déclarée à la première attaque de la manche et vaut contre TOUS
+# les assaillants : un seul jet, quel que soit le nombre de coups. Son score fixe
+# le seuil que l'attaquant doit atteindre.
+#
+# ── L'initiative d'une Garde est sa VITESSE ──────────────────────────────────
+# Une Garde ne répond qu'aux actions dont l'initiative est ≥ à la sienne ; à
+# défaut, le personnage Encaisse. C'est pour cela qu'Encaisser est gratuite et
+# toujours disponible — c'est le repli, pas un choix.
+#
+# ── Ce qui est branché, et ce qui ne l'est pas ───────────────────────────────
+# `onFlaw` / `onCritical` portent des EffectOp (grammaire partagée avec les
+# actions) et sont APPLIQUÉS. `concession` est appliquée. `contrecoup` est de la
+# DONNÉE SEULE : il exige une Garde mutable, réévaluée coup par coup — chantier
+# « Garde dynamique ». Un champ `wired: false` le dit explicitement.
+
+guards:
+
+  # ── 1️⃣ Encaisser — le repli, gratuit, inbrisable ───────────────────────────
+  absorb:
+    vaultCard: encaisser
+    name:        { fr: "Encaisser" }
+    description: { fr: "Faute de pouvoir esquiver ou parer à temps, vous contractez vos muscles et préparez votre esprit à absorber le choc." }
+    initiative:  1
+    cost:        { reactions: 0 }
+    roll:        { characteristic: strength, skill: robustness }
+    # Toujours disponible : c'est la définition du repli.
+    availability: {}
+    # 🟩 inconditionnel : on ne résiste pas activement.
+    concession:  { advantage: 1 }
+    unbreakable: true
+    contrecoup:
+      text:  { fr: "vous gagnez 1 jeton d'hémorragie 🩸" }
+      effect: [{ status: hemorrhage }]
+      wired: false
+    onFlaw:
+      text:   { fr: "⚠️ Défaut de Garde — 🔻" }
+      effect: [{ mental: -1 }]
+    onCritical:
+      # Réduction (1) sur les 💢 jusqu'à la fin de la manche : pas d'état
+      # « réduction » dans le moteur — chantier Garde dynamique.
+      text:   { fr: "✴️ Encaisser maîtrisé — Réduction (1) sur les 💢 de la manche" }
+      effect: []
+      wired:  false
+
+  # ── 2️⃣ Parade — la plus rapide, la plus fragile ────────────────────────────
+  parry:
+    vaultCard: parade
+    name:        { fr: "Parade" }
+    description: { fr: "Une lecture fine de la trajectoire adverse pour dévier le coup au dernier moment." }
+    initiative:  2
+    cost:        { reactions: 1 }
+    roll:        { characteristic: acuity, skill: vigilance }
+    availability:
+      # « Avoir une arme en main » — proxy de compétence en attendant le modèle
+      # d'équipement (chantier armes & boucliers).
+      requiresSkill: { skill: power, minValue: 1 }
+    # On ne pare pas un projectile ; une arme de mêlée à allonge reste parable,
+    # d'où le tag `ranged` et non la portée.
+    concession:  { advantage: 1, againstTag: ranged }
+    contrecoup:
+      text:  { fr: "votre score de Garde diminue de 1 point" }
+      guardScore: -1
+      wired: false
+    onFlaw:
+      # L'initiative de la Garde augmente de 2 : exige une Garde mutable.
+      text:   { fr: "⚠️ Parade déviée — Garde plus lente de 2 jusqu'à la fin de la manche" }
+      effect: []
+      guardInitiative: +2
+      wired:  false
+    onCritical:
+      text:   { fr: "✴️ Parade parfaite — +1 Réaction ⚡" }
+      effect: [{ gainReaction: 1 }]
+
+  # ── 3️⃣ Esquive — ne perd rien, paie en souffle ─────────────────────────────
+  dodge:
+    vaultCard: esquive
+    name:        { fr: "Esquive" }
+    description: { fr: "Un mouvement fluide, un pas de côté glissé pour laisser le coup se perdre dans le vide." }
+    initiative:  3
+    cost:        { reactions: 1 }
+    roll:        { characteristic: agility, skill: mobility }
+    availability:
+      # Le vault interdit aussi « immobilisé 🔗 », statut absent du moteur.
+      blockedByStatus: [entrapped, incapacitated, near-death]
+    # On n'esquive pas ce qui couvre toute la case. Aucune action ne porte encore
+    # le tag `zone` : la concession est écrite, inerte jusqu'aux attaques de zone.
+    concession:  { advantage: 1, againstTag: zone }
+    contrecoup:
+      text:  { fr: "augmentez votre Fatigue 💧 de 1 point" }
+      effect: [{ fatigue: 1 }]
+      wired: false
+    onFlaw:
+      text:   { fr: "⚠️ Défaut de Garde — défenseur +1💧" }
+      effect: [{ fatigue: 1 }]
+    onCritical:
+      # Déplacement immédiat d'une case : la Garde ne sait pas encore bouger son
+      # porteur — chantier Garde dynamique.
+      text:   { fr: "✴️ Esquive parfaite — déplacement immédiat d'une case" }
+      effect: []
+      wired:  false
+
+  # ── 3️⃣ Dérobade — un seul coup, puis on Encaisse ───────────────────────────
+  evade:
+    vaultCard: derobade
+    name:        { fr: "Dérobade" }
+    description: { fr: "Se fondre dans l'environnement, casser la ligne de vue au moment de l'impact." }
+    initiative:  3
+    cost:        { reactions: 1 }
+    roll:        { characteristic: grace, skill: disguise }
+    availability:
+      blockedByStatus: [incapacitated, near-death]
+      # Aucune case n'est occultée 🌑 tant que la furtivité n'est pas simulée :
+      # la Dérobade est donc DÉCLARÉE mais jamais disponible. Volontaire — la
+      # carte existe, le moteur l'ignore.
+      requiresOccultedSquare: true
+    contrecoup:
+      text:  { fr: "la Garde est perdue — vous Encaissez les attaques suivantes" }
+      losesGuard: true
+      wired: false
+    onFlaw:
+      text:   { fr: "⚠️ Dérobade manquée — aucun déplacement" }
+      effect: []
+      wired:  false
+    onCritical:
+      text:   { fr: "✴️ Dérobade parfaite — Dissimulé 😶‍🌫️" }
+      effect: []
+      wired:  false
+
+  # ── 4️⃣ Blocage — tient son score, s'alourdit ───────────────────────────────
+  block:
+    vaultCard: blocage
+    name:        { fr: "Blocage" }
+    description: { fr: "S'abriter derrière son bouclier, et transformer son corps en une forteresse inébranlable." }
+    initiative:  4
+    cost:        { reactions: 1 }
+    roll:        { characteristic: vigor, skill: endurance }
+    availability:
+      # « Avoir un bouclier » — proxy de compétence, même chantier que la Parade.
+      requiresSkill: { skill: robustness, minValue: 2 }
+    contrecoup:
+      text:  { fr: "l'initiative de votre Garde augmente de 1 jusqu'à la fin de la manche" }
+      guardInitiative: +1
+      wired: false
+    onFlaw:
+      text:   { fr: "⚠️ Blocage lourd — Garde plus lente de 1 jusqu'à la fin de la manche" }
+      effect: []
+      guardInitiative: +1
+      wired:  false
+    onCritical:
+      text:   { fr: "✴️ Blocage assuré — Garde plus rapide de 1 jusqu'à la fin de la manche" }
+      effect: []
+      guardInitiative: -1
+      wired:  false

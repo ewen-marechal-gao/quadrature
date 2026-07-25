@@ -8,15 +8,25 @@
 #
 # Ce que ça vérifie : la fenêtre de réaction s'ouvre PENDANT la résolution, la
 # réaction se résout AVANT le déplacement, et son coût en ⚡ la borne.
-name: Réaction — la frappe opportuniste
+#
+# ── Passe TRAITS (§ traits.md) ───────────────────────────────────────────────
+# Les deux combattants portent désormais un mode réactif ⚒️ au lieu d'une action
+# à déclencheur natif : la Sentinelle a **Opportunisme** (sa Frappe vive se joue
+# en Réaction ⚡💧) et le tirailleur **Tir d'instinct** (son Tir rapide de même).
+# Le banc teste donc les deux sens du même déclencheur : celui qui décroche se
+# fait frapper, celui qui approche se fait tirer dessus.
+name: Réaction — modes réactifs ⚒️ (Opportunisme / Tir d'instinct)
 description: >-
   Un duelliste colle un tirailleur qui cherche à reprendre ses distances. Chaque
-  décrochage lui offre une ouverture — s'il lui reste une réaction ⚡ à dépenser.
+  décrochage lui offre une ouverture — s'il lui reste une réaction ⚡ à dépenser ;
+  et chaque approche offre au tirailleur un tir de réaction.
 maxRounds: 12
 
-# Couloir : la longueur laisse le tirailleur décrocher, la faible hauteur rend
-# le va-et-vient lisible.
-board: { width: 24, height: 5 }
+# Couloir COURT (mesuré) : le tirailleur court plus vite que le duelliste (8
+# cases contre 6). Sur 24 cases il décroche longtemps et les fenêtres de réaction
+# se raréfient (~2-4 par combat) ; acculé au bout d'un couloir de 14, il doit
+# rompre au contact manche après manche (~2-6, dans les DEUX sens).
+board: { width: 14, height: 5 }
 
 factions:
   - name: Duellistes
@@ -27,14 +37,14 @@ factions:
       - sheet: characterSheets/Sentinel_reactive.yaml
         persona: opportunist
         pos: { x: 6, y: 2 }
-    # La trousse porte la RÉACTION en plus de la mêlée : elle n'entre jamais dans
-    # le plan de manche, elle est proposée quand le déclencheur survient.
+    # Plus besoin d'inscrire une action de réaction dédiée : le trait Opportunisme
+    # ajoute un MODE réactif à la Frappe vive, qui reste par ailleurs planifiable.
     allowedActions:
-      ["sharp-strike", "armed-attack", "opportunity-strike", "respiration", "stabilize", "walk", "course"]
+      ["sharp-strike", "armed-attack", "respiration", "stabilize", "walk", "course"]
 
   - name: Tirailleurs
     characters:
-      - sheet: characterSheets/Ranged_skirmisher.yaml
+      - sheet: characterSheets/Ranged_instinctive.yaml
         persona: cautious          # veut survivre : il décrochera
         pos: { x: 7, y: 2 }
     allowedActions: ["quick-shot", "aimed-shot", "course", "walk", "respiration", "stabilize"]

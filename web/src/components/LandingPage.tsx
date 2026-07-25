@@ -76,6 +76,17 @@ export function LandingPage({ locale }: Props) {
             </Link>
           )}
           {localeEnabled && (
+            <Link href={`/${locale}/traits/`} className="landing-book-card">
+              <span className="landing-book-title">Traits</span>
+              <span className="landing-book-subtitle">Outil de table</span>
+              <span className="landing-book-desc">
+                Parcourez les traits débloqués aux rangs 3 et 5 des compétences :
+                effet imprimé, action modifiée et mécanique de jeu.
+              </span>
+              <span className="landing-book-arrow">→</span>
+            </Link>
+          )}
+          {localeEnabled && (
             <Link href={`/${locale}/evolution/`} className="landing-book-card">
               <span className="landing-book-title">Évolution</span>
               <span className="landing-book-subtitle">Le monde d'Aeonir</span>

@@ -34,7 +34,8 @@ import "@/app/cards.css";
 const FACTION_COLORS = ["#c49a45", "#a03a2a", "#2e5f8f", "#3e7f44"];
 
 const GUARD_LABELS: Record<string, string> = {
-  absorb: "Encaisser", dodge: "Esquive", parry: "Parade", block: "Blocage",
+  absorb: "Encaisser", parry: "Parade", dodge: "Esquive",
+  evade: "Dérobade", block: "Blocage",
 };
 
 const BAND_NAME: Record<string, string> = {

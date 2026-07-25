@@ -36,6 +36,7 @@ export type EffectOp =
   | { destabilize: true }        // « Déstabilisé » : la cible ignore son prochain regain de ◇
   | { shiftIfBroken: number }    // décale l'état mental UNIQUEMENT si la cible n'a plus de ◇ (+N Colère / −N Peur)
   | { setInertia: number }       // SELF: pose l'Inertie ➡️ (la Charge la remet à 0 en consommant l'élan)
+  | { gainReaction: number }     // SELF: gagne N Réactions ⚡ (critique de Parade)
 
 // ─── Declarative action outcomes ──────────────────────────────────────────────
 
@@ -79,10 +80,16 @@ export function makeResolve(outcomes: ActionOutcomes) {
       effects.push(...opsToCombatEffects(o.effect, target.id, actor.id))
       if (o.text) notes.push(`${prefix} ${o.text}`)
     }
-    // Une action n'échoue jamais : total ≥ DC = succès (✅), sinon succès partiel (◐).
-    apply(hit ? outcomes.onSuccess : outcomes.onFailure, hit ? '✅' : '◐')
+    // ORDRE DE RÉSOLUTION : ⚠️ Défaut, puis ✴️ Critique, puis l'issue.
+    // C'est l'ordre IMPRIMÉ sur la carte (cf. le schéma de rules/fr/cartes), et
+    // il n'est pas cosmétique : plusieurs effets sont plafonnés ou absorbés, donc
+    // leur rang change le résultat. Un 🔻 de défaut appliqué avant le ◇ que
+    // l'action accorde tombe sur la piste ; appliqué après, le ◇ tout neuf
+    // l'absorbe et le défaut ne coûte plus rien.
     if (flaw)     apply(outcomes.onFlaw, '⚠️')
     if (critical) apply(outcomes.onCritical, '✴️')
+    // Une action n'échoue jamais : total ≥ DC = succès (✅), sinon succès partiel (◐).
+    apply(hit ? outcomes.onSuccess : outcomes.onFailure, hit ? '✅' : '◐')
     return { effects, notes }
   }
 }
@@ -122,6 +129,9 @@ export function opsToCombatEffects(
       for (let i = 0; i < Math.abs(op.shiftIfBroken); i++) {
         out.push({ targetId, kind: 'shift-mental-broken', direction })
       }
+    } else if ('gainReaction' in op) {
+      // SELF: une Réaction ⚡ rendue au porteur (critique de Parade), jamais à la cible.
+      if (selfId) out.push({ targetId: selfId, kind: 'add-reaction', amount: op.gainReaction })
     } else if ('setInertia' in op) {
       // SELF: l'élan est une propriété du lanceur (la Charge le consomme → 0).
       if (selfId) out.push({ targetId: selfId, kind: 'set-inertia', value: op.setInertia })

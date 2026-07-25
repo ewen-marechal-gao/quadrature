@@ -44,7 +44,7 @@ Au début de la manche, un personnage ayant au moins un jeton **métabolisme �
 
 *La fatigue s'est installée trop profondément pour qu'une nuit suffise à l'effacer.*
 
-L'épuisement est un état cumulable, suivi par des marqueurs **épuisement 😩**, principalement infligé par les voyages éprouvants (voir [voyager.md](voyager.md)).
+L'épuisement est un état cumulable, suivi par des marqueurs **épuisement 😩**, principalement infligé par les voyages éprouvants (voir [voyager.md](voyager.md)). En combat, un **Défaut ⚠️** sur l'action **Respiration** en pose également un : un souffle mal repris se paie longtemps.
 
 **Effet — plancher de fatigue :** la **Fatigue 💧** d'un personnage ne peut jamais descendre en dessous de son nombre de marqueurs **😩** — ni par le repos, ni par les actions de récupération. Au début de chaque combat, sa fatigue démarre donc au moins à ce niveau.
 

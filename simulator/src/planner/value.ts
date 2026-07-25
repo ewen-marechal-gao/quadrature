@@ -31,7 +31,7 @@ import type {
 } from '../combat/types'
 import { MENTAL_STATES } from '../combat/types'
 import {
-  effChar, resistanceThreshold, stabilityPool, MENTAL_STATE_EFFECTS,
+  effChar, resistanceThreshold, stabilityPool, stepMentalToward, MENTAL_STATE_EFFECTS,
 } from '../combat/combatant'
 import { STATUS_DEFS } from '../combat/status'
 import { PHYSICAL_CHARACTERISTICS, MENTAL_CHARACTERISTICS } from '../character/data'
@@ -96,6 +96,15 @@ const STABILITY_PC_VALUE = 0.8
 const STABILITY_ADV_VALUE = 0.4
 /** Base worth of one fatigue point 💧 on a PC (escalates near 10 and 20). */
 const FATIGUE_VALUE = 0.4
+/**
+ * Un marqueur 😩 Épuisé. Prix DÉLIBÉRÉMENT bas ici : sa vraie morsure est
+ * hors-combat (plancher de fatigue que seule une nuit en Havre lève), et le
+ * planificateur ne raisonne que sur le combat en cours. Il ne voit que la
+ * récupération qu'il s'interdit — pas la dette qu'il emporte.
+ */
+const EXHAUSTION_VALUE = 0.5
+/** Un cran d'initiative perdu sur sa prochaine action : on frappe après l'autre. */
+const INITIATIVE_DELAY_VALUE = 0.3
 /** Destroying an adversary block — a conferred capability goes dark. */
 const BLOCK_VALUE = 3
 /** Finishing a whole part (its tag, its cards, its resources). */
@@ -104,6 +113,15 @@ const PART_VALUE = 4
 const DECISIVE_VALUE = 40
 /** One 🩸 token — future wounds that pierce protection (PC) / armor (adversary). */
 const BLEED_VALUE = 1.2
+/**
+ * Horizon, en manches, sur lequel un saignement que RIEN ne referme est projeté.
+ *
+ * Une Récupération ≥ 1 borne la projection d'elle-même (le stock décroît jusqu'à
+ * passer sous le seuil) ; à Récupération 0 elle serait infinie. Trois manches est
+ * une fenêtre de décision, pas une vérité de règle : c'est un paramètre de
+ * valorisation, à ajuster si le planificateur sous-estime l'hémorragie.
+ */
+const BLEED_HORIZON = 3
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -192,6 +210,8 @@ function pcBurden(e: CombatEffect, s: CombatantState): number {
     case 'shift-mental-broken': return s.stability > 0 ? 0
                                      : mentalShiftBurdenPc(s, e.direction as 'toward-terror' | 'toward-rage')
     case 'set-mental':     return mentalStateBurdenPc(e.state) - mentalStateBurdenPc(s.mentalState)
+    case 'step-mental':    return mentalStateBurdenPc(stepMentalToward(s.mentalState, MENTAL_STATES.indexOf(e.toward), e.steps))
+                                  - mentalStateBurdenPc(s.mentalState)
     case 'add-stability':  return -Math.min(e.amount, Math.max(0, stabilityPool(s) - s.stability))
                                   * STABILITY_PC_VALUE
     case 'drain-stability': {
@@ -199,6 +219,12 @@ function pcBurden(e: CombatEffect, s: CombatantState): number {
       // Emptying the pool exposes the track to every further shock.
       return drained * STABILITY_PC_VALUE + (drained === s.stability && drained > 0 ? 0.5 : 0)
     }
+    // 😩 Épuisé : le vrai prix se paie APRÈS le combat (plancher de fatigue qu'une
+    // seule nuit en Havre lève). Le planificateur ne voit qu'un combat : il ne
+    // price donc que la part visible — la récupération qu'il s'interdit.
+    case 'add-exhaustion':      return e.amount * EXHAUSTION_VALUE
+    // Résolution plus tardive dans la bande : on frappe après l'adversaire.
+    case 'delay-next-action':   return e.amount * INITIATIVE_DELAY_VALUE
     case 'destabilize':    return 0            // adversary-only mechanic (◇ regen skip)
     case 'set-inertia':    return 0            // tempo handled by the planner (élan enables Charge)
     case 'move':
@@ -273,7 +299,17 @@ function statusBurdenPc(s: CombatantState, id: StatusEffect): number {
 function bleedStockBurdenPc(s: CombatantState, extra: number): number {
   const recovery = s.skills.recovery
   let tokens = s.bleed + extra
-  let total  = 0
+
+  // Récupération 0 : « un personnage sans Récupération ne referme rien seul »
+  // (§ etats.md). Le stock ne décroît JAMAIS — la projection est infinie, et la
+  // boucle ci-dessous ne terminerait pas. On borne à l'horizon de décision.
+  //
+  // Ce n'est pas un cas limite théorique : Brawler_powerful est à Récupération 0,
+  // et le premier jeton 🩸 posé par le Faucheur figeait la partie dans le
+  // planificateur — combat bloqué dès la manche 1, sans exception ni crash.
+  if (recovery <= 0) return tokens * BLEED_HORIZON * BLEED_VALUE
+
+  let total = 0
   while (tokens > recovery) {
     tokens -= recovery
     total  += tokens

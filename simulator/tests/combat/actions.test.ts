@@ -1,8 +1,9 @@
 import {
   ACTION_DEFS, GUARD_DEFS, rollParamsFrom, resolveAction,
   canUseAction, canAffordAction, availableGuards,
+  guardConcession, guardAnswers,
 } from '../../src/combat/actions'
-import type { CombatantState } from '../../src/combat/types'
+import type { CombatantState, CardTag } from '../../src/combat/types'
 import { addStatus, addFatigue } from '../../src/combat/combatant'
 import { makeCharacter, makeCombatant } from '../helpers/fixtures'
 
@@ -163,10 +164,14 @@ describe('respiration resolve', () => {
     expect(effects).toContainEqual({ targetId: 'A', kind: 'remove-fatigue', amount: 1 + endurance + 1 })
   })
 
-  it('flaw → spend 1 PA', () => {
+  // Le défaut ne coûte plus de PA : une mauvaise respiration se paie sur la
+  // durée (§ etats.md — 😩 Épuisé pose un plancher à la fatigue, que seule une
+  // nuit en Havre lève).
+  it('défaut → +1 😩 Épuisé, et AUCUNE perte de PA', () => {
     const { effects } = ACTION_DEFS['respiration'].resolve(
       { hit: false, critical: false, flaw: true }, makeCombatant('A'))
-    expect(effects).toContainEqual({ targetId: 'A', kind: 'spend-actions', amount: 1 })
+    expect(effects).toContainEqual({ targetId: 'A', kind: 'add-exhaustion', amount: 1 })
+    expect(effects.some(e => e.kind === 'spend-actions')).toBe(false)
   })
 
   it('no shift-mental effect (removed from respiration)', () => {
@@ -207,30 +212,94 @@ describe('stabilize resolve', () => {
     expect(effects).toContainEqual({ targetId: 'A', kind: 'add-reaction', amount: 1 })
   })
 
-  it('flaw → spend 1 PA', () => {
+  // Le défaut résout l'hémorragie SUR-LE-CHAMP au lieu d'attendre la fin de
+  // manche — plafonné à une blessure. Sans jeton 🩸, il n'y a rien à rouvrir.
+  it('défaut en saignant → 1💢 immédiate, et AUCUNE perte de PA', () => {
+    const bleeding = { ...makeCombatant('A'), bleed: 3 }
+    const { effects } = ACTION_DEFS['stabilize'].resolve(
+      { hit: false, critical: false, flaw: true }, bleeding)
+    expect(effects).toContainEqual({ targetId: 'A', kind: 'light-wound', amount: 1 })
+    expect(effects.some(e => e.kind === 'spend-actions')).toBe(false)
+    // La part garantie tient : le stock est bien vidé.
+    expect(effects).toContainEqual({ targetId: 'A', kind: 'remove-status', status: 'hemorrhage' })
+  })
+
+  it('défaut sans hémorragie → aucune blessure (rien à rouvrir)', () => {
     const { effects } = ACTION_DEFS['stabilize'].resolve(
       { hit: false, critical: false, flaw: true }, makeCombatant('A'))
-    expect(effects).toContainEqual({ targetId: 'A', kind: 'spend-actions', amount: 1 })
+    expect(effects.some(e => e.kind === 'light-wound')).toBe(false)
   })
 })
 
 // ─── GuardDef.effects ─────────────────────────────────────────────────────────
 
-describe('GUARD_DEFS[absorb] — attackerAdvantage', () => {
-  it('absorb grants 1 attacker advantage (passive guard penalty)', () => {
-    expect(GUARD_DEFS['absorb'].attackerAdvantage).toBe(1)
+/**
+ * 🟩 Concession (§ defense_reactions.md).
+ *
+ * Encaisser concède SANS condition — on ne résiste pas activement. Les Gardes
+ * actives ne concèdent que contre un type d'action précis : la Parade contre un
+ * tir, l'Esquive contre une zone. Lire `attackerAdvantage` seul ne dit donc plus
+ * rien : c'est `guardConcession(garde, tags)` qui fait foi.
+ */
+describe('concession 🟩 — inconditionnelle pour Encaisser, gâtée pour les autres', () => {
+  const MELEE:  CardTag[] = ['offensive', 'melee', 'physical']
+  const RANGED: CardTag[] = ['offensive', 'ranged', 'physical']
+  const ZONE:   CardTag[] = ['offensive', 'melee', 'zone']
+
+  it('Encaisser concède 1🟩 quoi qu\'il arrive', () => {
+    expect(guardConcession('absorb', MELEE)).toBe(1)
+    expect(guardConcession('absorb', RANGED)).toBe(1)
+    expect(guardConcession('absorb', undefined)).toBe(1)
   })
 
-  it('dodge grants no attacker advantage', () => {
-    expect(GUARD_DEFS['dodge'].attackerAdvantage ?? 0).toBe(0)
+  it('la Parade ne concède rien à une lame, 1🟩 à un projectile', () => {
+    expect(guardConcession('parry', MELEE)).toBe(0)
+    expect(guardConcession('parry', RANGED)).toBe(1)
   })
 
-  it('parry grants no attacker advantage', () => {
-    expect(GUARD_DEFS['parry'].attackerAdvantage ?? 0).toBe(0)
+  it("l'Esquive ne concède qu'aux attaques de zone", () => {
+    expect(guardConcession('dodge', MELEE)).toBe(0)
+    expect(guardConcession('dodge', RANGED)).toBe(0)
+    expect(guardConcession('dodge', ZONE)).toBe(1)
   })
 
-  it('block grants no attacker advantage', () => {
-    expect(GUARD_DEFS['block'].attackerAdvantage ?? 0).toBe(0)
+  it('tags inconnus (carte d\'adversaire) → aucune concession conditionnelle facturée', () => {
+    expect(guardConcession('parry', undefined)).toBe(0)
+    expect(guardConcession('dodge', undefined)).toBe(0)
+  })
+
+  it('le Blocage ne concède jamais — sa faiblesse est sa lenteur', () => {
+    expect(guardConcession('block', MELEE)).toBe(0)
+    expect(guardConcession('block', RANGED)).toBe(0)
+  })
+})
+
+/**
+ * 🕐 Vitesse de Garde : une Garde répond aux actions d'initiative ≥ à la sienne.
+ * Encaisser 1️⃣ · Parade 2️⃣ · Esquive/Dérobade 3️⃣ · Blocage 4️⃣.
+ */
+describe('vitesse de Garde — qui peut répondre à quoi', () => {
+  it('Encaisser répond à tout — c\'est le repli', () => {
+    for (const init of [1, 2, 3, 5, 6, 7]) expect(guardAnswers('absorb', init)).toBe(true)
+  })
+
+  it('seules Encaisser et Parade répondent à une Frappe opportuniste (2️⃣)', () => {
+    expect(guardAnswers('absorb', 2)).toBe(true)
+    expect(guardAnswers('parry',  2)).toBe(true)
+    expect(guardAnswers('dodge',  2)).toBe(false)
+    expect(guardAnswers('block',  2)).toBe(false)
+  })
+
+  it('on ne bloque pas une Frappe vive (3️⃣) : le bouclier est trop lent', () => {
+    expect(guardAnswers('dodge', 3)).toBe(true)
+    expect(guardAnswers('evade', 3)).toBe(true)
+    expect(guardAnswers('block', 3)).toBe(false)
+  })
+
+  it('une Attaque armée (5️⃣) laisse le choix des cinq', () => {
+    for (const g of ['absorb', 'parry', 'dodge', 'evade', 'block'] as const) {
+      expect(guardAnswers(g, 5)).toBe(true)
+    }
   })
 })
 
@@ -242,14 +311,17 @@ describe('GUARD_DEFS[absorb].effects', () => {
     expect(effects.some(e => e.kind === 'spend-reaction')).toBe(false)
   })
 
-  it('flaw → +1💧 fatigue on defender', () => {
+  // Le défaut d'Encaisser n'est plus la fatigue commune : c'est un 🔻. Encaisser
+  // vous coupe les moyens de ne plus encaisser — Concentré et son +1⚡ d'abord.
+  it('défaut → 🔻 sur la piste mentale (pas de fatigue)', () => {
     const { effects } = GUARD_DEFS['absorb'].effects({ flaw: true }, defender, true)
-    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-fatigue', amount: 1 })
+    expect(effects).toContainEqual({ targetId: 'B', kind: 'shift-mental', direction: 'toward-terror' })
+    expect(effects.some(e => e.kind === 'add-fatigue')).toBe(false)
   })
 
-  it('no flaw → no fatigue effect', () => {
+  it('no flaw → no effect at all', () => {
     const { effects } = GUARD_DEFS['absorb'].effects({ flaw: false }, defender, true)
-    expect(effects.some(e => e.kind === 'add-fatigue')).toBe(false)
+    expect(effects).toHaveLength(0)
   })
 })
 
@@ -280,34 +352,45 @@ describe('GUARD_DEFS[parry].effects — same reaction cost as dodge', () => {
   })
 })
 
-describe('GUARD_DEFS[block].effects — critical grants temporary protection', () => {
+describe('GUARD_DEFS[parry].effects — le critique rend la Réaction ⚡', () => {
   const defender = makeCombatant('B')
 
-  it('critical → adds 1 temporary protection 🛡️ to the defender', () => {
-    const { effects } = GUARD_DEFS['block'].effects({ flaw: false, critical: true }, defender, true)
-    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-temp-protection', amount: 1 })
-  })
-
-  it('no critical → no temp-protection effect', () => {
-    const { effects } = GUARD_DEFS['block'].effects({ flaw: false, critical: false }, defender, true)
-    expect(effects.some(e => e.kind === 'add-temp-protection')).toBe(false)
-  })
-
-  it('critical note mentions protection temporaire', () => {
-    const { notes } = GUARD_DEFS['block'].effects({ flaw: false, critical: true }, defender, true)
-    expect(notes.some(n => n.includes('🛡️'))).toBe(true)
-  })
-
-  it('critical with first use: spends reaction AND adds temp protection', () => {
-    const { effects } = GUARD_DEFS['block'].effects({ flaw: false, critical: true }, defender, true)
+  it('critique → +1⚡ : la Parade se rembourse elle-même', () => {
+    const { effects } = GUARD_DEFS['parry'].effects({ flaw: false, critical: true }, defender, true)
     expect(effects).toContainEqual({ targetId: 'B', kind: 'spend-reaction' })
-    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-temp-protection', amount: 1 })
+    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-reaction', amount: 1 })
   })
 
-  it('flaw with critical: fatigue + temp protection both applied', () => {
-    const { effects } = GUARD_DEFS['block'].effects({ flaw: true, critical: true }, defender, true)
-    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-fatigue', amount: 1 })
-    expect(effects).toContainEqual({ targetId: 'B', kind: 'add-temp-protection', amount: 1 })
+  it('sans critique → aucune ⚡ rendue', () => {
+    const { effects } = GUARD_DEFS['parry'].effects({ flaw: false, critical: false }, defender, true)
+    expect(effects.some(e => e.kind === 'add-reaction')).toBe(false)
+  })
+})
+
+/**
+ * Issues portées par la donnée mais PAS ENCORE branchées (`wired: false`) :
+ * elles exigent une Garde mutable, réévaluée coup par coup. Le moteur les
+ * ignore SILENCIEUSEMENT — pas d'effet, et surtout pas de note qui annoncerait
+ * un effet qui n'a pas eu lieu. Ce test verrouille ce contrat.
+ */
+describe('issues de Garde non branchées — ignorées en silence', () => {
+  const defender = makeCombatant('B')
+
+  it('le critique du Blocage (initiative) ne produit ni effet ni note', () => {
+    const { effects, notes } = GUARD_DEFS['block'].effects({ flaw: false, critical: true }, defender, true)
+    expect(effects).toEqual([{ targetId: 'B', kind: 'spend-reaction' }])
+    expect(notes).toHaveLength(0)
+  })
+
+  it('le défaut du Blocage (initiative) ne produit ni fatigue ni note', () => {
+    const { effects, notes } = GUARD_DEFS['block'].effects({ flaw: true, critical: false }, defender, true)
+    expect(effects.some(e => e.kind === 'add-fatigue')).toBe(false)
+    expect(notes).toHaveLength(0)
+  })
+
+  it("le critique de l'Esquive (déplacement) ne produit rien non plus", () => {
+    const { effects } = GUARD_DEFS['dodge'].effects({ flaw: false, critical: true }, defender, true)
+    expect(effects).toEqual([{ targetId: 'B', kind: 'spend-reaction' }])
   })
 })
 
@@ -522,5 +605,43 @@ describe('availableGuards', () => {
   it('excludes block when robustness < 2', () => {
     const s = makeCombatant('A', { skills: { ...makeCharacter().skills, robustness: 1 } })
     expect(availableGuards(s)).not.toContain('block')
+  })
+})
+
+// ─── Ordre de résolution d'une issue ─────────────────────────────────────────
+
+/**
+ * ⚠️ Défaut, puis ✴️ Critique, puis l'issue (✅/◐) — l'ordre IMPRIMÉ sur la carte
+ * (cf. le schéma de rules/fr/cartes/README.md, où `defaut` et `critique`
+ * précèdent `effet`/`succes`/`echec`).
+ *
+ * Il n'est pas cosmétique : plusieurs effets sont plafonnés, absorbés ou
+ * conditionnés à l'état courant, donc leur rang change le résultat. Le moteur
+ * les appliquait dans l'ordre inverse.
+ */
+describe("ordre de résolution — ⚠️ et ✴️ avant l'issue", () => {
+  it('une action déclarative émet son défaut avant son succès', () => {
+    const { effects } = ACTION_DEFS['armed-attack'].resolve(
+      { hit: true, critical: false, flaw: true }, makeCombatant('A'), makeCombatant('B'))
+    const flawIdx    = effects.findIndex(e => e.kind === 'add-fatigue' && e.targetId === 'A')
+    const successIdx = effects.findIndex(e => e.kind === 'light-wound' && e.targetId === 'B')
+    expect(flawIdx).toBeGreaterThanOrEqual(0)
+    expect(flawIdx).toBeLessThan(successIdx)
+  })
+
+  it('le critique précède aussi l\'issue', () => {
+    const { effects } = ACTION_DEFS['armed-attack'].resolve(
+      { hit: true, critical: true, flaw: false }, makeCombatant('A'), makeCombatant('B'))
+    const critIdx    = effects.findIndex(e => e.kind === 'add-status')
+    const successIdx = effects.findIndex(e => e.kind === 'light-wound')
+    expect(critIdx).toBeLessThan(successIdx)
+  })
+
+  it('Respiration : le marqueur 😩 tombe avant la récupération qu\'il plafonne', () => {
+    const { effects } = ACTION_DEFS['respiration'].resolve(
+      { hit: true, critical: false, flaw: true }, makeCombatant('A'))
+    const exhaustIdx = effects.findIndex(e => e.kind === 'add-exhaustion')
+    const healIdx    = effects.findIndex(e => e.kind === 'remove-fatigue')
+    expect(exhaustIdx).toBeLessThan(healIdx)
   })
 })

@@ -29,6 +29,8 @@ import { buildPool, roll } from '../dieSystem'
 import { effChar, isDefeated, mentalRollModifiers, canReact } from './combatant'
 import { STATUS_DEFS } from './status'
 import { loadPlayerActionDefs } from './actions-data'
+import { loadGuardDefs } from './guards-data'
+import { applyTraitOverlays } from './traits'
 
 // Grammaire et interpréteur déclaratifs : ré-exportés depuis effect-ops.ts
 // (les issues elles-mêmes vivent dans data/player_actions.yaml).
@@ -170,25 +172,30 @@ export interface GuardDef {
   rollChar:    CharacteristicName
   rollSkill:   SkillName
   /**
-   * Reaction speed of this guard.
-   * A guard can only be used against attacks whose initiative is strictly higher:
-   *   guardDef.initiative < attackDef.initiative
+   * VITESSE de la Garde (§ defense_reactions.md — 🕐 Vitesse de Garde).
+   * Une Garde ne répond qu'aux actions dont l'initiative est ≥ à la sienne :
+   *   guardDef.initiative <= attackDef.initiative
+   * À défaut, le personnage Encaisse — c'est pourquoi Encaisser est gratuite.
    *
-   * Lower = faster = usable against more attacks.
-   *   absorb  0  — passive; always available (no initiative constraint)
-   *   dodge   2  — quick sidestep; reacts to sharp/unarmed(3), armed(5), brutal(6)
-   *   parry   4  — weapon discipline; reacts to armed(5), brutal(6) only
-   *   block   5  — heavy block; only reacts to brutal-strike(6)
+   * Plus bas = plus rapide = répond à plus de choses.
+   *   absorb 1 — tout
+   *   parry  2 — initiative 2 et plus (y compris la Frappe opportuniste)
+   *   dodge  3 — initiative 3 et plus · evade 3 — idem
+   *   block  4 — initiative 4 et plus (jamais une Frappe vive)
    */
   initiative:  number
   /**
-   * Number of 🟩 advantage dice granted to the **attacker** when this guard is chosen.
+   * Nombre de dés 🟩 concédés à l'ATTAQUANT quand cette Garde est choisie.
    *
-   * Encaisser (absorb) grants 1 advantage: the defender accepts the blow without
-   * actively resisting, so the attacker rolls with a free advantage die.
-   * Active guards (dodge, parry, block) grant no advantage to the attacker.
+   * Encaisser en concède 1 sans condition : on ne résiste pas activement.
+   * Les Gardes actives ne concèdent que contre un type d'action précis, dit par
+   * `concessionTag` — la Parade contre les tirs, l'Esquive contre les zones.
    */
   attackerAdvantage?: number
+  /** Restreint la concession aux actions portant ce tag. Absent = inconditionnelle. */
+  concessionTag?: CardTag
+  /** Ne peut pas être brisée (Encaisser). */
+  unbreakable?: boolean
   isAvailable: (defender: CombatantState) => boolean
   /**
    * Roll this guard and return the full result.
@@ -242,30 +249,6 @@ function makeGuardRoll(char: CharacteristicName, skill: SkillName) {
   }
 }
 
-/**
- * Build a guard `effects` function.
- *  reactionCost = 0 → Encaisser: never spends a reaction; still flaws.
- *  reactionCost = 1 → Active guard: spends 1⚡ on first use this round.
- */
-function makeGuardEffects(reactionCost: number) {
-  return (
-    outcome:    { flaw: boolean; critical?: boolean },
-    defender:   CombatantState,
-    isFirstUse: boolean,
-  ): { effects: CombatEffect[]; notes: string[] } => {
-    const effects: CombatEffect[] = []
-    const notes:   string[]       = []
-    if (isFirstUse && reactionCost > 0) {
-      effects.push({ targetId: defender.id, kind: 'spend-reaction' })
-    }
-    if (outcome.flaw) {
-      effects.push({ targetId: defender.id, kind: 'add-fatigue', amount: 1 })
-      notes.push('⚠️ Défaut de Garde — défenseur +1💧')
-    }
-    return { effects, notes }
-  }
-}
-
 // ─── Roll params builder ──────────────────────────────────────────────────────
 
 /**
@@ -305,75 +288,54 @@ export function rollParamsFrom(
 
 export const ACTION_DEFS: Record<ActionId, ActionDef> = loadPlayerActionDefs()
 
+/**
+ * La def de `actionId` **telle que ce combattant la joue** : la def de base,
+ * ajustée par ses traits (§ traits.md — Momentum change le prix de la Frappe
+ * brutale, pas son effet).
+ *
+ * C'est LE seam à préférer à `ACTION_DEFS[id]` partout où le coût est lu ou
+ * dépensé. Sans trait porté, c'est exactement la même référence d'objet —
+ * aucun surcoût, aucun changement de comportement.
+ *
+ * ⚠️ Les modes réactifs ⚒️ ne passent PAS par ici : ils AJOUTENT une variante
+ * (cf. `reactionDefs`), ils ne remplacent pas la def de base.
+ */
+export function defFor(state: CombatantState, actionId: ActionId): ActionDef {
+  return applyTraitOverlays(state, ACTION_DEFS[actionId])
+}
+
 // ─── Guard definitions ────────────────────────────────────────────────────────
 
-export const GUARD_DEFS: Record<GuardId, GuardDef> = {
+/**
+ * Les cinq Gardes, CHARGÉES depuis data/guards.yaml — plus aucune règle de garde
+ * n'est écrite ici. Le loader reçoit `makeGuardRoll` pour que le jet applique
+ * les modificateurs défensifs de l'état mental sans créer de cycle d'import.
+ */
+export const GUARD_DEFS: Record<GuardId, GuardDef> = loadGuardDefs(makeGuardRoll)
 
-  // Encaisser: passive default — costs 0 reactions, always available
-  // initiative 0: can always absorb any attack (no speed constraint)
-  // attackerAdvantage 1: no active resistance → attacker rolls with 1🟩
-  absorb: {
-    id: 'absorb', label: 'Encaisser',
-    initiative: 0,
-    attackerAdvantage: 1,
-    cost: { actions: 0, reactions: 0, endPlayerRound: false },
-    rollChar: 'vigor', rollSkill: 'recovery',
-    isAvailable: () => true,
-    rollDC:  makeGuardRoll('vigor', 'recovery'),
-    effects: makeGuardEffects(0),
-  },
+/**
+ * 🟩 concédés à l'attaquant par le choix de Garde.
+ *
+ * Encaisser concède sans condition ; les Gardes actives ne concèdent que contre
+ * un type d'action donné (`concessionTag`) — la Parade contre les tirs, l'Esquive
+ * contre les zones. Sans tags connus (carte d'adversaire hors ACTION_DEFS), une
+ * concession conditionnelle ne s'applique pas.
+ */
+export function guardConcession(guardId: GuardId, tags?: readonly CardTag[]): number {
+  const def = GUARD_DEFS[guardId]
+  const amount = def.attackerAdvantage ?? 0
+  if (amount === 0) return 0
+  if (!def.concessionTag) return amount
+  return tags?.includes(def.concessionTag) ? amount : 0
+}
 
-  // Esquive: active reaction — costs 1⚡ on first use
-  // initiative 2: quick sidestep, reacts to sharp-strike(3), armed-attack(5), brutal-strike(6)
-  dodge: {
-    id: 'dodge', label: 'Esquive',
-    initiative: 2,
-    cost: { actions: 0, reactions: 1, endPlayerRound: false },
-    rollChar: 'agility', rollSkill: 'mobility',
-    isAvailable: (d) => !isDefeated(d),
-    rollDC:  makeGuardRoll('agility', 'mobility'),
-    effects: makeGuardEffects(1),
-  },
-
-  // Parade: active reaction — costs 1⚡; requires a weapon (power ≥ 1 as proxy)
-  // initiative 4: weapon discipline, reacts to armed-attack(5) and brutal-strike(6)
-  parry: {
-    id: 'parry', label: 'Parade',
-    initiative: 4,
-    cost: { actions: 0, reactions: 1, endPlayerRound: false },
-    rollChar: 'acuity', rollSkill: 'vigilance',
-    isAvailable: (d) => d.skills.power >= 1,
-    rollDC:  makeGuardRoll('acuity', 'vigilance'),
-    effects: makeGuardEffects(1),
-  },
-
-  // Blocage: active reaction — costs 1⚡; requires a shield (robustness ≥ 2 as proxy)
-  // initiative 5: heavy block, only reacts to brutal-strike(6)
-  // ✴️ Critical: the shield absorbs the blow → defender gains +1 temporary protection 🛡️
-  block: {
-    id: 'block', label: 'Blocage',
-    initiative: 5,
-    cost: { actions: 0, reactions: 1, endPlayerRound: false },
-    rollChar: 'strength', rollSkill: 'robustness',
-    isAvailable: (d) => d.skills.robustness >= 2,
-    rollDC: makeGuardRoll('strength', 'robustness'),
-    effects(outcome, defender, isFirstUse) {
-      const effects: CombatEffect[] = []
-      const notes:   string[]       = []
-      if (isFirstUse) {
-        effects.push({ targetId: defender.id, kind: 'spend-reaction' })
-      }
-      if (outcome.flaw) {
-        effects.push({ targetId: defender.id, kind: 'add-fatigue', amount: 1 })
-        notes.push('⚠️ Défaut de Garde — défenseur +1💧')
-      }
-      if (outcome.critical) {
-        effects.push({ targetId: defender.id, kind: 'add-temp-protection', amount: 1 })
-        notes.push('✴️ Critique — bouclier absorbe le choc (+1🛡️ temporaire)')
-      }
-      return { effects, notes }
-    },
-  },
+/**
+ * Une Garde peut-elle répondre à une action de cette initiative ?
+ * § defense_reactions.md — 🕐 Vitesse de Garde : la Garde doit être au moins
+ * aussi rapide que l'action (initiative ≥ à la sienne).
+ */
+export function guardAnswers(guardId: GuardId, attackInitiative: number): boolean {
+  return GUARD_DEFS[guardId].initiative <= attackInitiative
 }
 
 // ─── Check-roll parameters (single source, shared with the planner) ───────────
@@ -397,10 +359,9 @@ export function checkRollParams(
   const targetAdvantages = target && 'status' in target
     ? target.status.reduce((sum, id) => sum + (STATUS_DEFS[id]?.attackerAdvantage ?? 0), 0)
     : 0
-  // Accumulate 🟩 advantages from the guard choice (Encaisser grants 1 advantage to the attacker)
-  const guardAdvantage = guardId != null
-    ? (GUARD_DEFS[guardId].attackerAdvantage ?? 0)
-    : 0
+  // 🟩 concédés par le choix de Garde — inconditionnels (Encaisser) ou gâtés par
+  // le type d'action (la Parade ne concède que contre un tir).
+  const guardAdvantage = guardId != null ? guardConcession(guardId, action.tags) : 0
   const totalAdvantages = targetAdvantages + guardAdvantage + (action.selfAdvantage ?? 0)
   // Mental track: an attack is an OFFENSIVE roll (self-targeted actions are neither).
   const mentalMods = action.selfTargeted
@@ -432,7 +393,7 @@ export function resolveAction(
   const action = ACTION_DEFS[actionId]
   const params = checkRollParams(actorSnapshot, actionId, ctx.target, ctx.guardId)
   const guardAdvantage = ctx.guardId != null
-    ? (GUARD_DEFS[ctx.guardId].attackerAdvantage ?? 0)
+    ? guardConcession(ctx.guardId, action.tags)
     : 0
   const checkRoll = roll(buildPool(params), params.rerolls ?? 0)
 
@@ -521,7 +482,8 @@ export function canUseAction(state: CombatantState, actionId: ActionId): boolean
  */
 export function canAffordAction(state: CombatantState, actionId: ActionId): boolean {
   if (state.lastActionPlayed) return false
-  const cost = ACTION_DEFS[actionId].cost
+  // Le PRIX est ce que les traits touchent (Momentum) → def effective.
+  const cost = defFor(state, actionId).cost
   if (cost.actions   > state.actions)   return false
   if (cost.reactions > state.reactions) return false
   if (cost.endPlayerRound && state.status.some(id => STATUS_DEFS[id]?.preventsEndRound)) return false
@@ -541,5 +503,5 @@ export function canUseGuard(state: CombatantState, guardId: GuardId): boolean {
 
 /** All guards currently available to this combatant */
 export function availableGuards(state: CombatantState): GuardId[] {
-  return (['absorb', 'dodge', 'parry', 'block'] as GuardId[]).filter(g => canUseGuard(state, g))
+  return (Object.keys(GUARD_DEFS) as GuardId[]).filter(g => canUseGuard(state, g))
 }

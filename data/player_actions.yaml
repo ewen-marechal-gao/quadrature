@@ -162,7 +162,9 @@ actions:
         fr: "Tir ajusté et patient. Succès : 1💔 blessure grave, Échec : 2💢. Critique : hémorragie 🩸. Défaut : +1💧 pour toi. Coûte 1💧 en plus des PA. Portée 24 ; pas de tir au contact.",
         en: "Patient aimed shot. Hit: 1💔, miss: 2💢. Crit: hemorrhage 🩸. Flaw: +1💧 self. Range 24; no shot when engaged.",
       }
-    initiative: 8
+    # 7 = la valeur de la carte du vault (tir-cible). Le moteur portait 8 : la
+    # divergence a vécu tant que le test de cohérence ne voyait pas cette action.
+    initiative: 7
     cost: { actions: 2, fatigue: 1 }
     tags: [offensive, ranged, physical, physicalDamage]
     minRange: 1              # pas de tir si engagé (§ equipement — arc)

@@ -22,6 +22,8 @@ interface YamlInventory {
 
 interface YamlShape {
   name:       string
+  /** Ids de traits portés (§ traits.md) — voir character/traits.ts. */
+  traits?:    string[]
   inventory?: YamlInventory
   people?:    { name: string; caracs: string[]; skills: string[] }
   origin?:    { caracs: string[]; skills: string[] }
@@ -55,6 +57,7 @@ export function serializeToYaml(char: Character): string {
 
   const yamlObj: YamlShape = {
     name: char.name,
+    ...(char.traits && char.traits.length > 0 && { traits: char.traits }),
     ...(Object.keys(inventoryBlock).length > 0 && { inventory: inventoryBlock }),
     ...(char.people   && { people:   char.people }),
     ...(char.origin   && { origin:   char.origin }),
@@ -106,6 +109,7 @@ export function deserializeFromYaml(yamlStr: string): Character {
 
   const char: Character = {
     name: raw.name,
+    ...(Array.isArray(raw.traits) && raw.traits.length > 0 && { traits: raw.traits.map(String) }),
     ...(raw.people    && { people:     raw.people   as PeopleChoice }),
     ...(raw.origin    && { origin:     raw.origin   as OriginChoice }),
     ...(raw.training  && { training:   raw.training as TrainingChoice }),

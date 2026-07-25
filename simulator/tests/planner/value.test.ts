@@ -158,3 +158,42 @@ describe('scoreEffects — sign convention and personas', () => {
       .toBeLessThan(scoreEffects(cost, ctx(self, enemy, PERSONA_WEIGHTS.aggressive)))
   })
 })
+
+// ─── Hémorragie 🩸 : la projection doit TERMINER ──────────────────────────────
+
+/**
+ * Régression : à Récupération 0, le stock de 🩸 ne décroît jamais (§ etats.md —
+ * « un personnage sans Récupération ne referme rien seul »), et la projection
+ * des saignées à venir bouclait indéfiniment. Ce n'était pas théorique :
+ * Brawler_powerful est à Récupération 0, et le premier jeton posé par le
+ * Faucheur figeait le combat dès la manche 1 — pas de crash, pas d'exception,
+ * juste un processus qui ne rend jamais la main.
+ */
+describe('projection du saignement 🩸', () => {
+  const bleeder = (recovery: number, bleed: number): CombatantState => {
+    const s = makeCombatant('B')
+    return { ...s, bleed, skills: { ...s.skills, recovery } }
+  }
+  const addBleed: CombatEffect = { targetId: 'B', kind: 'add-status', status: 'hemorrhage' }
+
+  it('termine à Récupération 0 (le cas qui bloquait)', () => {
+    // Sans borne, cet appel ne revient jamais : c'est le test qui pend, pas qui échoue.
+    expect(effectBurden(addBleed, bleeder(0, 0))).toBeGreaterThan(0)
+    expect(effectBurden(addBleed, bleeder(0, 4))).toBeGreaterThan(0)
+  })
+
+  it('un saignement que rien ne referme coûte plus cher qu\'un saignement résorbable', () => {
+    expect(effectBurden(addBleed, bleeder(0, 2)))
+      .toBeGreaterThan(effectBurden(addBleed, bleeder(2, 2)))
+  })
+
+  it('à Récupération ≥ 1, un stock sous le seuil ne saigne pas', () => {
+    // Récupération 3, stock 1 → le corps referme avant la fin de manche.
+    expect(effectBurden(addBleed, bleeder(3, 0))).toBe(0)
+  })
+
+  it('le coût croît avec le stock déjà porté', () => {
+    expect(effectBurden(addBleed, bleeder(1, 5)))
+      .toBeGreaterThan(effectBurden(addBleed, bleeder(1, 1)))
+  })
+})
