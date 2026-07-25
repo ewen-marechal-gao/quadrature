@@ -15,11 +15,13 @@
 # seconde arme (perks T2) débloque mécaniquement toutes les options croisées.
 #
 # ── Ce qui est branché, et ce qui ne l'est pas ─────────────────────────────────
-# Lot 1 ne BRANCHE que `rollSubstitution` (Escrime 🟨🟨 au lieu de X). Tout le
-# reste — `mentalInit`, `reactionOnTrigger` (les ♾️ Formes), `rollBonus`,
-# `costOverride`, `outcomeRider` — est de la DONNÉE porteuse, marquée
-# `wired: false` et ignorée par le moteur, exactement comme le Contrecoup des
-# gardes. La donnée est là, le moteur suivra (Lot 2).
+# Branchés : `rollSubstitution` (Lot 1) ; `mentalInit` et `reactionOnTrigger`
+# (Lot 2 — les ♾️ Formes : état mental de départ + ⚡ sur déclencheur gaté). Reste
+# de la DONNÉE porteuse, marquée `wired: false` et ignorée par le moteur (comme le
+# Contrecoup des gardes) : `rollBonus` (relance Fine Lame), `costOverride`
+# (Insaisissable — Posture absente), `outcomeRider` (riders Belliciste), et le
+# déclencheur `guard-weakened` du Duelliste (exige une Garde mutable — chantier
+# Garde dynamique, avec la Riposte).
 
 discipline:
   id:   fencing
@@ -44,9 +46,9 @@ perks:
     grants:
       - { kind: skillTag, value: style-duelist }
       - { kind: skillTagChoice, options: [favweapon-light, favweapon-broad, favweapon-heavy] }
-      # ♾️ Combat sur la défensive — commence Prudent ; ⚡ quand la Garde est
-      # affaiblie/brisée. Exige une Garde mutable (chantier Garde dynamique).
-      - { kind: mentalInit, state: cautious, wired: false }
+      # ♾️ Combat sur la défensive — commence Prudent (branché) ; ⚡ quand la Garde
+      # est affaiblie/brisée (différé — exige une Garde mutable, avec la Riposte).
+      - { kind: mentalInit, state: cautious }
       - { kind: reactionOnTrigger, on: guard-weakened, whileMental: [cautious], amount: 1, wired: false }
       # [Lames larges] Mur de lame — Escrime au lieu de Vigilance en Parade.
       - { kind: rollSubstitution, target: { type: guard, id: parry }, requiresSkillTag: favweapon-broad }
@@ -66,11 +68,11 @@ perks:
     grants:
       - { kind: skillTag, value: style-finesse }
       - { kind: skillTagChoice, options: [favweapon-light, favweapon-broad, favweapon-heavy] }
-      # ♾️ Formes parfaites — commence Concentré ; +1 relance sur les jets Escrime,
-      # et ⚡ sur un jet Escrime réussi sans Défaut, tant que Concentré.
-      - { kind: mentalInit, state: focused, wired: false }
+      # ♾️ Formes parfaites — commence Concentré (branché) ; ⚡ sur un jet Escrime
+      # réussi sans Défaut tant que Concentré (branché). La +1 relance reste différée.
+      - { kind: mentalInit, state: focused }
       - { kind: rollBonus, on: fencing-roll, whileMental: [focused], rerolls: 1, wired: false }
-      - { kind: reactionOnTrigger, on: fencing-success-no-flaw, whileMental: [focused], amount: 1, wired: false }
+      - { kind: reactionOnTrigger, on: fencing-success-no-flaw, whileMental: [focused], amount: 1 }
       # [Lames légères] Escrime au lieu de Précision pour Frappe vive.
       - { kind: rollSubstitution, target: { type: action, id: sharp-strike }, requiresSkillTag: favweapon-light }
       # [Lames larges] Escrime au lieu de Mobilité pour Charge.
@@ -89,9 +91,9 @@ perks:
       - { kind: skillTag, value: style-warmonger }
       - { kind: skillTagChoice, options: [favweapon-light, favweapon-broad, favweapon-heavy] }
       # ♾️ Attaques acharnées — commence Agressif ; ⚡ à chaque attaque armée
-      # réussie, tant qu'Agressif.
-      - { kind: mentalInit, state: aggressive, wired: false }
-      - { kind: reactionOnTrigger, on: armed-attack-success, whileMental: [aggressive], amount: 1, wired: false }
+      # réussie, tant qu'Agressif (branché).
+      - { kind: mentalInit, state: aggressive }
+      - { kind: reactionOnTrigger, on: armed-attack-success, whileMental: [aggressive], amount: 1 }
       # Riders par catégorie sur l'attaque armée — Estafilades / Entailles / Empaler.
       - { kind: outcomeRider, target: { type: action, id: armed-attack }, requiresSkillTag: favweapon-light, wired: false }
       - { kind: outcomeRider, target: { type: action, id: armed-attack }, requiresSkillTag: favweapon-broad, wired: false }

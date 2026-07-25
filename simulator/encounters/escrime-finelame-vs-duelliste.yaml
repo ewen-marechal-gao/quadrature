@@ -1,0 +1,20 @@
+name: "Escrime — Fine Lame vs Duelliste"
+description: >
+  L'attaque technique contre la contre-mesure. La Fine Lame cherche la Frappe vive
+  propre ; le Duelliste, Prudent, pare en Escrime (Mur de lame) là où sa Vigilance
+  est nulle. Test du levier de substitution DÉFENSIF.
+
+maxRounds: 20
+
+factions:
+  - name: "Fine Lame"
+    characters:
+      - sheet: characterSheets/Fencer_finesse.yaml
+        persona: opportunist
+    allowedActions: [sharp-strike, armed-attack, preparation, stabilize, respiration]
+
+  - name: "Duelliste"
+    characters:
+      - sheet: characterSheets/Fencer_duelist.yaml
+        persona: cautious
+    allowedActions: [armed-attack, stabilize, respiration]

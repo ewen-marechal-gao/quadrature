@@ -7,13 +7,16 @@
  * — comme combat/traits.ts.
  *
  * ── Familles implémentées ─────────────────────────────────────────────────────
- *  · `rollSubstitution` → `rollSubstitutionRank` (armes de prédilection : Escrime
- *    🟨🟨 au lieu de la compétence, sur actions ET gardes).
+ *  · `rollSubstitution`   → `rollSubstitutionRank` (armes de prédilection : Escrime
+ *    🟨🟨 au lieu de la compétence, sur actions ET gardes). — Lot 1
+ *  · `mentalInit`         → `initialMentalState` (les ♾️ Formes : état mental de
+ *    début de combat). — Lot 2
+ *  · `reactionOnTrigger`  → `reactionGrants` (⚡ sur déclencheur, gaté par l'état
+ *    mental — Belliciste, Fine Lame). — Lot 2
  *
  * ── Familles cadrées, pas encore branchées (grants `wired: false`) ────────────
- *  · `mentalInit` / `reactionOnTrigger` → les ♾️ Formes (état mental initial +
- *    ⚡ sur déclencheur gaté). Lot 2.
- *  · `rollBonus` / `costOverride` / `outcomeRider` → passifs restants.
+ *  · `rollBonus` (relance Fine Lame) · `costOverride` · `outcomeRider` (Belliciste)
+ *  · le déclencheur `guard-weakened` du Duelliste (exige une Garde mutable).
  *
  * Le porteur est lu depuis `state.char` (source unique de la fiche, toujours
  * présente sur un CombatantState) : pas de champ dupliqué sur l'état, donc aucun
@@ -21,6 +24,8 @@
  */
 
 import type { Character, DisciplineId } from '../character/types'
+import type { CombatEffect, MentalState } from './types'
+import { MENTAL_STATES } from './types'
 import { PERK_DEFS, effectiveSkillTags } from '../character/disciplines'
 
 /** Le porteur, réduit à ce dont ce module a besoin (la fiche). */
@@ -57,4 +62,72 @@ export function rollSubstitutionRank(
     }
   }
   return null
+}
+
+// ─── Famille `mentalInit` : l'état mental de départ (les ♾️ Formes) ────────────
+
+/**
+ * État mental de DÉBUT de combat imposé par les perks (Duelliste→Prudent, Fine
+ * Lame→Concentré, Belliciste→Agressif). `'focused'` par défaut, comme avant.
+ *
+ * Si plusieurs Formes en imposent un, la PREMIÈRE portée l'emporte : le choix du
+ * joueur n'est pas modélisé, mais un combattant de test n'a qu'une Forme.
+ */
+export function initialMentalState(char: Character): MentalState {
+  for (const id of char.perks ?? []) {
+    for (const g of PERK_DEFS[id]?.grants ?? []) {
+      if (g.kind === 'mentalInit' && g.wired !== false && MENTAL_STATES.includes(g.state as MentalState)) {
+        return g.state as MentalState
+      }
+    }
+  }
+  return 'focused'
+}
+
+// ─── Famille `reactionOnTrigger` : ⚡ sur déclencheur (les ♾️ Formes) ───────────
+
+/** Faits d'une action résolue dont dépendent les déclencheurs ♾️. */
+export interface ActionResolution {
+  /** Attaque armée = tags `melee` + `physicalDamage` (exclut mains nues, tir). */
+  isArmedAttack: boolean
+  /** Le jet a substitué la discipline (Escrime 🟨🟨). */
+  usedFencing:   boolean
+  hit:  boolean
+  flaw: boolean
+  mentalState: MentalState
+}
+
+/** Un déclencheur ♾️ a-t-il feu, au vu des faits de l'action ? */
+const TRIGGER_FIRES: Record<string, (r: ActionResolution) => boolean> = {
+  'armed-attack-success':    r => r.isArmedAttack && r.hit,
+  'fencing-success-no-flaw': r => r.usedFencing && r.hit && !r.flaw,
+}
+
+/**
+ * ⚡ gagnées via les ♾️ Formes après une action résolue :
+ *  · Belliciste — une attaque armée réussie, tant qu'Agressif ;
+ *  · Fine Lame — un jet Escrime réussi sans Défaut, tant que Concentré.
+ *
+ * Gaté par l'état mental (`whileMental`). Le déclencheur `guard-weakened` du
+ * Duelliste est `wired: false` → il ne passe jamais ici.
+ */
+export function reactionGrants(
+  carrier: PerkCarrier,
+  actorId: string,
+  res:     ActionResolution,
+): { effects: CombatEffect[]; notes: string[] } {
+  const effects: CombatEffect[] = []
+  const notes:   string[]       = []
+  for (const id of carrier.char.perks ?? []) {
+    const def = PERK_DEFS[id]
+    if (!def) continue
+    for (const g of def.grants) {
+      if (g.kind !== 'reactionOnTrigger' || g.wired === false) continue
+      if (!TRIGGER_FIRES[g.on]?.(res)) continue
+      if (g.whileMental && !g.whileMental.includes(res.mentalState)) continue
+      effects.push({ targetId: actorId, kind: 'add-reaction', amount: g.amount })
+      notes.push(`♾️ ${def.name} — +${g.amount}⚡`)
+    }
+  }
+  return { effects, notes }
 }

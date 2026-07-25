@@ -17,13 +17,15 @@ import { STATUS_DEFS } from './status'
 import { applyMove } from './position'
 import { PHYSICAL_CHARACTERISTICS, MENTAL_CHARACTERISTICS } from '../character/data'
 import { MENTAL_STATES } from './types'
+import { initialMentalState } from './perks'
 import { roll, buildPool } from '../dieSystem'
 
 // ─── Initialisation ───────────────────────────────────────────────────────────
 
 /**
  * Create a fresh CombatantState from a Character sheet.
- * Starting mental state is 'focused'; reactions = reactivity skill; actions = 3.
+ * Starting mental state is 'focused' by default, or the state imposed by a ♾️
+ * Forme (§ disciplines/ — Duelliste→Prudent, etc.); reactions = reactivity; actions = 3.
  */
 export function initCombatant(char: Character): CombatantState {
   const reactivity = char.skills.reactivity
@@ -36,7 +38,7 @@ export function initCombatant(char: Character): CombatantState {
     lightWounds:       0,
     heavyWounds:       0,
     fatigue:           1,   // § Fatigue : débute à 1, jamais sous 1
-    mentalState:       'focused',
+    mentalState:       initialMentalState(char),
     stability:         0,   // set below via stabilityPool (needs the built state)
     bleed:             0,
     exhaustion:        0,

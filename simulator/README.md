@@ -135,7 +135,7 @@ src/
 │   ├── status.ts       # STATUS_DEFS (essoufflé, sonné, à terre, hémorragie…)
 │   ├── effect-ops.ts   # grammaire d'effets partagée PJ ↔ adversaires
 │   ├── traits.ts       # face combat des traits (modes réactifs, coûts)
-│   └── perks.ts        # face combat des perks : substitution de jet d'Escrime
+│   └── perks.ts        # face combat des perks : substitution de jet + ♾️ Formes
 ├── adversary/     # Créatures : parties à blocs, ressources régénérantes, dés d'adversaire, heuristique de deck
 ├── planner/       # Le cerveau des agents scriptés (cf. § ci-dessous)
 │   ├── prob.ts        # distributions EXACTES des jets (mémoïsées)
@@ -197,20 +197,24 @@ Un perk va plus loin qu'un trait : il porte une **liste hétérogène de `grants
 | :--- | :--- | :--- |
 | `rollSubstitution` | jouer la discipline 🟨🟨 au lieu d'une compétence, sur une action **ou** une garde | ✅ (Lot 1) |
 | `skillTag` / `skillTagChoice` | conférer un marqueur / offrir un choix de build (arme de prédilection) | ✅ (validation) |
-| `mentalInit`, `reactionOnTrigger` | les ♾️ Formes : état mental initial + ⚡ sur déclencheur gaté | ⏳ Lot 2 |
-| `rollBonus`, `costOverride`, `outcomeRider` | passifs restants | ⏳ |
+| `mentalInit` | les ♾️ Formes : état mental de début de combat (Duelliste→Prudent…) | ✅ (Lot 2) |
+| `reactionOnTrigger` | les ♾️ Formes : ⚡ sur déclencheur gaté par l'état mental | ✅ (Lot 2) |
+| `rollBonus`, `costOverride`, `outcomeRider` | passifs restants (+ le déclencheur `guard-weakened` du Duelliste) | ⏳ |
 
 Un grant `wired: false` est de la **donnée porteuse** ignorée par le moteur (même
 convention que le Contrecoup des gardes) — la donnée est complète, le moteur suit
 par lots. La **substitution** est câblée là où le jet se construit, une seule fois :
 `checkRollParams` (actions, vue aussi par le planificateur) et `makeGuardRoll`
 (gardes) ; elle remplace la valeur de compétence par le rang de discipline, la
-caractéristique 🟦 ne bouge pas. Le porteur est lu depuis `state.char`, donc aucun
-champ n'est dupliqué sur l'état de combat.
+caractéristique 🟦 ne bouge pas. Les **♾️ Formes** posent l'état mental de départ
+(`initCombatant`) et rendent une ⚡ après une action résolue (`resolveAction` :
+Belliciste sur attaque armée réussie, Fine Lame sur jet Escrime réussi sans Défaut).
+Le porteur est lu depuis `state.char`, donc aucun champ n'est dupliqué sur l'état.
 
 **Escrime** est la première discipline branchée : les trois Formes (Duelliste,
-Fine Lame, Belliciste) avec leurs substitutions par arme de prédilection. Les ♾️
-et les Bottes suivront.
+Fine Lame, Belliciste) avec leurs substitutions par arme de prédilection **et leurs
+♾️** (état mental initial + génération de ⚡). Restent la Riposte du Duelliste (elle
+attend une Garde mutable) et les Bottes.
 
 ---
 
@@ -277,9 +281,12 @@ volontairement simplifiés ou **en avance** sur le vault :
   rouler l'Attaque armée sur Puissance pour tout le monde, dague ou rapière.
 - **Nuances de tir non modélisées** : avantage 🟩 contre Parade, mode réactif du
   Tir rapide, relance 🟦 du Tir ajusté (⚒️ différés).
-- **Escrime partielle (Lot 1)** : seule la substitution de jet par arme de
-  prédilection est branchée. Les ♾️ Formes (état mental initial, ⚡ sur déclencheur),
-  la Riposte et les Bottes attendent le Lot 2 — présents en donnée `wired: false`.
+- **Escrime partielle (Lots 1–2)** : substitution de jet par arme de prédilection
+  et ♾️ Formes (état mental initial, ⚡ sur déclencheur) sont branchées. Restent en
+  donnée `wired: false` : la relance Fine Lame, les riders Belliciste, la Riposte du
+  Duelliste (déclencheur « garde affaiblie » — attend une Garde mutable), les Bottes.
+  Le planificateur ne *price* pas encore le gain de ⚡ des ♾️ (l'effet survient, mais
+  l'agent ne choisit pas d'attaquer *pour* la ⚡).
 - **`optimize.ts` obsolète** : il cherche `respirationThreshold`, inerte depuis que
   le planificateur par utilité a remplacé les seuils de self-care. À réoutiller sur
   les poids de persona (`PlannerConfig.weights`, déjà prévus pour ça).

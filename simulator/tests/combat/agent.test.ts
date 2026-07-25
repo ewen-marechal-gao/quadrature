@@ -63,12 +63,14 @@ describe('planRoundActions — self-care emerges from the pricing', () => {
     expect(plans[0]?.action).toBe('respiration')
   })
 
-  it('no self-care needed → first plan is an offensive action', () => {
+  it('no self-care needed → the round does not open on healing', () => {
     const s = makeCombatant('A')  // fatigue=1, no status
     const plans = planRoundActions(s, opponent, cfgCautious)
     expect(plans.length).toBeGreaterThan(0)
-    const def = ACTION_DEFS[plans[0].action]
-    expect(def.selfTargeted).toBe(false)
+    // Rien à soigner → Respiration/Stabiliser ne valent pas la Bande I. On n'exige
+    // plus l'offensive : un ouvreur proactif comme Préparation (banque des ⚡ pour
+    // un prudent) est légitime. La garantie testée est l'absence de SOIN gâché.
+    expect(['respiration', 'stabilize']).not.toContain(plans[0].action)
   })
 })
 

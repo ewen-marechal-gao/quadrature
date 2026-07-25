@@ -1,0 +1,20 @@
+name: "Escrime — Belliciste vs Fine Lame"
+description: >
+  L'acharné contre la technicienne. Le Belliciste démarre Agressif et gagne une
+  réaction à chaque coup porté ; la Fine Lame démarre Concentrée (+1⚡/manche) et
+  se recharge sur ses Frappes vives propres. Deux moteurs à ⚡ opposés.
+
+maxRounds: 20
+
+factions:
+  - name: "Belliciste"
+    characters:
+      - sheet: characterSheets/Fencer_warmonger.yaml
+        persona: aggressive
+    allowedActions: [armed-attack, brutal-strike, stabilize, respiration]
+
+  - name: "Fine Lame"
+    characters:
+      - sheet: characterSheets/Fencer_finesse.yaml
+        persona: opportunist
+    allowedActions: [sharp-strike, armed-attack, preparation, stabilize, respiration]

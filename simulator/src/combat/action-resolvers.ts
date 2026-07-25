@@ -15,6 +15,7 @@ import { mentalDegree } from './combatant'
 export type ActionResolverId =
   | 'respiration' | 'stabilize'
   | 'preservation' | 'focalisation' | 'resolution' | 'meditation'
+  | 'preparation'
 
 export interface CustomActionResolver {
   /** DC formula (reads live state for dynamic values). */
@@ -112,6 +113,18 @@ export const ACTION_RESOLVERS: Record<ActionResolverId, CustomActionResolver> = 
                           `✅ Résolution — 🔺${critical ? ' ×2 (✴️)' : ''}, +1 ◇`)
       else note(o, '◐ Résolution partielle — +1 ◇')
       gainStability(o, actor.id)
+      return { effects: o.fx, notes: o.notes }
+    },
+  },
+
+  // Préparation — tempo pur : +3 réactions ⚡, sans jet. L'effet est
+  // INCONDITIONNEL (la carte n'a pas de jet) ; getDC = 0 fait toujours « réussir »
+  // le tirage nominal, que le resolver ignore de toute façon.
+  preparation: {
+    getDC: () => 0,
+    resolve(_outcome, actor) {
+      const o: Fx = { fx: [], notes: [] }
+      gainReaction(o, actor.id, 3, '▶️ Préparation — +3 ⚡')
       return { effects: o.fx, notes: o.notes }
     },
   },

@@ -1,0 +1,25 @@
+name: "Escrime — Arène : Fine Lame esquiveuse"
+description: >
+  Test spatial (arène 11×11). La Fine Lame, profil Esquive (grosse Réactivité +
+  Préparation), encaisse l'assaut du Belliciste. But : observer si un critique
+  d'Esquive la déplace d'une case — ce qui casserait l'engagement et annulerait
+  les attaques suivantes de la manche.
+
+maxRounds: 20
+
+board: { width: 11, height: 11 }
+
+factions:
+  - name: "Fine Lame"
+    characters:
+      - sheet: characterSheets/Fencer_finesse.yaml
+        persona: opportunist
+        pos: { x: 4, y: 5 }
+    allowedActions: [sharp-strike, armed-attack, preparation, walk, stabilize, respiration]
+
+  - name: "Belliciste"
+    characters:
+      - sheet: characterSheets/Fencer_warmonger.yaml
+        persona: aggressive
+        pos: { x: 6, y: 5 }
+    allowedActions: [armed-attack, brutal-strike, walk, stabilize, respiration]

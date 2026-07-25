@@ -31,7 +31,7 @@ import { STATUS_DEFS } from './status'
 import { loadPlayerActionDefs } from './actions-data'
 import { loadGuardDefs } from './guards-data'
 import { applyTraitOverlays } from './traits'
-import { rollSubstitutionRank } from './perks'
+import { rollSubstitutionRank, reactionGrants } from './perks'
 
 // Grammaire et interpréteur déclaratifs : ré-exportés depuis effect-ops.ts
 // (les issues elles-mêmes vivent dans data/player_actions.yaml).
@@ -424,6 +424,14 @@ export function resolveAction(
     ? [`🟩 Avantage — Encaisser (défense passive)`]
     : []
 
+  // ♾️ Formes : ⚡ gagnées sur déclencheur (Belliciste sur attaque armée réussie,
+  // Fine Lame sur jet Escrime réussi sans Défaut), gatées par l'état mental.
+  const perkReactions = reactionGrants(actorSnapshot, actorSnapshot.id, {
+    isArmedAttack: action.tags.includes('melee') && action.tags.includes('physicalDamage'),
+    usedFencing:   rollSubstitutionRank(actorSnapshot, 'action', actionId) != null,
+    hit, flaw, mentalState: actorSnapshot.mentalState,
+  })
+
   return {
     actorId:   actorSnapshot.id,
     action:    actionId,
@@ -435,8 +443,8 @@ export function resolveAction(
     hit,
     critical,
     flaw,
-    effects: [...ctx.guardReaction.effects, ...actionEffects],
-    notes:   [...ctx.guardReaction.notes, ...guardAdvantageNotes, ...actionNotes],
+    effects: [...ctx.guardReaction.effects, ...actionEffects, ...perkReactions.effects],
+    notes:   [...ctx.guardReaction.notes, ...guardAdvantageNotes, ...actionNotes, ...perkReactions.notes],
   }
 }
 

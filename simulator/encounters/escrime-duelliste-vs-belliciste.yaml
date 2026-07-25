@@ -1,0 +1,20 @@
+name: "Escrime — Duelliste vs Belliciste"
+description: >
+  Le mur contre le marteau. Le Duelliste Prudent pare en Escrime et encaisse ; le
+  Belliciste Agressif frappe fort et se recharge en réactions. La défense de
+  substitution tient-elle face à un moteur d'attaque ?
+
+maxRounds: 20
+
+factions:
+  - name: "Duelliste"
+    characters:
+      - sheet: characterSheets/Fencer_duelist.yaml
+        persona: cautious
+    allowedActions: [armed-attack, stabilize, respiration]
+
+  - name: "Belliciste"
+    characters:
+      - sheet: characterSheets/Fencer_warmonger.yaml
+        persona: aggressive
+    allowedActions: [armed-attack, brutal-strike, stabilize, respiration]

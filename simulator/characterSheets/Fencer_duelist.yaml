@@ -1,0 +1,65 @@
+name: "Duelist Fencer"
+# Escrime — Forme Duelliste (§ martial_escrime.md). Arme de prédilection : lames
+# larges → Mur de lame : la Parade roule en Escrime au lieu de Vigilance (ici
+# Vigilance 0 → Escrime 1, gain net). ♾️ Combat sur la défensive : démarre Prudent
+# (+1 relance défensive). La Riposte / le gain de ⚡ sur garde brisée attendent la
+# Garde dynamique — ce profil ne génère donc pas de ⚡.
+disciplines:
+  fencing: 1
+perks:
+  - duelist
+skillTags:
+  - favweapon-broad
+inventory:
+  protection: 2
+characteristics:
+  strength:
+    value: 2          # dérivé : power 2 → rang 2 (prérequis + arme en main pour Parade)
+    wounds: 0
+    power: 2
+    robustness: 1
+  agility:
+    value: 1
+    wounds: 0
+    precision: 0
+    mobility: 0
+  vigor:
+    value: 1
+    wounds: 0
+    endurance: 1
+    recovery: 1
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 1
+    wounds: 0
+    observation: 0
+    vigilance: 0      # nulle : c'est l'Escrime (Mur de lame) qui porte la Parade
+  willpower:
+    value: 1
+    wounds: 0
+    authority: 0
+    discipline: 1
+  intelligence:
+    value: 2          # dérivé : reactivity 2 → rang 2 (réactions pour parer)
+    wounds: 0
+    logic: 0
+    reactivity: 2
+  tenacity:
+    value: 1
+    wounds: 0
+    conviction: 1
+    resilience: 0
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 1
+    wounds: 0
+    foresight: 0
+    intuition: 0

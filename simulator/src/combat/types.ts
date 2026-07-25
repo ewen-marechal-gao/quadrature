@@ -125,6 +125,8 @@ export type ActionId =
   | 'focalisation'   // Focalisation — Logique+Intelligence ; recentre vers Concentré + ◇
   | 'resolution'     // Résolution   — Conviction+Ténacité ; 🔺 vers Agressif + ◇
   | 'meditation'     // Méditation   — Résilience+Ténacité ; +◇ par Résilience
+  // Tempo (§ attribute_actions.md) — économie de réactions
+  | 'preparation'    // Préparation  — Bande I, 1 PA, sans jet : gagne 3 réactions ⚡
   // Actions sociales — poussent l'état mental de la CIBLE (créatures)
   | 'provocation'    // Provocation  — Manipulation+Charisme ; inflige 🔺 (vers Colère)
   | 'intimidation'   // Intimidation — Autorité+Volonté ; inflige 🔻 (vers Peur)

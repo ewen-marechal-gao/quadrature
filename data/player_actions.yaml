@@ -286,6 +286,24 @@ actions:
     selfTargeted: true
     resolver: meditation
 
+  # ── Tempo (§ attribute_actions.md — économie de réactions) ───────────────────
+  preparation:
+    vaultCard: preparation
+    name: { fr: "Préparation" }
+    description:
+      {
+        fr: "Vous vous mettez en garde (Bande I, sans jet) : gagnez 3 réactions ⚡. Interdit si enragé ou terrifié. Idéal avant une salve d'Esquives/Parades.",
+      }
+    initiative: 1
+    cost: { actions: 1 }
+    tags: [support, enhancement]
+    prerequisite: { skill: reactivity, minValue: 1 }
+    # « ne pas être enragé ou terrifié » — tous les autres états sont permis.
+    mentalConditions: [furious, aggressive, focused, cautious, panicked]
+    roll: { characteristic: intelligence, skill: reactivity }
+    selfTargeted: true
+    resolver: preparation
+
   # ── Actions sociales (poussent l'état mental de la CIBLE) ────────────────────
   # Contestent la garde de la créature ; l'effet 🔺/🔻 est ensuite tamponné par
   # son ◇ (Ténacité). Leviers pour rechercher les états extrêmes d'une créature
