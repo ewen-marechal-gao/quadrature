@@ -197,6 +197,14 @@ export interface GuardDef {
   concessionTag?: CardTag
   /** Ne peut pas être brisée (Encaisser). */
   unbreakable?: boolean
+  /**
+   * Recul, en cases, que la Garde s'accorde sur un CRITIQUE (Esquive parfaite :
+   * « déplacement immédiat d'une case »). Résolu comme un intent `move-toward`
+   * away depuis l'attaquant — le plateau et les positions sont détanglés en aval
+   * (expandMoves), donc la Garde n'a pas à les connaître. Utile aussi à la
+   * Dérobade. Absent = la Garde ne déplace pas son porteur.
+   */
+  critMoveAway?: number
   isAvailable: (defender: CombatantState) => boolean
   /**
    * Roll this guard and return the full result.
@@ -345,6 +353,25 @@ export function guardConcession(guardId: GuardId, tags?: readonly CardTag[]): nu
  */
 export function guardAnswers(guardId: GuardId, attackInitiative: number): boolean {
   return GUARD_DEFS[guardId].initiative <= attackInitiative
+}
+
+/**
+ * Déplacement qu'une Garde inflige à SON PORTEUR sur un critique (Esquive
+ * parfaite : recul d'une case face à l'attaquant). Rendu comme un INTENT
+ * `move-toward` away : `expandMoves` le détangle contre le plateau (case libre,
+ * bornée), et `gateByReach` retire ensuite les coups devenus hors d'atteinte —
+ * c'est ce qui « annule » les attaques. `null` si la Garde ne déplace pas.
+ *
+ * Sans plateau (rencontre sans positions), l'intent est un no-op : rien ne bouge.
+ */
+export function guardCritMove(
+  guardId:    GuardId,
+  defenderId: string,
+  attackerId: string,
+): CombatEffect | null {
+  const away = GUARD_DEFS[guardId].critMoveAway ?? 0
+  if (away <= 0) return null
+  return { targetId: defenderId, kind: 'move-toward', goalId: attackerId, budget: away, away: true }
 }
 
 // ─── Check-roll parameters (single source, shared with the planner) ───────────

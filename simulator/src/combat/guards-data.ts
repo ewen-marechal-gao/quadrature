@@ -35,6 +35,8 @@ interface RawGuardOutcome {
   effect?: EffectOp[]
   /** Indication de chantier, jamais lue par le moteur (voir `wired`). */
   guardInitiative?: number
+  /** Recul (cases) accordé sur cette issue — géométrie détanglée en aval (Esquive). */
+  moveAway?: number
   wired?:  boolean
 }
 
@@ -151,6 +153,9 @@ function toGuardDef(
       ...(raw.concession.againstTag && { concessionTag: raw.concession.againstTag }),
     }),
     ...(raw.unbreakable && { unbreakable: true }),
+    // Recul sur critique (Esquive parfaite) — honoré seulement si l'issue est branchée.
+    ...(raw.onCritical?.wired !== false && raw.onCritical?.moveAway != null &&
+      { critMoveAway: raw.onCritical.moveAway }),
     isAvailable: makeIsAvailable(raw.availability),
     rollDC:      makeRoll(raw.roll.characteristic, raw.roll.skill, id),
     effects:     makeGuardEffects(raw, cost, locale),

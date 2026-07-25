@@ -21,10 +21,10 @@ characteristics:
     power: 1
     robustness: 0
   agility:
-    value: 2          # dérivé : mobility 2 → rang 2 (satisfait le prérequis Agilité 2)
+    value: 2 # dérivé : mobility 2 → rang 2 (satisfait le prérequis Agilité 2)
     wounds: 0
-    precision: 1      # débloque Frappe vive ; substituée par Escrime
-    mobility: 2
+    precision: 1 # débloque Frappe vive ; substituée par Escrime
+    mobility: 3
   vigor:
     value: 1
     wounds: 0
@@ -39,17 +39,17 @@ characteristics:
     value: 1
     wounds: 0
     observation: 0
-    vigilance: 0      # abandonnée : la Parade n'est pas le style de la Fine Lame
+    vigilance: 0
   willpower:
     value: 1
     wounds: 0
     authority: 0
     discipline: 1
   intelligence:
-    value: 3          # dérivé : reactivity 4 → rangs 2 et 4
+    value: 2 # dérivé : reactivity 3 → rangs 2
     wounds: 0
     logic: 0
-    reactivity: 4     # grosse réserve de ⚡ pour enchaîner les Esquives
+    reactivity: 3 # grosse réserve de ⚡ pour enchaîner les Esquives
   tenacity:
     value: 1
     wounds: 0

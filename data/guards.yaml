@@ -19,6 +19,13 @@
 # actions) et sont APPLIQUÉS. `concession` est appliquée. `contrecoup` est de la
 # DONNÉE SEULE : il exige une Garde mutable, réévaluée coup par coup — chantier
 # « Garde dynamique ». Un champ `wired: false` le dit explicitement.
+#
+# `moveAway` (sur `onCritical`) : recul, en cases, accordé au porteur sur un
+# critique — l'Esquive parfaite. Détanglé contre le plateau en aval (move-toward
+# away, cf. combat/round.ts getOrRollGuard) : la case libre et les bornes sont
+# calculées là où on connaît les positions ; sans plateau, c'est un no-op. Un
+# recul peut mettre les coups suivants — et le coup déclencheur en mêlée — hors
+# d'atteinte, qui sont alors perdus (§ portée).
 
 guards:
 
@@ -100,11 +107,13 @@ guards:
       text:   { fr: "⚠️ Défaut de Garde — défenseur +1💧" }
       effect: [{ fatigue: 1 }]
     onCritical:
-      # Déplacement immédiat d'une case : la Garde ne sait pas encore bouger son
-      # porteur — chantier Garde dynamique.
-      text:   { fr: "✴️ Esquive parfaite — déplacement immédiat d'une case" }
-      effect: []
-      wired:  false
+      # Recul immédiat d'une case face à l'attaquant : détanglé contre le plateau
+      # en aval (move-toward away), ce qui peut mettre les coups suivants — et le
+      # coup déclencheur en mêlée — hors d'atteinte.
+      text:    { fr: "✴️ Esquive parfaite — recul immédiat d'une case" }
+      effect:  []
+      moveAway: 1
+      wired:   true
 
   # ── 3️⃣ Dérobade — un seul coup, puis on Encaisse ───────────────────────────
   evade:

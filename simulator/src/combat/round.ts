@@ -45,7 +45,7 @@ import type {
 import {
   resolveAction, resolveMovementAction, type ActionContext,
   ACTION_DEFS, GUARD_DEFS, defFor,
-  availableGuards,
+  availableGuards, guardCritMove,
 } from './actions'
 import {
   spendActionCost, processRoundEnd,
@@ -824,6 +824,14 @@ function getOrRollGuard(
     { flaw: guardRoll.flaw, critical: guardRoll.critical },
     targetSnap, /* isFirstUse */ true,
   )
+
+  // Esquive parfaite (critique) : le défenseur recule d'une case face à
+  // l'attaquant. Émis comme intent move-toward away, détanglé par expandMoves
+  // dans la bande — d'où le passage par phaseEffects (sans plateau, no-op).
+  if (guardRoll.critical) {
+    const move = guardCritMove(guardId, targetId, attackerId)
+    if (move) reaction.effects.push(move)
+  }
 
   cache.set(targetId, { guardId, roll: guardRoll })
   return { guardId, guardRoll, reaction }

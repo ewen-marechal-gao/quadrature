@@ -13,7 +13,7 @@
 import fs   from 'fs'
 import path from 'path'
 import { parse } from 'yaml'
-import { GUARD_DEFS, availableGuards, guardConcession, guardAnswers } from '../../src/combat/actions'
+import { GUARD_DEFS, availableGuards, guardConcession, guardAnswers, guardCritMove } from '../../src/combat/actions'
 import { readRawGuards, GUARDS_FILE } from '../../src/combat/guards-data'
 import { SKILL_LABEL, CHARACTERISTIC_LABEL } from '../../src/character/data'
 import type { GuardId } from '../../src/combat/types'
@@ -55,6 +55,29 @@ describe('loadGuardDefs', () => {
     expect(GUARD_DEFS['absorb'].rollChar).toBe('strength')
     expect(GUARD_DEFS['block'].rollSkill).toBe('endurance')
     expect(GUARD_DEFS['block'].rollChar).toBe('vigor')
+  })
+})
+
+// ─── Recul sur critique (Esquive parfaite) ────────────────────────────────────
+
+describe('critMoveAway — déplacement de garde sur critique', () => {
+  it('seule l\'Esquive recule (1 case) sur critique', () => {
+    expect(GUARD_DEFS['dodge'].critMoveAway).toBe(1)
+    for (const id of ALL_IDS.filter(g => g !== 'dodge')) {
+      expect(GUARD_DEFS[id].critMoveAway).toBeUndefined()
+    }
+  })
+
+  it('guardCritMove — Esquive : intent move-toward away vers l\'attaquant', () => {
+    expect(guardCritMove('dodge', 'DEF', 'ATK')).toEqual({
+      targetId: 'DEF', kind: 'move-toward', goalId: 'ATK', budget: 1, away: true,
+    })
+  })
+
+  it('guardCritMove — les autres Gardes ne déplacent pas', () => {
+    for (const id of ALL_IDS.filter(g => g !== 'dodge')) {
+      expect(guardCritMove(id, 'DEF', 'ATK')).toBeNull()
+    }
   })
 })
 
