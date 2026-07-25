@@ -6,6 +6,7 @@ import type {
 import type { RollParams } from '../types'
 import { SKILL_PARENT, ALL_CHARACTERISTICS, ALL_SKILLS, BASE_CHARACTER, PHYSICAL_CHARACTERISTICS } from './data'
 import { validateTraits } from './traits'
+import { validatePerks } from './disciplines'
 
 // ─── Construction ────────────────────────────────────────────────────────────
 
@@ -159,6 +160,14 @@ export function validateCharacter(char: Character): ValidationResult {
   }
 
   errors.push(...validateTraits(char.traits ?? [], char.skills))
+
+  // Atouts de discipline : prérequis, résolution des choix de skillTag, et rang
+  // investi ≤ cap débloqué. Les prérequis carac lisent la valeur de BUILD.
+  const caracValues = {} as Record<CharacteristicName, number>
+  for (const c of ALL_CHARACTERISTICS) caracValues[c] = char.characteristics[c].value
+  errors.push(...validatePerks(
+    char.perks ?? [], char.skillTags ?? [], char.disciplines ?? {}, caracValues,
+  ))
 
   return { valid: errors.length === 0, errors }
 }

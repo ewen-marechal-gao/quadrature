@@ -103,6 +103,17 @@ la valeur écrite sur la fiche n'est qu'indicative. Une fiche ne peut donc pas
 diverger de ses rangs pratiqués. Les compétences débloquent aussi les actions
 (prérequis) : `precision ≥ 1` → Frappe vive, `intuition ≥ 1` → Tir rapide…
 
+Une fiche porte en plus, optionnellement :
+
+- **`traits`** — atouts de socle (§ traits.md), débloqués aux rangs 3/5 d'une compétence ;
+- **`disciplines`** — rang investi dans une discipline hors socle (`{ fencing: 1 }`) ;
+- **`perks`** — atouts de discipline (les Formes, Bottes…) ;
+- **`skillTags`** — choix de build enregistrés (arme de prédilection, style : `favweapon-broad`, `style-duelist`).
+
+`validateCharacter` refuse toute fiche incohérente : un perk dont les prérequis ne
+sont pas tenus, un choix d'arme non résolu, un rang de discipline au-delà du cap
+débloqué par les perks.
+
 ---
 
 ## Architecture
@@ -110,7 +121,10 @@ diverger de ses rangs pratiqués. Les compétences débloquent aussi les actions
 ```
 src/
 ├── dieSystem/     # Le Jet : réserves de dés, lancer, conservation des 4 dés, critiques/défauts
-├── character/     # Fiches de PJ : dérivation des caracs, I/O YAML, affichage
+├── character/     # Fiches de PJ : dérivation des caracs, I/O YAML, traits, disciplines & atouts (perks)
+│   ├── traits.ts       # registre data/traits.yaml + validation de progression
+│   ├── disciplines.ts  # registre data/disciplines/*.yaml (perks) + validatePerks
+│   └── grants.ts       # vocabulaire partagé des grants (familles trait ET perk)
 ├── combat/        # Cœur : actions, gardes, statuts, blessures, bandes, positions, résolution
 │   ├── round.ts       # resolveRoundBands — balaie les 3 bandes, snapshot-puis-applique
 │   ├── actions.ts     # ActionDef + GUARD_DEFS + resolveAction (jet vs DD)
@@ -119,7 +133,9 @@ src/
 │   ├── bands.ts        # bandes d'initiative I/II/III (🌓🌕🌗)
 │   ├── position.ts / movement.ts   # grille (Chebyshev), chemins, approche & recul
 │   ├── status.ts       # STATUS_DEFS (essoufflé, sonné, à terre, hémorragie…)
-│   └── effect-ops.ts   # grammaire d'effets partagée PJ ↔ adversaires
+│   ├── effect-ops.ts   # grammaire d'effets partagée PJ ↔ adversaires
+│   ├── traits.ts       # face combat des traits (modes réactifs, coûts)
+│   └── perks.ts        # face combat des perks : substitution de jet d'Escrime
 ├── adversary/     # Créatures : parties à blocs, ressources régénérantes, dés d'adversaire, heuristique de deck
 ├── planner/       # Le cerveau des agents scriptés (cf. § ci-dessous)
 │   ├── prob.ts        # distributions EXACTES des jets (mémoïsées)
@@ -164,6 +180,37 @@ selon sa puissance) contre la **garde fixe** du PJ — elle ne roule pas de gard
 Son corps est fait de **parties à blocs** ; chaque bloc intact **confère** une
 capacité (une carte, un bonus de garde, une ressource régénérante 🫁/◇/🍀) qui
 disparaît quand le bloc cède. Piste mentale à 4 états modulant le rang des dés.
+
+### Disciplines & atouts — perks (`character/disciplines.ts`, `combat/perks.ts`)
+
+Les **disciplines** (§ `rules/fr/disciplines/`) sont des compétences **hors du
+socle** de 20 : leur rang est débloqué par des **atouts (perks)**, plafonné à 4.
+La source est un fichier par discipline dans
+[`data/disciplines/`](../data/disciplines) (sections `perks:` + `actions:`), même
+patron que `player_actions.yaml` : clés anglaises, chaînes `Locale`.
+
+Un perk va plus loin qu'un trait : il porte une **liste hétérogène de `grants`**
+(un trait en porte au plus un de chaque). Les familles vivent dans
+[`character/grants.ts`](src/character/grants.ts) :
+
+| Famille | Ce qu'elle fait | Branchée ? |
+| :--- | :--- | :--- |
+| `rollSubstitution` | jouer la discipline 🟨🟨 au lieu d'une compétence, sur une action **ou** une garde | ✅ (Lot 1) |
+| `skillTag` / `skillTagChoice` | conférer un marqueur / offrir un choix de build (arme de prédilection) | ✅ (validation) |
+| `mentalInit`, `reactionOnTrigger` | les ♾️ Formes : état mental initial + ⚡ sur déclencheur gaté | ⏳ Lot 2 |
+| `rollBonus`, `costOverride`, `outcomeRider` | passifs restants | ⏳ |
+
+Un grant `wired: false` est de la **donnée porteuse** ignorée par le moteur (même
+convention que le Contrecoup des gardes) — la donnée est complète, le moteur suit
+par lots. La **substitution** est câblée là où le jet se construit, une seule fois :
+`checkRollParams` (actions, vue aussi par le planificateur) et `makeGuardRoll`
+(gardes) ; elle remplace la valeur de compétence par le rang de discipline, la
+caractéristique 🟦 ne bouge pas. Le porteur est lu depuis `state.char`, donc aucun
+champ n'est dupliqué sur l'état de combat.
+
+**Escrime** est la première discipline branchée : les trois Formes (Duelliste,
+Fine Lame, Belliciste) avec leurs substitutions par arme de prédilection. Les ♾️
+et les Bottes suivront.
 
 ---
 
@@ -230,6 +277,9 @@ volontairement simplifiés ou **en avance** sur le vault :
   rouler l'Attaque armée sur Puissance pour tout le monde, dague ou rapière.
 - **Nuances de tir non modélisées** : avantage 🟩 contre Parade, mode réactif du
   Tir rapide, relance 🟦 du Tir ajusté (⚒️ différés).
+- **Escrime partielle (Lot 1)** : seule la substitution de jet par arme de
+  prédilection est branchée. Les ♾️ Formes (état mental initial, ⚡ sur déclencheur),
+  la Riposte et les Bottes attendent le Lot 2 — présents en donnée `wired: false`.
 - **`optimize.ts` obsolète** : il cherche `respirationThreshold`, inerte depuis que
   le planificateur par utilité a remplacé les seuils de self-care. À réoutiller sur
   les poids de persona (`PlannerConfig.weights`, déjà prévus pour ça).

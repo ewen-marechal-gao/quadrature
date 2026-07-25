@@ -13,6 +13,16 @@ export type CharacteristicName =
   | 'charisma'      // Charisme
   | 'lucidity'      // Lucidité
 
+/**
+ * Disciplines — compétences HORS socle (§ disciplines/). Contrairement aux 20
+ * compétences, elles ne s'itèrent pas partout et ne se rangent pas sous une
+ * caractéristique : leur rang est débloqué par des atouts (perks), plafonné à 4
+ * (le rang 5 relève d'une quête + trait signature, hors modèle). Seule l'Escrime
+ * est branchée pour l'instant ; le type est prévu extensible aux 6 autres
+ * disciplines martiales et aux 7 disciplines magiques.
+ */
+export type DisciplineId = 'fencing'
+
 /** All 20 skill names */
 export type SkillName =
   | 'power'         | 'robustness'    // strength
@@ -69,6 +79,25 @@ export interface Character {
    * `validateCharacter` vérifie que la progression les autorise.
    */
   traits?: string[]
+  /**
+   * Rang INVESTI dans chaque discipline (§ disciplines/) — distinct du *cap*,
+   * qui se reconstruit depuis les perks (`max(disciplineCap)`, plafonné à 4). On
+   * stocke le rang car cap 3 ≠ rang 3 ; `validatePerks` vérifie `rang ≤ cap`.
+   */
+  disciplines?: Partial<Record<DisciplineId, number>>
+  /**
+   * Atouts de discipline portés, par id (§ disciplines/ — les « perks »). Vont
+   * plus loin que les traits : ils confèrent actions, modifs d'actions, bonus
+   * passifs. Les défs vivent dans data/disciplines/*.yaml (character/disciplines.ts).
+   */
+  perks?: string[]
+  /**
+   * Choix de build enregistrés qu'un perk propose (arme de prédilection, style…).
+   * Primitive générique : `favweapon-broad`, `style-duelist`… Un perk *confère*
+   * des tags (marqueurs auto) et *offre* des `skillTagChoice` que la fiche résout
+   * en en listant l'option retenue ici.
+   */
+  skillTags?: string[]
   /**
    * Base protection 🛡️ from armor / equipment.
    * Each point absorbs one incoming heavy wound 💔; defaults to 0 if absent.

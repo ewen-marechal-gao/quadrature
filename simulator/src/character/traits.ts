@@ -19,34 +19,10 @@ import { parse } from 'yaml'
 import type { SkillName } from './types'
 import { localize, type LocalizedString } from '../locale'
 
-// ─── Familles d'effet (le vocabulaire de `grants`) ────────────────────────────
-
-/**
- * « L'action X **peut** être utilisée en Réaction ⚡ lorsque … ».
- *
- * ⚠️ AJOUTE une variante réactive : l'action reste jouable normalement dans la
- * manche. Le vault dit « peut », pas « devient » — un trait n'enlève rien.
- */
-export interface ReactiveModeGrant {
-  /** Famille de déclencheur (TriggerKind côté combat). */
-  on:    string
-  /** `reach` = portée de l'action (défaut), `adjacent` = 1 case, `self` = soi. */
-  scope?: string
-  /** Coût de la VARIANTE (remplace celui de l'action de base). */
-  cost:  { actions?: number; reactions?: number; fatigue?: number }
-}
-
-/** Deltas signés appliqués au coût de `action` (plancher 0). */
-export interface CostDeltaGrant {
-  actions?:   number
-  reactions?: number
-  fatigue?:   number
-}
-
-export interface TraitGrants {
-  reactiveMode?: ReactiveModeGrant
-  costDelta?:    CostDeltaGrant
-}
+// Le vocabulaire des grants (familles de trait ET de perk) est partagé —
+// cf. character/grants.ts. Les traits n'en consomment que le conteneur TraitGrants.
+export type { ReactiveModeGrant, CostDeltaGrant, TraitGrants } from './grants'
+import type { TraitGrants } from './grants'
 
 // ─── TraitDef ─────────────────────────────────────────────────────────────────
 

@@ -24,6 +24,12 @@ interface YamlShape {
   name:       string
   /** Ids de traits portés (§ traits.md) — voir character/traits.ts. */
   traits?:    string[]
+  /** Rangs de discipline investis (§ disciplines/) — voir character/disciplines.ts. */
+  disciplines?: Record<string, number>
+  /** Ids d'atouts de discipline portés (les « perks »). */
+  perks?:     string[]
+  /** Choix de build enregistrés (arme de prédilection, style…). */
+  skillTags?: string[]
   inventory?: YamlInventory
   people?:    { name: string; caracs: string[]; skills: string[] }
   origin?:    { caracs: string[]; skills: string[] }
@@ -58,6 +64,9 @@ export function serializeToYaml(char: Character): string {
   const yamlObj: YamlShape = {
     name: char.name,
     ...(char.traits && char.traits.length > 0 && { traits: char.traits }),
+    ...(char.disciplines && Object.keys(char.disciplines).length > 0 && { disciplines: char.disciplines as Record<string, number> }),
+    ...(char.perks && char.perks.length > 0 && { perks: char.perks }),
+    ...(char.skillTags && char.skillTags.length > 0 && { skillTags: char.skillTags }),
     ...(Object.keys(inventoryBlock).length > 0 && { inventory: inventoryBlock }),
     ...(char.people   && { people:   char.people }),
     ...(char.origin   && { origin:   char.origin }),
@@ -110,6 +119,13 @@ export function deserializeFromYaml(yamlStr: string): Character {
   const char: Character = {
     name: raw.name,
     ...(Array.isArray(raw.traits) && raw.traits.length > 0 && { traits: raw.traits.map(String) }),
+    ...(raw.disciplines && Object.keys(raw.disciplines).length > 0 && {
+      disciplines: Object.fromEntries(
+        Object.entries(raw.disciplines).map(([d, n]) => [d, Number(n)]),
+      ) as Character['disciplines'],
+    }),
+    ...(Array.isArray(raw.perks) && raw.perks.length > 0 && { perks: raw.perks.map(String) }),
+    ...(Array.isArray(raw.skillTags) && raw.skillTags.length > 0 && { skillTags: raw.skillTags.map(String) }),
     ...(raw.people    && { people:     raw.people   as PeopleChoice }),
     ...(raw.origin    && { origin:     raw.origin   as OriginChoice }),
     ...(raw.training  && { training:   raw.training as TrainingChoice }),

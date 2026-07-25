@@ -31,6 +31,7 @@ import { STATUS_DEFS } from './status'
 import { loadPlayerActionDefs } from './actions-data'
 import { loadGuardDefs } from './guards-data'
 import { applyTraitOverlays } from './traits'
+import { rollSubstitutionRank } from './perks'
 
 // Grammaire et interpréteur déclaratifs : ré-exportés depuis effect-ops.ts
 // (les issues elles-mêmes vivent dans data/player_actions.yaml).
@@ -239,12 +240,20 @@ export interface ActionContext {
 
 // ─── Guard factories ──────────────────────────────────────────────────────────
 
-/** Build a `rollDC` function from a static char + skill pair (a guard is a DEFENSIVE roll). */
-function makeGuardRoll(char: CharacteristicName, skill: SkillName) {
+/**
+ * Build a `rollDC` function from a static char + skill pair (a guard is a
+ * DEFENSIVE roll). `guardId` is threaded in so the roll can apply an Escrime
+ * substitution (Mur de lame / Blocage à l'épée) — the closure knows which guard
+ * it is, which the encapsulated `rollDC(snapshot)` otherwise wouldn't.
+ */
+function makeGuardRoll(char: CharacteristicName, skill: SkillName, guardId: GuardId) {
   return (snap: CombatantState): RollResult => {
     const { rerolls, disadvantages } = mentalRollModifiers(snap.mentalState, 'defensive')
     const params = rollParamsFrom(snap, char, skill,
       disadvantages > 0 ? { disadvantages } : {})
+    // Arme de prédilection : le rang d'Escrime remplace la valeur de compétence.
+    const sub = rollSubstitutionRank(snap, 'guard', guardId)
+    if (sub != null) params.skill = sub
     return roll(buildPool(params), rerolls)
   }
 }
@@ -367,11 +376,17 @@ export function checkRollParams(
   const mentalMods = action.selfTargeted
     ? { rerolls: 0, disadvantages: 0 }
     : mentalRollModifiers(actorSnapshot.mentalState, 'offensive')
-  return rollParamsFrom(actorSnapshot, action.rollChar, action.rollSkill, {
+  const params = rollParamsFrom(actorSnapshot, action.rollChar, action.rollSkill, {
     ...(totalAdvantages > 0 ? { advantages: totalAdvantages } : {}),
     ...(mentalMods.disadvantages > 0 ? { disadvantages: mentalMods.disadvantages } : {}),
     ...(mentalMods.rerolls > 0 ? { rerolls: mentalMods.rerolls } : {}),
   })
+  // Arme de prédilection (Fine Lame) : le rang d'Escrime remplace la valeur de
+  // compétence. Fait ICI — la seule arithmétique du jet, partagée entre le
+  // planificateur (qui price) et resolveAction (qui joue).
+  const sub = rollSubstitutionRank(actorSnapshot, 'action', actionId)
+  if (sub != null) params.skill = sub
+  return params
 }
 
 // ─── Unified action resolution ────────────────────────────────────────────────

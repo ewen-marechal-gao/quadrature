@@ -131,7 +131,7 @@ function toGuardDef(
   id: GuardId,
   raw: RawGuard,
   locale: string,
-  makeRoll: (c: CharacteristicName, s: SkillName) => GuardDef['rollDC'],
+  makeRoll: (c: CharacteristicName, s: SkillName, guardId: GuardId) => GuardDef['rollDC'],
 ): GuardDef {
   const cost: ActionCost = {
     actions:        0,
@@ -152,7 +152,7 @@ function toGuardDef(
     }),
     ...(raw.unbreakable && { unbreakable: true }),
     isAvailable: makeIsAvailable(raw.availability),
-    rollDC:      makeRoll(raw.roll.characteristic, raw.roll.skill),
+    rollDC:      makeRoll(raw.roll.characteristic, raw.roll.skill, id),
     effects:     makeGuardEffects(raw, cost, locale),
   }
 }
@@ -171,7 +171,7 @@ export function readRawGuards(): Record<string, RawGuard> {
  * évite un cycle d'import entre le loader et les définitions.
  */
 export function loadGuardDefs(
-  makeRoll: (c: CharacteristicName, s: SkillName) => GuardDef['rollDC'],
+  makeRoll: (c: CharacteristicName, s: SkillName, guardId: GuardId) => GuardDef['rollDC'],
   locale = 'fr',
 ): Record<GuardId, GuardDef> {
   const raw = readRawGuards()

@@ -1,0 +1,98 @@
+# ⚔️ Escrime (Fencing) — discipline source (perks + cartes)
+#
+# Projection de rules/fr/disciplines/martial_escrime.md. Mêmes conventions que
+# player_actions.yaml / guards.yaml : clés ANGLAISES, chaînes Locale { fr, en }.
+#
+# ── Ce qu'un perk EST ──────────────────────────────────────────────────────────
+# Un atout de discipline. Il porte des `grants` HÉTÉROGÈNES (contrairement aux
+# traits, un « un de chaque ») : marqueurs et choix de skillTag, substitution de
+# jet, bonus passifs, futures cartes. `disciplineCap` relève le plafond d'Escrime.
+#
+# ── skillTags : styles ET armes de prédilection ────────────────────────────────
+# Une seule primitive. Une Forme CONFÈRE son `style-*` (marqueur auto) et OFFRE le
+# choix d'une `favweapon-*` (arme de prédilection). Les effets par catégorie sont
+# des grants conditionnés `requiresSkillTag`. Prendre un second style / une
+# seconde arme (perks T2) débloque mécaniquement toutes les options croisées.
+#
+# ── Ce qui est branché, et ce qui ne l'est pas ─────────────────────────────────
+# Lot 1 ne BRANCHE que `rollSubstitution` (Escrime 🟨🟨 au lieu de X). Tout le
+# reste — `mentalInit`, `reactionOnTrigger` (les ♾️ Formes), `rollBonus`,
+# `costOverride`, `outcomeRider` — est de la DONNÉE porteuse, marquée
+# `wired: false` et ignorée par le moteur, exactement comme le Contrecoup des
+# gardes. La donnée est là, le moteur suivra (Lot 2).
+
+discipline:
+  id:   fencing
+  name: { fr: "Escrime", en: "Fencing" }
+  # Rang max atteignable par atouts. Le 5 vient d'une quête + trait signature
+  # (choix joueur/meneur), hors de ce modèle.
+  cap:  4
+
+perks:
+
+  # ── Tiers 1 : Formes ─────────────────────────────────────────────────────────
+
+  # Duelliste — l'art de la contre-mesure. Absorbe pour créer l'opportunité.
+  duelist:
+    name: { fr: "Duelliste", en: "Duelist" }
+    tier: 1
+    disciplineCap: 1
+    prereq:
+      # ⚠️ Rédaction ambiguë du vault (« Force 2, Agilité 2 ou Acuité 2 ») —
+      # lecture PERMISSIVE provisoire (l'une des trois suffit), à trancher.
+      characteristicsAny: [{ strength: 2 }, { agility: 2 }, { acuity: 2 }]
+    grants:
+      - { kind: skillTag, value: style-duelist }
+      - { kind: skillTagChoice, options: [favweapon-light, favweapon-broad, favweapon-heavy] }
+      # ♾️ Combat sur la défensive — commence Prudent ; ⚡ quand la Garde est
+      # affaiblie/brisée. Exige une Garde mutable (chantier Garde dynamique).
+      - { kind: mentalInit, state: cautious, wired: false }
+      - { kind: reactionOnTrigger, on: guard-weakened, whileMental: [cautious], amount: 1, wired: false }
+      # [Lames larges] Mur de lame — Escrime au lieu de Vigilance en Parade.
+      - { kind: rollSubstitution, target: { type: guard, id: parry }, requiresSkillTag: favweapon-broad }
+      # [Lames lourdes] Blocage à l'épée — Escrime au lieu d'Endurance en Blocage.
+      - { kind: rollSubstitution, target: { type: guard, id: block }, requiresSkillTag: favweapon-heavy }
+      # [Lames légères] Insaisissable — Posture coûte 1⚡. L'action Posture n'existe
+      # pas encore dans le sim → donnée seule.
+      - { kind: costOverride, target: { type: action, id: posture }, cost: { reactions: 1 }, requiresSkillTag: favweapon-light, wired: false }
+
+  # Fine Lame — perfection technique, économie de mouvement.
+  finesse:
+    name: { fr: "Fine Lame", en: "Finesse" }
+    tier: 1
+    disciplineCap: 1
+    prereq:
+      characteristicsAny: [{ strength: 2 }, { agility: 2 }, { grace: 2 }]
+    grants:
+      - { kind: skillTag, value: style-finesse }
+      - { kind: skillTagChoice, options: [favweapon-light, favweapon-broad, favweapon-heavy] }
+      # ♾️ Formes parfaites — commence Concentré ; +1 relance sur les jets Escrime,
+      # et ⚡ sur un jet Escrime réussi sans Défaut, tant que Concentré.
+      - { kind: mentalInit, state: focused, wired: false }
+      - { kind: rollBonus, on: fencing-roll, whileMental: [focused], rerolls: 1, wired: false }
+      - { kind: reactionOnTrigger, on: fencing-success-no-flaw, whileMental: [focused], amount: 1, wired: false }
+      # [Lames légères] Escrime au lieu de Précision pour Frappe vive.
+      - { kind: rollSubstitution, target: { type: action, id: sharp-strike }, requiresSkillTag: favweapon-light }
+      # [Lames larges] Escrime au lieu de Mobilité pour Charge.
+      - { kind: rollSubstitution, target: { type: action, id: charge }, requiresSkillTag: favweapon-broad }
+      # [Lames lourdes] Escrime au lieu de Puissance pour Frappe brutale.
+      - { kind: rollSubstitution, target: { type: action, id: brutal-strike }, requiresSkillTag: favweapon-heavy }
+
+  # Belliciste — attaques acharnées, la lame qui déchire.
+  warmonger:
+    name: { fr: "Belliciste", en: "Warmonger" }
+    tier: 1
+    disciplineCap: 1
+    prereq:
+      characteristicsAny: [{ strength: 2 }, { vigor: 2 }]
+    grants:
+      - { kind: skillTag, value: style-warmonger }
+      - { kind: skillTagChoice, options: [favweapon-light, favweapon-broad, favweapon-heavy] }
+      # ♾️ Attaques acharnées — commence Agressif ; ⚡ à chaque attaque armée
+      # réussie, tant qu'Agressif.
+      - { kind: mentalInit, state: aggressive, wired: false }
+      - { kind: reactionOnTrigger, on: armed-attack-success, whileMental: [aggressive], amount: 1, wired: false }
+      # Riders par catégorie sur l'attaque armée — Estafilades / Entailles / Empaler.
+      - { kind: outcomeRider, target: { type: action, id: armed-attack }, requiresSkillTag: favweapon-light, wired: false }
+      - { kind: outcomeRider, target: { type: action, id: armed-attack }, requiresSkillTag: favweapon-broad, wired: false }
+      - { kind: outcomeRider, target: { type: action, id: armed-attack }, requiresSkillTag: favweapon-heavy, wired: false }
