@@ -18,7 +18,7 @@
  * Success rule (§Résolution): checkRoll.total >= threshold  (equal = success)
  */
 
-import type { CharacteristicName, SkillName } from '../character/types'
+import type { CharacteristicName, SkillName, DisciplineId } from '../character/types'
 import type { RollParams, RollResult } from '../types'
 import type {
   ActionId, GuardId, ActionCost, CardTag, MentalState, StatusEffect,
@@ -28,7 +28,7 @@ import type { AdversaryCombatant } from '../adversary/combatant'
 import { buildPool, roll } from '../dieSystem'
 import { effChar, isDefeated, mentalRollModifiers, canReact } from './combatant'
 import { STATUS_DEFS } from './status'
-import { loadPlayerActionDefs } from './actions-data'
+import { loadPlayerActionDefs, loadDisciplineActionDefs } from './actions-data'
 import { loadGuardDefs } from './guards-data'
 import { applyTraitOverlays } from './traits'
 import { rollSubstitutionRank, reactionGrants } from './perks'
@@ -138,6 +138,12 @@ export interface ActionDef {
   requiresFirstAction: boolean
   rollChar:      CharacteristicName
   rollSkill:     SkillName
+  /**
+   * Discipline dont cette carte est issue (data/disciplines/*.yaml). PRÉSENTE =
+   * l'action n'est jouable que par un porteur ayant ≥ 1 rang dans la discipline
+   * (gating de `canUseAction`) — elle ne pollue pas le catalogue des autres.
+   */
+  discipline?:   DisciplineId
   /** True for self-targeted actions: roll vs fixed DC, no opponent, no guard */
   selfTargeted:  boolean
   /** DC formula for self-targeted actions (reads live state for dynamic values) */
@@ -303,7 +309,12 @@ export function rollParamsFrom(
 // resolve() est généré par makeResolve, les customs (Respiration, Stabiliser)
 // sont branchés via le registre action-resolvers.ts. Chargement synchrone.
 
-export const ACTION_DEFS: Record<ActionId, ActionDef> = loadPlayerActionDefs()
+// Actions universelles (player_actions.yaml) + cartes de discipline
+// (disciplines/*.yaml `actions`, gatées par possession — cf. canUseAction).
+export const ACTION_DEFS: Record<ActionId, ActionDef> = {
+  ...loadPlayerActionDefs(),
+  ...loadDisciplineActionDefs(),
+}
 
 /**
  * La def de `actionId` **telle que ce combattant la joue** : la def de base,
@@ -516,6 +527,8 @@ export function resolveMovementAction(
 export function canUseAction(state: CombatantState, actionId: ActionId): boolean {
   if (isDefeated(state)) return false
   const def = ACTION_DEFS[actionId]
+  // Carte de discipline : réservée à qui possède la discipline (≥ 1 rang).
+  if (def.discipline && (state.char.disciplines?.[def.discipline] ?? 0) < 1) return false
   if (def.prerequisite && state.skills[def.prerequisite.skill] < def.prerequisite.minValue) return false
   if (def.mentalConditions.length > 0 && !def.mentalConditions.includes(state.mentalState)) return false
   if (def.requiresFirstAction && state.firstActionPlayed) return false

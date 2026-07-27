@@ -15,7 +15,7 @@
 import fs   from 'fs'
 import path from 'path'
 import { parse } from 'yaml'
-import type { CharacteristicName, SkillName } from '../character/types'
+import type { CharacteristicName, SkillName, DisciplineId } from '../character/types'
 import type { ActionId, ActionCost, CardTag, StatusEffect, CombatantState, ActionTrigger } from './types'
 import {
   makeResolve, type ActionOutcome, type ActionOutcomes, type EffectOp,
@@ -103,7 +103,7 @@ function resolveOutcome(o: RawOutcome, locale: string): ActionOutcome {
   return { ...(o.text && { text: localize(o.text, locale) }), effect: o.effect ?? [] }
 }
 
-function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string): ActionDef {
+export function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string): ActionDef {
   const cost: ActionCost = {
     actions:        raw.cost.actions,
     reactions:      raw.cost.reactions ?? 0,
@@ -183,4 +183,35 @@ export function loadPlayerActionDefs(locale = 'fr'): Record<ActionId, ActionDef>
     Object.entries(raw).map(([id, r]) => [id, toActionDef(id as ActionId, r, locale)]),
   ) as Record<ActionId, ActionDef>
   return defs
+}
+
+// ─── Cartes de discipline (Lot 2) ──────────────────────────────────────────────
+
+/** Dossier des disciplines, à la racine /data (miroir de PLAYER_ACTIONS_FILE). */
+export const DISCIPLINES_DIR =
+  path.resolve(__dirname, '..', '..', '..', 'data', 'disciplines')
+
+interface RawDisciplineActionsFile {
+  discipline: { id: string }
+  actions?:   Record<string, RawPlayerAction>
+}
+
+/**
+ * Charge les CARTES de discipline (`actions` de data/disciplines/*.yaml) comme
+ * ActionDefs — même schéma et même assembleur que les actions universelles, mais
+ * chaque def est tagguée de sa `discipline` (gating par possession, cf.
+ * canUseAction). Les fichiers sans bloc `actions` (Escrime pour l'instant) sont
+ * ignorés. Fusionnées dans ACTION_DEFS à côté des actions universelles.
+ */
+export function loadDisciplineActionDefs(locale = 'fr'): Record<ActionId, ActionDef> {
+  const out = {} as Record<ActionId, ActionDef>
+  if (!fs.existsSync(DISCIPLINES_DIR)) return out
+  for (const file of fs.readdirSync(DISCIPLINES_DIR).filter(f => /\.ya?ml$/.test(f)).sort()) {
+    const doc = parse(fs.readFileSync(path.join(DISCIPLINES_DIR, file), 'utf-8')) as RawDisciplineActionsFile
+    const discipline = doc.discipline?.id as DisciplineId
+    for (const [id, raw] of Object.entries(doc.actions ?? {})) {
+      out[id as ActionId] = { ...toActionDef(id as ActionId, raw, locale), discipline }
+    }
+  }
+  return out
 }

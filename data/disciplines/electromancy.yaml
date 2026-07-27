@@ -1,0 +1,55 @@
+# ⚡ Électromancie (Electromancy) — discipline source (cartes du galop d'essai)
+#
+# Projection de rules/fr/disciplines/magie_electromancie.md. Mêmes conventions
+# que player_actions.yaml / fencing.yaml : clés ANGLAISES, chaînes Locale {fr,en}.
+#
+# ── Portée de ce fichier ────────────────────────────────────────────────────────
+# GALOP D'ESSAI de l'économie de charges (Phases B→C→D). Deux cartes minimales,
+# CIBLÉES, qui exercent la chaîne complète onPlay → propagation → pricing :
+#   · spark     — générateur : onPlay auto-charge une ⊖ (propagée par le planner),
+#                 succès = brûle la cible. ⚠️ Fixture : l'Étincelle DÉFINITIVE du
+#                 vault ne génère PAS (les vrais générateurs sont tier 1) — ici
+#                 le onPlay ⊖ sert à valider le moteur.
+#   · discharge — exutoire : onPlay dissipe une ⊖ (déclenche le gate hasChargeSink
+#                 ET la propagation), succès = foudroie la cible.
+# Le jet Électromancie 🟨 n'a pas encore de branchement (pas de discipline-as-roll) :
+# proxy Volonté + Discipline en attendant. Modes ⛞, DD dynamique et cartes réelles
+# (Focalisation, Décharge à X⊖) = chantier ultérieur.
+
+discipline:
+  id:   electromancy
+  name: { fr: "Électromancie", en: "Electromancy" }
+  cap:  4
+
+actions:
+
+  # Étincelle — générateur (bande I). onPlay ⊖ inconditionnel → propagé, gaté.
+  spark:
+    name:        { fr: "Étincelle", en: "Spark" }
+    description: { fr: "Un éclair fugace : brûle la cible et vous laisse une charge ⊖.",
+                   en: "A fleeting spark: burns the target and leaves you a ⊖ charge." }
+    initiative:  2
+    cost:        { actions: 1 }
+    tags:        [offensive, ranged]
+    reach:       3
+    roll:        { characteristic: willpower, skill: discipline }
+    onPlay:    { text: { fr: "vous gagnez une charge ⊖", en: "you gain a ⊖ charge" },
+                 effect: [{ selfCharge: -1 }] }
+    onSuccess: { text: { fr: "2 Brûlures 🔥", en: "2 burns 🔥" }, effect: [{ burn: 2 }] }
+    onFailure: { text: { fr: "1 Brûlure 🔥", en: "1 burn 🔥" }, effect: [{ burn: 1 }] }
+
+  # Décharge Électrostatique — exutoire (bande III). onPlay dissipe une ⊖.
+  discharge:
+    name:        { fr: "Décharge Électrostatique", en: "Electrostatic Discharge" }
+    description: { fr: "Libère l'électricité accumulée en un éclair vers la cible.",
+                   en: "Releases the stored charge as a bolt into the target." }
+    initiative:  7
+    cost:        { actions: 1 }
+    tags:        [offensive, ranged]
+    reach:       5
+    roll:        { characteristic: willpower, skill: discipline }
+    onPlay:    { text: { fr: "dissipe une charge ⊖", en: "dissipates a ⊖ charge" },
+                 effect: [{ dissipateCharge: 1 }] }
+    onSuccess: { text: { fr: "2 Brûlures 🔥 + 2 💢", en: "2 burns 🔥 + 2 💢" },
+                 effect: [{ burn: 2 }, { wound: 2 }] }
+    onFailure: { text: { fr: "1 Brûlure 🔥", en: "1 burn 🔥" }, effect: [{ burn: 1 }] }

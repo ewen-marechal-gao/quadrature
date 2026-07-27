@@ -464,7 +464,7 @@ function makeContext(
  * ne vaut rien (façon `pushDirectionsFor`). Une décharge ciblant l'adversaire
  * (`dissipateTargetCharge`) ne compte pas : elle ne vide pas SA propre batterie.
  */
-function hasChargeSinkFor(config: PlannerConfig): boolean {
+export function hasChargeSinkFor(config: PlannerConfig): boolean {
   for (const id of ALL_ACTION_IDS) {
     if (!isAllowed(id, config)) continue
     const out = ACTION_DEFS[id].outcomes

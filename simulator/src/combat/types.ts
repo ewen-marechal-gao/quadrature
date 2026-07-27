@@ -132,6 +132,9 @@ export type ActionId =
   | 'intimidation'   // Intimidation — Autorité+Volonté ; inflige 🔻 (vers Peur)
   // Réactions ⚡ (§ defense_reactions.md) — jouées sur un DÉCLENCHEUR, hors plan de manche
   | 'opportunity-strike' // Frappe opportuniste — init 2, ⚡💧, Réactivité+Intelligence
+  // ⚡ Électromancie (cartes de discipline — data/disciplines/electromancy.yaml)
+  | 'spark'          // Étincelle   — génère une charge ⊖ (onPlay), brûle la cible
+  | 'discharge'      // Décharge Électrostatique — dissipe une ⊖, foudroie la cible
 
 // ─── Déclencheurs de réaction (§ defense_reactions.md) ────────────────────────
 
