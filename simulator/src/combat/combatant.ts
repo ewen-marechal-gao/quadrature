@@ -460,26 +460,34 @@ export function processCombustion(state: CombatantState): { state: CombatantStat
 // ─── Charge électrique ⚡ (§ électromancie) ─────────────────────────────────────
 
 /**
- * Plafond de charges ⊖ que ce combattant peut accumuler sur lui-même : son rang
- * d'Électromancie (+ Condensateur plus tard). 0 pour un non-mage — la moindre ⊖
- * le brûle alors aussitôt (« toute charge supplémentaire se dissipe en 🔥 »).
+ * Nombre maximal de charges ⊖ qu'un mage peut AUTO-accumuler sur lui-même
+ * (§ Électromancie — « ne peut accumuler au-delà de son niveau »). Point de calcul
+ * UNIQUE, à faire grandir :
+ *   · base    = rang d'Électromancie ;
+ *   · + Condensateur (perk) : +3 ⊖ au-delà du niveau ;
+ *   · Focalisation Cathodique (état temporaire) : plus de plafond du tout.
+ * Ne borne QUE l'auto-accumulation du lanceur — une ⊖ posée par un tiers sur une
+ * cible n'y est pas soumise (voir le flag `capped` de `add-charge`).
  */
 export function chargeCap(state: CombatantState): number {
   return state.char.disciplines?.electromancy ?? 0
 }
 
 /**
- * Ajoute `delta` à la charge (⊕ = +, ⊖ = −). L'opposée neutralise par
- * arithmétique. Les ⊖ AU-DELÀ du cap sont écrêtées et se dissipent chacune en un
- * marqueur 🔥 (combustion). Les ⊕ ne sont pas plafonnées (§ électromancie).
+ * Ajoute `delta` à la charge (⊕ = +, ⊖ = −), l'opposée neutralisant par
+ * arithmétique. `capped` = le LANCEUR s'auto-charge : ses ⊖ au-delà de `chargeCap`
+ * sont écrêtées et se dissipent chacune en un 🔥. Sans `capped` (charge reçue /
+ * posée sur autrui), aucun plafond ni brûlure. Les ⊕ ne sont jamais plafonnées.
  */
-export function addCharge(state: CombatantState, delta: number): CombatantState {
-  const cap = chargeCap(state)
+export function addCharge(state: CombatantState, delta: number, capped = false): CombatantState {
   const raw = state.charge + delta
-  if (raw < -cap) {
-    const overflow = (-cap) - raw
-    // `cap === 0 ? 0 : -cap` évite le zéro NÉGATIF (Object.is(-0, 0) === false).
-    return addBurn({ ...state, charge: cap === 0 ? 0 : -cap }, overflow)
+  if (capped) {
+    const cap = chargeCap(state)
+    if (raw < -cap) {
+      const overflow = (-cap) - raw
+      // `cap === 0 ? 0 : -cap` évite le zéro NÉGATIF (Object.is(-0, 0) === false).
+      return addBurn({ ...state, charge: cap === 0 ? 0 : -cap }, overflow)
+    }
   }
   return { ...state, charge: raw }
 }
@@ -719,7 +727,7 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'remove-fatigue': return removeFatigue(s, effect.amount)
     // Hémorragie 🩸 : compteur de jetons (prototype), pas un statut binaire.
     case 'add-burn':       return addBurn(s, effect.amount)
-    case 'add-charge':     return addCharge(s, effect.delta)
+    case 'add-charge':     return addCharge(s, effect.delta, effect.capped ?? false)
     case 'dissipate-charge': return dissipateCharge(s, effect.amount)
     case 'add-status':     return effect.status === 'hemorrhage' ? addBleedPc(s, 1)  : addStatus(s, effect.status)
     case 'remove-status':  return effect.status === 'hemorrhage' ? clearBleedPc(s)   : removeStatus(s, effect.status)

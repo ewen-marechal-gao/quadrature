@@ -488,13 +488,12 @@ export function combustionTick(c: AdversaryCombatant): AdversaryCombatant {
 
 /**
  * Ajoute `delta` à la charge (⊕ = +, ⊖ = −), neutralisation par arithmétique. Une
- * créature n'a pas de capacité (cap 0) : toute ⊖ résiduelle se dissipe aussitôt
- * en 🔥. Les ⊕ ne sont pas plafonnées.
+ * créature ne s'AUTO-charge jamais (elle ne lance pas de sorts) : une charge qu'un
+ * mage lui pose s'accumule sans plafond ni brûlure — le cap/🔥 est un mécanisme
+ * réservé à l'auto-accumulation du lanceur.
  */
 export function addAdversaryCharge(c: AdversaryCombatant, delta: number): AdversaryCombatant {
-  const raw = c.charge + delta
-  if (raw < 0) return addAdversaryBurn({ ...c, charge: 0 }, -raw)
-  return { ...c, charge: raw }
+  return { ...c, charge: c.charge + delta }
 }
 
 /** Dissipe jusqu'à `amount` charges vers 0 (sans changer de pôle). */

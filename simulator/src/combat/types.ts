@@ -312,7 +312,10 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
   | { kind: 'add-fatigue';    amount: number }
   | { kind: 'remove-fatigue'; amount: number }
   | { kind: 'add-burn';       amount: number }  // 🔥 marqueurs de combustion (§ combustion)
-  | { kind: 'add-charge';     delta: number }   // ⚡ charge SIGNÉE (± ⊕/⊖) ; overflow ⊖ → 🔥
+  // ⚡ charge SIGNÉE (± ⊕/⊖). `capped` = auto-accumulation du LANCEUR sur lui-même :
+  // seules ces ⊖ au-delà de son cap se dissipent en 🔥 (§ électromancie). Une charge
+  // posée sur une cible (capped absent) s'accumule sans plafond ni brûlure.
+  | { kind: 'add-charge';     delta: number; capped?: boolean }
   | { kind: 'dissipate-charge'; amount: number } // ⚡ réduit la magnitude de charge vers 0
   | { kind: 'add-status';     status: StatusEffect }
   | { kind: 'remove-status';  status: StatusEffect }

@@ -119,9 +119,11 @@ export function opsToCombatEffects(
     } else if ('selfBurn' in op) {
       if (selfId) out.push({ targetId: selfId, kind: 'add-burn', amount: op.selfBurn })
     } else if ('charge' in op) {
+      // Posée sur la CIBLE : pas d'auto-accumulation → ni plafond ni 🔥.
       out.push({ targetId, kind: 'add-charge', delta: op.charge })
     } else if ('selfCharge' in op) {
-      if (selfId) out.push({ targetId: selfId, kind: 'add-charge', delta: op.selfCharge })
+      // Le lanceur s'auto-charge : `capped` → ⊖ au-delà du cap = 🔥.
+      if (selfId) out.push({ targetId: selfId, kind: 'add-charge', delta: op.selfCharge, capped: true })
     } else if ('dissipateCharge' in op) {
       if (selfId) out.push({ targetId: selfId, kind: 'dissipate-charge', amount: op.dissipateCharge })
     } else if ('dissipateTargetCharge' in op) {
