@@ -467,9 +467,11 @@ function makeContext(
 export function hasChargeSinkFor(config: PlannerConfig): boolean {
   for (const id of ALL_ACTION_IDS) {
     if (!isAllowed(id, config)) continue
-    const out = ACTION_DEFS[id].outcomes
-    if (!out) continue
-    for (const tier of [out.onSuccess, out.onFailure, out.onCritical, out.onFlaw, out.onPlay]) {
+    const def = ACTION_DEFS[id]
+    // Décharge par resolver (sans outcomes) : signalée par le drapeau consumesCharge.
+    if (def.consumesCharge) return true
+    for (const tier of [def.outcomes?.onSuccess, def.outcomes?.onFailure,
+                        def.outcomes?.onCritical, def.outcomes?.onFlaw, def.outcomes?.onPlay]) {
       for (const op of tier?.effect ?? []) {
         if ('dissipateCharge' in op) return true
       }

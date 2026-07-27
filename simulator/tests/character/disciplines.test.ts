@@ -27,20 +27,22 @@ const CARACS_HIGH = Object.fromEntries(
 // ─── Le registre et sa source ─────────────────────────────────────────────────
 
 describe('data/disciplines — le registre', () => {
-  it('charge la discipline Escrime, cap 4', () => {
+  it('charge les disciplines Escrime & Électromancie, cap 4', () => {
     expect(DISCIPLINE_DEFS.fencing).toBeDefined()
     expect(DISCIPLINE_DEFS.fencing.cap).toBe(4)
+    expect(DISCIPLINE_DEFS.electromancy).toBeDefined()
+    expect(DISCIPLINE_DEFS.electromancy.cap).toBe(4)
   })
 
-  it('charge les trois Formes du vault', () => {
-    expect(Object.keys(PERK_DEFS).sort()).toEqual(['duelist', 'finesse', 'warmonger'])
+  it('charge les trois Formes d\'Escrime + l\'Initiation à l\'Électromancie', () => {
+    expect(Object.keys(PERK_DEFS).sort()).toEqual(['arc-initiate', 'duelist', 'finesse', 'warmonger'])
   })
 
-  it('chaque perk est complet et rattaché à sa discipline', () => {
+  it('chaque perk est complet et rattaché à une discipline connue', () => {
     for (const [id, def] of Object.entries(PERK_DEFS)) {
       expect(def.id).toBe(id)
       expect(def.name.length).toBeGreaterThan(0)
-      expect(def.discipline).toBe('fencing')
+      expect(DISCIPLINE_DEFS[def.discipline]).toBeDefined()
       expect(def.tier).toBeGreaterThanOrEqual(1)
       expect(Array.isArray(def.grants)).toBe(true)
     }

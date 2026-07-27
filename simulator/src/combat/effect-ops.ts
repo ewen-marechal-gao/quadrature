@@ -77,21 +77,26 @@ export interface OutcomeFlags { hit: boolean; critical: boolean; flaw: boolean }
 /**
  * Generate a resolve() from declarative outcomes — the single generic
  * interpreter shared by every standard action. Self-targeted ops (selfFatigue…)
- * land on the actor; everything else on the target. Mirrors the legacy
- * hand-written resolvers: no target → no effects (target-directed actions only).
+ * land on the actor; everything else on the target.
+ *
+ * `selfTargeted` : l'action ne vise personne d'autre — ses ops s'appliquent au
+ * LANCEUR (Focalisation Cathodique : ⊖ sur soi). On résout alors sur l'acteur
+ * même sans cible ennemie. Une action CIBLÉE sans cible ne produit rien (le
+ * planificateur price parfois sans cible ; il ne faut pas s'auto-blesser).
  */
-export function makeResolve(outcomes: ActionOutcomes) {
+export function makeResolve(outcomes: ActionOutcomes, selfTargeted = false) {
   return (
     { hit, critical, flaw }: OutcomeFlags,
     actor:   { id: string },
     target?: { id: string },
   ): { effects: CombatEffect[]; notes: string[] } => {
-    if (!target) return { effects: [], notes: [] }
+    const opsTarget = selfTargeted ? actor : target
+    if (!opsTarget) return { effects: [], notes: [] }
     const effects: CombatEffect[] = []
     const notes:   string[]       = []
     const apply = (o: ActionOutcome | undefined, prefix: string) => {
       if (!o) return
-      effects.push(...opsToCombatEffects(o.effect, target.id, actor.id))
+      effects.push(...opsToCombatEffects(o.effect, opsTarget.id, actor.id))
       if (o.text) notes.push(`${prefix} ${o.text}`)
     }
     // ORDRE DE RÉSOLUTION : ⚠️ Défaut, ✴️ Critique, ▶️ onPlay, puis l'issue.

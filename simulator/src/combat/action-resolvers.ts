@@ -16,12 +16,17 @@ export type ActionResolverId =
   | 'respiration' | 'stabilize'
   | 'preservation' | 'focalisation' | 'resolution' | 'meditation'
   | 'preparation'
+  | 'discharge'
 
 export interface CustomActionResolver {
-  /** DC formula (reads live state for dynamic values). */
+  /** DC formula (reads live state for dynamic values). Inutile pour une action
+   *  CIBLÉE (le DC vient de la garde) — mettre () => 0. */
   getDC:   (actor: CombatantState) => number
-  /** Effect resolution — self-targeted: no opponent involved. */
-  resolve: (outcome: OutcomeFlags, actor: CombatantState) => { effects: CombatEffect[]; notes: string[] }
+  /**
+   * Effect resolution. `target` n'est fourni que pour les actions CIBLÉES
+   * (Décharge) ; les resolveurs auto-ciblés l'ignorent (aucun adversaire).
+   */
+  resolve: (outcome: OutcomeFlags, actor: CombatantState, target?: { id: string }) => { effects: CombatEffect[]; notes: string[] }
 }
 
 export const ACTION_RESOLVERS: Record<ActionResolverId, CustomActionResolver> = {
@@ -125,6 +130,43 @@ export const ACTION_RESOLVERS: Record<ActionResolverId, CustomActionResolver> = 
     resolve(_outcome, actor) {
       const o: Fx = { fx: [], notes: [] }
       gainReaction(o, actor.id, 3, '▶️ Préparation — +3 ⚡')
+      return { effects: o.fx, notes: o.notes }
+    },
+  },
+
+  // ── Décharge Électrostatique — exutoire DYNAMIQUE (§ magie_electromancie.md) ──
+  //
+  // CIBLÉE : DC = garde de l'ennemi (getDC inutile). Elle libère toutes les ⊖
+  // portées par le lanceur dans la cible — plus il est chargé, plus elle frappe.
+  // Chaque ⊖ dissipée = 2💢 (mode « Intensité » du vault) sur un succès ; sur un
+  // succès partiel, elle brûle (1🔥/⊖, § échec). Les charges sont TOUJOURS
+  // dépensées (le tir part), et le critique compte une ⊖ de plus (§ ✴️).
+  // Écarts assumés (chantier) : DD self « 7 + X » (ici garde), choix des 4 modes.
+  discharge: {
+    getDC: () => 0,
+    resolve({ hit, critical, flaw }, actor, target) {
+      const o: Fx = { fx: [], notes: [] }
+      if (!target) return { effects: [], notes: [] }
+      const held    = Math.max(0, -actor.charge)          // ⊖ réellement portées
+      const spent    = held                                // toutes libérées
+      const effective = spent + (critical ? 1 : 0)         // ✴️ : +1 ⊖ fictive pour les effets
+      if (spent > 0) o.fx.push({ targetId: actor.id, kind: 'dissipate-charge', amount: spent })
+
+      if (hit) {
+        if (effective > 0) {
+          o.fx.push({ targetId: target.id, kind: 'light-wound', amount: 2 * effective })
+          note(o, `✅ Décharge — ${effective}⊖ → ${2 * effective}💢${critical ? ' (✴️ +1⊖)' : ''}`)
+        } else {
+          o.fx.push({ targetId: target.id, kind: 'add-burn', amount: 1 })
+          note(o, '✅ Décharge à vide — 1🔥')
+        }
+      } else {
+        // Succès partiel : la décharge brûle, 1🔥 par ⊖ dissipée (au moins 1).
+        o.fx.push({ targetId: target.id, kind: 'add-burn', amount: Math.max(1, effective) })
+        note(o, `◐ Décharge partielle — ${Math.max(1, effective)}🔥`)
+      }
+      // ⚠️ Défaut d'électromancie : le lanceur se brûle.
+      if (flaw) { o.fx.push({ targetId: actor.id, kind: 'add-burn', amount: 1 }); note(o, '⚠️ Défaut — 1🔥 sur vous') }
       return { effects: o.fx, notes: o.notes }
     },
   },

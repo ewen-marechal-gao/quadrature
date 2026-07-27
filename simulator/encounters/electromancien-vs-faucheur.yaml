@@ -1,0 +1,20 @@
+# Premier duel d'un Électromancien contre un Faucheur.
+# Boucle attendue : Focalisation Cathodique (⊖, bande I) → Décharge (bande III),
+# Étincelle en appoint. Test de la chaîne charges B→C→D sur un vrai adversaire.
+name: Duel — l'Électromancien contre le Faucheur
+description: >-
+  Dans l'ombre de la canopée, un électromancien accumule la foudre statique
+  et la déverse sur un Faucheur en chasse. Premier duel magie contre créature.
+maxRounds: 30
+factions:
+  - name: Électromancien
+    characters:
+      - sheet: characterSheets/Electromancer_arc.yaml
+        persona: opportunist
+    # Boucle de charges + cantrip + entretien (◇ / fatigue).
+    allowedActions: ["cathodic-focus", "discharge", "spark", "stabilize", "respiration"]
+
+  - name: Faune d'Aeonir
+    characters:
+      - adversary: faucheur
+    allowedActions: []

@@ -29,24 +29,28 @@ const cfg = (allowedActions?: PlannerConfig['allowedActions']): PlannerConfig =>
   ({ persona: 'aggressive', targetId: 'E', ...(allowedActions && { allowedActions }) })
 
 describe('cartes d\'Électromancie chargées dans ACTION_DEFS', () => {
-  it('spark & discharge existent et sont tagguées de leur discipline', () => {
+  it('spark / cathodic-focus / discharge existent et sont tagguées de leur discipline', () => {
     expect(ACTION_DEFS.spark?.discipline).toBe('electromancy')
+    expect(ACTION_DEFS['cathodic-focus']?.discipline).toBe('electromancy')
     expect(ACTION_DEFS.discharge?.discipline).toBe('electromancy')
-    expect(ACTION_DEFS.spark.outcomes?.onPlay).toBeDefined()   // socle B présent
+    // Le générateur AUTO-CIBLÉ porte le socle onPlay (⊖) + un DC fixe.
+    expect(ACTION_DEFS['cathodic-focus'].selfTargeted).toBe(true)
+    expect(ACTION_DEFS['cathodic-focus'].outcomes?.onPlay).toBeDefined()
+    expect(ACTION_DEFS['cathodic-focus'].getDC).toBeDefined()
   })
 })
 
 describe('gate hasChargeSink — un exutoire dans le kit', () => {
   it('faux sans décharge, vrai avec', () => {
-    expect(hasChargeSinkFor(cfg(['spark']))).toBe(false)
-    expect(hasChargeSinkFor(cfg(['spark', 'discharge']))).toBe(true)
+    expect(hasChargeSinkFor(cfg(['cathodic-focus']))).toBe(false)
+    expect(hasChargeSinkFor(cfg(['cathodic-focus', 'discharge']))).toBe(true)
   })
 })
 
-describe('pricing D en contexte — la ⊖ de spark ne vaut que gatée', () => {
+describe('pricing D en contexte — la ⊖ de la Focalisation ne vaut que gatée', () => {
   // Le payoff est mémoïsé par ref d'acteur (payoffCache) — sans lien avec
   // hasChargeSink, stable au sein d'une manche mais pas entre deux ctx. On force
-  // le recalcul avec des instances DISTINCTES (m1/e1 vs m2/e2).
+  // le recalcul avec des instances DISTINCTES (m1 vs m2).
   const ctx = (m: ReturnType<typeof mage>, e: ReturnType<typeof foe>, hasChargeSink: boolean): ScoreContext => ({
     selfId:  'M',
     isEnemy: id => id === 'E',
@@ -56,22 +60,22 @@ describe('pricing D en contexte — la ⊖ de spark ne vaut que gatée', () => {
     hasChargeSink,
   })
 
-  it('spark score PLUS haut quand une décharge existe (charge valorisée)', () => {
+  it('cathodic-focus score PLUS haut quand une décharge existe (charge valorisée)', () => {
     const m1 = mage(), e1 = foe()
     const m2 = mage(), e2 = foe()
-    const withSink = scorePlayerAction('spark', m1, e1, ctx(m1, e1, true))
-    const without  = scorePlayerAction('spark', m2, e2, ctx(m2, e2, false))
+    const withSink = scorePlayerAction('cathodic-focus', m1, e1, ctx(m1, e1, true))
+    const without  = scorePlayerAction('cathodic-focus', m2, e2, ctx(m2, e2, false))
     expect(withSink).toBeGreaterThan(without)
   })
 })
 
 describe('séquencement — charger en bande I, décharger en bande III', () => {
-  it('le plan de manche enchaîne spark puis discharge', () => {
-    const plan = planRoundUtility(mage(), foe(), cfg(['spark', 'discharge']))
+  it('le plan de manche enchaîne cathodic-focus puis discharge', () => {
+    const plan = planRoundUtility(mage(), foe(), cfg(['cathodic-focus', 'discharge']))
     const ids = plan.map(p => p.action)
-    expect(ids).toContain('spark')
+    expect(ids).toContain('cathodic-focus')
     expect(ids).toContain('discharge')
-    // spark (init 2, bande I) est planifié AVANT discharge (init 7, bande III).
-    expect(ids.indexOf('spark')).toBeLessThan(ids.indexOf('discharge'))
+    // cathodic-focus (init 1, bande I) est planifié AVANT discharge (init 7, bande III).
+    expect(ids.indexOf('cathodic-focus')).toBeLessThan(ids.indexOf('discharge'))
   })
 })

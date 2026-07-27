@@ -65,6 +65,10 @@ interface RawPlayerAction {
   requiresFirstAction?: boolean
   roll?:        { characteristic: CharacteristicName; skill: SkillName }
   selfTargeted?: boolean
+  /** DC fixe d'une action auto-ciblée déclarative (Focalisation : jet vs DD). */
+  selfDC?:      number
+  /** L'action DISSIPE les ⊖ du lanceur (Décharge) — marque le gate `hasChargeSink`. */
+  consumesCharge?: boolean
   // ── Déplacement & élan (§ positions) ────────────────────────────────────────
   /** Action de mouvement (Marche/Course) : ni jet ni garde. */
   movement?:    boolean
@@ -143,12 +147,13 @@ export function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string):
     ...(raw.blockedByStatus && { blockedByStatus: raw.blockedByStatus }),
     ...(raw.requiresInertia != null && { requiresInertia: raw.requiresInertia }),
     ...(raw.selfAdvantage != null && { selfAdvantage: raw.selfAdvantage }),
+    ...(raw.consumesCharge && { consumesCharge: true }),
   }
 
   if (raw.resolver) {
     const custom = ACTION_RESOLVERS[raw.resolver as ActionResolverId]
     if (!custom) throw new Error(`player_actions.yaml: resolver inconnu "${raw.resolver}" (action ${id})`)
-    return { ...base, getDC: custom.getDC, resolve: (o, actor) => custom.resolve(o, actor) }
+    return { ...base, getDC: custom.getDC, resolve: (o, actor, target) => custom.resolve(o, actor, target) }
   }
 
   // Action de mouvement : résolue par resolveMovementAction (branche dédiée de
@@ -166,6 +171,12 @@ export function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string):
     ...(raw.onCritical && { onCritical: resolveOutcome(raw.onCritical, locale) }),
     ...(raw.onFlaw     && { onFlaw:     resolveOutcome(raw.onFlaw, locale) }),
     ...(raw.onPlay     && { onPlay:     resolveOutcome(raw.onPlay, locale) }),
+  }
+  // Auto-ciblée déclarative (Focalisation Cathodique) : jet vs DD fixe, ses ops
+  // s'appliquent au lanceur (makeResolve selfTargeted). Le DC dynamique
+  // (7 + charges du vault) reste un chantier — un DD fixe suffit ici.
+  if (raw.selfTargeted) {
+    return { ...base, outcomes, resolve: makeResolve(outcomes, true), getDC: () => raw.selfDC ?? 0 }
   }
   return { ...base, outcomes, resolve: makeResolve(outcomes) }
 }

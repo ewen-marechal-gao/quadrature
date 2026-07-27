@@ -1,0 +1,63 @@
+name: "Arc Electromancer"
+# Électromancie — premier électromancien jouable (§ magie_electromancie.md).
+# Profil « batterie » : Volonté + Discipline élevées (jet d'Électromancie, proxy),
+# Réactivité pour tenir la garde face au Faucheur. Boucle : Focalisation Cathodique
+# (⊖ bande I) → Décharge Électrostatique (bande III). Étincelle comble la bande II.
+# Rang d'Électromancie 2 (plafond de charge 2), débloqué par l'Initiation.
+disciplines:
+  electromancy: 2
+perks:
+  - arc-initiate
+inventory:
+  protection: 1
+characteristics:
+  strength:
+    value: 1
+    wounds: 0
+    power: 0
+    robustness: 1
+  agility:
+    value: 2
+    wounds: 0
+    precision: 0
+    mobility: 2 # Marche / Esquive
+  vigor:
+    value: 2
+    wounds: 0
+    endurance: 1
+    recovery: 1
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 1
+    wounds: 0
+    observation: 0
+    vigilance: 1
+  willpower:
+    value: 3
+    wounds: 0
+    authority: 0
+    discipline: 3 # jet d'Électromancie (proxy) — débloque le rang (prérequis Volonté 2)
+  intelligence:
+    value: 2
+    wounds: 0
+    logic: 0
+    reactivity: 2 # réserve de ⚡ pour la garde
+  tenacity:
+    value: 2
+    wounds: 0
+    conviction: 0
+    resilience: 2 # tenir moralement face au Faucheur
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 1
+    wounds: 0
+    foresight: 0
+    intuition: 0

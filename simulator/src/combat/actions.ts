@@ -144,6 +144,12 @@ export interface ActionDef {
    * (gating de `canUseAction`) — elle ne pollue pas le catalogue des autres.
    */
   discipline?:   DisciplineId
+  /**
+   * L'action DISSIPE les ⊖ du lanceur (Décharge Électrostatique) : elle est un
+   * EXUTOIRE de charge. Lu par le planificateur (`hasChargeSink`) pour savoir si
+   * se charger a une valeur, même quand la décharge est un resolver sans outcomes.
+   */
+  consumesCharge?: boolean
   /** True for self-targeted actions: roll vs fixed DC, no opponent, no guard */
   selfTargeted:  boolean
   /** DC formula for self-targeted actions (reads live state for dynamic values) */

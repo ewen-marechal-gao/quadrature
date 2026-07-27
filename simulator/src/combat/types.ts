@@ -133,7 +133,8 @@ export type ActionId =
   // Réactions ⚡ (§ defense_reactions.md) — jouées sur un DÉCLENCHEUR, hors plan de manche
   | 'opportunity-strike' // Frappe opportuniste — init 2, ⚡💧, Réactivité+Intelligence
   // ⚡ Électromancie (cartes de discipline — data/disciplines/electromancy.yaml)
-  | 'spark'          // Étincelle   — génère une charge ⊖ (onPlay), brûle la cible
+  | 'spark'          // Étincelle   — cantrip : brûle la cible (ne génère pas)
+  | 'cathodic-focus' // Focalisation Cathodique — auto-ciblée : accumule une ⊖ (onPlay)
   | 'discharge'      // Décharge Électrostatique — dissipe une ⊖, foudroie la cible
 
 // ─── Déclencheurs de réaction (§ defense_reactions.md) ────────────────────────
