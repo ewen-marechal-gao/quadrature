@@ -454,7 +454,28 @@ function makeContext(
     getActor: id => id === self.id ? self : id === opponent.id ? opponent : undefined,
     weights,
     pushDirections: pushDirectionsFor(config),
+    hasChargeSink:  hasChargeSinkFor(config),
   }
+}
+
+/**
+ * Le kit contient-il une action de DÉCHARGE — qui dissipe les ⊖ du lanceur (op
+ * `dissipateCharge`) ? Gate la valeur du stock de ⊖ : sans exutoire, se charger
+ * ne vaut rien (façon `pushDirectionsFor`). Une décharge ciblant l'adversaire
+ * (`dissipateTargetCharge`) ne compte pas : elle ne vide pas SA propre batterie.
+ */
+function hasChargeSinkFor(config: PlannerConfig): boolean {
+  for (const id of ALL_ACTION_IDS) {
+    if (!isAllowed(id, config)) continue
+    const out = ACTION_DEFS[id].outcomes
+    if (!out) continue
+    for (const tier of [out.onSuccess, out.onFailure, out.onCritical, out.onFlaw, out.onPlay]) {
+      for (const op of tier?.effect ?? []) {
+        if ('dissipateCharge' in op) return true
+      }
+    }
+  }
+  return false
 }
 
 /**

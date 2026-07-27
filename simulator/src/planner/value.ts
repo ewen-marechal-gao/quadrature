@@ -32,6 +32,7 @@ import type {
 import { MENTAL_STATES } from '../combat/types'
 import {
   effChar, resistanceThreshold, stabilityPool, stepMentalToward, MENTAL_STATE_EFFECTS,
+  addCharge, dissipateCharge,
 } from '../combat/combatant'
 import { STATUS_DEFS } from '../combat/status'
 import { PHYSICAL_CHARACTERISTICS, MENTAL_CHARACTERISTICS } from '../character/data'
@@ -120,6 +121,21 @@ const BLEED_VALUE = 1.2
  */
 const BURN_VALUE = 1.5
 /**
+ * ⚡ Valeur d'UNE charge ⊖ portée par le lanceur, par POTENTIEL DE CONVERSION.
+ * Chaque ⊖ se convertit en dégâts via une action de décharge (Décharge
+ * Électrostatique : ~2💢/2🔥 par ⊖, soit ~2-3 en 💢-équivalents). On la price à
+ * une FRACTION de ce rendement : porter la charge vaut sa promesse, la décharger
+ * réalise le reste — sinon le planificateur se chargerait sans jamais tirer
+ * (la valeur pleine ne se débloque qu'à la décharge, cf. dégâts sur la cible).
+ */
+const CHARGE_STOCK_VALUE = 1.0
+/**
+ * Rendements décroissants du stock de ⊖ (somme géométrique) : le DD de la
+ * Décharge croît avec X dissipé (7 + X), on ne vide donc pas tout d'un coup de
+ * façon fiable. Borne la valeur d'un gros stock (Σ → CHARGE_STOCK_VALUE / (1−d)).
+ */
+const CHARGE_DECAY = 0.6
+/**
  * Horizon, en manches, sur lequel un saignement que RIEN ne referme est projeté.
  *
  * Une Récupération ≥ 1 borne la projection d'elle-même (le stock décroît jusqu'à
@@ -147,6 +163,13 @@ export interface ScoreContext {
    * that hurts. Absent = both (standalone pricing).
    */
   pushDirections?: { rage: boolean; terror: boolean }
+  /**
+   * ⚡ Le kit de l'acteur contient-il une action de DÉCHARGE (qui dissipe ses
+   * propres ⊖ pour en tirer un effet) ? Une charge ⊖ ne vaut son potentiel de
+   * conversion que s'il existe un moyen de la dépenser — sinon elle est inerte
+   * (voire une charge de trop qui brûle). Absent = aucune (pas de valeur).
+   */
+  hasChargeSink?: boolean
 }
 
 /**
@@ -159,7 +182,8 @@ export function scoreEffects(effects: readonly CombatEffect[], ctx: ScoreContext
   for (const e of effects) {
     const target = ctx.getActor(e.targetId)
     if (!target) continue
-    const burden = effectBurden(e, target, e.targetPart, ctx.pushDirections)
+    const isSelf = e.targetId === ctx.selfId
+    const burden = effectBurden(e, target, e.targetPart, ctx.pushDirections, ctx.hasChargeSink ?? false, isSelf)
     if (ctx.isEnemy(e.targetId)) {
       // Decisive progress (K.O., last part, trauma at the extreme) gets the
       // finisher multiplier — the opportunist smells blood, by the numbers.
@@ -184,25 +208,31 @@ export function effectBurden(
   target:   Actor,
   partType?: string,
   push?:    { rage: boolean; terror: boolean },
+  /** Le kit peut-il dépenser une ⊖ (action de décharge) ? Sinon la charge est inerte. */
+  chargeSink = false,
+  /** L'effet tombe-t-il sur le LANCEUR ? La valeur d'une charge est propre à son porteur-mage. */
+  isSelf     = false,
 ): number {
   return isAdversaryActor(target)
     ? adversaryBurden(e, target, partType, push ?? { rage: true, terror: true })
-    : pcBurden(e, target)
+    : pcBurden(e, target, chargeSink, isSelf)
 }
 
 // ─── PC burdens ───────────────────────────────────────────────────────────────
 
-function pcBurden(e: CombatEffect, s: CombatantState): number {
+function pcBurden(e: CombatEffect, s: CombatantState, chargeSink = false, isSelf = false): number {
   switch (e.kind) {
     case 'light-wound':    return lightWoundBurdenPc(s, e.amount)
     case 'heavy-wound':    return heavyWoundBurdenPc(s)
     case 'heal-wounds':    return -Math.min(e.amount, s.lightWounds)
     case 'add-fatigue':    return fatigueBurdenPc(s, e.amount)
     case 'add-burn':       return e.amount * BURN_VALUE
-    // ⚡ Charges : valorisées par leur POTENTIEL DE CONVERSION (Phase D). Neutres
-    // pour l'instant — aucune carte d'électromancie n'en produit encore.
-    case 'add-charge':
-    case 'dissipate-charge': return 0
+    // ⚡ Charges : valorisées sur le LANCEUR par POTENTIEL DE CONVERSION (marginal
+    // du stock de ⊖), avec pénalité de débordement (🔥). Sur autrui, la valeur
+    // (fuel de Surcharge, avantage 🟩) est propre au mage et pas encore modélisée
+    // → 0 (chantier : décharge ennemie / avantage électrique).
+    case 'add-charge':       return isSelf ? chargeAddBurdenPc(s, e.delta, e.capped ?? false, chargeSink) : 0
+    case 'dissipate-charge': return isSelf ? chargeDissipateBurdenPc(s, e.amount, chargeSink) : 0
     case 'remove-fatigue': return -fatigueBurdenPc({ ...s, fatigue: Math.max(1, s.fatigue - e.amount) },
                                                    Math.min(e.amount, s.fatigue - 1))
     // Hémorragie 🩸 PJ : un COMPTEUR de jetons (add = +1 jeton, remove = tout
@@ -329,6 +359,39 @@ function bleedStockBurdenPc(s: CombatantState, extra: number): number {
 }
 
 /**
+ * ⚡ Valeur (BÉNÉFIQUE → burden NÉGATIF) du stock de ⊖ que le lanceur porte, par
+ * potentiel de conversion. Somme géométrique décroissante (cf. CHARGE_DECAY) :
+ * la 1ʳᵉ ⊖ vaut plein, les suivantes de moins en moins (le DD de la Décharge
+ * croît avec X). Gaté : sans exutoire dans le kit, une ⊖ est inerte → 0. Les ⊕
+ * sur soi (rares) sont hors-sujet.
+ */
+export function chargeStockBurdenPc(s: CombatantState, hasSink: boolean): number {
+  const q = Math.max(0, -s.charge)
+  if (q === 0 || !hasSink) return 0
+  let value = 0
+  for (let i = 0; i < q; i++) value += CHARGE_STOCK_VALUE * Math.pow(CHARGE_DECAY, i)
+  return -value
+}
+
+/**
+ * Marginal d'un `add-charge` sur le lanceur : gain de stock exploitable (bénéfice)
+ * PLUS le 🔥 qu'un débordement du plafond génère (auto-accumulation ⊖ au-delà du
+ * cap). On simule `addCharge` (pur) pour connaître la charge écrêtée et la brûlure.
+ */
+function chargeAddBurdenPc(s: CombatantState, delta: number, capped: boolean, hasSink: boolean): number {
+  const after = addCharge(s, delta, capped)
+  const stock = chargeStockBurdenPc(after, hasSink) - chargeStockBurdenPc(s, hasSink)
+  const burn  = (after.burn - s.burn) * BURN_VALUE
+  return stock + burn
+}
+
+/** Marginal d'un `dissipate-charge` sur le lanceur : perte de stock exploitable. */
+function chargeDissipateBurdenPc(s: CombatantState, amount: number, hasSink: boolean): number {
+  const after = dissipateCharge(s, amount)
+  return chargeStockBurdenPc(after, hasSink) - chargeStockBurdenPc(s, hasSink)
+}
+
+/**
  * Standing burden of a mental state, from MENTAL_STATE_EFFECTS: what the state
  * costs per round in dice, reactions and fatigue. Negative terms are the perks
  * (rage states reroll their attacks; focused banks a reaction).
@@ -378,8 +441,10 @@ function adversaryBurden(
     case 'heavy-wound':    return heavyWoundBurdenAdv(c, partType)
     case 'add-fatigue':    return fatigueBurdenAdv(c, e.amount)
     case 'add-burn':       return e.amount * BURN_VALUE
+    // Charge sur une créature : sa valeur (fuel de Surcharge/Arcs, avantage 🟩 du
+    // mage) est propre au lanceur et pas encore modélisée → 0 (chantier).
     case 'add-charge':
-    case 'dissipate-charge': return 0     // potentiel de conversion — Phase D
+    case 'dissipate-charge': return 0
     case 'add-status':     return e.status === 'stunned' && !c.stunned ? 2 : 0
     case 'shift-mental':        return mentalShiftBurdenAdv(c, e.direction)
     case 'shift-mental-broken': return c.stability > 0 ? 0
