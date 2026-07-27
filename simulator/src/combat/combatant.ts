@@ -42,6 +42,7 @@ export function initCombatant(char: Character): CombatantState {
     stability:         0,   // set below via stabilityPool (needs the built state)
     bleed:             0,
     burn:              0,
+    charge:            0,
     exhaustion:        0,
     initiativeDelay:   0,
     mentalWounds:      0,
@@ -456,6 +457,42 @@ export function processCombustion(state: CombatantState): { state: CombatantStat
   return { state: s, notes: [`🔥 Combustion — ${s.burn}🔥 → ${heavies}💔 + 🔻×${heavies}`] }
 }
 
+// ─── Charge électrique ⚡ (§ électromancie) ─────────────────────────────────────
+
+/**
+ * Plafond de charges ⊖ que ce combattant peut accumuler sur lui-même : son rang
+ * d'Électromancie (+ Condensateur plus tard). 0 pour un non-mage — la moindre ⊖
+ * le brûle alors aussitôt (« toute charge supplémentaire se dissipe en 🔥 »).
+ */
+export function chargeCap(state: CombatantState): number {
+  return state.char.disciplines?.electromancy ?? 0
+}
+
+/**
+ * Ajoute `delta` à la charge (⊕ = +, ⊖ = −). L'opposée neutralise par
+ * arithmétique. Les ⊖ AU-DELÀ du cap sont écrêtées et se dissipent chacune en un
+ * marqueur 🔥 (combustion). Les ⊕ ne sont pas plafonnées (§ électromancie).
+ */
+export function addCharge(state: CombatantState, delta: number): CombatantState {
+  const cap = chargeCap(state)
+  const raw = state.charge + delta
+  if (raw < -cap) {
+    const overflow = (-cap) - raw
+    // `cap === 0 ? 0 : -cap` évite le zéro NÉGATIF (Object.is(-0, 0) === false).
+    return addBurn({ ...state, charge: cap === 0 ? 0 : -cap }, overflow)
+  }
+  return { ...state, charge: raw }
+}
+
+/** Dissipe jusqu'à `amount` charges en réduisant la magnitude vers 0 (sans changer de pôle). */
+export function dissipateCharge(state: CombatantState, amount: number): CombatantState {
+  if (amount <= 0 || state.charge === 0) return state
+  const charge = state.charge > 0
+    ? Math.max(0, state.charge - amount)
+    : Math.min(0, state.charge + amount)
+  return { ...state, charge }
+}
+
 /** Heal n light wounds (floor 0) */
 export function healLightWounds(state: CombatantState, amount: number): CombatantState {
   return { ...state, lightWounds: Math.max(0, state.lightWounds - amount) }
@@ -682,6 +719,8 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'remove-fatigue': return removeFatigue(s, effect.amount)
     // Hémorragie 🩸 : compteur de jetons (prototype), pas un statut binaire.
     case 'add-burn':       return addBurn(s, effect.amount)
+    case 'add-charge':     return addCharge(s, effect.delta)
+    case 'dissipate-charge': return dissipateCharge(s, effect.amount)
     case 'add-status':     return effect.status === 'hemorrhage' ? addBleedPc(s, 1)  : addStatus(s, effect.status)
     case 'remove-status':  return effect.status === 'hemorrhage' ? clearBleedPc(s)   : removeStatus(s, effect.status)
     case 'spend-actions':  return { ...s, actions: Math.max(0, s.actions - effect.amount) }
@@ -752,6 +791,7 @@ export function toCombatantSnapshot(state: CombatantState): CombatantSnapshot {
     mentalCapacity: sum(MENTAL_CHARACTERISTICS),
     bleed:          state.bleed,
     burn:           state.burn,
+    charge:         state.charge,
     exhaustion:     state.exhaustion,
     status:         [...state.status],
     charWounds,

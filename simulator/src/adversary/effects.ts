@@ -10,6 +10,7 @@
 import type { CombatEffect } from '../combat/types'
 import {
   damagePart, addAdversaryFatigue, shiftAdversaryMental, addBleed, addAdversaryBurn,
+  addAdversaryCharge, dissipateAdversaryCharge,
   type AdversaryCombatant,
 } from './combatant'
 
@@ -46,6 +47,8 @@ export function applyPcEffectsToAdversary(
       case 'heavy-wound': c = damagePart(c, targetPart, { heavy: 1 });         break
       case 'add-fatigue': c = addAdversaryFatigue(c, fx.amount);               break
       case 'add-burn':    c = addAdversaryBurn(c, fx.amount);                  break
+      case 'add-charge':  c = addAdversaryCharge(c, fx.delta);                 break
+      case 'dissipate-charge': c = dissipateAdversaryCharge(c, fx.amount);     break
       case 'shift-mental':
         c = shiftAdversaryMental(c, fx.direction === 'toward-terror' ? -1 : fx.direction === 'toward-rage' ? 1 : 0)
         break

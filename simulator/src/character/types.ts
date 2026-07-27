@@ -21,7 +21,7 @@ export type CharacteristicName =
  * est branchée pour l'instant ; le type est prévu extensible aux 6 autres
  * disciplines martiales et aux 7 disciplines magiques.
  */
-export type DisciplineId = 'fencing'
+export type DisciplineId = 'fencing' | 'electromancy'
 
 /** All 20 skill names */
 export type SkillName =

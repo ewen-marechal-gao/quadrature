@@ -217,6 +217,13 @@ export interface CombatantState {
    */
   burn: number
   /**
+   * ⚡ Charge électrique (§ électromancie) : entier SIGNÉ — `+` = ⊕ positive,
+   * `−` = ⊖ négative, `0` = neutre. La neutralisation (« on ne porte pas les deux,
+   * l'opposée dissipe ») est de l'arithmétique. Le nombre de ⊖ = max(0, −charge).
+   * Les ⊖ au-delà du cap (rang d'Électromancie) se dissipent en 🔥 (combustion).
+   */
+  charge: number
+  /**
    * 😩 Épuisé : marqueurs cumulatifs (§ etats.md). Ils posent un PLANCHER à la
    * Fatigue 💧 — elle ne descend jamais en dessous de leur nombre, ni par le
    * repos ni par la Respiration.
@@ -305,6 +312,8 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
   | { kind: 'add-fatigue';    amount: number }
   | { kind: 'remove-fatigue'; amount: number }
   | { kind: 'add-burn';       amount: number }  // 🔥 marqueurs de combustion (§ combustion)
+  | { kind: 'add-charge';     delta: number }   // ⚡ charge SIGNÉE (± ⊕/⊖) ; overflow ⊖ → 🔥
+  | { kind: 'dissipate-charge'; amount: number } // ⚡ réduit la magnitude de charge vers 0
   | { kind: 'add-status';     status: StatusEffect }
   | { kind: 'remove-status';  status: StatusEffect }
   | { kind: 'spend-actions';  amount: number }  // lose PA (flaw penalty etc.)
@@ -420,6 +429,8 @@ export interface CombatantSnapshot {
   bleed:          number
   /** 🔥 Combustion : marqueurs de brûlure cumulés à cet instant */
   burn:           number
+  /** ⚡ Charge électrique signée (+ ⊕ / − ⊖) à cet instant */
+  charge:         number
   /** 😩 Épuisé : marqueurs cumulés — plancher de la Fatigue 💧 */
   exhaustion:     number
   status:         StatusEffect[]

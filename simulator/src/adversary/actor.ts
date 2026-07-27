@@ -23,7 +23,7 @@ import {
 } from '../combat/combatant'
 import {
   isAdversaryDefeated, damagePart, addAdversaryFatigue, shiftAdversaryMental,
-  addBleed, bleedTick, addAdversaryBurn,
+  addBleed, bleedTick, addAdversaryBurn, addAdversaryCharge, dissipateAdversaryCharge,
   startRound as adversaryStartRound,
   type AdversaryCombatant,
 } from './combatant'
@@ -109,6 +109,10 @@ function applyEffectToAdversary(a: AdversaryCombatant, fx: CombatEffect): Advers
       return addAdversaryFatigue(a, fx.amount)
     case 'add-burn':
       return addAdversaryBurn(a, fx.amount)
+    case 'add-charge':
+      return addAdversaryCharge(a, fx.delta)
+    case 'dissipate-charge':
+      return dissipateAdversaryCharge(a, fx.amount)
     case 'shift-mental':
       if (fx.direction === 'toward-terror') return shiftAdversaryMental(a, -1)
       if (fx.direction === 'toward-rage')   return shiftAdversaryMental(a, +1)

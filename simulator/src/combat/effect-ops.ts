@@ -29,6 +29,10 @@ export type EffectOp =
   | { heavyWound: number }
   | { burn: number }             // 🔥 N marqueurs de combustion sur la cible
   | { selfBurn: number }         // SELF: le lanceur subit N 🔥 (⚠️ Défaut d'électromancie)
+  | { charge: number }           // ⚡ ajoute une charge signée (± ⊕/⊖) à la CIBLE
+  | { selfCharge: number }       // SELF: le lanceur ajoute une charge signée sur lui-même
+  | { dissipateCharge: number }  // SELF: dissipe N charges du lanceur (vers 0)
+  | { dissipateTargetCharge: number } // ⚡ dissipe N charges de la CIBLE (vers 0)
   | { status: StatusEffect }
   | { mental: number }
   | { move: number }
@@ -114,6 +118,14 @@ export function opsToCombatEffects(
       out.push({ targetId, kind: 'add-burn', amount: op.burn })
     } else if ('selfBurn' in op) {
       if (selfId) out.push({ targetId: selfId, kind: 'add-burn', amount: op.selfBurn })
+    } else if ('charge' in op) {
+      out.push({ targetId, kind: 'add-charge', delta: op.charge })
+    } else if ('selfCharge' in op) {
+      if (selfId) out.push({ targetId: selfId, kind: 'add-charge', delta: op.selfCharge })
+    } else if ('dissipateCharge' in op) {
+      if (selfId) out.push({ targetId: selfId, kind: 'dissipate-charge', amount: op.dissipateCharge })
+    } else if ('dissipateTargetCharge' in op) {
+      out.push({ targetId, kind: 'dissipate-charge', amount: op.dissipateTargetCharge })
     } else if ('status' in op) {
       out.push({ targetId, kind: 'add-status', status: op.status })
     } else if ('mental' in op) {

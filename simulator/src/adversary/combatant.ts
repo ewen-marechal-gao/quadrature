@@ -133,6 +133,12 @@ export interface AdversaryCombatant {
    */
   burn:      number
   /**
+   * ⚡ Charge électrique signée (§ électromancie) : + ⊕ / − ⊖. Une créature n'a
+   * pas de capacité propre (cap 0) : toute ⊖ la brûle aussitôt ; elle peut porter
+   * des ⊕ (posées par un mage). Miroir du champ PJ.
+   */
+  charge:    number
+  /**
    * « Déstabilisé » : la créature ignore son PROCHAIN regain de ◇ au début de
    * manche (posé par Provocation/Intimidation, consommé au startRound). Assèche
    * durablement le ◇ malgré sa régénération.
@@ -202,6 +208,7 @@ export function initAdversary(sheet: AdversarySheet): AdversaryCombatant {
     stunned:     false,
     bleed:       0,
     burn:        0,
+    charge:      0,
     destabilized: false,
     usedReactions: [],
   }
@@ -477,6 +484,26 @@ export function combustionTick(c: AdversaryCombatant): AdversaryCombatant {
   return heavies > 0 ? shiftAdversaryMental(next, -heavies) : next
 }
 
+// ─── Charge électrique ⚡ (§ électromancie) ─────────────────────────────────────
+
+/**
+ * Ajoute `delta` à la charge (⊕ = +, ⊖ = −), neutralisation par arithmétique. Une
+ * créature n'a pas de capacité (cap 0) : toute ⊖ résiduelle se dissipe aussitôt
+ * en 🔥. Les ⊕ ne sont pas plafonnées.
+ */
+export function addAdversaryCharge(c: AdversaryCombatant, delta: number): AdversaryCombatant {
+  const raw = c.charge + delta
+  if (raw < 0) return addAdversaryBurn({ ...c, charge: 0 }, -raw)
+  return { ...c, charge: raw }
+}
+
+/** Dissipe jusqu'à `amount` charges vers 0 (sans changer de pôle). */
+export function dissipateAdversaryCharge(c: AdversaryCombatant, amount: number): AdversaryCombatant {
+  if (amount <= 0 || c.charge === 0) return c
+  const charge = c.charge > 0 ? Math.max(0, c.charge - amount) : Math.min(0, c.charge + amount)
+  return { ...c, charge }
+}
+
 // ─── Fatigue ──────────────────────────────────────────────────────────────────
 
 /** Core: spend 🫁 first, then mark the clock; `minThrough` cases always land. */
@@ -567,6 +594,8 @@ export interface AdversarySnapshot {
   bleed:       number
   /** 🔥 Marqueurs de combustion cumulés (propagation + 💔 au début de manche). */
   burn:        number
+  /** ⚡ Charge électrique signée (+ ⊕ / − ⊖). */
+  charge:      number
   /** « Déstabilisé » : sautera son prochain regain de ◇. */
   destabilized: boolean
   /** 🛡️ Armure totale restante (somme sur les parties, consommée par les 💔). */
@@ -612,6 +641,7 @@ export function toAdversarySnapshot(c: AdversaryCombatant): AdversarySnapshot {
     winded:      isAdversaryWinded(c),
     bleed:       c.bleed,
     burn:        c.burn,
+    charge:      c.charge,
     destabilized: c.destabilized,
     /** Armure totale = somme de l'armure RESTANTE des parties (consommée par les 💔). */
     armorTotal:  allParts.reduce((s, p) => s + p.armor, 0),
