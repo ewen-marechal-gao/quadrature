@@ -55,12 +55,20 @@ export interface ActionOutcome {
 /**
  * Declarative description of a target-directed action's results.
  * onCritical / onFlaw are ADDITIVE to the success/failure base.
+ *
+ * `onPlay` is the UNCONDITIONAL tier — it fires whatever the roll, applied
+ * after ⚠️ Défaut / ✴️ Critique but before ✅/◐. It carries the effects an
+ * action produces just by being played (typically SELF ops : générer une
+ * charge ⊖, poser une Inertie…), independent of whether the attack lands.
+ * C'est le socle des combos d'Électromancie : une carte « charge » dépose sa
+ * ⊖ à coup sûr, la conversion se joue au tour d'après.
  */
 export interface ActionOutcomes {
   onSuccess:   ActionOutcome
   onFailure:   ActionOutcome
   onCritical?: ActionOutcome
   onFlaw?:     ActionOutcome
+  onPlay?:     ActionOutcome
 }
 
 /** Result flags of an action check, input to a resolver. */
@@ -86,7 +94,7 @@ export function makeResolve(outcomes: ActionOutcomes) {
       effects.push(...opsToCombatEffects(o.effect, target.id, actor.id))
       if (o.text) notes.push(`${prefix} ${o.text}`)
     }
-    // ORDRE DE RÉSOLUTION : ⚠️ Défaut, puis ✴️ Critique, puis l'issue.
+    // ORDRE DE RÉSOLUTION : ⚠️ Défaut, ✴️ Critique, ▶️ onPlay, puis l'issue.
     // C'est l'ordre IMPRIMÉ sur la carte (cf. le schéma de rules/fr/cartes), et
     // il n'est pas cosmétique : plusieurs effets sont plafonnés ou absorbés, donc
     // leur rang change le résultat. Un 🔻 de défaut appliqué avant le ◇ que
@@ -94,6 +102,10 @@ export function makeResolve(outcomes: ActionOutcomes) {
     // l'absorbe et le défaut ne coûte plus rien.
     if (flaw)     apply(outcomes.onFlaw, '⚠️')
     if (critical) apply(outcomes.onCritical, '✴️')
+    // ▶️ onPlay : le socle INCONDITIONNEL — il tombe quel que soit le jet, après
+    // crit/défaut mais avant l'issue. C'est là que se posent les ressources
+    // qu'une carte génère juste en étant jouée (⊖ auto-chargée, Inertie…).
+    apply(outcomes.onPlay, '▶️')
     // Une action n'échoue jamais : total ≥ DC = succès (✅), sinon succès partiel (◐).
     apply(hit ? outcomes.onSuccess : outcomes.onFailure, hit ? '✅' : '◐')
     return { effects, notes }

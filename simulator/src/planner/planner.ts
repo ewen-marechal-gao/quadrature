@@ -425,7 +425,7 @@ function pushDirectionsFor(config: PlannerConfig): { rage: boolean; terror: bool
     if (!isAllowed(id, config)) continue
     const out = ACTION_DEFS[id].outcomes
     if (!out) continue
-    for (const tier of [out.onSuccess, out.onFailure, out.onCritical, out.onFlaw]) {
+    for (const tier of [out.onSuccess, out.onFailure, out.onCritical, out.onFlaw, out.onPlay]) {
       for (const op of tier?.effect ?? []) {
         if ('mental' in op)        { if (op.mental > 0) rage = true; else if (op.mental < 0) terror = true }
         if ('shiftIfBroken' in op) { if (op.shiftIfBroken > 0) rage = true; else terror = true }

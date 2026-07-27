@@ -86,6 +86,8 @@ interface RawPlayerAction {
   onFailure?:   RawOutcome
   onCritical?:  RawOutcome
   onFlaw?:      RawOutcome
+  /** Socle inconditionnel : appliqué quel que soit le jet (après crit/défaut, avant l'issue). */
+  onPlay?:      RawOutcome
   resolver?:    string
 }
 
@@ -163,6 +165,7 @@ function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string): Action
     onFailure: resolveOutcome(raw.onFailure, locale),
     ...(raw.onCritical && { onCritical: resolveOutcome(raw.onCritical, locale) }),
     ...(raw.onFlaw     && { onFlaw:     resolveOutcome(raw.onFlaw, locale) }),
+    ...(raw.onPlay     && { onPlay:     resolveOutcome(raw.onPlay, locale) }),
   }
   return { ...base, outcomes, resolve: makeResolve(outcomes) }
 }
