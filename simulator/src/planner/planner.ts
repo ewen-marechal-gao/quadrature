@@ -35,8 +35,9 @@ import {
   checkRollParams, rollParamsFrom, defFor, guardConcession, guardAnswers, type ActionDef,
 } from '../combat/actions'
 import {
-  spendActionCost, mentalRollModifiers, MENTAL_STATE_EFFECTS,
+  spendActionCost, mentalRollModifiers, MENTAL_STATE_EFFECTS, applyEffectToState,
 } from '../combat/combatant'
+import { opsToCombatEffects, type EffectOp } from '../combat/effect-ops'
 import type { PlannedAction, PlannedCard } from '../combat/round'
 import { bandOf, BANDS, type Band } from '../combat/bands'
 import { distance } from '../combat/position'
@@ -366,6 +367,47 @@ export const estimateGuard = (defender: CombatantState, attackInitiative: number
  * later band gates on (élan for the Charge, Essoufflé for the Course, and the
  * Respiration clearing it). Not a resolution: no rolls, no target, no board.
  */
+/**
+ * Enemy sentinel for onPlay projection : les ops ciblées partent vers cet id
+ * bidon et sont écartées (on ne garde que les ops SELF). Il suffit qu'il diffère
+ * de l'id du lanceur.
+ */
+const PLANNER_ENEMY_SENTINEL = '__planner_enemy__'
+
+/**
+ * Replie dans l'état du lanceur les ops SELF d'un tier ▶️ onPlay (⊖ auto-chargée,
+ * dissipation, 🔥, Inertie…). Les ops ciblées (adversaire) partent vers le
+ * sentinel et sont écartées : cet état ne modélise que le lanceur. Pur et
+ * exporté pour être testé sans carte réelle.
+ */
+export function projectOnPlaySelf(
+  state:  CombatantState,
+  onPlay: { effect: EffectOp[] } | undefined,
+): CombatantState {
+  if (!onPlay) return state
+  let s = state
+  for (const e of opsToCombatEffects(onPlay.effect, PLANNER_ENEMY_SENTINEL, s.id)) {
+    if (e.targetId === s.id) s = applyEffectToState(s, e)
+  }
+  return s
+}
+
+/**
+ * Projette dans l'état de PLANIFICATION les ressources qu'une action pose à COUP
+ * SÛR, pour que les bandes suivantes du DFS les voient (« la Course arme la
+ * Charge de la bande III »). Deux sources de garanties :
+ *
+ *  1. les drapeaux déclarés sur la def — Inertie ➡️, statut posé/levé ;
+ *  2. le tier ▶️ **onPlay**, inconditionnel par construction : ses ops SELF
+ *     (⊖ auto-chargée, dissipation, 🔥, Inertie…) tombent quel que soit le jet,
+ *     donc le planificateur peut compter dessus pour la suite de la manche.
+ *     C'est CE chaînage qui rend visibles les combos d'Électromancie
+ *     (charger en bande I → convertir en bande III).
+ *
+ * On ne propage QUE onPlay : les tiers conditionnels (succès/critique) dépendent
+ * du dé et ne sont pas un acquis. Les ops ciblant l'adversaire sont écartées
+ * (filtre sur l'id du lanceur) — cet état ne modélise que le lanceur.
+ */
 export function simulateSelfEffects(state: CombatantState, id: ActionId): CombatantState {
   const def = ACTION_DEFS[id]
   let s = state
@@ -374,7 +416,8 @@ export function simulateSelfEffects(state: CombatantState, id: ActionId): Combat
     s = { ...s, status: [...s.status, def.grantsStatus] }
   }
   if (def.clearsStatus) s = { ...s, status: s.status.filter(x => x !== def.clearsStatus) }
-  return s
+
+  return projectOnPlaySelf(s, def.outcomes?.onPlay)
 }
 
 /**
