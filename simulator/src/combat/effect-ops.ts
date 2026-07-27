@@ -27,6 +27,8 @@ export type EffectOp =
   | { wound: number }
   | { fatigue: number }
   | { heavyWound: number }
+  | { burn: number }             // 🔥 N marqueurs de combustion sur la cible
+  | { selfBurn: number }         // SELF: le lanceur subit N 🔥 (⚠️ Défaut d'électromancie)
   | { status: StatusEffect }
   | { mental: number }
   | { move: number }
@@ -108,6 +110,10 @@ export function opsToCombatEffects(
       out.push({ targetId, kind: 'add-fatigue', amount: op.fatigue })
     } else if ('heavyWound' in op) {
       for (let i = 0; i < op.heavyWound; i++) out.push({ targetId, kind: 'heavy-wound' })
+    } else if ('burn' in op) {
+      out.push({ targetId, kind: 'add-burn', amount: op.burn })
+    } else if ('selfBurn' in op) {
+      if (selfId) out.push({ targetId: selfId, kind: 'add-burn', amount: op.selfBurn })
     } else if ('status' in op) {
       out.push({ targetId, kind: 'add-status', status: op.status })
     } else if ('mental' in op) {

@@ -127,6 +127,12 @@ export interface AdversaryCombatant {
    */
   bleed:     number
   /**
+   * 🔥 Combustion : marqueurs de brûlure cumulatifs (§ combustion). Au début de
+   * manche, s'il y en a, +1 (propagation), puis chaque lot de 5 inflige 1
+   * blessure grave 💔 automatique et 🔻. Miroir exact du modèle PJ.
+   */
+  burn:      number
+  /**
    * « Déstabilisé » : la créature ignore son PROCHAIN regain de ◇ au début de
    * manche (posé par Provocation/Intimidation, consommé au startRound). Assèche
    * durablement le ◇ malgré sa régénération.
@@ -195,6 +201,7 @@ export function initAdversary(sheet: AdversarySheet): AdversaryCombatant {
     actions:     0,
     stunned:     false,
     bleed:       0,
+    burn:        0,
     destabilized: false,
     usedReactions: [],
   }
@@ -250,7 +257,7 @@ export function effectiveGuard(c: AdversaryCombatant): number {
  * le ◇ asséché par Provocation/Intimidation reste bas la manche suivante.
  */
 export function startRound(c: AdversaryCombatant): AdversaryCombatant {
-  return {
+  const refreshed: AdversaryCombatant = {
     ...c,
     stability: c.destabilized ? c.stability : grantedResource(c, 'stability'),
     endurance: grantedResource(c, 'endurance'),
@@ -260,6 +267,9 @@ export function startRound(c: AdversaryCombatant): AdversaryCombatant {
     destabilized: false,     // « Déstabilisé » consommé (a sauté ce regain de ◇)
     usedReactions: [],       // les réactions gratuites se rechargent chaque manche
   }
+  // Combustion 🔥 (§ combustion) — propagation + conversion 5🔥 → 💔 + 🔻. À l'init
+  // (burn = 0) c'est un no-op ; en jeu, s'exécute à chaque début de manche.
+  return combustionTick(refreshed)
 }
 
 // ─── Capability derivation (from intact blocks) ───────────────────────────────
@@ -437,6 +447,36 @@ export function bleedTick(c: AdversaryCombatant): AdversaryCombatant {
   return next
 }
 
+// ─── Combustion 🔥 ──────────────────────────────────────────────────────────────
+
+/** Add N cumulative burn 🔥 markers. */
+export function addAdversaryBurn(c: AdversaryCombatant, amount = 1): AdversaryCombatant {
+  return { ...c, burn: c.burn + amount }
+}
+
+/**
+ * Round-start combustion (§ combustion) : si la créature porte au moins un
+ * marqueur 🔥, il s'en propage un de plus, puis chaque lot de 5 détruit un bloc
+ * intact (💔 automatique — ignore armure et Évasion 🍀, comme la saignée) et
+ * pousse la piste mentale d'un cran vers la Peur (🔻). Marqueurs non consommés.
+ */
+export function combustionTick(c: AdversaryCombatant): AdversaryCombatant {
+  if (c.burn <= 0) return c
+  const next = structuredClone(c)
+  next.burn += 1
+  const heavies = Math.floor(next.burn / 5)
+  for (let i = 0; i < heavies; i++) {
+    const blocks = [...next.parts, ...next.weapons]
+      .flatMap(p => p.blocks)
+      .filter(b => !isBlockDestroyed(b))
+    if (blocks.length === 0) break
+    // Bloc intact le plus entamé → détruit (miroir de la saignée, mais une 💔).
+    const target = blocks.sort((a, b) => b.damage - a.damage)[0]
+    target.damage = target.cases
+  }
+  return heavies > 0 ? shiftAdversaryMental(next, -heavies) : next
+}
+
 // ─── Fatigue ──────────────────────────────────────────────────────────────────
 
 /** Core: spend 🫁 first, then mark the clock; `minThrough` cases always land. */
@@ -525,6 +565,8 @@ export interface AdversarySnapshot {
   winded:      boolean
   /** 🩸 Jetons d'hémorragie cumulés (cases cochées en fin de manche). */
   bleed:       number
+  /** 🔥 Marqueurs de combustion cumulés (propagation + 💔 au début de manche). */
+  burn:        number
   /** « Déstabilisé » : sautera son prochain regain de ◇. */
   destabilized: boolean
   /** 🛡️ Armure totale restante (somme sur les parties, consommée par les 💔). */
@@ -569,6 +611,7 @@ export function toAdversarySnapshot(c: AdversaryCombatant): AdversarySnapshot {
     stunned:     c.stunned,
     winded:      isAdversaryWinded(c),
     bleed:       c.bleed,
+    burn:        c.burn,
     destabilized: c.destabilized,
     /** Armure totale = somme de l'armure RESTANTE des parties (consommée par les 💔). */
     armorTotal:  allParts.reduce((s, p) => s + p.armor, 0),

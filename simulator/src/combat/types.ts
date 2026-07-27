@@ -210,6 +210,13 @@ export interface CombatantState {
    */
   bleed: number
   /**
+   * 🔥 Combustion : marqueurs de brûlure cumulatifs (§ combustion). Au début de
+   * chaque manche, si ≥ 1 ils se PROPAGENT (+1), puis chaque lot de 5 inflige 1
+   * blessure grave 💔 automatique et un décalage 🔻. Les marqueurs persistent :
+   * rien ne les retire encore (chantier — extinction). Symétrique PJ ↔ adversaire.
+   */
+  burn: number
+  /**
    * 😩 Épuisé : marqueurs cumulatifs (§ etats.md). Ils posent un PLANCHER à la
    * Fatigue 💧 — elle ne descend jamais en dessous de leur nombre, ni par le
    * repos ni par la Respiration.
@@ -297,6 +304,7 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
   | { kind: 'heal-wounds';    amount: number }  // reduce lightWounds (floor 0)
   | { kind: 'add-fatigue';    amount: number }
   | { kind: 'remove-fatigue'; amount: number }
+  | { kind: 'add-burn';       amount: number }  // 🔥 marqueurs de combustion (§ combustion)
   | { kind: 'add-status';     status: StatusEffect }
   | { kind: 'remove-status';  status: StatusEffect }
   | { kind: 'spend-actions';  amount: number }  // lose PA (flaw penalty etc.)
@@ -410,6 +418,8 @@ export interface CombatantSnapshot {
   mentalCapacity: number
   /** 🩸 Hémorragie : jetons cumulés à cet instant */
   bleed:          number
+  /** 🔥 Combustion : marqueurs de brûlure cumulés à cet instant */
+  burn:           number
   /** 😩 Épuisé : marqueurs cumulés — plancher de la Fatigue 💧 */
   exhaustion:     number
   status:         StatusEffect[]

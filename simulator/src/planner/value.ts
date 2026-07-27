@@ -114,6 +114,12 @@ const DECISIVE_VALUE = 40
 /** One 🩸 token — future wounds that pierce protection (PC) / armor (adversary). */
 const BLEED_VALUE = 1.2
 /**
+ * One 🔥 combustion marker. Plus dangereux qu'un 🩸 : il se PROPAGE (+1/manche) et
+ * chaque lot de 5 inflige une 💔 + 🔻. Prix à plat et PROVISOIRE — la vraie
+ * projection (croissance + seuils) relève du pricing de stock (Phase D).
+ */
+const BURN_VALUE = 1.5
+/**
  * Horizon, en manches, sur lequel un saignement que RIEN ne referme est projeté.
  *
  * Une Récupération ≥ 1 borne la projection d'elle-même (le stock décroît jusqu'à
@@ -192,6 +198,7 @@ function pcBurden(e: CombatEffect, s: CombatantState): number {
     case 'heavy-wound':    return heavyWoundBurdenPc(s)
     case 'heal-wounds':    return -Math.min(e.amount, s.lightWounds)
     case 'add-fatigue':    return fatigueBurdenPc(s, e.amount)
+    case 'add-burn':       return e.amount * BURN_VALUE
     case 'remove-fatigue': return -fatigueBurdenPc({ ...s, fatigue: Math.max(1, s.fatigue - e.amount) },
                                                    Math.min(e.amount, s.fatigue - 1))
     // Hémorragie 🩸 PJ : un COMPTEUR de jetons (add = +1 jeton, remove = tout
@@ -366,6 +373,7 @@ function adversaryBurden(
     case 'light-wound':    return lightWoundBurdenAdv(c, e.amount, partType)
     case 'heavy-wound':    return heavyWoundBurdenAdv(c, partType)
     case 'add-fatigue':    return fatigueBurdenAdv(c, e.amount)
+    case 'add-burn':       return e.amount * BURN_VALUE
     case 'add-status':     return e.status === 'stunned' && !c.stunned ? 2 : 0
     case 'shift-mental':        return mentalShiftBurdenAdv(c, e.direction)
     case 'shift-mental-broken': return c.stability > 0 ? 0

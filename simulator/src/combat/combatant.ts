@@ -41,6 +41,7 @@ export function initCombatant(char: Character): CombatantState {
     mentalState:       initialMentalState(char),
     stability:         0,   // set below via stabilityPool (needs the built state)
     bleed:             0,
+    burn:              0,
     exhaustion:        0,
     initiativeDelay:   0,
     mentalWounds:      0,
@@ -107,6 +108,10 @@ export function resetRoundTokens(state: CombatantState): CombatantState {
     // combat (§ Stabilité) fixé à l'initialisation, qui se dépense et ne se
     // régénère pas (aucune règle de récupération pour l'instant).
   }
+
+  // Combustion 🔥 (§ combustion) — propagation + conversion 5🔥 → 💔 + 🔻, avant
+  // le test d'Endurance (une blessure grave peut incapaciter).
+  s = processCombustion(s).state
 
   // ── Test d'Endurance (phase d'entretien) ────────────────────────────────────
   // Déclenché si fatigue ≥ 10 et personnage non incapacité.
@@ -175,7 +180,12 @@ export function resetRoundTokensWithLog(
 
   let maintenanceEntry: MaintenanceEntry | null = null
 
-  /** La fatigue est ≥ 10, test d'endurance */  
+  // Combustion 🔥 — appliquée avant le test d'Endurance (§ combustion). État seul
+  // pour l'instant : la trace visible est le champ `burn` du snapshot + les 💔.
+  const combustion = processCombustion(s)
+  s = combustion.state
+
+  /** La fatigue est ≥ 10, test d'endurance */
   if (s.fatigue >= 10 && !isDefeated(s)) {  
 
     // Status disadvantages are applied to the endurance test triggered by fatigue
@@ -417,6 +427,35 @@ export function clearBleedPc(state: CombatantState): CombatantState {
   return { ...state, bleed: 0 }
 }
 
+// ─── Combustion 🔥 ──────────────────────────────────────────────────────────────
+
+/** Add N cumulative burn 🔥 markers. */
+export function addBurn(state: CombatantState, amount = 1): CombatantState {
+  return { ...state, burn: state.burn + amount }
+}
+
+/**
+ * Round-start combustion (§ combustion) : si le combattant porte au moins un
+ * marqueur 🔥, il s'en PROPAGE un de plus, puis chaque lot de 5 inflige une
+ * blessure grave 💔 automatique (perce la Protection — feu interne) et un
+ * décalage 🔻 (absorbable par un ◇, comme tout choc subi).
+ *
+ * Les marqueurs ne sont PAS consommés : la combustion s'aggrave tant que rien
+ * ne l'éteint (aucune extinction modélisée — chantier). Rendu avec ses notes de
+ * log pour la phase d'entretien.
+ */
+export function processCombustion(state: CombatantState): { state: CombatantState; notes: string[] } {
+  if (state.burn <= 0) return { state, notes: [] }
+  let s: CombatantState = { ...state, burn: state.burn + 1 }
+  const heavies = Math.floor(s.burn / 5)
+  if (heavies === 0) {
+    return { state: s, notes: [`🔥 Combustion — ${s.burn}🔥 (propagation)`] }
+  }
+  for (let i = 0; i < heavies; i++) s = applyHeavyWound(s, /* bypassProtection = */ true)
+  for (let i = 0; i < heavies; i++) s = shiftMentalState(s, 'toward-terror')
+  return { state: s, notes: [`🔥 Combustion — ${s.burn}🔥 → ${heavies}💔 + 🔻×${heavies}`] }
+}
+
 /** Heal n light wounds (floor 0) */
 export function healLightWounds(state: CombatantState, amount: number): CombatantState {
   return { ...state, lightWounds: Math.max(0, state.lightWounds - amount) }
@@ -642,6 +681,7 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'add-fatigue':    return addFatigue(s, effect.amount)
     case 'remove-fatigue': return removeFatigue(s, effect.amount)
     // Hémorragie 🩸 : compteur de jetons (prototype), pas un statut binaire.
+    case 'add-burn':       return addBurn(s, effect.amount)
     case 'add-status':     return effect.status === 'hemorrhage' ? addBleedPc(s, 1)  : addStatus(s, effect.status)
     case 'remove-status':  return effect.status === 'hemorrhage' ? clearBleedPc(s)   : removeStatus(s, effect.status)
     case 'spend-actions':  return { ...s, actions: Math.max(0, s.actions - effect.amount) }
@@ -711,6 +751,7 @@ export function toCombatantSnapshot(state: CombatantState): CombatantSnapshot {
     mentalWounds:   state.mentalWounds,
     mentalCapacity: sum(MENTAL_CHARACTERISTICS),
     bleed:          state.bleed,
+    burn:           state.burn,
     exhaustion:     state.exhaustion,
     status:         [...state.status],
     charWounds,
