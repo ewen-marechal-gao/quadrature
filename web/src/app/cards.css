@@ -110,6 +110,11 @@
   padding: 12px 16px;
 }
 
+/* Seconde ligne (disciplines) : collée à la ligne famille au-dessus. */
+.cards-filters--disciplines {
+  padding-top: 0;
+}
+
 .cards-chip {
   padding: 4px 12px;
   font-size: 0.76rem;

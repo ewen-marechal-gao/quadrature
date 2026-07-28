@@ -130,6 +130,8 @@ export interface ActionCard {
   table?: { titre?: string; lignes: CardTableRow[] };
   notes?: string;
   source?: string;
+  /** Id de la discipline d'origine (electromancy, fencing…) — pour le filtre /cartes. Absent = carte du vault. */
+  discipline?: string;
 }
 
 /** Groupe de cartes issu d'un fichier YAML. */

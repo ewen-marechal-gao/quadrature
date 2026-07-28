@@ -109,7 +109,10 @@ function jetOf(a: RawDisciplineAction, disciplineName: string, locale: Locale): 
   return `${disciplineName} 🟨🟨 + ${char} 🟦`;
 }
 
-function toCard(id: string, a: RawDisciplineAction, disciplineName: string, locale: Locale): ActionCard {
+function toCard(
+  id: string, a: RawDisciplineAction,
+  disciplineId: string, disciplineName: string, locale: Locale,
+): ActionCard {
   const tags = a.tags ?? [];
   const outcome = (o?: RawOutcome) => L(o?.text, locale) || undefined;
   const cible = cibleOf(a, locale);
@@ -138,6 +141,7 @@ function toCard(id: string, a: RawDisciplineAction, disciplineName: string, loca
     ...(outcome(a.onSuccess) && { succes: outcome(a.onSuccess) }),
     ...(outcome(a.onFailure) && { echec: outcome(a.onFailure) }),
     source: disciplineName,
+    ...(disciplineId && { discipline: disciplineId }),
   };
 }
 
@@ -152,9 +156,10 @@ export function getDisciplineCards(locale: Locale = "fr"): ActionCard[] {
     } catch {
       continue;
     }
-    const disciplineName = L(doc?.discipline?.name, locale) || doc?.discipline?.id || "";
+    const disciplineId = doc?.discipline?.id ?? "";
+    const disciplineName = L(doc?.discipline?.name, locale) || disciplineId;
     for (const [id, a] of Object.entries(doc?.actions ?? {})) {
-      cards.push(toCard(id, a, disciplineName, locale));
+      cards.push(toCard(id, a, disciplineId, disciplineName, locale));
     }
   }
   return cards;

@@ -8,7 +8,7 @@
  * en A4 paysage, 8 cartes par page (2 rangées × 4 colonnes), voir globals.css.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import type { ActionCard as Card, CardFamily, CardType } from "@/lib/cards";
 import { ActionCard } from "@/components/ActionCard";
@@ -68,6 +68,8 @@ export function CardBrowser({ cards, locale }: { cards: Card[]; locale: string }
   const [typeFilter, setTypeFilter] = useState<CardType | null>(null);
   /** true = uniquement les actions universelles (sans prérequis). */
   const [universalOnly, setUniversalOnly] = useState(false);
+  /** Disciplines sélectionnées (multi). Vide = toutes ; sinon, seules celles-ci. */
+  const [disciplineFilter, setDisciplineFilter] = useState<Set<string>>(new Set());
   /** Mode économique : fond des cartes blanc (économise l'encre). */
   const [ecoMode, setEcoMode] = useState(false);
   const [selection, setSelection] = useState<Map<string, number>>(new Map());
@@ -76,6 +78,21 @@ export function CardBrowser({ cards, locale }: { cards: Card[]; locale: string }
     () => [...new Set(cards.map((c) => c.famille))],
     [cards]
   );
+
+  /** Disciplines présentes parmi les cartes : { id, label }, dédoublonnées. */
+  const disciplines = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of cards) if (c.discipline) m.set(c.discipline, c.source ?? c.discipline);
+    return [...m].map(([id, label]) => ({ id, label }));
+  }, [cards]);
+
+  const toggleDiscipline = useCallback((id: string) => {
+    setDisciplineFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
 
   const searchIndex = useMemo(
     () => new Map(cards.map((c) => [c.id, searchableText(c)])),
@@ -88,10 +105,13 @@ export function CardBrowser({ cards, locale }: { cards: Card[]; locale: string }
       if (familyFilter && c.famille !== familyFilter) return false;
       if (typeFilter && c.type !== typeFilter) return false;
       if (universalOnly && c.prerequis) return false;
+      // Disciplines : vide = tout ; sinon, la carte doit appartenir à l'une d'elles
+      // (les cartes du vault, sans discipline, sont donc masquées dès qu'un filtre est actif).
+      if (disciplineFilter.size > 0 && (!c.discipline || !disciplineFilter.has(c.discipline))) return false;
       if (q && !searchIndex.get(c.id)?.includes(q)) return false;
       return true;
     });
-  }, [cards, query, familyFilter, typeFilter, universalOnly, searchIndex]);
+  }, [cards, query, familyFilter, typeFilter, universalOnly, disciplineFilter, searchIndex]);
 
   const totalSelected = [...selection.values()].reduce((a, b) => a + b, 0);
   const pageCount = Math.ceil(totalSelected / CARDS_PER_PAGE);
@@ -191,6 +211,24 @@ export function CardBrowser({ cards, locale }: { cards: Card[]; locale: string }
             </button>
           ))}
         </div>
+
+        {/* Seconde ligne : filtres par DISCIPLINE (multi-sélection). Vide = tout
+            afficher ; sinon, seules les cartes des disciplines cochées. Absente
+            s'il n'existe aucune carte de discipline. */}
+        {disciplines.length > 0 && (
+          <div className="cards-filters cards-filters--disciplines">
+            {disciplines.map((d) => (
+              <button
+                key={d.id}
+                className={`cards-chip ${disciplineFilter.has(d.id) ? "cards-chip--on" : ""}`}
+                onClick={() => toggleDiscipline(d.id)}
+                aria-pressed={disciplineFilter.has(d.id)}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <main className="cards-gallery">
           {visible.map((card) => {
