@@ -26,8 +26,23 @@ import type { CombatCards } from "@/lib/combat-cards";
 import type { ActionCard as CardData } from "@/lib/cards";
 import { actionLabel, statusLabel, describeEffect, mentalIcon } from "@/lib/combat-labels";
 import { ActionCard } from "@/components/ActionCard";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import "@/app/combat.css";
 import "@/app/cards.css";
+
+/** Topbar façon shell du livre : retour landing (logo) + fil vers /encounters. */
+function ViewerTopBar({ locale, title }: { locale: Locale; title: string }) {
+  return (
+    <header className="top-bar">
+      <Link href={`/${locale}/`} className="top-bar-logo">Quadrature</Link>
+      <span className="top-bar-sep">—</span>
+      <Link href={`/${locale}/encounters/`} className="top-bar-book">Rencontres</Link>
+      <span className="top-bar-sep">·</span>
+      <span className="top-bar-title">{title}</span>
+      <LocaleSwitcher locale={locale} />
+    </header>
+  );
+}
 
 // ─── Constantes d'affichage ───────────────────────────────────────────────────
 
@@ -647,11 +662,13 @@ export function CombatViewer({
 
   if (views.length === 0) {
     return (
-      <main className="cbv">
-        <Link href={`/${locale}/combat/`} className="cbv-back">← Tous les combats</Link>
-        <h1>{title}</h1>
-        <p className="cbv-empty">Ce rapport ne contient aucune manche jouée.</p>
-      </main>
+      <>
+        <ViewerTopBar locale={locale} title={title} />
+        <main className="cbv">
+          <h1>{title}</h1>
+          <p className="cbv-empty">Ce rapport ne contient aucune manche jouée.</p>
+        </main>
+      </>
     );
   }
 
@@ -706,8 +723,9 @@ export function CombatViewer({
   );
 
   return (
+    <>
+    <ViewerTopBar locale={locale} title={title} />
     <main className="cbv">
-      <Link href={`/${locale}/combat/`} className="cbv-back">← Tous les combats</Link>
       <header className="cbv-head">
         <h1>{title}</h1>
       </header>
@@ -754,5 +772,6 @@ export function CombatViewer({
         {logBody}
       </div>
     </main>
+    </>
   );
 }

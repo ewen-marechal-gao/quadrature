@@ -6,7 +6,7 @@
  * Gauche : la liste des rencontres (scénarios YAML), avec le nombre de logs.
  * Droite : les logs de la rencontre sélectionnée — sélection multiple + suppression
  * (via le route handler DELETE /api/combat-reports), chaque log ouvrant le viewer
- * existant `/[locale]/combat/[id]`.
+ * `/[locale]/encounters/[id]`.
  *
  * Rendu HYBRIDE : les données arrivent déjà lues côté serveur (page.tsx) ; ce
  * composant n'ajoute que l'interactivité (sélection, suppression) et déclenche un
@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Locale } from "@/lib/nav";
 import type { EncounterGroup, ReportSummary, CombatOutcome } from "@/lib/combat-report";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import "@/app/combat.css";
 
 const ORPHAN_KEY = "__orphans__";
@@ -119,9 +120,17 @@ export function EncountersBrowser({
   }, [selected, busy, router]);
 
   return (
+    <>
+      <header className="top-bar">
+        <Link href={`/${locale}/`} className="top-bar-logo">Quadrature</Link>
+        <span className="top-bar-sep">—</span>
+        <span className="top-bar-book">Rencontres</span>
+        <span className="top-bar-title" />
+        <LocaleSwitcher locale={locale} />
+      </header>
+
     <main className="enc">
       <header className="enc-head">
-        <h1>Rencontres</h1>
         <p className="enc-sub">
           {groups.length === 0
             ? "Aucune rencontre dans simulator/encounters/."
@@ -222,6 +231,7 @@ export function EncountersBrowser({
         </section>
       </div>
     </main>
+    </>
   );
 }
 
@@ -243,7 +253,7 @@ function LogRow({
         onChange={onToggle}
         aria-label={`Sélectionner ${title}`}
       />
-      <Link href={`/${locale}/combat/${report.id}/`} className="enc-log__link">
+      <Link href={`/${locale}/encounters/${report.id}/`} className="enc-log__link">
         <span className="enc-log__title">{title}</span>
         <span className="enc-log__meta">
           <span>{formatStamp(report.id, report.timestamp)}</span>
