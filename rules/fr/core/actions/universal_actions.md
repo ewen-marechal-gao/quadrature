@@ -23,23 +23,23 @@ Les combats se décomposent en Manches, au cours desquelles les personnages et l
 
 ## Comprendre une carte d'action
 
-| Champ | Signification |
-| :--- | :--- |
+| Champ              | Signification                                                                                                 |
+| :----------------- | :------------------------------------------------------------------------------------------------------------ |
 | 1️⃣ **Initiative** | Ordre de résolution (1️⃣ le premier, 🔟 le dernier) — détermine la **bande** : I (1-3) · II (4-6) · III (7-9) |
-| **Prérequis** | Condition de déblocage de l'action |
-| **Coût** | Points d'action en phases de lune 🌓/🌕/🌗 (la lune = la bande), Réactions ⚡ et/ou ressources 💧 |
-| ⚡ **Déclencheur** | Conditions pour déclencher une réaction |
-| 🔒 **Conditions** | Facteurs devant être satisfaits |
-| 🧠 **Mental** | État mental requis |
-| 🎯 **Cible** | Cible et portée de l'action |
-| 🎲 **Jet** | Compétences (🟨🟨) et caractéristique (🟦) utilisées |
-| 🆚 **Contre** | DD fixe ou jet opposé |
-| ⚠️ **Défaut** | Pénalité si un 0 est conservé parmi les 🟨/🟪 |
-| ✴️ **Critique** | Effet si un 5 est conservé parmi les 🟨/🟫 |
-| ▶️ **Effet** | Effet immédiat, quel que soit le résultat |
-| ⏳ **Effet** | Effet de durée, quel que soit le résultat |
-| ✅ **Succès** | Effet si résultat ≥ DD ou jet opposé |
-| ❌ **Échec** | Effet si résultat < DD ou jet opposé |
+| **Prérequis**      | Condition de déblocage de l'action                                                                            |
+| **Coût**           | Points d'action en phases de lune 🌓/🌕/🌗 (la lune = la bande), Réactions ⚡ et/ou ressources 💧              |
+| ⚡ **Déclencheur**  | Conditions pour déclencher une réaction                                                                       |
+| 🔒 **Conditions**  | Facteurs devant être satisfaits                                                                               |
+| 🧠 **Mental**      | État mental requis                                                                                            |
+| 🎯 **Cible**       | Cible et portée de l'action                                                                                   |
+| 🎲 **Jet**         | Compétences (🟨🟨) et caractéristique (🟦) utilisées                                                          |
+| 🆚 **Contre**      | DD fixe ou jet opposé                                                                                         |
+| ⚠️ **Défaut**      | Pénalité si un 0 est conservé parmi les 🟨/🟪                                                                 |
+| ✴️ **Critique**    | Effet si un 5 est conservé parmi les 🟨/🟫                                                                    |
+| ▶️ **Effet**       | Effet immédiat, quel que soit le résultat                                                                     |
+| ⏳ **Effet**        | Effet de durée, quel que soit le résultat                                                                     |
+| ✅ **Succès**       | Effet si résultat ≥ DD ou jet opposé                                                                          |
+| ❌ **Échec**        | Effet si résultat < DD ou jet opposé                                                                          |
 
 **Ordre de résolution :** les champs se résolvent **dans l'ordre où ils sont imprimés** — ⚠️ Défaut, puis ✴️ Critique, puis l'effet et l'issue ✅/❌.
 

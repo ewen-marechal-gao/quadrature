@@ -7,7 +7,7 @@
     "demo": "ts-node src/demo.ts",
     "simulate": "ts-node src/simulate.ts",
     "optimize": "ts-node src/optimize.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch"

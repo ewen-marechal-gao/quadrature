@@ -29,7 +29,7 @@ Les escrimeurs se spécialisent dans la maîtrise d'une poignée d'armes et de s
 
 **[Lames larges] Mur de lame :** vous pouvez utiliser votre discipline en **Escrime** 🟨🟨 à la place de votre **Vigilance** lorsque vous jouez une **Parade ⚡**.
 
-**[Lames lourdes] Blocage à l'épée :** votre arme de prédilection compte comme un bouclier (non improvisé) et peut être utilisée pour bloquer. Vous pouvez utiliser votre discipline en **Escrime** 🟨🟨 à la place de votre **Endurance** lorsque vous jouez une **Blocage ⚡**.
+**[Lames lourdes] Blocage à l'épée :** votre arme de prédilection compte comme un bouclier (non improvisé) et peut être utilisée pour bloquer. Vous pouvez utiliser votre discipline en **Escrime** 🟨🟨 à la place de votre **Endurance** lorsque vous jouez un **Blocage ⚡**.
 
 #### 3️⃣ Riposte
 
