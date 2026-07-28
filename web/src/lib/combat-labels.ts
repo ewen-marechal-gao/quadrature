@@ -57,6 +57,16 @@ export function describeEffect(e: CombatEffect): string | null {
     case "heal-wounds":       return `soigne ${n ?? ""}💢`.trim();
     case "add-fatigue":       return `${n ?? ""}💧`.trim();
     case "remove-fatigue":    return `−${n ?? ""}💧`.trim();
+    // 🔥 Combustion (add-burn : montant `amount`).
+    case "add-burn":          return `${n ?? ""}🔥`.trim();
+    // ⚡ Charge (add-charge : `delta` signé — ⊖ négatif / ⊕ positif).
+    case "add-charge": {
+      const d = typeof e.delta === "number" ? e.delta : 0;
+      if (d === 0) return null;
+      return d < 0 ? `+${-d}⊖` : `+${d}⊕`;
+    }
+    // ⚡ Dissipation d'une charge (dissipate-charge : `amount`, vers 0).
+    case "dissipate-charge":  return `dissipe ${n ?? ""}⚡`.trim();
     case "add-status":        return `+ ${statusLabel(String(e.status))}`;
     case "remove-status":     return `− ${statusLabel(String(e.status))}`;
     case "spend-actions":     return `−${n ?? 1}⚫`;

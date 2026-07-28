@@ -115,6 +115,10 @@ export interface CombatantSnapshot {
   /** Capacité de traumas (Σ caract. mentales). Absent des rapports antérieurs. */
   mentalCapacity?: number;
   bleed: number;
+  /** 🔥 Marqueurs de combustion. Absent des rapports antérieurs. */
+  burn?: number;
+  /** ⚡ Charge électrique signée (− = ⊖, + = ⊕). Absent des rapports antérieurs. */
+  charge?: number;
   status: string[];
   charWounds: Record<string, number>;
   protection: number;
@@ -137,6 +141,10 @@ export interface AdversarySnapshot {
   winded: boolean;
   bleed: number;
   destabilized: boolean;
+  /** 🔥 Marqueurs de combustion. Absent des rapports antérieurs. */
+  burn?: number;
+  /** ⚡ Charge électrique signée (− = ⊖, + = ⊕). Absent des rapports antérieurs. */
+  charge?: number;
   /** 🛡️ armure totale restante. Absent des rapports antérieurs. */
   armorTotal?: number;
   parts: Array<{
