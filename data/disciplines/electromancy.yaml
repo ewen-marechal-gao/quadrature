@@ -83,3 +83,9 @@ actions:
     roll:          { characteristic: willpower, skill: discipline }
     resolver:      discharge
     consumesCharge: true
+    # Prose d'AFFICHAGE seule (carte). Le moteur ignore ces tiers (branche
+    # `resolver` de toActionDef) — la mécanique dynamique vit dans le resolver.
+    onPlay:    { text: { fr: "libère toutes vos charges ⊖", en: "releases all your ⊖ charges" }, effect: [] }
+    onSuccess: { text: { fr: "2 💢 par charge ⊖ libérée (✴️ : +1 ⊖)", en: "2 💢 per released ⊖ (✴️: +1 ⊖)" }, effect: [] }
+    onFailure: { text: { fr: "1 🔥 par charge ⊖ libérée", en: "1 🔥 per released ⊖" }, effect: [] }
+    onFlaw:    { text: { fr: "vous subissez une brûlure 🔥", en: "you take a burn 🔥" }, effect: [] }

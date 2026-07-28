@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { LOCALES, resolveLocale } from "@/lib/nav";
 import { getAllCards } from "@/lib/cards";
+import { getDisciplineCards } from "@/lib/discipline-cards";
 import { CardBrowser } from "@/components/CardBrowser";
 
 export function generateStaticParams() {
@@ -32,7 +33,8 @@ export default async function CardsPage({
   if (!LOCALES.find((l) => l.id === localeParam)) notFound();
   const locale = resolveLocale(localeParam);
 
-  const cards = getAllCards(locale);
+  // Cartes du vault + cartes des disciplines (Électromancie…), converties.
+  const cards = [...getAllCards(locale), ...getDisciplineCards(locale)];
 
   return <CardBrowser cards={cards} locale={locale} />;
 }

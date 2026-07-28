@@ -19,6 +19,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { load } from "js-yaml";
 import { getAllCards, type ActionCard } from "@/lib/cards";
+import { getDisciplineCards } from "@/lib/discipline-cards";
 import { getAdversary } from "@/lib/bestiary";
 import { adversaryCardToPlayerCard, conferringBlocks } from "@/lib/adversary-card";
 import type { CombatLog } from "@/lib/combat-report";
@@ -62,6 +63,10 @@ export function resolveCombatCards(log: CombatLog, locale: Locale): CombatCards 
     const card = cardsById.get(vaultId);
     if (card) player[actionId] = card;
   }
+
+  // ── Joueur : actions de DISCIPLINE (Électromancie…) — l'id d'action EST l'id
+  // de carte (spark, cathodic-focus, discharge), pas de pont `vaultCard`. ──
+  for (const c of getDisciplineCards(locale)) player[c.id] = c;
 
   // ── Adversaire : deck de chaque adversaire du combat ──
   const advIds = new Set<string>();
