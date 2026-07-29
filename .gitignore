@@ -27,6 +27,11 @@ Quadrature - Feuille de Personnage.pdf
 /Capture*.png
 /horloge.png
 
+# Images en cours de travail : recherches, variantes écartées, illustrations
+# non retenues. Elles restent sur le disque mais hors du dépôt — c'est le
+# dossier où déplacer une image plutôt que de la supprimer.
+/images/ignored/
+
 # OS
 Thumbs.db
 .DS_Store
