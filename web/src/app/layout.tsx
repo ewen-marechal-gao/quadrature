@@ -1,9 +1,35 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+
+const DESCRIPTION =
+  "Quadrature — jeu de rôle sur table dans le monde d'Aeonir : règles, cartes " +
+  "d'action, bestiaire et outils de table.";
 
 export const metadata: Metadata = {
-  title: "Quadrature — Règles",
-  description: "Règles du jeu de rôle Quadrature",
+  // Rend absolues les URLs relatives ci-dessous (exigé pour Open Graph).
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} — Règles du jeu de rôle`,
+    // Les pages définissent déjà leur titre complet dans generateMetadata.
+    template: "%s",
+  },
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — Le monde d'Aeonir`,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    locale: "fr_FR",
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "La carte d'Aeonir" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — Le monde d'Aeonir`,
+    description: DESCRIPTION,
+    images: ["/og.jpg"],
+  },
 };
 
 export default function RootLayout({

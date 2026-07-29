@@ -222,3 +222,20 @@
   text-align: center;
 }
 
+
+/* ─── Pied de page ───────────────────────────────────────────────────────── */
+
+.landing-footer {
+  width: 100%;
+  max-width: 1100px;
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(196,154,69,0.18);
+
+  font-size: 0.78rem;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+  color: var(--panel-muted);
+  text-align: center;
+  text-wrap: balance;
+}
