@@ -13,6 +13,32 @@ de worldbuilding.
 
 ---
 
+## Licence
+
+Ce dépôt mêle deux natures d'œuvre, qui n'appellent pas la même licence : le
+**code** est ouvert au sens logiciel du terme, le **contenu du jeu** reste
+protégé contre l'exploitation commerciale.
+
+| Ce qui est couvert | Répertoires | Licence |
+| :----------------- | :---------- | :------ |
+| **Code** — site, moteur de combat, outils | `web/`, `simulator/`, `tools/` | [MIT](LICENSE) |
+| **Contenu du jeu** — règles, univers, données, illustrations | `rules/`, `data/`, `images/` | [CC BY-NC-SA 4.0](LICENSE-CONTENT) |
+
+Les fichiers de contenu situés hors de ces répertoires suivent la nature de leur
+contenu, pas leur emplacement : les illustrations et la carte d'Aeonir sous
+`web/public/` relèvent de la licence du contenu, bien qu'elles vivent dans un
+dossier de code.
+
+Concrètement : réutilisez le code comme bon vous semble, y compris
+commercialement. Pour le contenu du jeu, vous pouvez le partager et l'adapter —
+scénarios, aides de jeu, extensions — à condition de **citer la source**, de
+**ne pas en faire un usage commercial** et de **partager vos adaptations sous la
+même licence**. Jouer, en parler ou en diffuser des extraits dans le cadre d'une
+partie ou d'une critique n'a jamais demandé d'autorisation. Pour un usage
+commercial : <marechal.ewen@gmail.com>.
+
+---
+
 ## Aperçu
 
 | Dossier        | Rôle                                                            | Stack |
@@ -191,4 +217,6 @@ et complétion des disciplines.
 
 ## Licence
 
-Projet personnel, œuvre originale. Licence **à définir**.
+Œuvre originale d'Ewen Maréchal, sous double licence : code en [MIT](LICENSE),
+contenu du jeu en [CC BY-NC-SA 4.0](LICENSE-CONTENT). Détail en tête de ce
+fichier : [Licence](#licence).
