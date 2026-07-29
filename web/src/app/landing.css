@@ -239,3 +239,13 @@
   text-align: center;
   text-wrap: balance;
 }
+
+.landing-footer a {
+  color: var(--brass);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.landing-footer a:hover {
+  color: var(--on-brass, #f0e0c0);
+}

@@ -23,6 +23,9 @@ import { IS_PUBLIC_BUILD } from "@/lib/build-mode";
  */
 const FOOTER_YEAR = 2026;
 
+/** Licence du CONTENU du jeu (cf. LICENSE-CONTENT à la racine du dépôt). */
+const CC_LICENSE_URL = "https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr";
+
 interface Props {
   locale: Locale;
 }
@@ -158,15 +161,28 @@ export function LandingPage({ locale }: Props) {
         </nav>
 
         <footer className="landing-footer">
-          <p>
-            {locale === "fr"
-              ? `Quadrature — jeu de rôle original d'Ewen Maréchal. Univers, règles et
-                 illustrations © ${FOOTER_YEAR}, tous droits réservés. Projet en cours
-                 d'écriture : les règles publiées ici évoluent.`
-              : `Quadrature — an original tabletop RPG by Ewen Maréchal. Setting, rules
-                 and artwork © ${FOOTER_YEAR}, all rights reserved. A work in progress:
-                 the rules published here are subject to change.`}
-          </p>
+          {locale === "fr" ? (
+            <p>
+              Quadrature — jeu de rôle original d&apos;Ewen Maréchal, © {FOOTER_YEAR}.
+              Univers, règles et illustrations sous licence{" "}
+              <a href={CC_LICENSE_URL} rel="license noopener" target="_blank">
+                CC BY-NC-SA 4.0
+              </a>{" "}
+              : partage et adaptation libres, usage non commercial, partage à
+              l&apos;identique. Projet en cours d&apos;écriture : les règles publiées ici
+              évoluent.
+            </p>
+          ) : (
+            <p>
+              Quadrature — an original tabletop RPG by Ewen Maréchal, © {FOOTER_YEAR}.
+              Setting, rules and artwork licensed under{" "}
+              <a href={CC_LICENSE_URL} rel="license noopener" target="_blank">
+                CC BY-NC-SA 4.0
+              </a>
+              : share and adapt freely, non-commercial, share alike. A work in
+              progress: the rules published here are subject to change.
+            </p>
+          )}
         </footer>
       </div>
     </div>

@@ -13,6 +13,12 @@
       "runtimeArgs": ["run", "dev", "--prefix", "C:\\Users\\Ewen\\Documents\\Quadrature\\web"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "quadrature-public",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "4321", "C:\\Users\\Ewen\\Documents\\Quadrature\\web\\out"],
+      "port": 4321
     }
   ]
 }
