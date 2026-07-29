@@ -1,0 +1,91 @@
+# Déploiement du site public sur le VPS (quadrature.marechal-gao.fr).
+#
+# Construit l'export statique puis le synchronise dans ~/apps/quadrature-deploy/www/,
+# servi par un conteneur nginx derrière Traefik (cf. web/deploy/).
+#
+# ── Pourquoi construire ICI et jamais en local ────────────────────────────────
+# Le visualiseur de combat prérend une page par rapport présent dans
+# `simulator/combatReports/` — un dossier gitignoré, donc absent du runner. Un
+# build fait sur une machine de développement publierait ces rapports de mise au
+# point. Le build public les exclut de toute façon (cf. next.config.ts), mais
+# passer par la CI garantit la propriété plutôt que de la supposer.
+#
+# ── Secrets à définir dans Settings → Secrets and variables → Actions ─────────
+#   VPS_SSH_KEY      clé PRIVÉE (ed25519) autorisée sur le VPS
+#   VPS_HOST         51.210.102.237
+#   VPS_USER         debian
+#   VPS_KNOWN_HOSTS  sortie de `ssh-keyscan 51.210.102.237`
+#
+# `VPS_KNOWN_HOSTS` évite d'avoir à désactiver la vérification de l'hôte : sans
+# elle, la CI accepterait n'importe quel serveur se présentant à cette adresse.
+
+name: Déploiement
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Jamais deux déploiements concurrents : ils écriraient dans le même dossier.
+# Et on ne coupe pas un déploiement en cours, qui laisserait le site à moitié
+# synchronisé.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Construire et publier
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://quadrature.marechal-gao.fr
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+        working-directory: web
+
+      - run: npm run build:public
+        working-directory: web
+
+      # Garde-fou : si l'export venait à contenir l'outil local, on s'arrête
+      # avant de publier plutôt que de le découvrir en ligne.
+      - name: Vérifier l'absence des outils locaux
+        run: |
+          if [ -e web/out/fr/encounters ] || [ -e web/out/api ]; then
+            echo "::error::L'export contient les routes de l'outil local — déploiement interrompu."
+            exit 1
+          fi
+          test -f web/out/index.html || { echo "::error::Export vide."; exit 1; }
+
+      - name: Préparer la connexion SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      # --delete pour que les pages supprimées disparaissent aussi du serveur.
+      # La barre finale de `out/` est significative : on copie le CONTENU du
+      # dossier, pas le dossier lui-même.
+      - name: Synchroniser vers le VPS
+        run: |
+          rsync -az --delete --stats \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            web/out/ \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/apps/quadrature-deploy/www/"
+
+      - name: Vérifier que le site répond
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 3 --retry-delay 5 \
+                 https://quadrature.marechal-gao.fr/fr/)
+          echo "GET /fr/ → $code"
+          test "$code" = "200"

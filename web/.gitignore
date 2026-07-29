@@ -44,3 +44,7 @@ next-env.d.ts
 /public/content-index*.json
 /public/pagedjs/
 /public/quadrature.pdf
+# dérivés de public/images/map.jpg (cf. scripts/generate-web-images.mjs) —
+# seul l'original est versionné
+/public/images/map-web.jpg
+/public/og.jpg

@@ -3,7 +3,8 @@
 /**
  * LandingPage — page d'accueil de Quadrature.
  *
- * Fond : carte d'Aeonir (map.jpg) avec dérive lente (animation CSS).
+ * Fond : carte d'Aeonir avec dérive lente (animation CSS). On sert `map-web.jpg`,
+ * la version allégée dérivée de l'original 8 Mo au build (scripts/generate-web-images.mjs).
  * Contenu : titre, sous-titre, grille de 5 livres cliquables.
  *
  * Si la locale n'est pas activée (enabled:false dans LOCALES), les cartes
@@ -13,6 +14,17 @@
 import Link from "next/link";
 import { type Locale, BOOKS, LOCALES, localize } from "@/lib/nav";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { IS_PUBLIC_BUILD } from "@/lib/build-mode";
+
+/**
+ * Année de la mention de copyright. Constante littérale et non `new Date()` :
+ * ce composant est rendu au build ET réhydraté dans le navigateur, et une date
+ * calculée des deux côtés diverge au passage à la nouvelle année.
+ */
+const FOOTER_YEAR = 2026;
+
+/** Licence du CONTENU du jeu (cf. LICENSE-CONTENT à la racine du dépôt). */
+const CC_LICENSE_URL = "https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr";
 
 interface Props {
   locale: Locale;
@@ -26,7 +38,7 @@ export function LandingPage({ locale }: Props) {
       {/* Fond carte en dérive lente */}
       <div className="landing-map" aria-hidden="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/images/map.jpg" alt="" className="landing-map-img" />
+        <img src="/images/map-web.jpg" alt="" className="landing-map-img" />
         <div className="landing-map-overlay" />
       </div>
 
@@ -108,7 +120,9 @@ export function LandingPage({ locale }: Props) {
               <span className="landing-book-arrow">→</span>
             </Link>
           )}
-          {localeEnabled && (
+          {/* Outil LOCAL : la route n'existe pas dans le build public
+              (cf. next.config.ts), donc pas de lien vers elle non plus. */}
+          {localeEnabled && !IS_PUBLIC_BUILD && (
             <Link href={`/${locale}/encounters/`} className="landing-book-card">
               <span className="landing-book-title">Rencontres</span>
               <span className="landing-book-subtitle">Outil local</span>
@@ -145,6 +159,31 @@ export function LandingPage({ locale }: Props) {
             )
           )}
         </nav>
+
+        <footer className="landing-footer">
+          {locale === "fr" ? (
+            <p>
+              Quadrature — jeu de rôle original d&apos;Ewen Maréchal, © {FOOTER_YEAR}.
+              Univers, règles et illustrations sous licence{" "}
+              <a href={CC_LICENSE_URL} rel="license noopener" target="_blank">
+                CC BY-NC-SA 4.0
+              </a>{" "}
+              : partage et adaptation libres, usage non commercial, partage à
+              l&apos;identique. Projet en cours d&apos;écriture : les règles publiées ici
+              évoluent.
+            </p>
+          ) : (
+            <p>
+              Quadrature — an original tabletop RPG by Ewen Maréchal, © {FOOTER_YEAR}.
+              Setting, rules and artwork licensed under{" "}
+              <a href={CC_LICENSE_URL} rel="license noopener" target="_blank">
+                CC BY-NC-SA 4.0
+              </a>
+              : share and adapt freely, non-commercial, share alike. A work in
+              progress: the rules published here are subject to change.
+            </p>
+          )}
+        </footer>
       </div>
     </div>
   );
