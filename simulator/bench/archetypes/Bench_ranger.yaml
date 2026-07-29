@@ -1,0 +1,77 @@
+# GABARIT DE BANC D'ESSAI — Tireur (distance, Lucidité)
+#
+# Budget commun : 8 points de compétence, protection 🛡️ 1, aucun trait, aucune
+# discipline (cf. Bench_brute.yaml pour la convention détaillée).
+#
+# ── Ce gabarit ────────────────────────────────────────────────────────────────
+# Le pendant à distance de la Brute. Intuition 3 porte le Tir rapide (Lucidité ✪
+# + Intuition ✫), son attaque de tous les instants. Observation 1 lui laisse le
+# Tir ciblé — la grosse frappe à 💔 — mais volontairement peu soutenu : concentrer
+# les 8 points sur DEUX lignes de tir en ferait un gabarit à double pic sans
+# défense du tout, ce qui ne se compare plus à rien.
+#
+# Sa fragilité est assumée et fait partie de la mesure : Robustesse 1 lui donne un
+# seuil de résistance de 3 contre 4 à la Brute. Face à la Sentinelle, qui frappe
+# 💢💢💢, chaque coup encaissé déborde presque aussitôt en blessure grave 💔 —
+# c'est le prix du profil, et c'est exactement ce que la colonne « manches
+# tenues » doit rendre visible.
+#
+# NB : le banc se joue SANS tapis (aucune position déclarée), donc tout le monde
+# est à portée de tout le monde. Le Tireur y perd son atout de kiting — la mesure
+# porte sur son rendement de dégâts, pas sur sa tenue de distance.
+name: "Bench Ranger"
+disciplines: {}
+perks: []
+inventory:
+  protection: 1
+characteristics:
+  strength:
+    value: 1
+    wounds: 0
+    power: 0
+    robustness: 1     # seuil de résistance 3
+  agility:
+    value: 1
+    wounds: 0
+    precision: 0
+    mobility: 0
+  vigor:
+    value: 2
+    wounds: 0
+    endurance: 2
+    recovery: 0
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 1
+    wounds: 0
+    observation: 1    # Tir ciblé (prérequis rang 1) — appoint, pas ligne principale
+    vigilance: 0
+  willpower:
+    value: 1
+    wounds: 0
+    authority: 0
+    discipline: 0
+  intelligence:
+    value: 1
+    wounds: 0
+    logic: 0
+    reactivity: 1     # ⚡ 1 — socle commun
+  tenacity:
+    value: 1
+    wounds: 0
+    conviction: 0
+    resilience: 0
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 2
+    wounds: 0
+    foresight: 0
+    intuition: 3      # Tir rapide — la ligne offensive principale

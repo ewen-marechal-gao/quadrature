@@ -1,0 +1,79 @@
+# GABARIT DE BANC D'ESSAI — Électromancien (magie, Volonté + Électromancie)
+#
+# Budget commun : 8 points de compétence, protection 🛡️ 1, aucun trait.
+# EN PLUS : Électromancie rang 1 + l'atout Initiation (cf. Bench_brute.yaml).
+#
+# ── Ce gabarit ────────────────────────────────────────────────────────────────
+# La voie magique du banc. Discipline 3 fait tout le travail : elle porte le jet
+# des cartes (Volonté ✪ + Discipline ✫), elle DÉRIVE la Volonté à 2 — le prérequis
+# de l'Initiation — et elle gonfle la Stabilité ◇ à 4, de loin la meilleure du
+# banc. Un seul rang investi, alors que l'atout en autorise 2 : c'est le budget
+# commun qui l'impose, pas un plafond de la discipline.
+#
+# ── Une réserve à garder en tête en lisant ses chiffres ───────────────────────
+# L'Électromancien est le gabarit dont l'équilibrage est encore OUVERT (le duel
+# contre le Faucheur le donnait vainqueur à ~90-95 %, ce qui sent le surdosage).
+# Il est ici pour être mesuré à la même aune que les autres, pas comme référence :
+# s'il domine le banc, c'est un résultat sur la discipline, pas sur le banc.
+#
+# Sa boucle de charges (Focalisation Cathodique ⊖ → Décharge) exige DEUX manches
+# pour convertir, là où l'Étincelle brûle tout de suite. Le rendement du combo
+# face à un mannequin qui ne meurt jamais est précisément ce qu'on veut voir.
+name: "Bench Electromancer"
+disciplines:
+  electromancy: 1
+perks:
+  - arc-initiate
+inventory:
+  protection: 1
+characteristics:
+  strength:
+    value: 1
+    wounds: 0
+    power: 0
+    robustness: 1     # seuil de résistance 3
+  agility:
+    value: 1
+    wounds: 0
+    precision: 0
+    mobility: 0
+  vigor:
+    value: 2
+    wounds: 0
+    endurance: 2
+    recovery: 1
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 1
+    wounds: 0
+    observation: 0
+    vigilance: 0
+  willpower:
+    value: 2          # dérivé : Discipline 3 → Volonté 2, le prérequis de l'Initiation
+    wounds: 0
+    authority: 0
+    discipline: 3     # jet des cartes d'Électromancie · Stabilité ◇ 4
+  intelligence:
+    value: 1
+    wounds: 0
+    logic: 0
+    reactivity: 1     # ⚡ 1 — socle commun
+  tenacity:
+    value: 1
+    wounds: 0
+    conviction: 0
+    resilience: 0
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 1
+    wounds: 0
+    foresight: 0
+    intuition: 0

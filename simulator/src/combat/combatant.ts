@@ -445,10 +445,17 @@ export function addBurn(state: CombatantState, amount = 1): CombatantState {
  * ne l'éteint (aucune extinction modélisée — chantier). Rendu avec ses notes de
  * log pour la phase d'entretien.
  */
+/**
+ * Lot de 🔥 qu'il faut réunir pour qu'une 💔 tombe (§ combustion). Nommé parce
+ * qu'il est le taux de change entre marqueurs de feu et blessures — ce dont a
+ * besoin quiconque doit chiffrer ce que « vaut » une brûlure (le banc d'essai).
+ */
+export const COMBUSTION_THRESHOLD = 5
+
 export function processCombustion(state: CombatantState): { state: CombatantState; notes: string[] } {
   if (state.burn <= 0) return { state, notes: [] }
   let s: CombatantState = { ...state, burn: state.burn + 1 }
-  const heavies = Math.floor(s.burn / 5)
+  const heavies = Math.floor(s.burn / COMBUSTION_THRESHOLD)
   if (heavies === 0) {
     return { state: s, notes: [`🔥 Combustion — ${s.burn}🔥 (propagation)`] }
   }

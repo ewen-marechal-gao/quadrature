@@ -1,0 +1,78 @@
+# GABARIT DE BANC D'ESSAI — Brute (mêlée, Force)
+#
+# ── La convention de budget, commune aux quatre gabarits ──────────────────────
+#   • 8 points de compétence, ni plus ni moins ;
+#   • protection 🛡️ 1 ;
+#   • aucun trait (les traits s'ouvrent aux rangs 3 et 5 : c'est une SECONDE
+#     monnaie, qui fausserait la comparaison si un seul gabarit en portait) ;
+#   • les rangs de discipline et les atouts sont eux aussi une monnaie à part —
+#     dans les règles un atout OUVRE un plafond, il ne s'achète pas en points de
+#     compétence. Les deux gabarits de discipline en portent donc en PLUS des 8
+#     points. Savoir si c'est trop généreux est précisément une des questions que
+#     ce banc doit trancher : à lire dans l'écart Brute ↔ Escrimeur, qui frappent
+#     tous deux en Force et ne diffèrent que par la discipline.
+#
+# Les caractéristiques ne sont jamais achetées : elles se DÉRIVENT des rangs de
+# compétence (base 1, +1 au rang 2, +1 de plus au rang 4). Les `value` ci-dessous
+# sont donc un aide-lecture recalculé au chargement, pas une entrée.
+#
+# ── Ce gabarit ────────────────────────────────────────────────────────────────
+# Le mètre-étalon offensif : tout en Force, frappe au contact, encaisse debout.
+# Puissance 3 porte l'Attaque armée ET la Frappe brutale ; Robustesse 2 lui donne
+# le meilleur seuil de résistance du banc (4) et ouvre le Blocage.
+name: "Bench Brute"
+disciplines: {}
+perks: []
+inventory:
+  protection: 1
+characteristics:
+  strength:
+    value: 3
+    wounds: 0
+    power: 3          # Attaque armée + Frappe brutale (prérequis rang 1)
+    robustness: 2     # seuil de résistance 4 · ouvre le Blocage (rang 2)
+  agility:
+    value: 1
+    wounds: 0
+    precision: 0
+    mobility: 0
+  vigor:
+    value: 2
+    wounds: 0
+    endurance: 2
+    recovery: 0
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 1
+    wounds: 0
+    observation: 0
+    vigilance: 0
+  willpower:
+    value: 1
+    wounds: 0
+    authority: 0
+    discipline: 0
+  intelligence:
+    value: 1
+    wounds: 0
+    logic: 0
+    reactivity: 1     # ⚡ 1 — socle commun aux quatre gabarits (une garde active/manche)
+  tenacity:
+    value: 1
+    wounds: 0
+    conviction: 0
+    resilience: 0
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 1
+    wounds: 0
+    foresight: 0
+    intuition: 0

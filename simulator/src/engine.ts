@@ -16,7 +16,7 @@ import { loadCharacter }        from './character/io'
 import { ALL_CHARACTERISTICS, ALL_SKILLS } from './character/data'
 import type { Character, CharacteristicName, SkillName } from './character/types'
 
-import { resolveCharacterPath } from './encounter/io'
+import { resolveCharacterPath, SIMULATOR_ROOT } from './encounter/io'
 import type { EncounterConfig, EncounterFaction, EncounterCharacter, AgentType } from './encounter/types'
 
 import { initCombatant, resetRoundTokensWithLog } from './combat/combatant'
@@ -25,7 +25,7 @@ import { type Band } from './combat/bands'
 import { type Position } from './combat/position'
 import type { GuardProvider, PlannedAction, Plan } from './combat/round'
 
-import { loadAdversary } from './adversary/io'
+import { loadAdversary, loadAdversaryFile } from './adversary/io'
 import type { AdversarySheet } from './adversary/types'
 import { initAdversary } from './adversary/combatant'
 import { selectTargetPart, cardMoveBudget } from './adversary/agent'
@@ -70,10 +70,24 @@ export interface AdversarySide {
 
 export type Side = PcSide | AdversarySide
 
+/**
+ * Un `adversary:` désigne-t-il un FICHIER plutôt qu'un id du bestiaire ?
+ *
+ * Même convention que `sheet:` pour les PJ : un chemin se reconnaît à son
+ * séparateur ou à son extension. Elle existe pour les fiches qui ne SONT pas
+ * des créatures — les mannequins du banc d'essai vivent hors de
+ * data/bestiary/cards, un dossier généré qui les écraserait.
+ */
+function isAdversaryPath(ref: string): boolean {
+  return ref.includes('/') || ref.includes('\\') || /\.ya?ml$/.test(ref)
+}
+
 /** Load one faction slot into a Side (PC sheet or adversary fiche). */
 async function loadSide(cfg: EncounterCharacter, faction: EncounterFaction): Promise<Side> {
   if (cfg.adversary) {
-    const sheet = await loadAdversary(cfg.adversary)
+    const sheet = isAdversaryPath(cfg.adversary)
+      ? await loadAdversaryFile(path.resolve(SIMULATOR_ROOT, cfg.adversary))
+      : await loadAdversary(cfg.adversary)
     return { kind: 'adversary', id: sheet.id, sheet, ...(cfg.pos && { pos: cfg.pos }) }
   }
   const char = await loadCharacter(resolveCharacterPath(cfg.sheet!))

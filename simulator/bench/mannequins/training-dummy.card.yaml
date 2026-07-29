@@ -1,0 +1,138 @@
+# ÉTALON DE BANC D'ESSAI — pas une créature du bestiaire.
+#
+# Le « Sac de frappe » mesure l'OFFENSE d'un gabarit : combien de 💢 il sort par
+# manche, et à quelle fréquence il touche. Tout ce qui n'est pas cette mesure est
+# donc neutralisé — le mannequin est une CONSTANTE, pas un adversaire :
+#
+#   • il ne rend jamais un coup (deck vide, ⚫ 0) : le DpM lu est le plafond du
+#     gabarit, non un compromis survie/dégâts ;
+#   • il ne meurt jamais : chaque run va au bout du compteur de manches, donc le
+#     dénominateur du DpM est identique pour tous. Un mannequin mortel
+#     avantagerait mécaniquement les builds à gros pic, qui l'achèveraient plus
+#     tôt et se verraient créditer d'un « par manche » flatteur.
+#
+# ── Comment on rend une créature immortelle (et pourquoi pas autrement) ───────
+# Trois leviers existent dans le moteur, on n'en retient qu'UN :
+#   ✗ l'ARMURE annule les 💔 mais se consomme, et surtout elle réduit aussi les
+#     💢 — le planificateur verrait une cible sans intérêt et cesserait de
+#     frapper, ce qui viderait la mesure de son sens ;
+#   ✗ l'ÉVASION 🍀 convertit les 💔 en 💢, mais elle est désactivée par Sonné 🫨
+#     (que la Frappe brutale applique en critique) : l'immortalité deviendrait
+#     intermittente, donc le gabarit le plus violent serait le seul à pouvoir
+#     tuer l'étalon ;
+#   ✓ les BLOCS. Une blessure grave 💔 détruit UN bloc, quelle que soit sa
+#     taille — un bloc géant unique tomberait donc au premier 💔. On empile
+#     alors 40 blocs profonds : armure 0, aucune conversion, aucun effet caché.
+#     Le mannequin encaisse comme une cible parfaitement ordinaire, simplement
+#     plus longtemps que le banc ne dure (~1,5 💔/manche sur 10 manches).
+#
+# Le bloc porteur du ◇ est placé EN DERNIER : les blocs se détruisent de haut en
+# bas, et un grant ne vaut que tant que son bloc est intact. Ce ◇ verrouille la
+# piste mentale — l'état mental d'une créature MODIFIE sa garde (Prudent +1,
+# Enragé −2), et une garde qui dérive en cours de combat rendrait les taux de
+# réussite incomparables d'un gabarit à l'autre. Aucune action des trousses du
+# banc ne pousse la piste mentale aujourd'hui : c'est une assurance, pas un
+# correctif.
+#
+# Sa garde 8 est LE seuil de référence du banc. La changer change l'échelle de
+# tous les DpM : on la déplace pour recalibrer, jamais au cas par cas.
+id: training-dummy
+name:
+  fr: Sac de frappe
+  en: Punching Bag
+power: initiate
+# Jamais lancés (aucune carte) — présents parce que le schéma d'une fiche l'exige.
+dice:
+  - threat
+  - threat
+  - threat
+  - threat
+description:
+  fr: >-
+    Mannequin d'entraînement de la salle d'armes : un tronc de bois gainé de
+    toile, lesté de sable, qui encaisse sans jamais rendre un coup. Étalon de
+    mesure, pas créature.
+guard:
+  # `type` est un libellé d'affichage : seule `value` fixe le seuil à atteindre.
+  type: block
+  value: 8
+speed:
+  walk: 0
+  run: 0
+# Horloge de fatigue hors d'atteinte : le mannequin ne tombe jamais d'épuisement.
+fatigue: 9999
+# ⚫ 0 — il ne joue aucune carte, même s'il en avait une.
+actions: 0
+parts:
+  # UNE seule partie : la sélection de cible priorise les parties `offensive`,
+  # donc découper le mannequin en plusieurs parties ne ferait que déplacer la
+  # question de savoir laquelle encaisse. Une seule, et tout y atterrit.
+  - type: body
+    tag: support
+    name:
+      fr: Tronc
+      en: Trunk
+    description:
+      fr: Bois gainé de toile, lesté de sable. Se marque, ne se brise pas.
+    # Armure 0 : ce qui est infligé est ce qui est compté.
+    armor: 0
+    blocks:
+      - &pad
+        cases: 60
+        name:
+          fr: Bourre
+          en: Stuffing
+        grants:
+          text:
+            fr: Inerte
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      # Dernier bloc = dernier détruit : le ◇ tient tant que le mannequin tient.
+      - cases: 60
+        name:
+          fr: Âme de bois
+          en: Wooden Core
+        grants:
+          text:
+            fr: Inerte — regagne 30 ◇ au début de la manche (piste mentale verrouillée)
+          resource: stability
+          amount: 30
+traits: []
+# Deck VIDE — c'est ce qui fait du mannequin un sac de frappe et non un sparring.
+cards: []

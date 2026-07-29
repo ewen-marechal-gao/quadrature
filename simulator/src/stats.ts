@@ -72,6 +72,14 @@ export interface ActionStat {
   lightDealt:       number
   /** heavy-wound effects landing on the opponent */
   heavyDealt:       number
+  /**
+   * add-burn 🔥 markers landing on the opponent. Compté à part des 💢 parce que
+   * la combustion n'est pas une blessure : elle s'accumule, se PROPAGE (+1 par
+   * manche tant qu'il en reste un) et convertit chaque lot de 5 en 💔 perçant
+   * l'armure. Sans cette colonne, une discipline dont c'est le vecteur principal
+   * (Électromancie, Calomancie) apparaît comme n'infligeant presque rien.
+   */
+  burnDealt:        number
   /** remove-fatigue effects landing on self (self-targeted actions) */
   fatigueRecovered: number
   /** heal-wounds effects landing on self */
@@ -165,7 +173,7 @@ function mkActionStat(): ActionStat {
   return {
     uses: 0, offensiveUses: 0, hits: 0,
     roll: mkAcc(), crits: 0, flaws: 0,
-    fatigueDealt: 0, lightDealt: 0, heavyDealt: 0,
+    fatigueDealt: 0, lightDealt: 0, heavyDealt: 0, burnDealt: 0,
     fatigueRecovered: 0, woundsHealed: 0,
   }
 }
@@ -333,6 +341,7 @@ export function computeStats(logs: CombatLog[]): ComputedStats {
               if (fx.kind === 'add-fatigue'  && fx.targetId === entry.targetId) as.fatigueDealt += fx.amount
               if (fx.kind === 'light-wound'  && fx.targetId === entry.targetId) as.lightDealt += fx.amount
               if (fx.kind === 'heavy-wound'  && fx.targetId === entry.targetId) as.heavyDealt++
+              if (fx.kind === 'add-burn'     && fx.targetId === entry.targetId) as.burnDealt += fx.amount
             }
             // Self-targeted: recovery effects
             if (fx.kind === 'remove-fatigue' && fx.targetId === entry.actorId) as.fatigueRecovered += fx.amount
@@ -684,6 +693,7 @@ export function printStats(stats: ComputedStats, encounterName: string): void {
       if (s.fatigueDealt     > 0) parts.push(`${(s.fatigueDealt     / s.uses).toFixed(1)}💧↓`)
       if (s.lightDealt       > 0) parts.push(`${(s.lightDealt       / s.uses).toFixed(1)}💢`)
       if (s.heavyDealt       > 0) parts.push(`${(s.heavyDealt       / s.uses).toFixed(2)}💔`)
+      if (s.burnDealt        > 0) parts.push(`${(s.burnDealt        / s.uses).toFixed(1)}🔥`)
       if (s.fatigueRecovered > 0) parts.push(`${(s.fatigueRecovered / s.uses).toFixed(1)}💧↑`)
       if (s.woundsHealed     > 0) parts.push(`${(s.woundsHealed     / s.uses).toFixed(1)}💢↑`)
       const effet = parts.join(' ') || '—'

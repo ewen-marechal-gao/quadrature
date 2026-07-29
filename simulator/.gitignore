@@ -7,5 +7,9 @@ node_modules/
 # Simulation reports (generated at runtime)
 combatReports/
 
+# Rapports du banc d'essai (générés par `npm run bench`) — les fiches et gabarits
+# de bench/ restent versionnés, eux : ce sont les ÉTALONS de mesure.
+bench/reports/
+
 # Environment variables (API keys, secrets)
 .env

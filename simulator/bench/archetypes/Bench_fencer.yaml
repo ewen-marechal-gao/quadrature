@@ -1,0 +1,81 @@
+# GABARIT DE BANC D'ESSAI — Escrimeur (mêlée, Force + Escrime)
+#
+# Budget commun : 8 points de compétence, protection 🛡️ 1, aucun trait.
+# EN PLUS : Escrime rang 1 + l'atout Duelliste (cf. Bench_brute.yaml — les rangs
+# de discipline sont une monnaie distincte des points de compétence).
+#
+# ── Pourquoi Duelliste, et pourquoi lames larges ──────────────────────────────
+# C'est la Forme dont les effets sont réellement BRANCHÉS dans le moteur, donc la
+# seule qui produise une mesure honnête :
+#   • Mur de lame (lames larges) — la Parade roule en Escrime au lieu de
+#     Vigilance. Ici Vigilance 0 contre Escrime 1 : un gain net de +1 sur chaque
+#     Parade. Rendre ce gain lisible est tout l'intérêt de laisser Vigilance à 0.
+#   • ♾️ Combat sur la défensive — démarre l'état mental sur Prudent.
+# Le ⚡ sur Garde affaiblie n'est pas branché (il exige la Garde dynamique) : il
+# ne compte donc pas dans ce que le banc mesure.
+#
+# ── Ce que ce gabarit sert à lire ─────────────────────────────────────────────
+# Il attaque comme la Brute (Attaque armée, Force ✪ + Puissance ✫) mais en Force
+# 2 contre 3, ayant redirigé deux points vers Réactivité 2 — donc ⚡ 2, de quoi
+# parer deux fois par manche. L'écart Brute ↔ Escrimeur se lit alors comme un
+# seul arbitrage : combien de dégâts vaut une discipline défensive ?
+name: "Bench Fencer"
+disciplines:
+  fencing: 1
+perks:
+  - duelist
+skillTags:
+  - favweapon-broad   # Mur de lame : la Parade roule en Escrime
+inventory:
+  protection: 1
+characteristics:
+  strength:
+    value: 2          # dérivé : Puissance 2 → Force 2, le prérequis du Duelliste
+    wounds: 0
+    power: 2          # Attaque armée · ouvre la Parade (prérequis rang 1)
+    robustness: 1     # seuil de résistance 3
+  agility:
+    value: 1
+    wounds: 0
+    precision: 0
+    mobility: 1
+  vigor:
+    value: 2
+    wounds: 0
+    endurance: 2
+    recovery: 0
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 1
+    wounds: 0
+    observation: 0
+    vigilance: 0      # nulle À DESSEIN : c'est l'Escrime qui porte la Parade
+  willpower:
+    value: 1
+    wounds: 0
+    authority: 0
+    discipline: 0
+  intelligence:
+    value: 2
+    wounds: 0
+    logic: 0
+    reactivity: 2     # ⚡ 2 — deux Parades par manche, le cœur du profil
+  tenacity:
+    value: 1
+    wounds: 0
+    conviction: 0
+    resilience: 0
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 1
+    wounds: 0
+    foresight: 0
+    intuition: 0

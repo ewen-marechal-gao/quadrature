@@ -6,6 +6,7 @@
   "scripts": {
     "demo": "ts-node src/demo.ts",
     "simulate": "ts-node src/simulate.ts",
+    "bench": "ts-node src/bench.ts",
     "optimize": "ts-node src/optimize.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
