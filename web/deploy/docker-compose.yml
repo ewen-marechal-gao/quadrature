@@ -1,0 +1,27 @@
+# Quadrature — service statique derrière le Traefik du VPS.
+#
+# Même motif que le CV (~/apps/cv-deploy) : un nginx:alpine qui sert le dossier
+# `www/` déposé par `npm run deploy`. Aucun Node en production — le site est un
+# export statique.
+#
+# Emplacement sur le VPS : ~/apps/quadrature-deploy/
+# Le réseau `proxy` et le resolver `myresolver` sont ceux de ~/apps/traefik.
+
+services:
+  quadrature:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./www:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.quadrature.rule=Host(`quadrature.marechal-gao.fr`)"
+      - "traefik.http.routers.quadrature.entrypoints=websecure"
+      - "traefik.http.routers.quadrature.tls.certresolver=myresolver"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

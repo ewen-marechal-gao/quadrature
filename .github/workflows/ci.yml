@@ -1,0 +1,61 @@
+# CI — vérifie que le dépôt reste sain à chaque poussée.
+#
+# Deux sous-projets ont une chaîne de vérification, et ils sont indépendants :
+# on les teste en parallèle pour qu'un échec côté simulateur n'attende pas le
+# build du site.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# Une poussée en remplaçant une autre sur la même branche, on annule la
+# précédente : seul le dernier état compte.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulator:
+    name: Simulateur — types & tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: simulator/package-lock.json
+
+      - run: npm ci
+        working-directory: simulator
+
+      - run: npm run typecheck
+        working-directory: simulator
+
+      - run: npm test
+        working-directory: simulator
+
+  web:
+    name: Site — build public
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+        working-directory: web
+
+      # `build:public` type-check ET produit l'export statique : si cette étape
+      # passe, le site est déployable en l'état. C'est exactement la commande
+      # qu'exécute le workflow de déploiement.
+      - run: npm run build:public
+        working-directory: web

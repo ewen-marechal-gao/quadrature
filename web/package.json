@@ -8,7 +8,6 @@
     "prebuild": "node scripts/copy-pagedjs.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-web-images.mjs && node scripts/generate-content-index.mjs fr",
     "build": "next build",
     "build:public": "node scripts/copy-pagedjs.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-web-images.mjs && node scripts/generate-content-index.mjs fr && node scripts/build-public.mjs",
-    "deploy": "node scripts/deploy.mjs",
     "start": "next start",
     "refresh-content": "node scripts/generate-content-index.mjs fr",
     "generate-pdf": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs fr && node scripts/generate-pdf.mjs"
@@ -33,6 +32,7 @@
     "@types/react-dom": "^19",
     "pdf-lib": "^1.17.1",
     "puppeteer": "^25.1.0",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
