@@ -400,7 +400,8 @@ function PcCard({ s }: { s: CombatantSnapshot }) {
           <span title="armure">{s.protection + s.tempProtection}🛡️</span>
           <span title="blessures légères / seuil de résistance">{overMax(s.lightWounds, s.resistance)}💢</span>
           <span title="blessures graves / capacité">{overMax(s.heavyWounds, s.heavyCapacity)}💔</span>
-          {s.burn ? <span title="combustion">{s.burn}🔥</span> : null}
+          {s.burn ? <span title="brûlures en cours (5 = embrasement)">{s.burn}🔥</span> : null}
+          {s.blaze ? <span title="embrasements — rallument 1🔥 chacun en fin de manche">{s.blaze}❤️‍🔥</span> : null}
           {s.charge ? <span title="charge électrique ⚡">{chargeLabel(s.charge)}</span> : null}
         </div>
         <div className="cbv-actor__col cbv-actor__col--mental">
@@ -432,7 +433,8 @@ function AdvCard({ s }: { s: AdversarySnapshot }) {
           {s.armorTotal != null && <span title="armure totale">{s.armorTotal}🛡️</span>}
           <span title="blessures subies (cases)">{marked}💢</span>
           <span title="blocs détruits / total">{destroyed}/{s.parts.length}✖</span>
-          {s.burn ? <span title="combustion">{s.burn}🔥</span> : null}
+          {s.burn ? <span title="brûlures en cours (5 = embrasement)">{s.burn}🔥</span> : null}
+          {s.blaze ? <span title="embrasements — rallument 1🔥 chacun en fin de manche">{s.blaze}❤️‍🔥</span> : null}
           {s.charge ? <span title="charge électrique ⚡">{chargeLabel(s.charge)}</span> : null}
         </div>
         <div className="cbv-actor__col cbv-actor__col--mental">

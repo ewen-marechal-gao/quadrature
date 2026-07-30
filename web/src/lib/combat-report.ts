@@ -115,8 +115,14 @@ export interface CombatantSnapshot {
   /** Capacité de traumas (Σ caract. mentales). Absent des rapports antérieurs. */
   mentalCapacity?: number;
   bleed: number;
-  /** 🔥 Marqueurs de combustion. Absent des rapports antérieurs. */
+  /** 🔥 Brûlures en cours d'accumulation — reste sous le seuil d'embrasement (5). */
   burn?: number;
+  /**
+   * ❤️‍🔥 Embrasements déclarés. C'est LE compteur qui compte : chacun a déjà coûté
+   * une blessure grave et rallume une brûlure à chaque fin de manche. Absent des
+   * rapports antérieurs au modèle 🔥→❤️‍🔥.
+   */
+  blaze?: number;
   /** ⚡ Charge électrique signée (− = ⊖, + = ⊕). Absent des rapports antérieurs. */
   charge?: number;
   status: string[];
@@ -141,8 +147,14 @@ export interface AdversarySnapshot {
   winded: boolean;
   bleed: number;
   destabilized: boolean;
-  /** 🔥 Marqueurs de combustion. Absent des rapports antérieurs. */
+  /** 🔥 Brûlures en cours d'accumulation — reste sous le seuil d'embrasement (5). */
   burn?: number;
+  /**
+   * ❤️‍🔥 Embrasements déclarés. C'est LE compteur qui compte : chacun a déjà coûté
+   * une blessure grave et rallume une brûlure à chaque fin de manche. Absent des
+   * rapports antérieurs au modèle 🔥→❤️‍🔥.
+   */
+  blaze?: number;
   /** ⚡ Charge électrique signée (− = ⊖, + = ⊕). Absent des rapports antérieurs. */
   charge?: number;
   /** 🛡️ armure totale restante. Absent des rapports antérieurs. */

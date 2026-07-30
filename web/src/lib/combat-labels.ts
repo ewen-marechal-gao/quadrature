@@ -57,8 +57,11 @@ export function describeEffect(e: CombatEffect): string | null {
     case "heal-wounds":       return `soigne ${n ?? ""}💢`.trim();
     case "add-fatigue":       return `${n ?? ""}💧`.trim();
     case "remove-fatigue":    return `−${n ?? ""}💧`.trim();
-    // 🔥 Combustion (add-burn : montant `amount`).
+    // 🔥 Combustion (§ combustion) — la pose peut déclencher un embrasement ❤️‍🔥,
+    // qui apparaît alors comme une 💔 séparée dans la même liste d'effets.
     case "add-burn":          return `${n ?? ""}🔥`.trim();
+    case "remove-burn":       return `−${n ?? ""}🔥`.trim();
+    case "remove-blaze":      return `−${n ?? ""}❤️‍🔥`.trim();
     // ⚡ Charge (add-charge : `delta` signé — ⊖ négatif / ⊕ positif).
     case "add-charge": {
       const d = typeof e.delta === "number" ? e.delta : 0;
