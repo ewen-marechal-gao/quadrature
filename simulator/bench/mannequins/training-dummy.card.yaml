@@ -1,41 +1,42 @@
 # ÉTALON DE BANC D'ESSAI — pas une créature du bestiaire.
 #
-# Le « Sac de frappe » mesure l'OFFENSE d'un gabarit : combien de 💢 il sort par
-# manche, et à quelle fréquence il touche. Tout ce qui n'est pas cette mesure est
-# donc neutralisé — le mannequin est une CONSTANTE, pas un adversaire :
+# Le « Sac de frappe » mesure l'OFFENSE d'un gabarit : combien de cases ▢ il
+# parvient à cocher par manche. Tout ce qui n'est pas cette mesure est neutralisé
+# — le mannequin est une CONSTANTE, pas un adversaire :
 #
-#   • il ne rend jamais un coup (deck vide, ⚫ 0) : le DpM lu est le plafond du
+#   • il ne rend jamais un coup (deck vide, ⚫ 0) : le débit lu est le plafond du
 #     gabarit, non un compromis survie/dégâts ;
 #   • il ne meurt jamais : chaque run va au bout du compteur de manches, donc le
-#     dénominateur du DpM est identique pour tous. Un mannequin mortel
-#     avantagerait mécaniquement les builds à gros pic, qui l'achèveraient plus
-#     tôt et se verraient créditer d'un « par manche » flatteur.
+#     dénominateur est identique pour tous. Un mannequin mortel avantagerait les
+#     builds à gros pic, qui l'achèveraient plus tôt et se verraient créditer
+#     d'un « par manche » flatteur.
 #
-# ── Comment on rend une créature immortelle (et pourquoi pas autrement) ───────
-# Trois leviers existent dans le moteur, on n'en retient qu'UN :
-#   ✗ l'ARMURE annule les 💔 mais se consomme, et surtout elle réduit aussi les
-#     💢 — le planificateur verrait une cible sans intérêt et cesserait de
-#     frapper, ce qui viderait la mesure de son sens ;
-#   ✗ l'ÉVASION 🍀 convertit les 💔 en 💢, mais elle est désactivée par Sonné 🫨
-#     (que la Frappe brutale applique en critique) : l'immortalité deviendrait
-#     intermittente, donc le gabarit le plus violent serait le seul à pouvoir
-#     tuer l'étalon ;
-#   ✓ les BLOCS. Une blessure grave 💔 détruit UN bloc, quelle que soit sa
-#     taille — un bloc géant unique tomberait donc au premier 💔. On empile
-#     alors 40 blocs profonds : armure 0, aucune conversion, aucun effet caché.
-#     Le mannequin encaisse comme une cible parfaitement ordinaire, simplement
-#     plus longtemps que le banc ne dure (~1,5 💔/manche sur 10 manches).
+# ── LA CASE ▢ EST L'UNITÉ DE MESURE, ET LA TAILLE DES BLOCS EN EST LE PRIX ────
+# C'est le point le plus important de cette fiche. On ne convertit RIEN : on
+# compte les cases effectivement cochées sur la cible. Or les trois vecteurs de
+# dégâts y aboutissent déjà, chacun à son juste prix, sans qu'on ait à décréter
+# un taux de change :
+#   · une blessure légère 💢 coche une case ;
+#   · une blessure grave 💔 DÉTRUIT un bloc — donc coche toutes ses cases ;
+#   · les brûlures 🔥 détruisent un bloc par lot de 5 (combustionTick), et
+#     l'hémorragie 🩸 coche une case par manche.
 #
-# Le bloc porteur du ◇ est placé EN DERNIER : les blocs se détruisent de haut en
-# bas, et un grant ne vaut que tant que son bloc est intact. Ce ◇ verrouille la
-# piste mentale — l'état mental d'une créature MODIFIE sa garde (Prudent +1,
-# Enragé −2), et une garde qui dérive en cours de combat rendrait les taux de
-# réussite incomparables d'un gabarit à l'autre. Aucune action des trousses du
-# banc ne pousse la piste mentale aujourd'hui : c'est une assurance, pas un
-# correctif.
+# La conséquence est qu'un bloc PROFOND rendrait une 💔 démesurée : sur des blocs
+# de 60 cases, une seule blessure grave vaudrait soixante coups légers. On calque
+# donc l'anatomie réelle : les créatures du bestiaire ont des blocs de 2 à 4
+# cases (le Faucheur : 2, 2, 3, 2, 3, 4, 2, 3, 2, 2). On retient 3, le mode et la
+# médiane — ce qui situe une 💔 à ≈ 3 💢, le bas de la fourchette de conception.
+# Changer ce 3 change le prix relatif des blessures graves pour TOUT le banc :
+# c'est le bouton de calibrage, et il est ici, pas dans le code.
 #
-# Sa garde 8 est LE seuil de référence du banc. La changer change l'échelle de
-# tous les DpM : on la déplace pour recalibrer, jamais au cas par cas.
+# 60 blocs, soit 180 cases : il en faut assez pour que le mannequin ne soit
+# jamais détruit, mais SURTOUT pour qu'aucun dégât ne déborde — le trop-plein
+# d'un bloc plein est PERDU (fillBlocks), et une saturation sous-compterait
+# silencieusement les gabarits les plus violents. Le banc vérifie à chaque
+# passage qu'on est resté loin de cette limite.
+#
+# Sa garde 8 est LE seuil de référence du banc. La déplacer change l'échelle de
+# tous les débits à la fois : on la bouge pour recalibrer, jamais au cas par cas.
 id: training-dummy
 name:
   fr: Sac de frappe
@@ -74,11 +75,12 @@ parts:
       en: Trunk
     description:
       fr: Bois gainé de toile, lesté de sable. Se marque, ne se brise pas.
-    # Armure 0 : ce qui est infligé est ce qui est compté.
+    # Armure 0 : ce qui est infligé est ce qui est coché. Une armure fausserait
+    # doublement la mesure — elle absorbe les 💔 et réduit les 💢.
     armor: 0
     blocks:
       - &pad
-        cases: 60
+        cases: 3
         name:
           fr: Bourre
           en: Stuffing
@@ -123,8 +125,31 @@ parts:
       - *pad
       - *pad
       - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
       # Dernier bloc = dernier détruit : le ◇ tient tant que le mannequin tient.
-      - cases: 60
+      # Il verrouille la piste mentale, dont l'état MODIFIE la garde (Prudent +1,
+      # Enragé −2) : une garde qui dérive rendrait les taux de réussite
+      # incomparables d'un gabarit à l'autre.
+      - cases: 3
         name:
           fr: Âme de bois
           en: Wooden Core

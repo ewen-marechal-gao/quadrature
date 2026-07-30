@@ -594,9 +594,4 @@ export const PRICE = {
   dieMod:    DIE_MOD_VALUE,
   decisive:  DECISIVE_VALUE,
   bleed:     BLEED_VALUE,
-  // Exposé pour que le banc d'essai convertisse 💔 et 💢 dans une SEULE monnaie :
-  // un profil qui ne sort que des 💔 (Frappe brutale) et un qui ne sort que des
-  // 💢 (Attaque armée) sont sinon incomparables. Le taux est celui que le
-  // planificateur applique déjà — le banc ne s'invente pas le sien.
-  heavy:     HEAVY_VALUE,
 } as const

@@ -1,0 +1,90 @@
+# GABARIT DE BANC D'ESSAI — Fine Lame (Escrime · Fine Lame, lame courte)
+#
+# Budget commun : 8 points de compétence, protection 🛡️ 1, aucun trait.
+# EN PLUS : Escrime rang 1 + l'atout Fine Lame (cf. Bench_brute.yaml).
+#
+# ── Ce gabarit ────────────────────────────────────────────────────────────────
+# Le troisième Escrimeur : léger, rapide, bâti sur l'Agilité. Sa ligne est la
+# Frappe vive (1 ⚫ + 1 💧, initiative 3) — deux fois moins chère en actions que
+# l'Attaque armée, donc un débit de coups supérieur pour des dégâts unitaires
+# moindres. Puissance 0 lui ferme la Frappe brutale : il n'a aucun pic, que du
+# rythme.
+#
+# ── Le point le plus subtil de la fiche : la substitution est NEUTRE ──────────
+# Escrime au lieu de Précision sur la Frappe vive (lames courtes, branché).
+# Or la substitution remplace la VALEUR de compétence par le rang de discipline :
+# ici Escrime 1 contre Précision 1, soit exactement zéro dé gagné. Ce n'est pas
+# une erreur d'allocation — c'est que la substitution ne sert PAS à améliorer le
+# jet à ce rang. Elle sert à faire de la Frappe vive un « jet d'Escrime », et
+# c'est cela seul qui arme le vrai moteur du profil :
+#
+# ♾️ Formes parfaites (branché) : démarre Concentré, et gagne 1 ⚡ à chaque jet
+# d'Escrime réussi sans Défaut tant qu'il reste Concentré. Sans la lame courte,
+# aucune de ses actions ne compterait comme un jet d'Escrime et le moteur ne
+# tournerait jamais.
+#
+# À surveiller au banc : le rang d'Escrime finira par dépasser Précision 1, et
+# la substitution deviendra alors un gain sec en plus du moteur à ⚡. Le gabarit
+# est donc probablement mesuré à son PLANCHER.
+#
+# La relance +1 de Fine Lame n'est pas branchée : elle ne compte pas ici.
+name: "Bench Finesse"
+disciplines:
+  fencing: 1
+perks:
+  - finesse
+skillTags:
+  - favweapon-light   # Frappe vive en Escrime — l'amorce du moteur à ⚡
+inventory:
+  protection: 1
+characteristics:
+  strength:
+    value: 1
+    wounds: 0
+    power: 0          # nulle : ni Frappe brutale, ni Parade (qui exige rang 1)
+    robustness: 1
+  agility:
+    value: 2          # dérivé de Mobilité 2 — satisfait le prérequis (Agilité 2)
+    wounds: 0
+    precision: 1      # ouvre la Frappe vive (prérequis rang 1)
+    mobility: 2
+  vigor:
+    value: 2
+    wounds: 0
+    endurance: 2
+    recovery: 0
+  grace:
+    value: 1
+    wounds: 0
+    composure: 0
+    disguise: 0
+  acuity:
+    value: 1
+    wounds: 0
+    observation: 0
+    vigilance: 0
+  willpower:
+    value: 1
+    wounds: 0
+    authority: 0
+    discipline: 0
+  intelligence:
+    value: 2
+    wounds: 0
+    logic: 0
+    reactivity: 2     # ⚡ 2 achetées, que sa Forme recharge sur jet réussi
+  tenacity:
+    value: 1
+    wounds: 0
+    conviction: 0
+    resilience: 0
+  charisma:
+    value: 1
+    wounds: 0
+    eloquence: 0
+    manipulation: 0
+  lucidity:
+    value: 1
+    wounds: 0
+    foresight: 0
+    intuition: 0

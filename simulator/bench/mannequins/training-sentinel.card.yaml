@@ -18,18 +18,19 @@
 # La sélection de cible en mêlée vise les parties `offensive` EN PREMIER. Donner
 # à la Sentinelle un « bras de frappe » séparé serait donc un piège : le PJ le
 # démolirait en priorité, la carte qu'il confère serait perdue, et la Sentinelle
-# cesserait de frapper — la mesure de résistance s'effondrerait au moment précis
-# où le gabarit encaisse le mieux. Tout tient donc dans UNE partie `support`.
+# cesserait de frapper — la mesure s'effondrerait au moment précis où le gabarit
+# encaisse le mieux. Tout tient donc dans UNE partie `support`.
 #
-# Pour l'immortalité, même raisonnement que le Sac de frappe (voir sa fiche) :
-# 40 blocs profonds, armure 0, aucune conversion. Une 💔 détruit UN bloc quelle
-# que soit sa taille, d'où l'empilement plutôt qu'un bloc géant. Les deux blocs
-# porteurs de grants sont EN DERNIER — les blocs se détruisent de haut en bas, et
-# la carte comme le ◇ doivent survivre aussi longtemps que la Sentinelle.
+# ── Blocs de 3 cases, comme le Sac de frappe ──────────────────────────────────
+# Même barème, pour que les cases cochées SUR elle restent lisibles avec la même
+# échelle (voir training-dummy.card.yaml, qui porte l'explication complète : une
+# 💔 détruit un bloc, donc la profondeur d'un bloc EST le prix d'une blessure
+# grave). 60 blocs = 180 cases, de quoi encaisser 20 manches sans jamais être
+# détruite ni saturer.
 #
-# Calibrage : ⬜⬜⬜⬜ en disposition agressive = +1 rang, donc quatre dés 🟫
-# (2,3,3,4,4,5) sommés, moyenne ≈ 14 — la même pression de frappe qu'un
-# Faucheur, la référence « initié » déjà éprouvée dans les duels existants.
+# Calibrage de frappe : ⬜⬜⬜⬜ en disposition agressive = +1 rang, donc quatre
+# dés 🟫 (2,3,3,4,4,5) sommés, moyenne ≈ 14 — la même pression qu'un Faucheur,
+# la référence « initié » déjà éprouvée dans les duels existants.
 id: training-sentinel
 name:
   fr: Sentinelle d'entraînement
@@ -67,7 +68,7 @@ parts:
     armor: 0
     blocks:
       - &pad
-        cases: 60
+        cases: 3
         name:
           fr: Fût
           en: Post
@@ -111,8 +112,28 @@ parts:
       - *pad
       - *pad
       - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
+      - *pad
       # Avant-dernier : la carte de frappe. Tant qu'il tient, la pression tient.
-      - cases: 60
+      - cases: 3
         name:
           fr: Ressort de frappe
           en: Striking Spring
@@ -123,7 +144,7 @@ parts:
       # Dernier : le ◇ qui verrouille la piste mentale. L'état mental décale le
       # RANG des dés (Agressif +1, Paniqué −2) : sans ce verrou, la force de
       # frappe de l'étalon dériverait en cours de combat.
-      - cases: 60
+      - cases: 3
         name:
           fr: Âme d'acier
           en: Steel Core

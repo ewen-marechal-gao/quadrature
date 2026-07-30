@@ -24,6 +24,9 @@
 
 import type { AdversarySheet, AdversaryPart, AdversaryCardDef, AdversaryResource, PartTag } from './types'
 import type { Position } from '../combat/position'
+// Le seuil de combustion est le MÊME pour un PJ et pour une créature (§ combustion) :
+// une seule constante, pour que les deux pistes ne puissent pas diverger.
+import { COMBUSTION_THRESHOLD } from '../combat/combatant'
 
 // ─── Mental track (4-state, simplified vs the player's 7) ─────────────────────
 
@@ -471,7 +474,7 @@ export function combustionTick(c: AdversaryCombatant): AdversaryCombatant {
   if (c.burn <= 0) return c
   const next = structuredClone(c)
   next.burn += 1
-  const heavies = Math.floor(next.burn / 5)
+  const heavies = Math.floor(next.burn / COMBUSTION_THRESHOLD)
   for (let i = 0; i < heavies; i++) {
     const blocks = [...next.parts, ...next.weapons]
       .flatMap(p => p.blocks)

@@ -446,9 +446,9 @@ export function addBurn(state: CombatantState, amount = 1): CombatantState {
  * log pour la phase d'entretien.
  */
 /**
- * Lot de 🔥 qu'il faut réunir pour qu'une 💔 tombe (§ combustion). Nommé parce
- * qu'il est le taux de change entre marqueurs de feu et blessures — ce dont a
- * besoin quiconque doit chiffrer ce que « vaut » une brûlure (le banc d'essai).
+ * Lot de 🔥 qu'il faut réunir pour qu'une 💔 tombe (§ combustion). Partagé avec
+ * la piste des créatures (adversary/combatant.ts → combustionTick) : le seuil est
+ * le même des deux côtés, et une constante unique empêche qu'ils divergent.
  */
 export const COMBUSTION_THRESHOLD = 5
 

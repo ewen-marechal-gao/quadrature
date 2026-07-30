@@ -1,40 +1,52 @@
-# GABARIT DE BANC D'ESSAI — Brute (mêlée, Force)
+# GABARIT DE BANC D'ESSAI — Brute (Escrime · Belliciste, épée large)
 #
-# ── La convention de budget, commune aux quatre gabarits ──────────────────────
+# ── La convention de budget, commune à tous les gabarits ──────────────────────
 #   • 8 points de compétence, ni plus ni moins ;
 #   • protection 🛡️ 1 ;
 #   • aucun trait (les traits s'ouvrent aux rangs 3 et 5 : c'est une SECONDE
 #     monnaie, qui fausserait la comparaison si un seul gabarit en portait) ;
-#   • les rangs de discipline et les atouts sont eux aussi une monnaie à part —
-#     dans les règles un atout OUVRE un plafond, il ne s'achète pas en points de
-#     compétence. Les deux gabarits de discipline en portent donc en PLUS des 8
-#     points. Savoir si c'est trop généreux est précisément une des questions que
-#     ce banc doit trancher : à lire dans l'écart Brute ↔ Escrimeur, qui frappent
-#     tous deux en Force et ne diffèrent que par la discipline.
+#   • les rangs de discipline et les atouts sont une monnaie à part — dans les
+#     règles un atout OUVRE un plafond, il ne s'achète pas en points.
 #
-# Les caractéristiques ne sont jamais achetées : elles se DÉRIVENT des rangs de
+# Les caractéristiques ne s'achètent jamais : elles se DÉRIVENT des rangs de
 # compétence (base 1, +1 au rang 2, +1 de plus au rang 4). Les `value` ci-dessous
-# sont donc un aide-lecture recalculé au chargement, pas une entrée.
+# sont un aide-lecture recalculé au chargement, pas une entrée.
 #
 # ── Ce gabarit ────────────────────────────────────────────────────────────────
-# Le mètre-étalon offensif : tout en Force, frappe au contact, encaisse debout.
-# Puissance 3 porte l'Attaque armée ET la Frappe brutale ; Robustesse 2 lui donne
-# le meilleur seuil de résistance du banc (4) et ouvre le Blocage.
+# La Forme la plus offensive de l'Escrime, montée sur le châssis le plus lourd.
+# Puissance 3 porte l'Attaque armée ET la Frappe brutale ; Robustesse 2 ouvre le
+# Blocage. Tout est concentré sur la ligne de Force — aucun point en Précision,
+# donc la Frappe vive lui reste fermée.
+#
+# ♾️ Attaques acharnées (branché) : démarre Agressif, et gagne 1 ⚡ à CHAQUE
+# attaque de mêlée réussie tant qu'il reste Agressif. C'est le vrai moteur du
+# profil, et il est atypique : la Brute n'achète qu'une seule ⚡ en Réactivité,
+# mais sa Forme lui en rend une par coup porté. Sa capacité à se défendre est
+# donc un SOUS-PRODUIT de son agressivité — ce que le banc doit rendre visible.
+#
+# Les riders d'issue par catégorie d'arme (Estafilades / Entailles / Empaler) ne
+# sont PAS branchés : l'épée large ne change donc rien mécaniquement ici
+# aujourd'hui. Elle est déclarée pour que la fiche dise le build en entier, et
+# pour que le jour où les riders seront câblés le gabarit en profite sans retouche.
 name: "Bench Brute"
-disciplines: {}
-perks: []
+disciplines:
+  fencing: 1
+perks:
+  - warmonger
+skillTags:
+  - favweapon-broad
 inventory:
   protection: 1
 characteristics:
   strength:
-    value: 3
+    value: 3          # dérivé — satisfait le prérequis du Belliciste (Force 2)
     wounds: 0
     power: 3          # Attaque armée + Frappe brutale (prérequis rang 1)
-    robustness: 2     # seuil de résistance 4 · ouvre le Blocage (rang 2)
+    robustness: 2     # ouvre le Blocage (rang 2)
   agility:
     value: 1
     wounds: 0
-    precision: 0
+    precision: 0      # nulle : la Frappe vive lui est fermée, c'est assumé
     mobility: 0
   vigor:
     value: 2
@@ -60,7 +72,7 @@ characteristics:
     value: 1
     wounds: 0
     logic: 0
-    reactivity: 1     # ⚡ 1 — socle commun aux quatre gabarits (une garde active/manche)
+    reactivity: 1     # ⚡ 1 acheté — sa Forme lui en rend une par coup réussi
   tenacity:
     value: 1
     wounds: 0

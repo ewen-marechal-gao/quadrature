@@ -36,13 +36,12 @@ import { mkdir, writeFile } from 'fs/promises'
 import { loadCharacter }    from './character/io'
 import { computeDerived }   from './character/character'
 import { ALL_SKILLS }       from './character/data'
-import { initCombatant, resistanceThreshold, COMBUSTION_THRESHOLD } from './combat/combatant'
+import { initCombatant, resistanceThreshold } from './combat/combatant'
 import { SIMULATOR_ROOT }   from './encounter/io'
 import type { EncounterConfig } from './encounter/types'
 import type { ActionId, CombatLog } from './combat/types'
 import { runCombat, loadParticipants, makeRosterGuardProvider, timestampSlug } from './engine'
 import { computeStats, type ComputedStats } from './stats'
-import { PRICE } from './planner/value'
 
 // ─── Constantes du banc ───────────────────────────────────────────────────────
 //
@@ -76,6 +75,8 @@ const PERSONA = 'opportunist' as const
 
 const DUMMY_PATH    = 'bench/mannequins/training-dummy.card.yaml'
 const SENTINEL_PATH = 'bench/mannequins/training-sentinel.card.yaml'
+/** Id porté par la fiche du Sac — la clé sous laquelle ses instantanés sont logués. */
+const DUMMY_ID      = 'training-dummy'
 
 /** Noms de faction FIXES : ce sont les clés sur lesquelles les victoires sont comptées. */
 const PC_FACTION  = 'PJ'
@@ -89,46 +90,48 @@ interface BenchArchetype {
   id:    string
   label: string
   sheet: string
-  /**
-   * Trousse autorisée. Elle fait partie du gabarit au même titre que sa fiche :
-   * un profil qu'on laisserait piocher dans TOUTES les actions ne mesurerait plus
-   * une voie, il mesurerait le planificateur. Respiration / Stabiliser sont
-   * communes — ce sont les soupapes d'entretien (fatigue 💧 et stabilité ◇), et
-   * les retirer punirait arbitrairement les gabarits qui dépensent le plus.
-   */
-  kit:   ActionId[]
 }
 
-const UPKEEP: ActionId[] = ['respiration', 'stabilize']
+/**
+ * LA MÊME trousse pour tous les gabarits — et c'est un point de méthode, pas
+ * une commodité.
+ *
+ * Une trousse taillée par gabarit fait arbitrer le CONCEPTEUR du banc à la place
+ * du build : retirer la Frappe brutale à l'Escrimeur « parce qu'il n'est pas une
+ * brute » alors que sa Puissance 1 la lui ouvre, c'est décider soi-même du
+ * résultat qu'on prétend mesurer. On donne donc à chacun la liste entière, et on
+ * laisse les VRAIS verrous filtrer :
+ *   · les prérequis de compétence (canUseAction) — Puissance 0 ferme la Frappe
+ *     brutale, Précision 0 ferme la Frappe vive, Intuition 0 ferme le Tir rapide ;
+ *   · la possession de discipline — les cartes d'Électromancie sont fermées à
+ *     quiconque n'a pas le rang.
+ * Ce que le gabarit peut jouer devient ainsi une CONSÉQUENCE de sa fiche.
+ *
+ * Deux familles restent volontairement dehors :
+ *   · le déplacement — le banc se joue sans tapis, il serait inerte ;
+ *   · le social (Provocation, Intimidation) — les mannequins ont la piste
+ *     mentale verrouillée, donc ces actions n'auraient aucun effet mesurable et
+ *     n'ajouteraient que du bruit dans le choix du planificateur.
+ */
+const SHARED_KIT: ActionId[] = [
+  // Offensives universelles — filtrées par leurs prérequis.
+  'armed-attack', 'unarmed-attack', 'brutal-strike', 'sharp-strike',
+  'quick-shot', 'aimed-shot',
+  // Cartes de discipline — filtrées par la possession du rang.
+  'spark', 'cathodic-focus', 'discharge',
+  // Entretien : les soupapes de fatigue 💧 et de stabilité ◇. Les retirer
+  // punirait arbitrairement les gabarits qui dépensent le plus.
+  'respiration', 'stabilize',
+]
 
 const ARCHETYPES: BenchArchetype[] = [
-  {
-    id:    'brute',
-    label: 'Brute',
-    sheet: 'bench/archetypes/Bench_brute.yaml',
-    kit:   ['armed-attack', 'brutal-strike', ...UPKEEP],
-  },
-  {
-    id:    'ranger',
-    label: 'Tireur',
-    sheet: 'bench/archetypes/Bench_ranger.yaml',
-    kit:   ['quick-shot', 'aimed-shot', ...UPKEEP],
-  },
-  {
-    // Précision 0 : la Frappe vive lui est fermée (prérequis rang 1). Sa voie
-    // offensive est donc l'Attaque armée — ce qui rend l'écart avec la Brute
-    // lisible comme un seul arbitrage (cf. Bench_fencer.yaml).
-    id:    'fencer',
-    label: 'Escrimeur',
-    sheet: 'bench/archetypes/Bench_fencer.yaml',
-    kit:   ['armed-attack', ...UPKEEP],
-  },
-  {
-    id:    'electromancer',
-    label: 'Électromancien',
-    sheet: 'bench/archetypes/Bench_electromancer.yaml',
-    kit:   ['spark', 'cathodic-focus', 'discharge', ...UPKEEP],
-  },
+  // Les trois Formes d'Escrime d'abord — elles se lisent l'une contre l'autre.
+  { id: 'brute',         label: 'Brute (Bellic.)', sheet: 'bench/archetypes/Bench_brute.yaml' },
+  { id: 'duelist',       label: 'Duelliste',       sheet: 'bench/archetypes/Bench_duelist.yaml' },
+  { id: 'finesse',       label: 'Fine Lame',       sheet: 'bench/archetypes/Bench_finesse.yaml' },
+  // Puis les deux voies hors Escrime, qui servent de points de repère externes.
+  { id: 'ranger',        label: 'Tireur',          sheet: 'bench/archetypes/Bench_ranger.yaml' },
+  { id: 'electromancer', label: 'Électromancien',  sheet: 'bench/archetypes/Bench_electromancer.yaml' },
 ]
 
 // ─── Mesures ──────────────────────────────────────────────────────────────────
@@ -145,19 +148,24 @@ interface RosterAudit {
 }
 
 interface OffenseMetrics {
-  /** 💢 émises par manche — la mesure de dégâts principale. */
+  /**
+   * LA colonne de comparaison : cases ▢ effectivement cochées sur la cible, par
+   * manche. Elle absorbe sans conversion des profils qui produisent chacun dans
+   * une devise différente — la Brute presque que des 💔, l'Escrimeur que des 💢,
+   * l'Électromancien que des 🔥.
+   */
+  casesPerRound: number
+  /** 💢 émises par manche — diagnostic : de quoi le débit est fait. */
   lightPerRound: number
-  /** 💔 émises par manche (Frappe brutale, Tir ciblé…). */
+  /** 💔 émises par manche (Frappe brutale, Tir ciblé…) — diagnostic. */
   heavyPerRound: number
-  /** 🔥 posées par manche (Étincelle…) — le vecteur des disciplines de feu. */
+  /** 🔥 posées par manche (Étincelle…) — diagnostic. */
   burnPerRound:  number
   /**
-   * LA colonne de comparaison : 💢, 💔 et 🔥 ramenées à une monnaie unique.
-   * Sans elle, trois profils sortant chacun dans une devise différente ne se
-   * comparent pas — c'est exactement le cas de la Brute (que des 💔), de
-   * l'Escrimeur (que des 💢) et de l'Électromancien (que des 🔥).
+   * Part de la capacité du mannequin consommée par le run le plus violent.
+   * Au-delà de ~90 %, la mesure n'est plus fiable : le trop-plein est perdu.
    */
-  equivPerRound: number
+  saturationPct: number
   /** Part des attaques qui franchissent la garde du Sac. */
   hitPct:        number
   /** Actions offensives déclarées par manche — le débit, indépendant de leur réussite. */
@@ -200,7 +208,7 @@ function makeEncounter(
       {
         name:       PC_FACTION,
         characters: [{ sheet: a.sheet, persona: PERSONA }],
-        allowedActions: a.kit,
+        allowedActions: SHARED_KIT,
       },
       {
         name:       ADV_FACTION,
@@ -216,12 +224,14 @@ function makeEncounter(
  * UNE fois : ils sont apatrides, et les recharger à chaque run ferait du banc une
  * mesure d'I/O disque.
  */
-async function runBatch(enc: EncounterConfig, runs: number): Promise<ComputedStats> {
+async function runBatch(
+  enc: EncounterConfig, runs: number,
+): Promise<{ stats: ComputedStats; logs: CombatLog[] }> {
   const participants = await loadParticipants(enc.factions)
   const getGuard     = makeRosterGuardProvider(participants)
   const logs: CombatLog[] = []
   for (let i = 0; i < runs; i++) logs.push(await runCombat(enc, participants, getGuard))
-  return computeStats(logs)
+  return { stats: computeStats(logs), logs }
 }
 
 /** Moyenne d'un accumulateur de stats.ts (n = 0 → 0, jamais NaN). */
@@ -229,16 +239,53 @@ const avg = (a: { sum: number; n: number }): number => (a.n > 0 ? a.sum / a.n : 
 /** Max d'un accumulateur (n = 0 → 0, jamais −Infinity). */
 const max = (a: { max: number; n: number }): number => (a.n > 0 ? a.max : 0)
 
-/**
- * Valeur d'un marqueur 🔥 en 💢-équivalents. La combustion convertit chaque lot
- * de 5 🔥 en une 💔 : un 🔥 vaut donc un cinquième de 💔. C'est une estimation
- * BASSE et volontairement telle — elle ignore la propagation (+1 🔥 par manche
- * tant qu'il en reste un) et le fait que la 💔 de combustion perce l'armure.
- * Mieux vaut sous-créditer une discipline que la surévaluer sur un banc.
- */
-const BURN_EQUIV = PRICE.heavy / COMBUSTION_THRESHOLD
+// ─── La monnaie du banc : la CASE ▢ cochée ────────────────────────────────────
+//
+// On ne convertit RIEN. On compte ce que la cible encaisse réellement, en cases
+// cochées sur son anatomie — et les vecteurs de dégâts y aboutissent déjà, chacun
+// à son juste prix, sans qu'aucun taux de change n'ait à être décrété :
+//   · une blessure légère 💢 coche une case ;
+//   · une blessure grave 💔 DÉTRUIT un bloc (destroyTopBlock pose damage = cases),
+//     donc coche d'un coup toutes les cases de ce bloc ;
+//   · les 🔥 détruisent un bloc par lot de 5 (combustionTick) et l'hémorragie 🩸
+//     coche une case par manche.
+//
+// Le prix relatif d'une 💔 cesse ainsi d'être une opinion du banc : c'est la
+// PROFONDEUR DES BLOCS du mannequin, calquée sur l'anatomie réelle des créatures
+// (3 cases — cf. bench/mannequins/training-dummy.card.yaml). Le bouton de
+// calibrage est dans la fiche, là où un concepteur ira le chercher.
+//
+// Les colonnes 💢 / 💔 / 🔥 restent affichées, mais comme DIAGNOSTIC : elles
+// disent de quoi le débit est fait, pas ce qu'il vaut.
 
-function offenseFrom(stats: ComputedStats, pcId: string): OffenseMetrics {
+/**
+ * Cases ▢ cochées sur la cible, cumulées sur tous les runs.
+ *
+ * Lues sur le dernier instantané de chaque run — les marques s'accumulent, donc
+ * l'état final EST le total encaissé. On lit l'état de la CIBLE plutôt que la
+ * somme des effets émis, et c'est délibéré : c'est la seule façon de capturer ce
+ * qui transite par un détour temporel (une brûlure posée à la manche 2 ne
+ * détruit un bloc qu'à la 5ᵉ, et aucun effet émis ne le dira).
+ */
+function markedCases(
+  logs: CombatLog[], advId: string,
+): { marked: number; capacity: number; peak: number } {
+  let marked = 0, capacity = 0, peak = 0
+  for (const log of logs) {
+    const last = log.rounds[log.rounds.length - 1]
+    const snap = last?.adversariesEndOfRound?.find(s => s.id === advId)
+    if (!snap) continue
+    const m = snap.parts.reduce((s, p) => s + p.marked, 0)
+    marked  += m
+    capacity = snap.parts.reduce((s, p) => s + p.total, 0)
+    if (m > peak) peak = m
+  }
+  return { marked, capacity, peak }
+}
+
+function offenseFrom(
+  stats: ComputedStats, pcId: string, logs: CombatLog[], advId: string,
+): OffenseMetrics {
   const totalRounds = stats.rounds.sum || 1
   const actions = stats.actionStats[pcId] ?? {}
 
@@ -251,14 +298,20 @@ function offenseFrom(stats: ComputedStats, pcId: string): OffenseMetrics {
     offUses += s.offensiveUses
   }
 
+  const cases = markedCases(logs, advId)
+
   return {
+    casesPerRound:   cases.marked / totalRounds,
     lightPerRound:   light / totalRounds,
     heavyPerRound:   heavy / totalRounds,
     burnPerRound:    burn / totalRounds,
-    equivPerRound:   (light + heavy * PRICE.heavy + burn * BURN_EQUIV) / totalRounds,
     hitPct:          offUses > 0 ? (hits / offUses) * 100 : 0,
     attacksPerRound: offUses / totalRounds,
     roundsAvg:       avg(stats.rounds),
+    // Au-delà de la capacité, le trop-plein d'un bloc plein est PERDU
+    // (fillBlocks) : le débit serait sous-compté en silence, et d'autant plus
+    // que le gabarit frappe fort. Le banc doit crier, pas arrondir.
+    saturationPct:   cases.capacity > 0 ? (cases.peak / cases.capacity) * 100 : 0,
   }
 }
 
@@ -303,13 +356,13 @@ async function auditOf(a: BenchArchetype): Promise<{ audit: RosterAudit; pcId: s
 async function benchArchetype(a: BenchArchetype, runs: number): Promise<BenchRow> {
   const { audit, pcId } = await auditOf(a)
 
-  const offStats = await runBatch(makeEncounter(a, DUMMY_PATH,    OFFENSE_ROUNDS),    runs)
-  const resStats = await runBatch(makeEncounter(a, SENTINEL_PATH, RESISTANCE_ROUNDS), runs)
+  const off = await runBatch(makeEncounter(a, DUMMY_PATH,    OFFENSE_ROUNDS),    runs)
+  const res = await runBatch(makeEncounter(a, SENTINEL_PATH, RESISTANCE_ROUNDS), runs)
 
   return {
     id: a.id, label: a.label, audit,
-    offense:    offenseFrom(offStats, pcId),
-    resistance: resistanceFrom(resStats, pcId),
+    offense:    offenseFrom(off.stats, pcId, off.logs, DUMMY_ID),
+    resistance: resistanceFrom(res.stats, pcId),
   }
 }
 
@@ -341,18 +394,31 @@ function printRoster(rows: BenchRow[]): void {
 function printOffense(rows: BenchRow[]): void {
   console.log(DIV)
   console.log(`  OFFENSE — contre le Sac de frappe (garde 8, ${OFFENSE_ROUNDS} manches)`)
-  console.log(`  ⟨éq⟩ = 💢 + ${PRICE.heavy}×💔 + ${BURN_EQUIV}×🔥 — LA colonne à comparer`)
+  console.log('  ⟨▢/manche⟩ = cases cochées sur la cible — LA colonne à comparer')
+  console.log('  (une 💔 détruit un bloc, donc coche ses 3 cases : rien n\'est converti)')
   console.log(
-    `  ${'Gabarit'.padEnd(16)}${'éq/manche'.padStart(10)}${'💢/m'.padStart(8)}${'💔/m'.padStart(8)}${'🔥/m'.padStart(8)}` +
+    `  ${'Gabarit'.padEnd(16)}${'▢/manche'.padStart(10)}${'💢/m'.padStart(8)}${'💔/m'.padStart(8)}${'🔥/m'.padStart(8)}` +
     `${'touche'.padStart(8)}${'att/manche'.padStart(11)}${'manches'.padStart(9)}`,
   )
   for (const r of rows) {
     const o = r.offense
     console.log(
-      `  ${r.label.padEnd(16)}${n2(o.equivPerRound).padStart(10)}` +
+      `  ${r.label.padEnd(16)}${n2(o.casesPerRound).padStart(10)}` +
       `${n2(o.lightPerRound).padStart(8)}${n2(o.heavyPerRound).padStart(8)}${n2(o.burnPerRound).padStart(8)}` +
       `${(n1(o.hitPct) + '%').padStart(8)}${n2(o.attacksPerRound).padStart(11)}${n1(o.roundsAvg).padStart(9)}`,
     )
+  }
+  // Saturation : au-delà, le mannequin déborde et le débit est sous-compté.
+  const saturated = rows.filter(r => r.offense.saturationPct >= 90)
+  if (saturated.length > 0) {
+    console.log(
+      `  ⚠️  MESURE NON FIABLE — le mannequin sature (` +
+      saturated.map(r => `${r.label} ${n1(r.offense.saturationPct)}%`).join(', ') +
+      `). Ajoutez des blocs à sa fiche : le trop-plein est perdu, donc sous-compté.`,
+    )
+  } else {
+    const worst = rows.reduce((m, r) => Math.max(m, r.offense.saturationPct), 0)
+    console.log(`  capacité du mannequin consommée au pire : ${n1(worst)} %`)
   }
 }
 
