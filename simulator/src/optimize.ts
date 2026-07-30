@@ -1,8 +1,18 @@
 /**
  * Optimiseur de stratégie pour le simulateur Quadrature.
  *
- * Effectue un grid search sur `respirationThreshold` pour les deux combattants,
- * calcule les fonctions de meilleure réponse, et identifie l'équilibre de Nash.
+ * Le planificateur par utilité price le monde à travers un VECTEUR DE POIDS de
+ * persona (offense / caution / finisher / noise — cf. planner/value.ts), conçu
+ * explicitement comme hook d'optimisation. Cet outil balaye l'axe qui définit un
+ * style tactique — l'AGRESSIVITÉ, le compromis offense ↔ caution — pour les deux
+ * combattants, calcule les fonctions de meilleure réponse, et identifie
+ * l'équilibre de Nash.
+ *
+ * Un niveau d'agressivité `a` produit le vecteur { offense: a, caution: SOMME−a,
+ * finisher, noise } : plus `a` monte, plus le combattant valorise les dégâts
+ * qu'il inflige et déprécie ceux qu'il encaisse. `finisher` et `noise` restent au
+ * niveau de la persona de la rencontre (son tempérament de base). Le même harnais
+ * se généralise à un autre axe en changeant `weightsFor`.
  *
  * Usage:
  *   npm run optimize                      → street-fight (défaut), 300 runs/cellule
@@ -22,8 +32,36 @@ import type { GuardProvider, PlannedAction }    from './combat/round'
 import { planRoundActions, makeGuardProvider }  from './combat/agent'
 import type { AgentConfig }                     from './combat/agent'
 import type { CombatantState, MaintenanceEntry } from './combat/types'
+import { PERSONA_WEIGHTS, type Weights }        from './planner/value'
 
 const ENCOUNTERS_DIR = path.resolve(__dirname, '..', 'encounters')
+
+// ─── Axe d'agressivité → vecteur de poids ─────────────────────────────────────
+//
+// L'agressivité `a` est directement le poids `offense` ; `caution` est son
+// complément à SOMME, de sorte qu'offense + caution reste constant et que l'axe
+// trace exactement le compromis « frapper vs se protéger » qui distingue les
+// personas historiques (agressive 1.35/0.65 · prudente 0.80/1.40).
+
+/** offense + caution le long de l'axe — englobe la plage des personas. */
+const WEIGHT_SUM = 2.0
+
+/** Niveaux d'agressivité balayés : 0.6 (très prudent) … 1.4 (très agressif). */
+const AGGRESSIONS = Array.from({ length: 9 }, (_, i) => Math.round((0.6 + i * 0.1) * 10) / 10)
+
+/** Un niveau d'agressivité, plaqué sur le tempérament (finisher/noise) d'une persona. */
+function weightsFor(base: Weights, aggression: number): Weights {
+  return {
+    offense:  aggression,
+    caution:  WEIGHT_SUM - aggression,
+    finisher: base.finisher,
+    noise:    base.noise,
+  }
+}
+
+/** Clé de cellule stable (évite la dérive flottante) et libellé d'affichage. */
+const fmt = (a: number): string => a.toFixed(1)
+const cellKey = (a1: number, a2: number): string => `${fmt(a1)}:${fmt(a2)}`
 
 // ─── Combat rapide (pas de CombatLog détaillé) ────────────────────────────────
 
@@ -79,24 +117,26 @@ async function quickCombat(
 interface Cell { w1: number; w2: number; n: number }
 
 async function evalGrid(
-  encounter:    EncounterConfig,
-  char1:        Character,
-  char2:        Character,
-  cfg1Base:     AgentConfig,
-  cfg2Base:     AgentConfig,
-  getGuard:     GuardProvider,
-  thresholds1:  number[],
-  thresholds2:  number[],
-  runsPerCell:  number,
+  encounter:     EncounterConfig,
+  char1:         Character,
+  char2:         Character,
+  cfg1Base:      AgentConfig,
+  cfg2Base:      AgentConfig,
+  base1:         Weights,
+  base2:         Weights,
+  getGuard:      GuardProvider,
+  aggressions1:  number[],
+  aggressions2:  number[],
+  runsPerCell:   number,
 ): Promise<Map<string, Cell>> {
   const results = new Map<string, Cell>()
-  const total   = thresholds1.length * thresholds2.length
+  const total   = aggressions1.length * aggressions2.length
   let   done    = 0
 
-  for (const t1 of thresholds1) {
-    for (const t2 of thresholds2) {
-      const cfg1 = { ...cfg1Base, respirationThreshold: t1 }
-      const cfg2 = { ...cfg2Base, respirationThreshold: t2 }
+  for (const a1 of aggressions1) {
+    for (const a2 of aggressions2) {
+      const cfg1 = { ...cfg1Base, weights: weightsFor(base1, a1) }
+      const cfg2 = { ...cfg2Base, weights: weightsFor(base2, a2) }
 
       let w1 = 0, w2 = 0
       for (let i = 0; i < runsPerCell; i++) {
@@ -104,7 +144,7 @@ async function evalGrid(
         if (r > 0) w1++
         else if (r < 0) w2++
       }
-      results.set(`${t1}:${t2}`, { w1, w2, n: runsPerCell })
+      results.set(cellKey(a1, a2), { w1, w2, n: runsPerCell })
 
       done++
       const pct = Math.round(done / total * 100)
@@ -118,44 +158,44 @@ async function evalGrid(
 // ─── Analyse et équilibre de Nash ────────────────────────────────────────────
 
 function analyze(
-  results:     Map<string, Cell>,
-  thresholds1: number[],
-  thresholds2: number[],
-  name1:       string,
-  name2:       string,
+  results:      Map<string, Cell>,
+  aggressions1: number[],
+  aggressions2: number[],
+  name1:        string,
+  name2:        string,
 ): void {
-  const wr1 = (t1: number, t2: number) => {
-    const c = results.get(`${t1}:${t2}`)
+  const wr1 = (a1: number, a2: number) => {
+    const c = results.get(cellKey(a1, a2))
     return c ? c.w1 / c.n : 0
   }
 
   // Meilleure réponse de chaque joueur
-  const br1 = new Map<number, number>()  // t2 → meilleur t1 pour joueur 1
-  const br2 = new Map<number, number>()  // t1 → meilleur t2 pour joueur 2
+  const br1 = new Map<number, number>()  // a2 → meilleure agressivité a1 pour joueur 1
+  const br2 = new Map<number, number>()  // a1 → meilleure agressivité a2 pour joueur 2
 
-  for (const t2 of thresholds2) {
-    let bestT1 = thresholds1[0], best = -Infinity
-    for (const t1 of thresholds1) {
-      const w = wr1(t1, t2)
-      if (w > best) { best = w; bestT1 = t1 }
+  for (const a2 of aggressions2) {
+    let bestA1 = aggressions1[0], best = -Infinity
+    for (const a1 of aggressions1) {
+      const w = wr1(a1, a2)
+      if (w > best) { best = w; bestA1 = a1 }
     }
-    br1.set(t2, bestT1)
+    br1.set(a2, bestA1)
   }
-  for (const t1 of thresholds1) {
-    let bestT2 = thresholds2[0], best = Infinity
-    for (const t2 of thresholds2) {
-      const w = wr1(t1, t2)
-      if (w < best) { best = w; bestT2 = t2 }
+  for (const a1 of aggressions1) {
+    let bestA2 = aggressions2[0], best = Infinity
+    for (const a2 of aggressions2) {
+      const w = wr1(a1, a2)
+      if (w < best) { best = w; bestA2 = a2 }
     }
-    br2.set(t1, bestT2)
+    br2.set(a1, bestA2)
   }
 
-  // Équilibre de Nash pur : br1(t2*) = t1* ET br2(t1*) = t2*
-  const nash: Array<{ t1: number; t2: number; w: number }> = []
-  for (const t1 of thresholds1) {
-    for (const t2 of thresholds2) {
-      if (br1.get(t2) === t1 && br2.get(t1) === t2) {
-        nash.push({ t1, t2, w: wr1(t1, t2) })
+  // Équilibre de Nash pur : br1(a2*) = a1* ET br2(a1*) = a2*
+  const nash: Array<{ a1: number; a2: number; w: number }> = []
+  for (const a1 of aggressions1) {
+    for (const a2 of aggressions2) {
+      if (br1.get(a2) === a1 && br2.get(a1) === a2) {
+        nash.push({ a1, a2, w: wr1(a1, a2) })
       }
     }
   }
@@ -164,66 +204,66 @@ function analyze(
   const n1 = name1.split(' ')[0]
   const n2 = name2.split(' ')[0]
 
-  console.log(`\n  Victoires ${name1} [%]   lignes = seuil ${n1}   colonnes = seuil ${n2}`)
+  console.log(`\n  Victoires ${name1} [%]   lignes = agress. ${n1}   colonnes = agress. ${n2}`)
+  console.log(`  agress. = poids offense (caution = ${WEIGHT_SUM.toFixed(1)} − offense)`)
   console.log(`  * = meilleure réponse de ${n1}   [x] = équilibre de Nash\n`)
 
-  // En-tête colonnes
-  process.stdout.write('  seuil │')
-  for (const t2 of thresholds2) process.stdout.write(String(t2).padStart(5))
+  // En-tête colonnes (cellules larges de 4 — même gabarit partout)
+  process.stdout.write('  agr │')
+  for (const a2 of aggressions2) process.stdout.write(fmt(a2).padStart(4))
   console.log()
-  console.log('  ──────┼' + '─────'.repeat(thresholds2.length))
+  console.log('  ────┼' + '────'.repeat(aggressions2.length))
 
-  for (const t1 of thresholds1) {
-    process.stdout.write(`   ${String(t1).padStart(3)}  │`)
-    for (const t2 of thresholds2) {
-      const w  = Math.round(wr1(t1, t2) * 100)
-      const isNash = nash.some(p => p.t1 === t1 && p.t2 === t2)
-      const isBR   = br1.get(t2) === t1
+  for (const a1 of aggressions1) {
+    process.stdout.write(`  ${fmt(a1).padStart(3)} │`)
+    for (const a2 of aggressions2) {
+      const w  = Math.round(wr1(a1, a2) * 100)
+      const isNash = nash.some(p => p.a1 === a1 && p.a2 === a2)
+      const isBR   = br1.get(a2) === a1
       const cell   = isNash ? `[${String(w).padStart(2)}]` : isBR ? ` ${String(w).padStart(2)}*` : `  ${String(w).padStart(2)} `
       process.stdout.write(cell)
     }
-    // Meilleure réponse de joueur 2 pour ce t1
-    const t2opt = br2.get(t1)!
-    const wopt  = Math.round(wr1(t1, t2opt) * 100)
-    console.log(`   BR${n2}→${t2opt}(${wopt}%)`)
+    // Meilleure réponse de joueur 2 pour cette agressivité a1
+    const a2opt = br2.get(a1)!
+    const wopt  = Math.round(wr1(a1, a2opt) * 100)
+    console.log(`   BR${n2}→${fmt(a2opt)}(${wopt}%)`)
   }
 
   // ── Tableaux de meilleures réponses ─────────────────────────────────────
   console.log(`\n  Meilleures réponses de ${name1} (maximise ses victoires) :`)
-  console.log(`  ${'Seuil '+n2+' ='}  → seuil ${n1} optimal  → taux victoire ${n1}`)
-  for (const t2 of thresholds2) {
-    const t1 = br1.get(t2)!
-    const w  = Math.round(wr1(t1, t2) * 100)
-    console.log(`    Si ${n2}=${String(t2).padEnd(4)} → ${n1}=${String(t1).padEnd(4)} → ${w}% victoires`)
+  for (const a2 of aggressions2) {
+    const a1 = br1.get(a2)!
+    const w  = Math.round(wr1(a1, a2) * 100)
+    console.log(`    Si ${n2}=${fmt(a2).padEnd(4)} → ${n1}=${fmt(a1).padEnd(4)} → ${w}% victoires`)
   }
 
   console.log(`\n  Meilleures réponses de ${name2} (minimise les victoires de ${name1}) :`)
-  for (const t1 of thresholds1) {
-    const t2 = br2.get(t1)!
-    const w  = Math.round(wr1(t1, t2) * 100)
-    console.log(`    Si ${n1}=${String(t1).padEnd(4)} → ${n2}=${String(t2).padEnd(4)} → ${w}% victoires ${n1}`)
+  for (const a1 of aggressions1) {
+    const a2 = br2.get(a1)!
+    const w  = Math.round(wr1(a1, a2) * 100)
+    console.log(`    Si ${n1}=${fmt(a1).padEnd(4)} → ${n2}=${fmt(a2).padEnd(4)} → ${w}% victoires ${n1}`)
   }
 
   // ── Résultat Nash ─────────────────────────────────────────────────────────
   console.log()
   if (nash.length > 0) {
-    for (const { t1, t2, w } of nash) {
+    for (const { a1, a2, w } of nash) {
       const pct1 = Math.round(w * 100)
       const pct2 = 100 - pct1
-      console.log(`  ✅ Équilibre de Nash pur :  seuil${n1}=${t1}  seuil${n2}=${t2}  →  ${pct1}% / ${pct2}%`)
+      console.log(`  ✅ Équilibre de Nash pur :  agress.${n1}=${fmt(a1)}  agress.${n2}=${fmt(a2)}  →  ${pct1}% / ${pct2}%`)
     }
   } else {
     console.log('  ⚠️  Pas d\'équilibre de Nash pur — itération des meilleures réponses :')
-    let t1 = thresholds1[Math.floor(thresholds1.length / 2)]
-    let t2 = thresholds2[Math.floor(thresholds2.length / 2)]
+    let a1 = aggressions1[Math.floor(aggressions1.length / 2)]
+    let a2 = aggressions2[Math.floor(aggressions2.length / 2)]
     for (let i = 0; i < 30; i++) {
-      const nt1 = br1.get(t2) ?? t1
-      const nt2 = br2.get(nt1) ?? t2
-      if (nt1 === t1 && nt2 === t2) break
-      t1 = nt1; t2 = nt2
+      const na1 = br1.get(a2) ?? a1
+      const na2 = br2.get(na1) ?? a2
+      if (na1 === a1 && na2 === a2) break
+      a1 = na1; a2 = na2
     }
-    const w = Math.round(wr1(t1, t2) * 100)
-    console.log(`  Convergence : seuil${n1}=${t1}  seuil${n2}=${t2}  →  ${w}% / ${100 - w}%`)
+    const w = Math.round(wr1(a1, a2) * 100)
+    console.log(`  Convergence : agress.${n1}=${fmt(a1)}  agress.${n2}=${fmt(a2)}  →  ${w}% / ${100 - w}%`)
   }
 }
 
@@ -245,7 +285,7 @@ async function optimize(): Promise<void> {
   const charCfg1   = f1.characters[0]
   const charCfg2   = f2.characters[0]
   // L'optimiseur est un outil PJ-only : les adversaires du bestiaire n'ont pas
-  // de seuil de Respiration à optimiser.
+  // de persona à balayer.
   if (!charCfg1.sheet || !charCfg2.sheet) {
     throw new Error('optimize: les deux camps doivent être des personnages (champ "sheet") — adversaires non supportés.')
   }
@@ -255,7 +295,12 @@ async function optimize(): Promise<void> {
   const cfg1Base: AgentConfig = { persona: charCfg1.persona!, targetId: char2.name, allowedActions: f1.allowedActions }
   const cfg2Base: AgentConfig = { persona: charCfg2.persona!, targetId: char1.name, allowedActions: f2.allowedActions }
 
-  // Guard providers : ne dépendent pas du seuil de Respiration — créés une seule fois
+  // Tempérament de base (finisher/noise) hérité de la persona de chaque camp ;
+  // l'axe offense/caution est balayé par-dessus.
+  const base1 = PERSONA_WEIGHTS[charCfg1.persona!]
+  const base2 = PERSONA_WEIGHTS[charCfg2.persona!]
+
+  // Guard providers : ne dépendent pas des poids — créés une seule fois
   const gp1 = makeGuardProvider(cfg1Base)
   const gp2 = makeGuardProvider(cfg2Base)
   const getGuard: GuardProvider = (targetId, state, available, attackerId, actionId) =>
@@ -263,27 +308,26 @@ async function optimize(): Promise<void> {
       ? gp1(targetId, state, available, attackerId, actionId)
       : gp2(targetId, state, available, attackerId, actionId)
 
-  // Plage de recherche : 4..16
-  const thresholds1 = Array.from({ length: 13 }, (_, i) => i + 4)
-  const thresholds2 = Array.from({ length: 13 }, (_, i) => i + 4)
-  const totalCombats = thresholds1.length * thresholds2.length * runsPerCell
+  const aggressions1 = AGGRESSIONS
+  const aggressions2 = AGGRESSIONS
+  const totalCombats = aggressions1.length * aggressions2.length * runsPerCell
 
   const sep = '═'.repeat(62)
   console.log(`\n${sep}`)
   console.log(`  🔬 Optimiseur de stratégie — ${encounter.name}`)
   console.log(`  ${char1.name} [${charCfg1.persona}]  vs  ${char2.name} [${charCfg2.persona}]`)
-  console.log(`  ${thresholds1.length}×${thresholds2.length} combinaisons × ${runsPerCell} runs = ${totalCombats.toLocaleString()} combats`)
+  console.log(`  ${aggressions1.length}×${aggressions2.length} combinaisons × ${runsPerCell} runs = ${totalCombats.toLocaleString()} combats`)
   console.log(sep)
 
   const start   = Date.now()
   const results = await evalGrid(
-    encounter, char1, char2, cfg1Base, cfg2Base, getGuard,
-    thresholds1, thresholds2, runsPerCell,
+    encounter, char1, char2, cfg1Base, cfg2Base, base1, base2, getGuard,
+    aggressions1, aggressions2, runsPerCell,
   )
   const elapsed = ((Date.now() - start) / 1000).toFixed(1)
   console.log(`  ✅ Terminé en ${elapsed}s\n`)
 
-  analyze(results, thresholds1, thresholds2, char1.name, char2.name)
+  analyze(results, aggressions1, aggressions2, char1.name, char2.name)
 
   console.log(`\n${sep}\n`)
 }

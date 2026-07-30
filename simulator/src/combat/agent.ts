@@ -37,6 +37,7 @@ import {
   planRoundUtility, simulateSelfEffects, selectGuardByEV,
   type PlannerConfig, type RankedPlan,
 } from '../planner/planner'
+import type { Weights } from '../planner/value'
 
 export type { GuardProvider }
 
@@ -57,10 +58,11 @@ export interface AgentConfig {
    */
   allowedActions?: ActionId[]
   /**
-   * Override the persona's default fatigue threshold for triggering Respiration.
-   * Used by the strategy optimiser. When absent, the persona default is used.
+   * Override the persona's valuation weights (offense / caution / finisher /
+   * noise). Used by the strategy optimiser to sweep tactical styles. When
+   * absent, the persona's default vector (PERSONA_WEIGHTS) is used.
    */
-  respirationThreshold?: number
+  weights?: Weights
 }
 
 // ─── LLM session ─────────────────────────────────────────────────────────────
@@ -162,6 +164,7 @@ function toPlannerConfig(config: AgentConfig): PlannerConfig {
     persona:  config.persona,
     targetId: config.targetId,
     ...(config.allowedActions && { allowedActions: config.allowedActions }),
+    ...(config.weights && { weights: config.weights }),
   }
 }
 

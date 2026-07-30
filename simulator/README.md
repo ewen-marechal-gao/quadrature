@@ -47,10 +47,10 @@ Scripts `package.json` : `test`, `test:watch`, `typecheck` (`tsc --noEmit`),
 Autres entrées :
 - `npx ts-node src/demo.ts` (`npm run demo`) — démonstration du système de dés et
   d'une fiche de personnage (hors combat).
-- `npx ts-node src/optimize.ts` (`npm run optimize`) — ⚠️ **obsolète** : grid search
-  sur `respirationThreshold`, un paramètre que le planificateur par utilité **ne lit
-  plus**. À réoutiller sur les **poids de persona** (`PlannerConfig.weights`) — voir
-  [Écarts & dette](#écarts-règles--simulation).
+- `npx ts-node src/optimize.ts` (`npm run optimize`) — grid search + équilibre de
+  Nash sur l'**agressivité** de chaque camp (l'axe offense ↔ caution des **poids de
+  persona**, `PlannerConfig.weights`). Balaye 9 niveaux par combattant et affiche
+  les meilleures réponses + l'équilibre. `npm run optimize -- <enc> <runs/cellule>`.
 
 ---
 
@@ -144,7 +144,7 @@ src/
 ├── encounter/     # Chargement des rencontres YAML
 ├── simulate.ts    # Boucle de combat + affichage + écriture des rapports
 ├── stats.ts       # Agrégation batch (taux de victoire, durées, usage d'actions)
-└── optimize.ts    # (obsolète) grid search d'équilibrage
+└── optimize.ts    # grid search + Nash sur l'agressivité (poids offense/caution)
 ```
 
 Les **définitions d'actions** (PJ) vivent dans
@@ -293,9 +293,6 @@ volontairement simplifiés ou **en avance** sur le vault :
   Duelliste (déclencheur « garde affaiblie » — attend une Garde mutable), les Bottes.
   Le planificateur ne *price* pas encore le gain de ⚡ des ♾️ (l'effet survient, mais
   l'agent ne choisit pas d'attaquer *pour* la ⚡).
-- **`optimize.ts` obsolète** : il cherche `respirationThreshold`, inerte depuis que
-  le planificateur par utilité a remplacé les seuils de self-care. À réoutiller sur
-  les poids de persona (`PlannerConfig.weights`, déjà prévus pour ça).
 - Divers `⚒️` (améliorations d'actions) et déclencheurs mentaux fins restent différés.
 
 La liste vivante des chantiers est dans [`../Roadmap.md`](../Roadmap.md).
