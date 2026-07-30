@@ -14,7 +14,8 @@ dist/
 # État local de l'éditeur Obsidian
 .obsidian/
 
-# Config locale de l'agent (launch.json reste versionné)
+# Config locale de l'agent
+CLAUDE.md
 .claude/settings.local.json
 
 # Fichiers locaux, sensibles ou legacy
