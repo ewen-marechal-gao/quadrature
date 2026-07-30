@@ -128,7 +128,12 @@ export function computeDerived(char: Character): DerivedStats {
   return {
     maxHealth:           PHYSICAL_CHARACTERISTICS.reduce((sum, c) => sum + char.characteristics[c].value, 0),
     currentHealth:       PHYSICAL_CHARACTERISTICS.reduce((sum, c) => sum + eff(c), 0),
-    resistanceThreshold: eff('vigor') + char.skills.robustness,
+    // Vigueur SEULE : la Robustesse a été retirée du seuil (elle rendait la
+    // caractéristique doublement défensive — seuil ET capacité d'armure) et ne
+    // pèse plus que sur la charge portée et l'armure. Doit rester d'accord avec
+    // `resistanceThreshold()` de combat/combatant.ts, qui est la source du moteur,
+    // et avec `resistanceMax()` du web (web/src/lib/character/derive.ts).
+    resistanceThreshold: eff('vigor'),
     maxStability:        eff('tenacity') + char.skills.discipline,
     carryCapacity:       2 + eff('strength') + char.skills.robustness,
   }

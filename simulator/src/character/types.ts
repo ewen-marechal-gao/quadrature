@@ -112,7 +112,11 @@ export interface DerivedStats {
   maxHealth: number
   /** Sum of effective (post-wounds) physical characteristic values */
   currentHealth: number
-  /** Effective vigor + robustness skill — light-wound threshold before overflow to heavy wounds */
+  /**
+   * Effective vigor — light-wound threshold before overflow to heavy wounds.
+   * La Robustesse n'y entre PAS (retirée du seuil) : elle ne pèse plus que sur
+   * `carryCapacity` et l'armure.
+   */
   resistanceThreshold: number
   /** Effective tenacity (post-wounds) + discipline skill */
   maxStability: number

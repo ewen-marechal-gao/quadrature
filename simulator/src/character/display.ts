@@ -85,7 +85,7 @@ export function formatCharacter(char: Character): string {
   lines.push(' DERIVED STATS')
   lines.push('')
   lines.push(`  ♥ Health              ${derived.currentHealth} / ${derived.maxHealth}`)
-  lines.push(`  Résistance (max)      ${derived.resistanceThreshold}   (vigor + robustness)`)
+  lines.push(`  Résistance (max)      ${derived.resistanceThreshold}   (vigor)`)
   lines.push(`  ◇ Stability (max)     ${derived.maxStability}   (tenacity + discipline)`)
   lines.push(`  Carry capacity        ${derived.carryCapacity}   (2 + strength + robustness)`)
   lines.push('')
