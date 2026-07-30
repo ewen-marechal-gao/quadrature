@@ -185,13 +185,12 @@ actions:
     name: { fr: "Respiration" }
     description:
       {
-        fr: "Régulation du souffle (première action uniquement). Retire Essoufflé 💨 toujours. Succès : retire (1 + Endurance)💧. Critique : +1💧 bonus. Échec : retire 1💧. Défaut : perd 1 PA. DD = fatigue actuelle.",
+        fr: "Régulation du souffle. Retire Essoufflé 💨 toujours. Succès : retire (1 + Endurance)💧. Critique : +1💧 bonus. Échec : retire 1💧. Défaut : perd 1 PA. DD = fatigue actuelle.",
       }
     initiative: 1
     cost: { actions: 1 }
     tags: [support, healing, physical]
     prerequisite: { skill: endurance, minValue: 1 }
-    requiresFirstAction: true
     roll: { characteristic: vigor, skill: endurance }
     selfTargeted: true
     resolver: respiration
@@ -202,7 +201,7 @@ actions:
     name: { fr: "Stabiliser" }
     description:
       {
-        fr: "Premiers soins (première action uniquement). Retire Hémorragie 🩸 toujours. Succès : soigne (1 + Récupération)💢. Critique : +1 ◇. Échec : soigne 1💢. Défaut : hémorragie résolue immédiatement (1💢). DD = 8 + blessures graves.",
+        fr: "Premiers soins. Retire Hémorragie 🩸 toujours. Succès : soigne (1 + Récupération)💢. Critique : +1 ◇. Échec : soigne 1💢. Défaut : hémorragie résolue immédiatement (1💢). DD = 8 + blessures graves.",
       }
     initiative: 1
     # 1💧 : soigner sous le feu épuise. Auto-limite le sustain — répété, le soin
@@ -210,7 +209,6 @@ actions:
     cost: { actions: 1, fatigue: 1 }
     tags: [support, healing, physical]
     prerequisite: { skill: recovery, minValue: 1 }
-    requiresFirstAction: true
     roll: { characteristic: vigor, skill: recovery }
     selfTargeted: true
     resolver: stabilize
@@ -237,7 +235,7 @@ actions:
     resolver: extinguish
 
   # ── Consolidation mentale (§ attribute_actions.md) ──────────────────────────
-  # Tronc commun : 🟢 (première action), DD = 8 + degré d'état mental,
+  # Tronc commun : bande I 🌓, DD = 8 + degré d'état mental,
   # ✅/❌ regagnent du ◇, ⚠️ Défaut = −1 PA. Variantes ⚒️ différées.
 
   preservation:
@@ -252,7 +250,6 @@ actions:
     tags: [support, mental, enhancement]
     prerequisite: { skill: discipline, minValue: 1 }
     mentalConditions: [enraged, furious, aggressive, focused] # concentré ou colère
-    requiresFirstAction: true
     roll: { characteristic: willpower, skill: discipline }
     selfTargeted: true
     resolver: preservation
@@ -268,7 +265,6 @@ actions:
     cost: { actions: 1 }
     tags: [support, mental, enhancement]
     prerequisite: { skill: logic, minValue: 1 }
-    requiresFirstAction: true
     roll: { characteristic: intelligence, skill: logic }
     selfTargeted: true
     resolver: focalisation
@@ -285,7 +281,6 @@ actions:
     tags: [support, mental, enhancement]
     prerequisite: { skill: conviction, minValue: 1 }
     mentalConditions: [focused, cautious, panicked, terrified] # concentré ou crainte
-    requiresFirstAction: true
     roll: { characteristic: tenacity, skill: conviction }
     selfTargeted: true
     resolver: resolution
@@ -302,7 +297,6 @@ actions:
     tags: [support, mental, enhancement]
     prerequisite: { skill: resilience, minValue: 1 }
     mentalConditions: [focused]
-    requiresFirstAction: true
     roll: { characteristic: tenacity, skill: resilience }
     selfTargeted: true
     resolver: meditation

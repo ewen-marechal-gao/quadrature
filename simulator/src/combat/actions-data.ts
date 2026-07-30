@@ -62,7 +62,6 @@ interface RawPlayerAction {
   prerequisite?: { skill: SkillName; minValue: number }
   /** Mental states allowing this action (empty/absent = no constraint). */
   mentalConditions?: MentalState[]
-  requiresFirstAction?: boolean
   roll?:        { characteristic: CharacteristicName; skill: SkillName }
   selfTargeted?: boolean
   /** DC fixe d'une action auto-ciblée déclarative (Focalisation : jet vs DD). */
@@ -111,7 +110,6 @@ export function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string):
   const cost: ActionCost = {
     actions:        raw.cost.actions,
     reactions:      raw.cost.reactions ?? 0,
-    endPlayerRound: raw.cost.endPlayerRound ?? false,
     ...(raw.cost.fatigue != null && { fatigue: raw.cost.fatigue }),
   }
   // Budget de déplacement : nombre fixe, ou dérivé d'une compétence (Course = 5 + Mobilité).
@@ -134,7 +132,6 @@ export function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string):
     ...(raw.trigger && { trigger: raw.trigger }),
     ...(raw.prerequisite && { prerequisite: raw.prerequisite }),
     mentalConditions: raw.mentalConditions ?? [],
-    requiresFirstAction: raw.requiresFirstAction ?? false,
     // Les actions de mouvement n'ont pas de jet ; on met un jet nominal jamais lu.
     rollChar:    raw.roll?.characteristic ?? 'agility',
     rollSkill:   raw.roll?.skill ?? 'mobility',

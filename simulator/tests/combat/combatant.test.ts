@@ -41,13 +41,6 @@ describe('resetRoundTokens', () => {
     expect(resetRoundTokens(s).actions).toBe(3)
   })
 
-  it('resets firstActionPlayed and lastActionPlayed to false', () => {
-    const s = { ...makeCombatant(), firstActionPlayed: true, lastActionPlayed: true }
-    const r = resetRoundTokens(s)
-    expect(r.firstActionPlayed).toBe(false)
-    expect(r.lastActionPlayed).toBe(false)
-  })
-
   it('clears stunned at round start — no additional PA penalty', () => {
     // The action cost was already paid immediately when stunned was applied;
     // onTokenReset only clears the status, no extra actionPenalty.
@@ -347,10 +340,9 @@ describe('processRoundEnd — hémorragie 🩸 (PJ)', () => {
 
 describe('resetRoundTokens — endurance test', () => {
   it('no endurance test when fatigue < 10', () => {
-    let s = addFatigue(makeCombatant(), 8)  // 1 + 8 = 9, just under the threshold
-    s = { ...s, firstActionPlayed: true, lastActionPlayed: true }
+    const s = addFatigue(makeCombatant(), 8)  // 1 + 8 = 9, just under the threshold
     const r = resetRoundTokens(s)
-    // No winded, fatigue unchanged (only the PA/flags reset happened)
+    // No winded, fatigue unchanged (only the PA reset happened)
     expect(r.status).not.toContain('winded')
     expect(r.fatigue).toBe(9)
   })

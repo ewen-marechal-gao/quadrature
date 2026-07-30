@@ -149,11 +149,20 @@ const cfg = (extra: Partial<AgentConfig> = {}): AgentConfig => ({
 /** Un adversaire minimal réduit à sa position (l'agent n'en lit que pos + défaite). */
 const foeAt = (x: number, y: number) => ({ ...makeCombatant('foe'), pos: at(x, y) })
 
+/**
+ * Ces tests portent sur l'APPROCHE, donc sur les seules cartes de déplacement.
+ * Depuis le retrait des PA colorés, un PA laissé libre peut être rempli par une
+ * carte de bande I (Respiration) : l'assertion ne doit pas dépendre de ce
+ * remplissage, qui n'est pas le sujet.
+ */
+const moves = (plans: { action: string }[]) =>
+  plans.map(p => p.action).filter(a => a === 'course' || a === 'charge' || a === 'walk')
+
 describe('planRoundActions — approche', () => {
   it('hors de portée, court (Bande II) puis charge (Bande III)', () => {
     const self = { ...makeCombatant('PC'), pos: at(0, 5) }
     const plans = planRoundActions(self, foeAt(9, 5), cfg())
-    expect(plans.map(p => p.action)).toEqual(['course', 'charge'])
+    expect(moves(plans)).toEqual(['course', 'charge'])
   })
 
   it('au contact, ne court pas — il frappe (comportement d\'avant les positions)', () => {
@@ -166,7 +175,7 @@ describe('planRoundActions — approche', () => {
   it('trop loin pour percuter, il court sans gâcher la Charge', () => {
     const self = { ...makeCombatant('PC'), pos: at(0, 5) }
     const plans = planRoundActions(self, foeAt(19, 5), cfg())
-    expect(plans.map(p => p.action)).toEqual(['course'])   // course seule, pas de charge
+    expect(moves(plans)).toEqual(['course'])   // course seule, pas de charge
   })
 
   it('sans position (pas de plateau), retombe sur le comportement d\'avant', () => {

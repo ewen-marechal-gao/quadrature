@@ -142,6 +142,15 @@ const CHARGE_STOCK_VALUE = 1.0
  */
 const CHARGE_DECAY = 0.6
 /**
+ * Part de la valeur d'une charge qu'on retient quand elle est posée sur AUTRUI
+ * plutôt que sur le mage (arbitrage créateur, 30/07/2026).
+ *
+ * Un pôle distant sert presque autant qu'une charge portée — il alimente Arcs et
+ * Surcharge, et une cible chargée ⊕ donne un 🟩 à l'Étincelle — mais il dépend
+ * d'une cible qui bouge, meurt, ou se décharge d'elle-même. D'où la décote.
+ */
+const REMOTE_CHARGE_RATIO = 0.75
+/**
  * Horizon, en manches, sur lequel un saignement que RIEN ne referme est projeté.
  *
  * Une Récupération ≥ 1 borne la projection d'elle-même (le stock décroît jusqu'à
@@ -220,7 +229,7 @@ export function effectBurden(
   isSelf     = false,
 ): number {
   return isAdversaryActor(target)
-    ? adversaryBurden(e, target, partType, push ?? { rage: true, terror: true })
+    ? adversaryBurden(e, target, partType, push ?? { rage: true, terror: true }, chargeSink)
     : pcBurden(e, target, chargeSink, isSelf)
 }
 
@@ -241,12 +250,16 @@ function pcBurden(e: CombatEffect, s: CombatantState, chargeSink = false, isSelf
     case 'remove-burn':    return burnStockBurdenPc(s, Math.max(0, s.burn - e.amount), s.blaze)
                                 - burnStockBurdenPc(s, s.burn, s.blaze)
     case 'remove-blaze':   return -Math.min(e.amount, s.blaze) * BLAZE_VALUE
-    // ⚡ Charges : valorisées sur le LANCEUR par POTENTIEL DE CONVERSION (marginal
-    // du stock de ⊖), avec pénalité de débordement (🔥). Sur autrui, la valeur
-    // (fuel de Surcharge, avantage 🟩) est propre au mage et pas encore modélisée
-    // → 0 (chantier : décharge ennemie / avantage électrique).
-    case 'add-charge':       return isSelf ? chargeAddBurdenPc(s, e.delta, e.capped ?? false, chargeSink) : 0
-    case 'dissipate-charge': return isSelf ? chargeDissipateBurdenPc(s, e.amount, chargeSink) : 0
+    // ⚡ Charges. Sur le LANCEUR : potentiel de conversion (marginal du stock de
+    // ⊖) + pénalité de débordement 🔥. Sur AUTRUI : un pôle, décoté à 75 %
+    // (cf. REMOTE_CHARGE_RATIO) et rendu en fardeau positif, la valeur revenant
+    // au mage et non au porteur.
+    case 'add-charge':       return isSelf
+                                  ? chargeAddBurdenPc(s, e.delta, e.capped ?? false, chargeSink)
+                                  : remoteChargeBurden(s.charge, e.delta, chargeSink)
+    case 'dissipate-charge': return isSelf
+                                  ? chargeDissipateBurdenPc(s, e.amount, chargeSink)
+                                  : remoteChargeBurden(s.charge, -Math.sign(s.charge) * Math.min(e.amount, Math.abs(s.charge)), chargeSink)
     case 'remove-fatigue': return -fatigueBurdenPc({ ...s, fatigue: Math.max(1, s.fatigue - e.amount) },
                                                    Math.min(e.amount, s.fatigue - 1))
     // Hémorragie 🩸 PJ : un COMPTEUR de jetons (add = +1 jeton, remove = tout
@@ -337,7 +350,6 @@ function statusBurdenPc(s: CombatantState, id: StatusEffect): number {
   if (def.drainActions)       burden += def.drainActions * PA_VALUE
   if (def.rollDisadvantage)   burden += def.rollDisadvantage * DIE_MOD_VALUE * 2  // every roll, ~2 rolls/round
   if (def.attackerAdvantage)  burden += def.attackerAdvantage * DIE_MOD_VALUE
-  if (def.preventsEndRound)   burden += 0.5
   if (def.onTokenReset) {
     const preview = def.onTokenReset(s)
     burden += preview.actionPenalty * PA_VALUE * (preview.clear ? 1 : 2)  // recurring if not cleared
@@ -416,9 +428,45 @@ function bleedStockBurdenPc(s: CombatantState, extra: number): number {
 export function chargeStockBurdenPc(s: CombatantState, hasSink: boolean): number {
   const q = Math.max(0, -s.charge)
   if (q === 0 || !hasSink) return 0
+  return -geometricChargeValue(q)
+}
+
+/** Somme géométrique décroissante de q charges exploitables. */
+function geometricChargeValue(q: number): number {
   let value = 0
   for (let i = 0; i < q; i++) value += CHARGE_STOCK_VALUE * Math.pow(CHARGE_DECAY, i)
-  return -value
+  return value
+}
+
+/**
+ * ⚡ Utilité, POUR LE LANCEUR, des charges portées par quelqu'un d'AUTRE — un
+ * PÔLE plutôt qu'une réserve.
+ *
+ * Miroir de `chargeStockBurdenPc`, avec deux écarts assumés :
+ *  · on compte la **magnitude**, ⊕ comme ⊖. Une réserve ne vaut que négative
+ *    (c'est elle qu'on dissipe), mais un pôle est exploitable des deux signes :
+ *    les Arcs relient deux pôles opposés, et l'Étincelle gagne un 🟩 sur une
+ *    cible portant une ⊕ (§ magie_electromancie).
+ *  · aucun plafond ni brûlure : le cap ne borne que l'AUTO-accumulation du mage
+ *    (§ Focalisation) ; une charge posée sur autrui n'y est pas soumise.
+ *
+ * Rendu POSITIF (une utilité, pas un fardeau) — les appelants lui donnent son
+ * signe selon la cible.
+ */
+function remoteChargeUtility(charge: number, hasSink: boolean): number {
+  if (!hasSink) return 0
+  return REMOTE_CHARGE_RATIO * geometricChargeValue(Math.abs(charge))
+}
+
+/**
+ * Marginal d'une charge posée sur autrui, exprimé en **fardeau sur la cible**.
+ *
+ * Positif = la cible s'en trouve « aggravée » du point de vue du lanceur, ce qui
+ * est exactement la lecture de `scoreEffects` (offense × fardeau) : c'est ainsi
+ * qu'un bénéfice pour le mage se code quand il est porté par un ennemi.
+ */
+function remoteChargeBurden(charge: number, delta: number, hasSink: boolean): number {
+  return remoteChargeUtility(charge + delta, hasSink) - remoteChargeUtility(charge, hasSink)
 }
 
 /**
@@ -483,6 +531,8 @@ function adversaryBurden(
   c:        AdversaryCombatant,
   partType: string | undefined,
   push:     { rage: boolean; terror: boolean },
+  /** Le kit du LANCEUR peut-il exploiter un pôle ? Sans exutoire, charger est inerte. */
+  chargeSink = false,
 ): number {
   switch (e.kind) {
     case 'light-wound':    return lightWoundBurdenAdv(c, e.amount, partType)
@@ -496,10 +546,14 @@ function adversaryBurden(
     case 'remove-burn':    return burnStockBurdenAdv(Math.max(0, c.burn - e.amount), c.blaze)
                                 - burnStockBurdenAdv(c.burn, c.blaze)
     case 'remove-blaze':   return -Math.min(e.amount, c.blaze) * BLAZE_VALUE
-    // Charge sur une créature : sa valeur (fuel de Surcharge/Arcs, avantage 🟩 du
-    // mage) est propre au lanceur et pas encore modélisée → 0 (chantier).
-    case 'add-charge':
-    case 'dissipate-charge': return 0
+    // Charge sur une créature : c'est le cas COURANT (l'Étincelle charge sa cible).
+    // Une créature ne s'auto-charge jamais ; ce qu'elle porte est un PÔLE pour le
+    // mage — décoté à 75 % et rendu en fardeau positif, comme sur un PJ ennemi.
+    case 'add-charge':       return remoteChargeBurden(c.charge, e.delta, chargeSink)
+    case 'dissipate-charge': return remoteChargeBurden(
+                                    c.charge,
+                                    -Math.sign(c.charge) * Math.min(e.amount, Math.abs(c.charge)),
+                                    chargeSink)
     case 'add-status':     return e.status === 'stunned' && !c.stunned ? 2 : 0
     case 'shift-mental':        return mentalShiftBurdenAdv(c, e.direction)
     case 'shift-mental-broken': return c.stability > 0 ? 0

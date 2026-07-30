@@ -56,7 +56,7 @@ export type StatusEffect =
   | 'stunned'       // 💫 Sonné       : −1 PA next round
   | 'knockdown'     // 🙏 À terre     : −1 PA next round (must spend action to stand)
   | 'kneeling'      // 🧎 À genoux    : melee attackers gain 🟩; stands up free at next round start
-  | 'winded'        // 💨 Essoufflé   : cannot use 🔴 token (endPlayerRound actions blocked)
+  | 'winded'        // 😮‍💨 Essoufflé  : −1 PA au début de manche (jamais moins de 1)
   | 'entrapped'     // 🕸️ Entravé    : cannot perform Marche/Course (movement not yet simulated)
   | 'incapacitated' // ❌ Incapacité  : out of combat (fatigue ≥ 20)
   | 'near-death'    // 😵 Aux portes de la Mort : out of combat (all physical characteristics at 0)
@@ -88,19 +88,19 @@ export type CardTag =
 /**
  * Cost of a single action.
  *
- * Each round a combatant receives 3 Points d'Action: 🟢⚫🔴.
- * All three count as PA (actions) and can pay any ⚫ cost,
- * but 🟢 may only be spent on the FIRST action and 🔴 only on the LAST.
+ * Chaque manche, un combattant reçoit **3 PA génériques** — interchangeables.
+ * Le typage temporel des anciens PA colorés (🟢 première action / 🔴 dernière)
+ * a été RETIRÉ : c'est la bande d'initiative qui ordonne désormais la manche, et
+ * le coût d'une carte se note en phases de lune (🌓 bande I, 🌕 II, 🌗 III), le
+ * glyphe donnant la bande et le nombre de glyphes le nombre de PA (§ combat.md).
  *
- * - actions       : total PA spent (from the 3-PA pool)
- * - reactions     : ⚡ reactions spent (for guards and reaction-mode actions)
- * - endPlayerRound: action requires and consumes the 🔴 token → ends this combatant's round
- * - fatigue       : 💧 fatigue points spent as part of the cost (not damage)
+ * - actions   : total PA spent (from the 3-PA pool)
+ * - reactions : ⚡ reactions spent (for guards and reaction-mode actions)
+ * - fatigue   : 💧 fatigue points spent as part of the cost (not damage)
  */
 export interface ActionCost {
   actions:        number   // PA spent (1 or 2 for most actions)
   reactions:      number   // ⚡ spent
-  endPlayerRound: boolean  // requires 🔴 → no further actions after this
   fatigue?:       number   // 💧 optional fatigue cost
 }
 
@@ -118,8 +118,8 @@ export type ActionId =
   | 'walk'           // Marche 🚶        — initiative 4, 1 PA, 3 cases, Inertie 2
   | 'course'         // Course 🏃        — initiative 6, 1 PA + 1💧, 5 + Mobilité cases, Inertie 3, essoufflé
   | 'charge'         // Charge           — initiative 7, 1 PA + 1💧, exige Inertie 3, Mobilité + Agilité 🟩
-  | 'respiration'    // Respiration      — initiative 1, 1 PA (🟢 — must be first action)
-  | 'stabilize'      // Stabiliser       — initiative 1, 1 PA (🟢 — must be first action)
+  | 'respiration'    // Respiration      — initiative 1, 1 PA (bande I 🌓)
+  | 'stabilize'      // Stabiliser       — initiative 1, 1 PA (bande I 🌓)
   | 'extinguish'     // Éteindre les flammes — bande I, 2 PA ; DD = 8 + 2×❤️‍🔥
   // Consolidation mentale (🟢 première action ; DD = 8 + degré d'état mental)
   | 'preservation'   // Préservation — Discipline+Volonté ; 🔻 vers Prudent + ◇
@@ -294,12 +294,8 @@ export interface CombatantState {
   tempProtection: number
 
   // ── Action economy ──────────────────────────────────────────────────────────
-  /** Remaining Points d'Action this round (starts at 3: one 🟢 + one ⚫ + one 🔴) */
+  /** Remaining Points d'Action this round (starts at 3, tous génériques) */
   actions:           number
-  /** True once any action has been played — 🟢-requiring actions no longer available */
-  firstActionPlayed: boolean
-  /** True once a 🔴-requiring action is played — no further actions this round */
-  lastActionPlayed:  boolean
   /** Remaining reaction tokens this round ⚡ */
   reactions:         number
   /** Maximum reactions per round (reactivity skill + bonuses, fixed at combat start) */

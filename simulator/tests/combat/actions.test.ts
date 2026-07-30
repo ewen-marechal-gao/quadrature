@@ -526,14 +526,12 @@ describe('canUseAction', () => {
     expect(canUseAction(s, 'brutal-strike')).toBe(true)
   })
 
-  it('requiresFirstAction blocked after first action is played', () => {
-    const s: CombatantState = { ...makeCombatant(), firstActionPlayed: true }
-    expect(canUseAction(s, 'respiration')).toBe(false)
-    expect(canUseAction(s, 'stabilize')).toBe(false)
-  })
-
-  it('requiresFirstAction allowed before first action', () => {
-    const s: CombatantState = { ...makeCombatant(), firstActionPlayed: false }
+  // Les PA colorés 🟢/🔴 ont été RETIRÉS (§ combat.md) : c'est la bande
+  // d'initiative qui ordonne la manche. Respiration et Stabiliser restent en
+  // bande I par leur initiative, mais plus rien ne les contraint à être jouées
+  // en premier — elles sont donc disponibles à tout moment de la manche.
+  it('aucune action n\'est plus réservée à la première place du tour', () => {
+    const s = makeCombatant()
     expect(canUseAction(s, 'respiration')).toBe(true)
     expect(canUseAction(s, 'stabilize')).toBe(true)
   })
@@ -542,12 +540,6 @@ describe('canUseAction', () => {
 // ─── canAffordAction ──────────────────────────────────────────────────────────
 
 describe('canAffordAction', () => {
-  it('lastActionPlayed → cannot afford any action', () => {
-    const s: CombatantState = { ...makeCombatant(), lastActionPlayed: true }
-    expect(canAffordAction(s, 'armed-attack')).toBe(false)
-    expect(canAffordAction(s, 'unarmed-attack')).toBe(false)
-  })
-
   it('insufficient PA → false', () => {
     const s: CombatantState = { ...makeCombatant(), actions: 1 }
     expect(canAffordAction(s, 'armed-attack')).toBe(false)  // costs 2 PA

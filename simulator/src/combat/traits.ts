@@ -122,7 +122,6 @@ function reactiveCost(base: ActionDef, cost: ReactiveCost): ActionCost {
   return {
     actions:        cost.actions   ?? 0,
     reactions:      cost.reactions ?? 0,
-    endPlayerRound: false,
     ...(cost.fatigue != null && { fatigue: cost.fatigue }),
     ...(cost.fatigue == null && base.cost.fatigue != null && { fatigue: base.cost.fatigue }),
   }

@@ -37,7 +37,6 @@ describe('loadGuardDefs', () => {
       expect(typeof def.effects).toBe('function')
       expect(typeof def.isAvailable).toBe('function')
       expect(def.cost.actions).toBe(0)          // une Garde ne coûte jamais de PA
-      expect(def.cost.endPlayerRound).toBe(false)
     }
   })
 

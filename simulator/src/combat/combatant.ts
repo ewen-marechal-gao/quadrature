@@ -52,8 +52,6 @@ export function initCombatant(char: Character): CombatantState {
     protection:        char.protection ?? 0,
     tempProtection:    0,
     actions:           3,
-    firstActionPlayed: false,
-    lastActionPlayed:  false,
     reactions:         reactivity,
     maxReactions:      reactivity,
   }
@@ -98,8 +96,6 @@ export function resetRoundTokens(state: CombatantState): CombatantState {
   let s: CombatantState = {
     ...state,
     actions:           Math.max(0, 3 - actionPenalty),
-    firstActionPlayed: false,
-    lastActionPlayed:  false,
     status:            newStatus,
     reactions:         state.maxReactions + focusedBonus,
     // L'Inertie ➡️ retombe à 0 en début de manche : l'élan ne se banque pas d'une
@@ -167,8 +163,6 @@ export function resetRoundTokensWithLog(
   let s: CombatantState = {
     ...state,
     actions:           Math.max(0, 3 - actionPenalty),
-    firstActionPlayed: false,
-    lastActionPlayed:  false,
     status:            newStatus,
     reactions:         state.maxReactions + focusedBonus,
     // L'Inertie ➡️ retombe à 0 en début de manche : l'élan ne se banque pas d'une
@@ -263,11 +257,9 @@ export function resistanceThreshold(state: CombatantState): number {
 export function spendActionCost(state: CombatantState, cost: ActionCost): CombatantState {
   let s: CombatantState = {
     ...state,
-    actions:           Math.max(0, state.actions - cost.actions),
-    firstActionPlayed: true,
+    actions: Math.max(0, state.actions - cost.actions),
   }
-  if (cost.endPlayerRound) s = { ...s, lastActionPlayed: true }
-  if (cost.reactions > 0)  s = { ...s, reactions: Math.max(0, s.reactions - cost.reactions) }
+  if (cost.reactions > 0) s = { ...s, reactions: Math.max(0, s.reactions - cost.reactions) }
   // Enragé : +1 fatigue 💧 supplémentaire à chaque action (§ Piste des États Mentaux)
   const mentalFatigue = MENTAL_STATE_EFFECTS[state.mentalState].fatiguePerAction
   const totalFatigue = (cost.fatigue ?? 0) + mentalFatigue

@@ -525,7 +525,6 @@ function buildSystemPrompt(persona: AgentPersona): string {
     .map(d => {
       const costParts: string[] = [`init ${d.initiative}`, `${d.cost.actions} PA`]
       if ((d.cost.fatigue ?? 0) > 0) costParts.push(`+${d.cost.fatigue}💧 fatigue`)
-      if (d.requiresFirstAction)     costParts.push('🟢 première action uniquement')
       return `▸ ${d.label} [${d.id}] (${costParts.join(', ')})\n  ${d.description}`
     })
     .join('\n\n')

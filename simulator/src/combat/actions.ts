@@ -134,8 +134,6 @@ export interface ActionDef {
    * means no mental constraint. Always present.
    */
   mentalConditions: MentalState[]
-  /** True for Respiration / Stabiliser: must be the first action of the round (🟢) */
-  requiresFirstAction: boolean
   rollChar:      CharacteristicName
   rollSkill:     SkillName
   /**
@@ -537,7 +535,6 @@ export function canUseAction(state: CombatantState, actionId: ActionId): boolean
   if (def.discipline && (state.char.disciplines?.[def.discipline] ?? 0) < 1) return false
   if (def.prerequisite && state.skills[def.prerequisite.skill] < def.prerequisite.minValue) return false
   if (def.mentalConditions.length > 0 && !def.mentalConditions.includes(state.mentalState)) return false
-  if (def.requiresFirstAction && state.firstActionPlayed) return false
   // Un statut bloquant interdit l'action (Course ← Essoufflé, À terre, Entravé…).
   if (def.blockedByStatus?.some(s => state.status.includes(s))) return false
   // Élan insuffisant (Charge/Bousculade exigent Inertie ➡️ 3) : il faut avoir couru avant.
@@ -550,12 +547,10 @@ export function canUseAction(state: CombatantState, actionId: ActionId): boolean
  * Does NOT check prerequisites (see canUseAction).
  */
 export function canAffordAction(state: CombatantState, actionId: ActionId): boolean {
-  if (state.lastActionPlayed) return false
   // Le PRIX est ce que les traits touchent (Momentum) → def effective.
   const cost = defFor(state, actionId).cost
   if (cost.actions   > state.actions)   return false
   if (cost.reactions > state.reactions) return false
-  if (cost.endPlayerRound && state.status.some(id => STATUS_DEFS[id]?.preventsEndRound)) return false
   if ((cost.fatigue ?? 0) > 0 && state.fatigue + (cost.fatigue ?? 0) >= 20) return false
   return true
 }

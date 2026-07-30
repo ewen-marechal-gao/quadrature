@@ -66,9 +66,36 @@ describe('effectBurden — marginal add/dissipate sur le lanceur', () => {
     expect(selfBurden(e, mage(3, -2))).toBeGreaterThan(0)
   })
 
-  it('une charge posée sur AUTRUI ne vaut rien (valeur propre au mage)', () => {
-    // même effet, mais isSelf=false → 0
-    expect(effectBurden(addCharge(-1), mage(3, 0), undefined, undefined, true, false)).toBe(0)
+  // ── Charge posée sur AUTRUI : un PÔLE, pas une réserve ────────────────────
+  //
+  // Elle profite au LANCEUR et non au porteur, donc elle se code en fardeau
+  // POSITIF sur la cible — c'est ainsi que scoreEffects (offense × fardeau) lit
+  // un bénéfice pour le mage. Décote de 25 % : un pôle distant bouge, meurt ou
+  // se décharge (§ REMOTE_CHARGE_RATIO).
+  const remote = (e: CombatEffect, target: ReturnType<typeof mage>, sink = true) =>
+    effectBurden(e, target, undefined, undefined, sink, /* isSelf = */ false)
+
+  it('une charge posée sur autrui vaut pour le lanceur (fardeau positif)', () => {
+    expect(remote(addCharge(-1), mage(3, 0))).toBeGreaterThan(0)
+  })
+
+  it('elle vaut 75 % de ce qu\'elle vaudrait sur le mage', () => {
+    const onSelf   = -selfBurden(addCharge(-1), mage(3, 0))   // utilité (positive)
+    const onOther  =  remote(addCharge(-1), mage(3, 0))
+    expect(onOther).toBeCloseTo(0.75 * onSelf, 6)
+  })
+
+  it('le SIGNE est indifférent : une ⊕ est un pôle comme une ⊖', () => {
+    expect(remote(addCharge(1), mage(3, 0))).toBeCloseTo(remote(addCharge(-1), mage(3, 0)), 6)
+  })
+
+  it('sans exutoire dans le kit, un pôle distant reste inerte', () => {
+    expect(remote(addCharge(-1), mage(3, 0), /* sink = */ false)).toBe(0)
+  })
+
+  it('dissiper le pôle d\'autrui rend le stock perdu (fardeau négatif)', () => {
+    const e: CombatEffect = { targetId: 'X', kind: 'dissipate-charge', amount: 1 }
+    expect(remote(e, mage(3, -2))).toBeLessThan(0)
   })
 })
 

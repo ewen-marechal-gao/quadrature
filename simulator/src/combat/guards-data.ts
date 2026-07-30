@@ -138,7 +138,6 @@ function toGuardDef(
   const cost: ActionCost = {
     actions:        0,
     reactions:      raw.cost.reactions ?? 0,
-    endPlayerRound: false,
     ...(raw.cost.fatigue != null && { fatigue: raw.cost.fatigue }),
   }
   return {

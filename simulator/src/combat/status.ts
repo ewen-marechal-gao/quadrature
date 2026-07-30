@@ -34,9 +34,6 @@
  *    → Number of 🟩 dice added to attackers' check rolls when targeting this combatant.
  *    → Applied in resolveAction (actions.ts).
  *
- *  preventsEndRound
- *    → true → actions with cost.endPlayerRound = true are blocked.
- *
  *  incapacitates
  *    → true → the combatant cannot perform any action (isDefeated = true).
  */
@@ -94,12 +91,6 @@ export interface StatusDef {
    * Used by À terre 🙏 and Inconscient 😵‍💫.
    */
   attackerAdvantage?: number
-
-  /**
-   * If true, actions with cost.endPlayerRound = true cannot be afforded
-   * while this status is active.
-   */
-  preventsEndRound?: boolean
 
   /**
    * If true, the combatant is considered defeated and cannot act at all.
