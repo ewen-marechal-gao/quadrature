@@ -18,8 +18,14 @@
 # un taux de change :
 #   · une blessure légère 💢 coche une case ;
 #   · une blessure grave 💔 DÉTRUIT un bloc — donc coche toutes ses cases ;
-#   · les brûlures 🔥 détruisent un bloc par lot de 5 (combustionTick), et
-#     l'hémorragie 🩸 coche une case par manche.
+#   · cinq brûlures 🔥 se retirent pour poser un embrasement ❤️‍🔥, qui détruit un
+#     bloc en se déclarant puis en rallume une de plus à chaque fin de manche ;
+#   · l'hémorragie 🩸 coche une case par manche.
+#
+# Le mannequin n'a AUCUNE action, donc aucune parade au feu : il mesure la branche
+# « créature vulnérable au feu » (§ combustion), qui est la branche pertinente pour
+# jauger l'offense d'un mage. Ce n'est pas un verdict sur ce que la combustion fait
+# à une cible capable d'étouffer les flammes.
 #
 # La conséquence est qu'un bloc PROFOND rendrait une 💔 démesurée : sur des blocs
 # de 60 cases, une seule blessure grave vaudrait soixante coups légers. On calque

@@ -74,10 +74,12 @@ export interface ActionStat {
   heavyDealt:       number
   /**
    * add-burn 🔥 markers landing on the opponent. Compté à part des 💢 parce que
-   * la combustion n'est pas une blessure : elle s'accumule, se PROPAGE (+1 par
-   * manche tant qu'il en reste un) et convertit chaque lot de 5 en 💔 perçant
-   * l'armure. Sans cette colonne, une discipline dont c'est le vecteur principal
-   * (Électromancie, Calomancie) apparaît comme n'infligeant presque rien.
+   * la combustion n'est pas une blessure mais une MISE : cinq brûlures se retirent
+   * pour poser un embrasement ❤️‍🔥, qui coûte alors une 💔 perçant l'armure puis
+   * rallume une brûlure à chaque fin de manche. Le débit réel se lit donc avec un
+   * décalage — et sous le seuil, il est nul. Sans cette colonne, une discipline
+   * dont c'est le vecteur principal (Électromancie, Calomancie) apparaîtrait comme
+   * n'infligeant presque rien.
    */
   burnDealt:        number
   /** remove-fatigue effects landing on self (self-targeted actions) */

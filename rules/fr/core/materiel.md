@@ -34,4 +34,5 @@ Actions sur les dés :
 - 💢 Jeton blessure légère, représentant une blessure superficielle subie par un personnage ou une créature.
 - 💧 Jeton fatigue, représentant une dépense d'énergie effectuée par un personnage ou une créature.
 - ◇ Jeton stabilité, représentant la résistance d'une créature aux effets mentaux.
-- 🔥 Jeton brûlure, représentant la combustion d'une créature ou d'un personnage.
+- 🔥 Jeton brûlure, représentant la combustion d'une créature ou d'un personnage. Cinq brûlures se retirent pour poser un jeton embrasement.
+- ❤️‍🔥 Jeton embrasement, représentant un feu qui a pris. Prévoir peu d'exemplaires : au-delà de deux ou trois sur la même cible, la partie est déjà jouée.

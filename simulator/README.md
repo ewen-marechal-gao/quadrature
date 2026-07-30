@@ -170,8 +170,14 @@ lance tout, on **conserve 4 dés** (meilleur 🟦, 2 meilleurs 🟨, 1 aléa), s
 3. **Système de garde** : au premier coup reçu dans la manche, le défenseur choisit
    et lance sa garde une fois ; le résultat devient le **DD** que tout attaquant
    doit atteindre ce tour. Gardes actives (Esquive/Parade/Blocage) = 1⚡.
-4. **Fin de manche** : conversion 💢→💔 (3:1 au-dessus de la Résistance),
-   saignements, expiration des protections temporaires.
+4. **Fin de manche** : saignements 🩸, conversion 💢→💔 (3:1 au-dessus de la
+   Résistance), **rallumage ❤️‍🔥** (chaque embrasement rajoute 1🔥, ce qui peut en
+   déclencher un nouveau), expiration des protections temporaires.
+
+La **combustion** n'a PAS d'étape de début de manche : un embrasement ❤️‍🔥 se
+déclare au moment où la 5ᵉ brûlure est posée (`addBurn`), et son rallumage est un
+effet de fin de manche — placé là pour tomber **après** *Éteindre les flammes*,
+qui se joue en bande I. Les deux pistes (PJ et créature) partagent le même seuil.
 
 ### Adversaires (`adversary/`)
 

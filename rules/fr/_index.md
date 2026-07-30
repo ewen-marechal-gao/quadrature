@@ -9,7 +9,7 @@
 
 | Fichier | Contenu |
 | :--- | :--- |
-| [core/materiel.md](core/materiel.md) | Types de dés (⬜🟩🟥🟦🟨🟫🟪), jetons (♥️💔💢💧◇🔥), conversion D6 classique |
+| [core/materiel.md](core/materiel.md) | Types de dés (⬜🟩🟥🟦🟨🟫🟪), jetons (♥️💔💢💧◇🔥❤️‍🔥), conversion D6 classique |
 | [core/glossaire.md](core/glossaire.md) | Grammaire symbolique : dés, ressources, actions/réactions, états mentaux, règles de cumulation |
 | [core/personnages.md](core/personnages.md) | Personnages : 10 caractéristiques (Corps/Esprit), 20 compétences, création (peuple, origine, formation), progression |
 | [core/jouer.md](core/jouer.md) | Jouer : 5 étapes du jet (0–20), table de DD, exemple hors combat, modes de jeu (Narration, Exploration, Épreuves, Combat) |
@@ -17,7 +17,7 @@
 | [core/equipement.md](core/equipement.md) | Inventaire, Emplacements🔳, armures, armes (familles), table dommages/protection |
 | [core/voyager.md](core/voyager.md) | Voyage : segments, rôles (chasse, orientation, logistique), charges, repos/camps/havres, épuisement 😩 |
 | [core/epreuves.md](core/epreuves.md) | Épreuves : horloge 4/6/8 segments + 2/3/4 points de pression extérieurs, bascule sur pression complète, verrouillage sur défaut, relances communes (⚙️ en rodage) |
-| [core/etats.md](core/etats.md) | États de statut : 🩸Hémorragie, 🔥Combustion, 🦠Virulence, 😩Épuisé, Engagé, Immobilisé, À terre… |
+| [core/etats.md](core/etats.md) | États de statut : 🩸Hémorragie, 🔥Combustion / ❤️‍🔥Embrasement, 🦠Virulence, 😩Épuisé, Engagé, Immobilisé, À terre… |
 | [core/furtivite.md](core/furtivite.md) | Occulté🌑, Repéré/Dissimulé, formule DD détection, actions Dissimulation & Furtivité |
 | [core/combat.md](core/combat.md) | Séquence de combat : entretien → actions (initiative) → nettoyage |
 | [core/traits.md](core/traits.md) | Tous les traits par compétence (⚒️ modificateurs d'action, ♾️ passifs permanents) |

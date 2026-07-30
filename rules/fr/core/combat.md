@@ -16,8 +16,10 @@ Les joueurs commencent le combat avec un nombre de **Réactions ⚡** égal à l
 
 Durant cette phase :
 1. Les joueurs reçoivent leurs **trois points d'action**.
-2. On résout les effets des états **Combustion 🔥** et **Virulence 🦠**.
+2. On résout l'état **Virulence 🦠**.
 3. Chaque personnage dont la fatigue est **≥ 10** effectue un **test d'Endurance**.
+
+> La **Combustion 🔥** ne se résout pas ici : un embrasement ❤️‍🔥 se déclare **au moment où la cinquième brûlure est posée**, et le rallumage des embrasements appartient à la phase de nettoyage — après que l'action **Éteindre les flammes** ait eu sa chance (voir [etats.md](etats.md)).
 
 **Test d'endurance**
 
@@ -71,5 +73,6 @@ Les **points d'action non dépensés** à la fin de la Bande III sont perdus (sa
 
 1. **Saignement 🩸** — si le personnage porte des jetons d'**Hémorragie**, retirer d'abord **Récupération ✫** jetons (le corps referme), puis subir **1 💢 par jeton restant** ; les jetons restants persistent (voir [etats.md](etats.md)).
 2. **Conversion 💢 → 💔** — comparer les **blessures légères 💢** à la **Résistance** (Vigueur). L'excédent au-dessus de la Résistance se convertit au taux **3 💢 → 1 blessure grave 💔** (par tranches entières de 3) ; le **reste est reporté** à la manche suivante. Chaque 💔 est absorbée par la **Protection 🛡️** — **sauf** si le personnage a saigné cette manche (le sang passe sous l'armure).
+3. **Rallumage ❤️‍🔥** — pour chaque **embrasement**, ajouter **1 brûlure 🔥**. Si la cinquième brûlure tombe ainsi, l'embrasement qu'elle déclenche se résout immédiatement — un incendie installé s'aggrave de lui-même, de plus en plus vite (voir [etats.md](etats.md)). Ce pas est **indépendant** du précédent : les 💔 du feu percent l'armure et n'entrent jamais dans le calcul de Résistance.
 
 *Exemple : Lena (Vigueur 1 → Résistance 1 ; Récupération 0) termine la manche avec 4 marqueurs 💢. L'excédent vaut 3 (4 − 1), soit une tranche de 3 → elle subit 1 💔, et il lui reste 1 💢 (reporté). Sans Récupération et sans bandage, une hémorragie non soignée continuerait de la faire saigner chaque manche.*
