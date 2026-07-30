@@ -217,7 +217,8 @@ describe('resolveRound — defeated combatants are skipped', () => {
 
 describe('resolveRound — damage delivery', () => {
   it('armed-attack always deals at least 1 wound (miss=1💢, hit=3💢)', () => {
-    // Fixture: vigor=3, robustness=2 → resistanceThreshold=5. Max damage=3 < 5, no overflow.
+    // Fixture: vigor=3 → resistanceThreshold=3 (la Robustesse n'entre pas dans le
+    // seuil). Dégâts max=3, donc aucun excédent au-dessus du seuil : pas d'overflow.
     for (let i = 0; i < 20; i++) {
       const a = makeCombatant('A')
       const b = makeCombatant('B')

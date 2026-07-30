@@ -346,10 +346,10 @@ async function auditOf(a: BenchArchetype): Promise<{ audit: RosterAudit; pcId: s
     audit: {
       label:       a.label,
       skillPoints: ALL_SKILLS.reduce((s, k) => s + char.skills[k], 0),
-      // ⚠️ Le seuil vient du MOTEUR (Vigueur effective seule), pas de
-      // computeDerived — qui rend encore Vigueur + Robustesse et diverge donc de
-      // ce que le combat applique réellement. Afficher le second ferait mentir
-      // l'audit de 2 points sur un gabarit à Robustesse 2.
+      // Le seuil est lu sur l'état MOTEUR : c'est lui qui régit la conversion
+      // 💢→💔, donc c'est lui que l'audit doit montrer. `computeDerived` donne
+      // désormais la même valeur (cf. tests/character/derived.test.ts, qui croise
+      // les deux) — mais autant lire la source plutôt que son reflet.
       resistance:  resistanceThreshold(st),
       stability:   d.maxStability,
       reactions:   st.maxReactions,
