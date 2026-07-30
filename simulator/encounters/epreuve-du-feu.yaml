@@ -1,0 +1,24 @@
+name: "Épreuve du feu"
+description: >
+  Vérification bout en bout de la combustion : un Électromancien n'a QUE Étincelle,
+  face à un Duelliste qui dispose d'Éteindre les flammes. Le duelliste doit choisir
+  entre frapper et étouffer — c'est exactement le dilemme que la carte doit créer.
+
+maxRounds: 12
+
+factions:
+  - name: "Incendiaire"
+    characters:
+      - sheet: bench/archetypes/Bench_electromancer.yaml
+        persona: aggressive
+    allowedActions:
+      - spark
+
+  - name: "Duelliste"
+    characters:
+      - sheet: bench/archetypes/Bench_duelist.yaml
+        persona: opportunist
+    allowedActions:
+      - armed-attack
+      - extinguish
+      - respiration

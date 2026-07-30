@@ -26,9 +26,17 @@ Les jetons restants **persistent** : ils saigneront de nouveau la manche suivant
 
 ### 🔥 Combustion
 
-La combustion est un état cumulable, suivi par des marqueurs **brûlure 🔥**.
+*Une brûlure superficielle ne tue personne. Ce qui tue, c'est le moment où le feu cesse d'être sur vous pour être en vous.*
 
-Au début de la manche, si un personnage possède un marqueur **brûlure 🔥**, ajouter un marqueur supplémentaire. Puis, pour chaque lot de 5 **brûlures 🔥**, le personnage ou la créature subit 1 Blessure grave 💔 automatique ainsi que **🔻**.
+La combustion se suit avec deux marqueurs distincts : les **brûlures 🔥**, qui s'accumulent, et les **embrasements ❤️‍🔥**, qui sont ce qu'elles deviennent.
+
+**Embrasement.** Dès que vous atteignez **5 brûlures 🔥**, retirez-les toutes et posez un **embrasement ❤️‍🔥** : vous subissez **1 blessure grave 💔**, qui **ignore la Protection 🛡️** — le feu passe sous l'armure —, ainsi que **🔻**. L'embrasement se déclenche **au moment où le cinquième marqueur est posé**, sans attendre la fin de la manche : les brûlures excédentaires restent sur vous et repartent d'un nouveau lot.
+
+**Rallumage — à la fin de chaque manche.** Pour **chaque embrasement ❤️‍🔥**, ajoutez **1 brûlure 🔥**. Un feu qui a pris se nourrit tout seul, et de plus en plus vite : c'est le second embrasement qui rend le troisième probable.
+
+Tant que vous ne portez **aucun ❤️‍🔥**, la combustion ne progresse pas seule — quelques brûlures isolées finissent par ne rien faire du tout. Le danger n'est pas de brûler, il est d'atteindre le seuil.
+
+**Suppression :** l'action **Éteindre les flammes** (voir [universal_actions.md](actions/universal_actions.md)) retire les brûlures 🔥 et, sur une réussite, un embrasement ❤️‍🔥. Certaines créatures y sont insensibles ou disposent de leurs propres parades ; d'autres n'ont aucun moyen d'étouffer le feu, et c'est là une vulnérabilité exploitable.
 
 ---
 

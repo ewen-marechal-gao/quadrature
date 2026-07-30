@@ -180,8 +180,8 @@ cartes:
     initiative: 1
     cout: "🌓🌓"
     jet: "Prestance 🟨🟨 + Grâce 🟦"
-    contre: "DD = nombre de marqueurs **brûlure 🔥**"
+    contre: "DD = **8 + 2 par embrasement ❤️‍🔥**"
     critique: "gagnez un jeton **Stabilité ◇**"
-    succes: "supprimez toutes vos **brûlures 🔥**"
-    echec: "supprimez **5 brûlures 🔥**"
+    succes: "supprimez toutes vos **brûlures 🔥** et **un embrasement ❤️‍🔥**"
+    echec: "supprimez **1 brûlure 🔥**"
     source: core/actions/universal_actions.md

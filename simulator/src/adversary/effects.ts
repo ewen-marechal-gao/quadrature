@@ -10,6 +10,7 @@
 import type { CombatEffect } from '../combat/types'
 import {
   damagePart, addAdversaryFatigue, shiftAdversaryMental, addBleed, addAdversaryBurn,
+  removeAdversaryBurn, removeAdversaryBlaze,
   addAdversaryCharge, dissipateAdversaryCharge,
   type AdversaryCombatant,
 } from './combatant'
@@ -47,6 +48,10 @@ export function applyPcEffectsToAdversary(
       case 'heavy-wound': c = damagePart(c, targetPart, { heavy: 1 });         break
       case 'add-fatigue': c = addAdversaryFatigue(c, fx.amount);               break
       case 'add-burn':    c = addAdversaryBurn(c, fx.amount);                  break
+      // Parades au feu d'une créature (§ combustion) : le canal existe, aucune
+      // fiche ne l'utilise encore — les monstres résistants au feu sont un chantier.
+      case 'remove-burn':  c = removeAdversaryBurn(c, fx.amount);              break
+      case 'remove-blaze': c = removeAdversaryBlaze(c, fx.amount);             break
       case 'add-charge':  c = addAdversaryCharge(c, fx.delta);                 break
       case 'dissipate-charge': c = dissipateAdversaryCharge(c, fx.amount);     break
       case 'shift-mental':

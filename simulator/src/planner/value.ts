@@ -32,7 +32,7 @@ import type {
 import { MENTAL_STATES } from '../combat/types'
 import {
   effChar, resistanceThreshold, stabilityPool, stepMentalToward, MENTAL_STATE_EFFECTS,
-  addCharge, dissipateCharge,
+  addCharge, dissipateCharge, BLAZE_THRESHOLD,
 } from '../combat/combatant'
 import { STATUS_DEFS } from '../combat/status'
 import { PHYSICAL_CHARACTERISTICS, MENTAL_CHARACTERISTICS } from '../character/data'
@@ -115,11 +115,17 @@ const DECISIVE_VALUE = 40
 /** One 🩸 token — future wounds that pierce protection (PC) / armor (adversary). */
 const BLEED_VALUE = 1.2
 /**
- * One 🔥 combustion marker. Plus dangereux qu'un 🩸 : il se PROPAGE (+1/manche) et
- * chaque lot de 5 inflige une 💔 + 🔻. Prix à plat et PROVISOIRE — la vraie
- * projection (croissance + seuils) relève du pricing de stock (Phase D).
+ * Une brûlure 🔥 qui n'atteint PAS le seuil. Seule, elle ne fait rien du tout
+ * (§ combustion : sans ❤️‍🔥 le feu ne progresse pas) — elle ne vaut donc que le
+ * rapprochement du seuil qu'elle représente. Tout le danger est dans le lot.
  */
 const BURN_VALUE = 1.5
+/**
+ * Un embrasement ❤️‍🔥. Il rallume 1🔥 à CHAQUE fin de manche : c'est lui, et lui
+ * seul, qui fait courir l'incendie, et il durcit le DD d'Éteindre les flammes de
+ * 2. Nettement plus cher qu'une 💔 isolée, qui elle ne se reproduit pas.
+ */
+const BLAZE_VALUE = 6
 /**
  * ⚡ Valeur d'UNE charge ⊖ portée par le lanceur, par POTENTIEL DE CONVERSION.
  * Chaque ⊖ se convertit en dégâts via une action de décharge (Décharge
@@ -226,7 +232,15 @@ function pcBurden(e: CombatEffect, s: CombatantState, chargeSink = false, isSelf
     case 'heavy-wound':    return heavyWoundBurdenPc(s)
     case 'heal-wounds':    return -Math.min(e.amount, s.lightWounds)
     case 'add-fatigue':    return fatigueBurdenPc(s, e.amount)
-    case 'add-burn':       return e.amount * BURN_VALUE
+    // 🔥/❤️‍🔥 : prix de STOCK, pas prix à l'unité. La brûlure qui complète le lot
+    // vaut une 💔 perçant l'armure PLUS un embrasement permanent ; les quatre
+    // autres ne valent presque rien. C'est ce saut qui doit décider le
+    // planificateur à étouffer maintenant plutôt qu'à la manche suivante.
+    case 'add-burn':       return burnStockBurdenPc(s, s.burn + e.amount, s.blaze)
+                                - burnStockBurdenPc(s, s.burn, s.blaze)
+    case 'remove-burn':    return burnStockBurdenPc(s, Math.max(0, s.burn - e.amount), s.blaze)
+                                - burnStockBurdenPc(s, s.burn, s.blaze)
+    case 'remove-blaze':   return -Math.min(e.amount, s.blaze) * BLAZE_VALUE
     // ⚡ Charges : valorisées sur le LANCEUR par POTENTIEL DE CONVERSION (marginal
     // du stock de ⊖), avec pénalité de débordement (🔥). Sur autrui, la valeur
     // (fuel de Surcharge, avantage 🟩) est propre au mage et pas encore modélisée
@@ -337,6 +351,40 @@ function statusBurdenPc(s: CombatantState, id: StatusEffect): number {
  * un stock sous la Récupération ne saigne jamais. Les 💢 de saignée percent la
  * Protection à la conversion, d'où le léger sur-prix.
  */
+/**
+ * Prix d'un stock de combustion (§ combustion) pour un PJ — fonction du COUPLE
+ * (🔥, ❤️‍🔥), jamais d'un marqueur isolé.
+ *
+ * Les lots complets ont déjà basculé : ils ne comptent plus comme brûlures mais
+ * comme embrasements, chacun ayant coûté une 💔 qui perce la Protection. Le reste
+ * de la pile n'est qu'un rapprochement du prochain seuil. C'est ce qui donne au
+ * planificateur la bonne asymétrie : trois brûlures ne valent presque rien, la
+ * cinquième vaut une blessure grave et un incendie permanent.
+ */
+function burnStockBurdenPc(s: CombatantState, burn: number, blaze: number): number {
+  const flares = Math.floor(burn / BLAZE_THRESHOLD)
+  const step   = BLAZE_VALUE + heavyWoundBurdenPc(s)   // ce que coûte un embrasement
+  return partialBurnBurden(burn % BLAZE_THRESHOLD, step)
+       + (blaze + flares) * BLAZE_VALUE
+       + flares * heavyWoundBurdenPc(s)
+}
+
+/**
+ * Prix d'une pile INCOMPLÈTE, en fraction de ce que coûtera l'embrasement.
+ *
+ * CONVEXE, et c'est le point : « sans ❤️‍🔥, quelques 🔥 isolées ne font jamais
+ * rien » (§ combustion). Une brûlure seule ne vaut presque rien, quatre valent
+ * presque un embrasement — parce qu'à quatre, le prochain jet du mage vous coûte
+ * une blessure grave et un incendie permanent. Un prix LINÉAIRE ferait mentir le
+ * planificateur sur sa propre règle : il verrait quatre petits maux là où il y a
+ * un grand danger, et n'étoufferait jamais au bon moment.
+ */
+function partialBurnBurden(rest: number, step: number): number {
+  if (rest <= 0) return 0
+  const ratio = rest / BLAZE_THRESHOLD
+  return Math.max(rest * BURN_VALUE, ratio * ratio * step)
+}
+
 function bleedStockBurdenPc(s: CombatantState, extra: number): number {
   const recovery = s.skills.recovery
   let tokens = s.bleed + extra
@@ -440,7 +488,14 @@ function adversaryBurden(
     case 'light-wound':    return lightWoundBurdenAdv(c, e.amount, partType)
     case 'heavy-wound':    return heavyWoundBurdenAdv(c, partType)
     case 'add-fatigue':    return fatigueBurdenAdv(c, e.amount)
-    case 'add-burn':       return e.amount * BURN_VALUE
+    // Miroir du prix de stock côté PJ : c'est la brûlure qui COMPLÈTE le lot qui
+    // détruit un bloc, les autres ne font qu'approcher du seuil. Sans ça, le
+    // planificateur du mage ne verrait jamais l'intérêt de finir une pile.
+    case 'add-burn':       return burnStockBurdenAdv(c.burn + e.amount, c.blaze)
+                                - burnStockBurdenAdv(c.burn, c.blaze)
+    case 'remove-burn':    return burnStockBurdenAdv(Math.max(0, c.burn - e.amount), c.blaze)
+                                - burnStockBurdenAdv(c.burn, c.blaze)
+    case 'remove-blaze':   return -Math.min(e.amount, c.blaze) * BLAZE_VALUE
     // Charge sur une créature : sa valeur (fuel de Surcharge/Arcs, avantage 🟩 du
     // mage) est propre au lanceur et pas encore modélisée → 0 (chantier).
     case 'add-charge':
@@ -504,6 +559,21 @@ function lightWoundBurdenAdv(c: AdversaryCombatant, amount: number, partType?: s
 }
 
 /** 💔 on a part: dodged by 🍀, eaten by a plate, or a whole block goes dark. */
+/**
+ * Prix d'un stock (🔥, ❤️‍🔥) sur une créature — miroir de `burnStockBurdenPc`.
+ *
+ * Le bloc détruit par un embrasement l'est TOUJOURS, quelle que soit l'Évasion 🍀 :
+ * le feu est déjà sous la peau. On price donc le bloc en dur au lieu de passer par
+ * `heavyWoundBurdenAdv`, qui escompte l'Évasion — sinon une créature esquivante
+ * ferait paraître la combustion inoffensive alors qu'elle ne peut rien contre.
+ */
+function burnStockBurdenAdv(burn: number, blaze: number): number {
+  const flares = Math.floor(burn / BLAZE_THRESHOLD)
+  return partialBurnBurden(burn % BLAZE_THRESHOLD, BLAZE_VALUE + BLOCK_VALUE)
+       + (blaze + flares) * BLAZE_VALUE
+       + flares * BLOCK_VALUE
+}
+
 function heavyWoundBurdenAdv(c: AdversaryCombatant, partType?: string): number {
   if (c.evasion > 0 && !c.stunned) return 1        // converted to 3💢 elsewhere — mild
   const part = resolvePart(c, partType)

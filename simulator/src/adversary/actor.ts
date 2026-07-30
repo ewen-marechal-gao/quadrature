@@ -23,7 +23,8 @@ import {
 } from '../combat/combatant'
 import {
   isAdversaryDefeated, damagePart, addAdversaryFatigue, shiftAdversaryMental,
-  addBleed, bleedTick, addAdversaryBurn, addAdversaryCharge, dissipateAdversaryCharge,
+  addBleed, bleedTick, addAdversaryBurn, removeAdversaryBurn, removeAdversaryBlaze,
+  rekindleAdversaryBlaze, addAdversaryCharge, dissipateAdversaryCharge,
   startRound as adversaryStartRound,
   type AdversaryCombatant,
 } from './combatant'
@@ -63,9 +64,13 @@ export function actorStartRound(a: Actor): Actor {
  * End-of-round processing. PCs run wound overflow / status hooks
  * (processRoundEnd); adversaries have no 💢→💔 conversion but bleed 🩸 (marking
  * cases on the most-wounded blocks, § Hémorragie — saignée).
+ *
+ * Le rallumage ❤️‍🔥 (§ combustion) est de FIN de manche des DEUX côtés — c'est ce
+ * qui le place après Éteindre les flammes (bande I), sans quoi l'extinction
+ * balaierait le rallumage dans la même manche et aucun incendie ne progresserait.
  */
 export function actorEndRound(a: Actor): Actor {
-  return isAdversaryActor(a) ? bleedTick(a) : processRoundEnd(a)
+  return isAdversaryActor(a) ? rekindleAdversaryBlaze(bleedTick(a)) : processRoundEnd(a)
 }
 
 // ─── Space ────────────────────────────────────────────────────────────────────

@@ -206,9 +206,11 @@ Les actions de déplacement consomment des **points d'action** et génèrent par
 
 **Coût :** 🌓🌓  
 🎲 **Jet :** Prestance 🟨🟨 + Grâce 🟦  
-🆚 **Contre :** DD = nombre de marqueurs **brûlure 🔥**
+🆚 **Contre :** DD = **8 + 2 par embrasement ❤️‍🔥**
 
 ✴️ **Critique :** gagnez un jeton **Stabilité ◇**
 
-✅ **Succès :** supprimez toutes vos **brûlures 🔥**.  
-❌ **Échec :** supprimez **5 brûlures 🔥**.
+✅ **Succès :** supprimez toutes vos **brûlures 🔥** et **un embrasement ❤️‍🔥**.  
+❌ **Échec :** supprimez **1 brûlure 🔥**.
+
+**Conseil :** deux usages, et ils ne se jouent pas au même moment. **En prévention**, tant que vous n'avez aucun ❤️‍🔥, le DD est bas et une réussite vous remet à zéro — étouffez quand la pile approche de 5, pas avant. **En traitement**, une fois le feu pris, chaque embrasement durcit le jet : l'échec ne fait plus que temporiser pendant que le rallumage regarnit la pile. Il vaut mieux dépenser deux phases de lune trop tôt qu'une manche trop tard.

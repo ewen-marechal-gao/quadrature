@@ -13,7 +13,7 @@ import type { OutcomeFlags } from './effect-ops'
 import { mentalDegree } from './combatant'
 
 export type ActionResolverId =
-  | 'respiration' | 'stabilize'
+  | 'respiration' | 'stabilize' | 'extinguish'
   | 'preservation' | 'focalisation' | 'resolution' | 'meditation'
   | 'preparation'
   | 'discharge'
@@ -65,6 +65,42 @@ export const ACTION_RESOLVERS: Record<ActionResolverId, CustomActionResolver> = 
       const healed = hit ? 1 + actor.skills.recovery : 1
       o.fx.push({ targetId: actor.id, kind: 'heal-wounds', amount: healed })
       note(o, hit ? `✅ Stabilisation — soigne ${healed}💢` : `❌ Partiel — soigne ${healed}💢`)
+      return { effects: o.fx, notes: o.notes }
+    },
+  },
+
+  // ── Éteindre les flammes — outil SITUATIONNEL contre la combustion ─────────
+  //
+  // Deux usages, un seul jet (§ universal_actions.md) :
+  //  · PRÉVENTIF (0 ❤️‍🔥) — DD 8, bas : une réussite vide la pile et remet le mage
+  //    à trois Étincelles du seuil. C'est le mode normal, et il fonctionne.
+  //  · CURATIF (≥ 1 ❤️‍🔥) — le DD monte de 2 par embrasement : plus le feu a pris,
+  //    moins on s'en défait, pendant que le rallumage regarnit la pile chaque
+  //    manche. La spirale se referme au rythme où l'incendie progresse.
+  //
+  // L'échec ne retire qu'UNE brûlure : il temporise sans annuler. Cette valeur est
+  // le vrai bouton de tension — à 2, elle compenserait exactement les 2🔥
+  // d'Étincelle et rater vaudrait réussir, ce qui viderait le jet de son sens.
+  extinguish: {
+    getDC: (actor) => 8 + 2 * actor.blaze,
+    resolve({ hit, critical }, actor) {
+      const o: Fx = { fx: [], notes: [] }
+      if (critical) gainStability(o, actor.id, 1, '✴️ Critique — gagne 1 ◇')
+
+      if (hit) {
+        // Ordre indifférent (les deux effets sont indépendants), mais on vide la
+        // pile AVANT de retirer l'embrasement : c'est l'ordre du texte de la carte.
+        if (actor.burn > 0) o.fx.push({ targetId: actor.id, kind: 'remove-burn', amount: actor.burn })
+        if (actor.blaze > 0) o.fx.push({ targetId: actor.id, kind: 'remove-blaze', amount: 1 })
+        note(o, `✅ Étouffé — ${actor.burn}🔥 dispersées` +
+                (actor.blaze > 0 ? ` et 1 embrasement maîtrisé (${actor.blaze - 1}❤️‍🔥 restants)` : ''))
+      } else {
+        const doused = Math.min(1, actor.burn)
+        if (doused > 0) o.fx.push({ targetId: actor.id, kind: 'remove-burn', amount: doused })
+        note(o, doused > 0
+          ? `❌ Partiel — 1🔥 étouffée (${actor.burn - 1}🔥 restantes)`
+          : '❌ Sans effet — rien à étouffer')
+      }
       return { effects: o.fx, notes: o.notes }
     },
   },

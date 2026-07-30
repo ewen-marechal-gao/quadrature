@@ -122,6 +122,10 @@ const SHARED_KIT: ActionId[] = [
   // Entretien : les soupapes de fatigue 💧 et de stabilité ◇. Les retirer
   // punirait arbitrairement les gabarits qui dépensent le plus.
   'respiration', 'stabilize',
+  // Éteindre les flammes — indispensable à la passe de RÉSISTANCE : sans elle, un
+  // gabarit exposé au feu n'aurait aucune parade et le banc mesurerait une
+  // vulnérabilité imaginaire. Inerte dans la passe d'offense (rien ne brûle le PJ).
+  'extinguish',
 ]
 
 const ARCHETYPES: BenchArchetype[] = [
@@ -247,8 +251,10 @@ const max = (a: { max: number; n: number }): number => (a.n > 0 ? a.max : 0)
 //   · une blessure légère 💢 coche une case ;
 //   · une blessure grave 💔 DÉTRUIT un bloc (destroyTopBlock pose damage = cases),
 //     donc coche d'un coup toutes les cases de ce bloc ;
-//   · les 🔥 détruisent un bloc par lot de 5 (combustionTick) et l'hémorragie 🩸
-//     coche une case par manche.
+//   · les 🔥 deviennent un embrasement ❤️‍🔥 tous les 5 marqueurs, et CHAQUE
+//     embrasement détruit un bloc en se déclarant puis en rallume un de plus à
+//     chaque fin de manche (§ combustion) ; l'hémorragie 🩸 coche une case par
+//     manche.
 //
 // Le prix relatif d'une 💔 cesse ainsi d'être une opinion du banc : c'est la
 // PROFONDEUR DES BLOCS du mannequin, calquée sur l'anatomie réelle des créatures

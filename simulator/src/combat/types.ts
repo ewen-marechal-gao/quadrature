@@ -120,6 +120,7 @@ export type ActionId =
   | 'charge'         // Charge           — initiative 7, 1 PA + 1💧, exige Inertie 3, Mobilité + Agilité 🟩
   | 'respiration'    // Respiration      — initiative 1, 1 PA (🟢 — must be first action)
   | 'stabilize'      // Stabiliser       — initiative 1, 1 PA (🟢 — must be first action)
+  | 'extinguish'     // Éteindre les flammes — bande I, 2 PA ; DD = 8 + 2×❤️‍🔥
   // Consolidation mentale (🟢 première action ; DD = 8 + degré d'état mental)
   | 'preservation'   // Préservation — Discipline+Volonté ; 🔻 vers Prudent + ◇
   | 'focalisation'   // Focalisation — Logique+Intelligence ; recentre vers Concentré + ◇
@@ -214,12 +215,18 @@ export interface CombatantState {
    */
   bleed: number
   /**
-   * 🔥 Combustion : marqueurs de brûlure cumulatifs (§ combustion). Au début de
-   * chaque manche, si ≥ 1 ils se PROPAGENT (+1), puis chaque lot de 5 inflige 1
-   * blessure grave 💔 automatique et un décalage 🔻. Les marqueurs persistent :
-   * rien ne les retire encore (chantier — extinction). Symétrique PJ ↔ adversaire.
+   * 🔥 Combustion : brûlures en cours d'accumulation (§ combustion). Reste
+   * TOUJOURS sous le seuil d'embrasement : dès qu'il l'atteint, 5 brûlures sont
+   * retirées et converties en un ❤️‍🔥 (voir `blaze`). Symétrique PJ ↔ adversaire.
    */
   burn: number
+  /**
+   * ❤️‍🔥 Embrasements (§ combustion) : ce que les brûlures sont DEVENUES. Chacun a
+   * déjà coûté 1💔 perçant l'armure + 🔻 au moment où il s'est déclaré, et rallume
+   * 1🔥 à la fin de chaque manche — c'est lui, et lui seul, qui fait progresser un
+   * incendie. Sans ❤️‍🔥, quelques 🔥 isolées stagnent et ne font jamais rien.
+   */
+  blaze: number
   /**
    * ⚡ Charge électrique (§ électromancie) : entier SIGNÉ — `+` = ⊕ positive,
    * `−` = ⊖ négative, `0` = neutre. La neutralisation (« on ne porte pas les deux,
@@ -316,6 +323,8 @@ export type CombatEffect = { targetId: string; targetPart?: string } & (
   | { kind: 'add-fatigue';    amount: number }
   | { kind: 'remove-fatigue'; amount: number }
   | { kind: 'add-burn';       amount: number }  // 🔥 marqueurs de combustion (§ combustion)
+  | { kind: 'remove-burn';    amount: number }  // 🔥 étouffées (Éteindre les flammes)
+  | { kind: 'remove-blaze';   amount: number }  // ❤️‍🔥 embrasements maîtrisés (réussite seule)
   // ⚡ charge SIGNÉE (± ⊕/⊖). `capped` = auto-accumulation du LANCEUR sur lui-même :
   // seules ces ⊖ au-delà de son cap se dissipent en 🔥 (§ électromancie). Une charge
   // posée sur une cible (capped absent) s'accumule sans plafond ni brûlure.
@@ -434,8 +443,10 @@ export interface CombatantSnapshot {
   mentalCapacity: number
   /** 🩸 Hémorragie : jetons cumulés à cet instant */
   bleed:          number
-  /** 🔥 Combustion : marqueurs de brûlure cumulés à cet instant */
+  /** 🔥 Combustion : brûlures en cours d'accumulation (toujours < seuil) */
   burn:           number
+  /** ❤️‍🔥 Embrasements déclarés — rallument 1🔥 chacun en fin de manche */
+  blaze:          number
   /** ⚡ Charge électrique signée (+ ⊕ / − ⊖) à cet instant */
   charge:         number
   /** 😩 Épuisé : marqueurs cumulés — plancher de la Fatigue 💧 */

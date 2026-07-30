@@ -26,7 +26,7 @@ import type { AdversarySheet, AdversaryPart, AdversaryCardDef, AdversaryResource
 import type { Position } from '../combat/position'
 // Le seuil de combustion est le MÊME pour un PJ et pour une créature (§ combustion) :
 // une seule constante, pour que les deux pistes ne puissent pas diverger.
-import { COMBUSTION_THRESHOLD } from '../combat/combatant'
+import { BLAZE_THRESHOLD } from '../combat/combatant'
 
 // ─── Mental track (4-state, simplified vs the player's 7) ─────────────────────
 
@@ -130,11 +130,16 @@ export interface AdversaryCombatant {
    */
   bleed:     number
   /**
-   * 🔥 Combustion : marqueurs de brûlure cumulatifs (§ combustion). Au début de
-   * manche, s'il y en a, +1 (propagation), puis chaque lot de 5 inflige 1
-   * blessure grave 💔 automatique et 🔻. Miroir exact du modèle PJ.
+   * 🔥 Combustion : brûlures en cours d'accumulation (§ combustion). Reste toujours
+   * sous le seuil : à 5, elles se convertissent en un ❤️‍🔥. Miroir du modèle PJ.
    */
   burn:      number
+  /**
+   * ❤️‍🔥 Embrasements. Chacun a déjà détruit un bloc en se déclarant, et rallume
+   * 1🔥 à la fin de chaque manche. Une créature sans parade au feu n'a aucun
+   * moyen d'enrayer cette boucle — c'est sa vulnérabilité.
+   */
+  blaze:     number
   /**
    * ⚡ Charge électrique signée (§ électromancie) : + ⊕ / − ⊖. Une créature n'a
    * pas de capacité propre (cap 0) : toute ⊖ la brûle aussitôt ; elle peut porter
@@ -211,6 +216,7 @@ export function initAdversary(sheet: AdversarySheet): AdversaryCombatant {
     stunned:     false,
     bleed:       0,
     burn:        0,
+    blaze:       0,
     charge:      0,
     destabilized: false,
     usedReactions: [],
@@ -277,9 +283,10 @@ export function startRound(c: AdversaryCombatant): AdversaryCombatant {
     destabilized: false,     // « Déstabilisé » consommé (a sauté ce regain de ◇)
     usedReactions: [],       // les réactions gratuites se rechargent chaque manche
   }
-  // Combustion 🔥 (§ combustion) — propagation + conversion 5🔥 → 💔 + 🔻. À l'init
-  // (burn = 0) c'est un no-op ; en jeu, s'exécute à chaque début de manche.
-  return combustionTick(refreshed)
+  // NB : la combustion ne se joue PLUS ici (§ combustion). L'embrasement se déclare
+  // à la pose de la 5ᵉ brûlure, et le rallumage des ❤️‍🔥 est un effet de FIN de
+  // manche (adversary/actor.ts → tick de fin de manche).
+  return refreshed
 }
 
 // ─── Capability derivation (from intact blocks) ───────────────────────────────
@@ -457,34 +464,57 @@ export function bleedTick(c: AdversaryCombatant): AdversaryCombatant {
   return next
 }
 
-// ─── Combustion 🔥 ──────────────────────────────────────────────────────────────
-
-/** Add N cumulative burn 🔥 markers. */
-export function addAdversaryBurn(c: AdversaryCombatant, amount = 1): AdversaryCombatant {
-  return { ...c, burn: c.burn + amount }
-}
+// ─── Combustion 🔥 / Embrasement ❤️‍🔥 ────────────────────────────────────────────
 
 /**
- * Round-start combustion (§ combustion) : si la créature porte au moins un
- * marqueur 🔥, il s'en propage un de plus, puis chaque lot de 5 détruit un bloc
- * intact (💔 automatique — ignore armure et Évasion 🍀, comme la saignée) et
- * pousse la piste mentale d'un cran vers la Peur (🔻). Marqueurs non consommés.
+ * Pose N brûlures 🔥 — et résout l'embrasement s'il se déclenche. Miroir exact du
+ * modèle PJ (combat/combatant.ts → addBurn), à ceci près qu'une 💔 se traduit ici
+ * par la destruction d'un bloc intact.
+ *
+ * L'embrasement tombe AU MOMENT DE LA POSE et consomme le lot : une salve peut
+ * donc franchir plusieurs seuils d'un coup, l'excédent repartant sur un nouveau
+ * lot. Le bloc détruit est le plus entamé (miroir de la saignée) — le feu achève
+ * ce qui cédait déjà. Ignore armure et Évasion 🍀 : il est sous la peau.
  */
-export function combustionTick(c: AdversaryCombatant): AdversaryCombatant {
-  if (c.burn <= 0) return c
+export function addAdversaryBurn(c: AdversaryCombatant, amount = 1): AdversaryCombatant {
   const next = structuredClone(c)
-  next.burn += 1
-  const heavies = Math.floor(next.burn / COMBUSTION_THRESHOLD)
-  for (let i = 0; i < heavies; i++) {
+  next.burn += amount
+  let flares = 0
+  while (next.burn >= BLAZE_THRESHOLD) {
+    next.burn -= BLAZE_THRESHOLD
+    next.blaze += 1
+    flares += 1
     const blocks = [...next.parts, ...next.weapons]
       .flatMap(p => p.blocks)
       .filter(b => !isBlockDestroyed(b))
-    if (blocks.length === 0) break
-    // Bloc intact le plus entamé → détruit (miroir de la saignée, mais une 💔).
+    if (blocks.length === 0) continue   // plus rien à brûler : le ❤️‍🔥 compte quand même
     const target = blocks.sort((a, b) => b.damage - a.damage)[0]
     target.damage = target.cases
   }
-  return heavies > 0 ? shiftAdversaryMental(next, -heavies) : next
+  return flares > 0 ? shiftAdversaryMental(next, -flares) : next
+}
+
+/** Retire N brûlures 🔥 (parade au feu — plancher à 0). */
+export function removeAdversaryBurn(c: AdversaryCombatant, amount = 1): AdversaryCombatant {
+  return { ...c, burn: Math.max(0, c.burn - amount) }
+}
+
+/** Retire N embrasements ❤️‍🔥. Les blocs déjà détruits ne reviennent pas. */
+export function removeAdversaryBlaze(c: AdversaryCombatant, amount = 1): AdversaryCombatant {
+  return { ...c, blaze: Math.max(0, c.blaze - amount) }
+}
+
+/**
+ * Rallumage de FIN de manche (§ combustion) : chaque ❤️‍🔥 rajoute 1🔥, ce qui peut
+ * en déclencher un nouveau — c'est toute l'accélération de l'incendie.
+ *
+ * Une créature DÉPOURVUE d'action d'extinction n'a rien à opposer à cette boucle :
+ * c'est une vulnérabilité de conception, pas un déséquilibre. Une créature qui
+ * résiste au feu se voit donner une carte qui retire des 🔥 / un ❤️‍🔥.
+ */
+export function rekindleAdversaryBlaze(c: AdversaryCombatant): AdversaryCombatant {
+  if (c.blaze <= 0) return c
+  return addAdversaryBurn(c, c.blaze)
 }
 
 // ─── Charge électrique ⚡ (§ électromancie) ─────────────────────────────────────
@@ -594,8 +624,10 @@ export interface AdversarySnapshot {
   winded:      boolean
   /** 🩸 Jetons d'hémorragie cumulés (cases cochées en fin de manche). */
   bleed:       number
-  /** 🔥 Marqueurs de combustion cumulés (propagation + 💔 au début de manche). */
+  /** 🔥 Brûlures en cours d'accumulation (toujours sous le seuil d'embrasement). */
   burn:        number
+  /** ❤️‍🔥 Embrasements déclarés — rallument 1🔥 chacun en fin de manche. */
+  blaze:       number
   /** ⚡ Charge électrique signée (+ ⊕ / − ⊖). */
   charge:      number
   /** « Déstabilisé » : sautera son prochain regain de ◇. */
@@ -643,6 +675,7 @@ export function toAdversarySnapshot(c: AdversaryCombatant): AdversarySnapshot {
     winded:      isAdversaryWinded(c),
     bleed:       c.bleed,
     burn:        c.burn,
+    blaze:       c.blaze,
     charge:      c.charge,
     destabilized: c.destabilized,
     /** Armure totale = somme de l'armure RESTANTE des parties (consommée par les 💔). */

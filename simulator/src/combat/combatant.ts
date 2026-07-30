@@ -42,6 +42,7 @@ export function initCombatant(char: Character): CombatantState {
     stability:         0,   // set below via stabilityPool (needs the built state)
     bleed:             0,
     burn:              0,
+    blaze:             0,
     charge:            0,
     exhaustion:        0,
     initiativeDelay:   0,
@@ -110,9 +111,9 @@ export function resetRoundTokens(state: CombatantState): CombatantState {
     // régénère pas (aucune règle de récupération pour l'instant).
   }
 
-  // Combustion 🔥 (§ combustion) — propagation + conversion 5🔥 → 💔 + 🔻, avant
-  // le test d'Endurance (une blessure grave peut incapaciter).
-  s = processCombustion(s).state
+  // NB : la combustion ne se joue PLUS au début de la manche (§ combustion). Un
+  // embrasement se déclare au moment où la 5ᵉ brûlure est posée, et le rallumage
+  // des ❤️‍🔥 se fait en fin de manche (processRoundEnd) — après Éteindre les flammes.
 
   // ── Test d'Endurance (phase d'entretien) ────────────────────────────────────
   // Déclenché si fatigue ≥ 10 et personnage non incapacité.
@@ -181,10 +182,8 @@ export function resetRoundTokensWithLog(
 
   let maintenanceEntry: MaintenanceEntry | null = null
 
-  // Combustion 🔥 — appliquée avant le test d'Endurance (§ combustion). État seul
-  // pour l'instant : la trace visible est le champ `burn` du snapshot + les 💔.
-  const combustion = processCombustion(s)
-  s = combustion.state
+  // NB : plus de combustion ici (§ combustion) — l'embrasement se déclare à la
+  // pose de la 5ᵉ brûlure, le rallumage des ❤️‍🔥 se fait en fin de manche.
 
   /** La fatigue est ≥ 10, test d'endurance */
   if (s.fatigue >= 10 && !isDefeated(s)) {  
@@ -399,10 +398,15 @@ export function processRoundEnd(state: CombatantState): CombatantState {
     s = { ...s, lightWounds: s.lightWounds - heavies * 3 }  // reste reporté
   }
 
-  // 3. Temporary protection expires at round end
+  // 3. Rallumage ❤️‍🔥 (§ combustion) — chaque embrasement rajoute 1🔥, ce qui peut
+  //    en déclencher un nouveau. Placé APRÈS la conversion 💢→💔 : les 💔 du feu
+  //    percent l'armure et n'ont rien à voir avec le seuil de Résistance.
+  s = rekindleBlaze(s).state
+
+  // 4. Temporary protection expires at round end
   s = { ...s, tempProtection: 0 }
 
-  // 4. Status end-of-round hooks (iterate over original status list to avoid
+  // 5. Status end-of-round hooks (iterate over original status list to avoid
   //    re-triggering statuses added by hooks within the same tick)
   for (const statusId of state.status) {
     const hook = STATUS_DEFS[statusId]?.onRoundEnd
@@ -428,40 +432,70 @@ export function clearBleedPc(state: CombatantState): CombatantState {
   return { ...state, bleed: 0 }
 }
 
-// ─── Combustion 🔥 ──────────────────────────────────────────────────────────────
+// ─── Combustion 🔥 / Embrasement ❤️‍🔥 ────────────────────────────────────────────
 
-/** Add N cumulative burn 🔥 markers. */
+/**
+ * Brûlures 🔥 à réunir pour qu'un embrasement ❤️‍🔥 se déclare (§ combustion).
+ * Partagé avec la piste des créatures (adversary/combatant.ts) : le seuil est le
+ * même des deux côtés, et une constante unique empêche qu'ils divergent.
+ */
+export const BLAZE_THRESHOLD = 5
+
+/**
+ * Pose N brûlures 🔥 — et résout l'embrasement s'il se déclenche.
+ *
+ * L'embrasement tombe AU MOMENT DE LA POSE, pas en fin de manche : c'est ce qui
+ * permet à une salve (Décharge) de percer une extinction déjà jouée en bande I,
+ * là où un filet régulier (Étincelle) se fait étouffer avant d'atteindre le seuil.
+ * Boucle `while` et non `if` : une salve peut franchir plusieurs seuils d'un coup,
+ * et l'excédent repart sur un nouveau lot au lieu d'être perdu.
+ *
+ * Chaque embrasement coûte 1💔 qui IGNORE la Protection (le feu est déjà sous
+ * l'armure) et un décalage 🔻 (absorbable par un ◇, comme tout choc subi).
+ */
 export function addBurn(state: CombatantState, amount = 1): CombatantState {
-  return { ...state, burn: state.burn + amount }
+  let s: CombatantState = { ...state, burn: state.burn + amount }
+  while (s.burn >= BLAZE_THRESHOLD) {
+    s = { ...s, burn: s.burn - BLAZE_THRESHOLD, blaze: s.blaze + 1 }
+    s = applyHeavyWound(s, /* bypassProtection = */ true)
+    s = shiftMentalState(s, 'toward-terror')
+  }
+  return s
+}
+
+/** Retire N brûlures 🔥 (Éteindre les flammes — plancher à 0). */
+export function removeBurn(state: CombatantState, amount = 1): CombatantState {
+  return { ...state, burn: Math.max(0, state.burn - amount) }
 }
 
 /**
- * Round-start combustion (§ combustion) : si le combattant porte au moins un
- * marqueur 🔥, il s'en PROPAGE un de plus, puis chaque lot de 5 inflige une
- * blessure grave 💔 automatique (perce la Protection — feu interne) et un
- * décalage 🔻 (absorbable par un ◇, comme tout choc subi).
- *
- * Les marqueurs ne sont PAS consommés : la combustion s'aggrave tant que rien
- * ne l'éteint (aucune extinction modélisée — chantier). Rendu avec ses notes de
- * log pour la phase d'entretien.
+ * Retire N embrasements ❤️‍🔥 (réussite d'Éteindre les flammes uniquement). Les 💔
+ * déjà encaissées ne sont PAS rendues : on éteint le feu, on ne referme pas la
+ * plaie qu'il a faite.
  */
-/**
- * Lot de 🔥 qu'il faut réunir pour qu'une 💔 tombe (§ combustion). Partagé avec
- * la piste des créatures (adversary/combatant.ts → combustionTick) : le seuil est
- * le même des deux côtés, et une constante unique empêche qu'ils divergent.
- */
-export const COMBUSTION_THRESHOLD = 5
+export function removeBlaze(state: CombatantState, amount = 1): CombatantState {
+  return { ...state, blaze: Math.max(0, state.blaze - amount) }
+}
 
-export function processCombustion(state: CombatantState): { state: CombatantState; notes: string[] } {
-  if (state.burn <= 0) return { state, notes: [] }
-  let s: CombatantState = { ...state, burn: state.burn + 1 }
-  const heavies = Math.floor(s.burn / COMBUSTION_THRESHOLD)
-  if (heavies === 0) {
-    return { state: s, notes: [`🔥 Combustion — ${s.burn}🔥 (propagation)`] }
-  }
-  for (let i = 0; i < heavies; i++) s = applyHeavyWound(s, /* bypassProtection = */ true)
-  for (let i = 0; i < heavies; i++) s = shiftMentalState(s, 'toward-terror')
-  return { state: s, notes: [`🔥 Combustion — ${s.burn}🔥 → ${heavies}💔 + 🔻×${heavies}`] }
+/**
+ * Rallumage de FIN de manche (§ combustion) : chaque ❤️‍🔥 rajoute 1🔥.
+ *
+ * En fin de manche et non au début, pour que le rallumage tombe APRÈS l'action
+ * Éteindre les flammes (bande I) : sinon l'extinction balaierait le rallumage
+ * dans la même manche et l'incendie ne progresserait jamais.
+ *
+ * Le rallumage passe par `addBurn`, donc il peut lui-même déclencher un
+ * embrasement — c'est là toute l'accélération : plus il y a de ❤️‍🔥, plus vite le
+ * suivant arrive.
+ */
+export function rekindleBlaze(state: CombatantState): { state: CombatantState; notes: string[] } {
+  if (state.blaze <= 0) return { state, notes: [] }
+  const s = addBurn(state, state.blaze)
+  const newFlares = s.blaze - state.blaze
+  const note = newFlares > 0
+    ? `❤️‍🔥 Rallumage — ${state.blaze}🔥 ajoutées → ${newFlares} embrasement(s) de plus (${s.blaze}❤️‍🔥, ${s.burn}🔥)`
+    : `❤️‍🔥 Rallumage — ${state.blaze}🔥 ajoutées (${s.blaze}❤️‍🔥, ${s.burn}🔥)`
+  return { state: s, notes: [note] }
 }
 
 // ─── Charge électrique ⚡ (§ électromancie) ─────────────────────────────────────
@@ -734,6 +768,8 @@ export function applyEffectToState(s: CombatantState, effect: CombatEffect): Com
     case 'remove-fatigue': return removeFatigue(s, effect.amount)
     // Hémorragie 🩸 : compteur de jetons (prototype), pas un statut binaire.
     case 'add-burn':       return addBurn(s, effect.amount)
+    case 'remove-burn':    return removeBurn(s, effect.amount)
+    case 'remove-blaze':   return removeBlaze(s, effect.amount)
     case 'add-charge':     return addCharge(s, effect.delta, effect.capped ?? false)
     case 'dissipate-charge': return dissipateCharge(s, effect.amount)
     case 'add-status':     return effect.status === 'hemorrhage' ? addBleedPc(s, 1)  : addStatus(s, effect.status)
@@ -806,6 +842,7 @@ export function toCombatantSnapshot(state: CombatantState): CombatantSnapshot {
     mentalCapacity: sum(MENTAL_CHARACTERISTICS),
     bleed:          state.bleed,
     burn:           state.burn,
+    blaze:          state.blaze,
     charge:         state.charge,
     exhaustion:     state.exhaustion,
     status:         [...state.status],

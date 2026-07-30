@@ -60,7 +60,9 @@ Chaque carte porte une **initiative** (1-10) qui la range dans l'une des trois *
 
 ## 🔥 États
 
-**🔥 Brûlures :** les vêtements ou le personnage est en feu.
+**🔥 Brûlures :** les vêtements ou le personnage est en feu. Cinq brûlures deviennent un **embrasement ❤️‍🔥**.
+
+**❤️‍🔥 Embrasement :** le feu a pris. Chaque embrasement rallume une brûlure 🔥 à la fin de chaque manche.
 
 **🦠 Virulence :** l'organisme du personnage ou de la créature est déstabilisé.
 

@@ -215,6 +215,27 @@ actions:
     selfTargeted: true
     resolver: stabilize
 
+  # ── Éteindre les flammes (§ universal_actions.md) ────────────────────────────
+  # Bande I (initiative 1) : l'extinction se résout AVANT les sorts, qui coûtent
+  # 🌕 (bande II). C'est ce qui rend l'outil préventif jouable — on étouffe la pile
+  # avant que le mage ne la regarnisse.
+  #
+  # Aucun prérequis de compétence : c'est une action UNIVERSELLE, tout le monde
+  # peut se rouler par terre. Prestance/Grâce ne font que décider si ça suffit.
+  extinguish:
+    vaultCard: eteindre-les-flammes
+    name: { fr: "Éteindre les flammes" }
+    description:
+      {
+        fr: "Étouffe la combustion. Succès : retire toutes les brûlures 🔥 et un embrasement ❤️‍🔥. Échec : retire 1🔥 seulement — de quoi temporiser. Critique : +1 ◇. DD = 8 + 2 par ❤️‍🔥 : plus le feu a pris, plus il est dur à maîtriser.",
+      }
+    initiative: 1
+    cost: { actions: 2 }
+    tags: [support, healing, physical]
+    roll: { characteristic: grace, skill: composure }   # composure = Prestance
+    selfTargeted: true
+    resolver: extinguish
+
   # ── Consolidation mentale (§ attribute_actions.md) ──────────────────────────
   # Tronc commun : 🟢 (première action), DD = 8 + degré d'état mental,
   # ✅/❌ regagnent du ◇, ⚠️ Défaut = −1 PA. Variantes ⚒️ différées.
