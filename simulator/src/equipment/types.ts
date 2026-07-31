@@ -49,6 +49,21 @@ export const ZONE_CAPACITY: Record<BodyZone, number> = {
   head: 1, hands: 2, body: 4, back: 2, waist: 2, legs: 1,
 }
 
+/**
+ * Objets portés, rangés par zone du corps. C'est la seule donnée stockée : tout
+ * ce qui s'en dérive est recalculé par `equipment/inventory.ts`, qui reste le
+ * lieu où lire ce type au sein du moteur (il le ré-exporte).
+ *
+ * Il vit ICI plutôt qu'à côté de ses fonctions parce que `character/types.ts` en
+ * a besoin : l'importer depuis `inventory.ts` tirait `items-data.ts`, donc le
+ * paquet `yaml`, dans tout programme TypeScript atteignant la fiche — dont le
+ * type-check du SITE, qui ne veut que des types et n'installe pas les
+ * dépendances du simulateur. Ce fichier-ci n'a aucune dépendance externe.
+ */
+export interface Inventory {
+  worn: Partial<Record<BodyZone, string[]>>
+}
+
 // ─── Armes ────────────────────────────────────────────────────────────────────
 
 /** Familles d'armes (§ equipement — « Famille d'armes : … »). */

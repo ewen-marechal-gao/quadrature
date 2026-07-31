@@ -15,14 +15,14 @@
  * été migrée.
  */
 
-import type { BodyZone, Item, WeaponItem, ShieldItem, AttackKind } from './types'
+import type { BodyZone, Inventory, Item, WeaponItem, ShieldItem, AttackKind } from './types'
 import { ZONE_CAPACITY, isWeapon, isArmor, isShield, isContainer } from './types'
 import { getItem } from './items-data'
 
-/** Objets portés, rangés par zone du corps. C'est la seule donnée stockée. */
-export interface Inventory {
-  worn: Partial<Record<BodyZone, string[]>>
-}
+// `Inventory` est DÉCLARÉ dans ./types (qui n'a aucune dépendance externe) et
+// ré-exporté ici, où on l'utilise : le moteur continue de le lire depuis ce
+// module, mais qui n'a besoin QUE du type ne tire plus `items-data` avec lui.
+export type { Inventory }
 
 // ─── Lecture ──────────────────────────────────────────────────────────────────
 

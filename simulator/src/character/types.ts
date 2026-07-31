@@ -1,4 +1,7 @@
-import type { Inventory } from '../equipment/inventory'
+// Depuis ./types et non ./inventory : ce fichier est la porte d'entrée des types
+// de la fiche, y compris pour le SITE, qui n'installe pas les dépendances du
+// simulateur. Passer par `inventory.ts` y tirait `items-data.ts` et son `yaml`.
+import type { Inventory } from '../equipment/types'
 
 /** All 10 characteristic names */
 export type CharacteristicName =
