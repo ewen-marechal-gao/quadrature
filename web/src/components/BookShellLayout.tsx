@@ -17,13 +17,12 @@
  *   page.tsx   (serveur) → PageInitializer (client) → setCurrentContent → BookViewer
  */
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
 import { type Locale, getBookById, getTitleForSlug, localize, BOOKS, getBookForSlug } from "@/lib/nav";
 import { useBook } from "@/lib/context";
 import { BookViewer } from "@/components/BookViewerLoader";
 import { BookViewerSkeleton } from "@/components/BookViewerSkeleton";
-import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { TopBar } from "@/components/TopBar";
 
 interface Props {
   bookId: string;
@@ -78,46 +77,32 @@ export function BookShellLayout({ bookId, locale, children }: Props) {
       {children}
 
       {/* ── Top bar ──────────────────────────────────────────── */}
-      <header className="top-bar">
-        <button
-          className="top-bar-collapse"
-          onClick={() => setCollapsed(c => !c)}
-          aria-label={collapsed ? "Ouvrir le sommaire" : "Réduire le sommaire"}
-          title={collapsed ? "Ouvrir le sommaire" : "Réduire le sommaire"}
-        >
-          {collapsed ? "›" : "‹"}
-        </button>
-
-        <Link href={`/${locale}/`} className="top-bar-logo">
-          Quadrature
-        </Link>
-
-        {book && (
-          <>
-            <span className="top-bar-sep">—</span>
-            <span className="top-bar-book">{localize(book.title, locale)}</span>
-          </>
-        )}
-
-        {current && currentSlug !== sections[0]?.slug && (
-          <>
-            <span className="top-bar-sep">·</span>
-            <span className="top-bar-title">{current}</span>
-          </>
-        )}
-
-        <LocaleSwitcher locale={locale} bookId={bookId} />
-
-        <a
-          href="/quadrature.pdf"
-          download="Quadrature.pdf"
-          className="top-bar-download"
-          title="Télécharger le PDF complet"
-          aria-label="Télécharger le document en PDF"
-        >
-          ⬇ PDF
-        </a>
-      </header>
+      <TopBar
+        locale={locale}
+        page={book ? localize(book.title, locale) : "Bibliothèque"}
+        // La première section porte le titre du livre : le répéter n'apprend rien.
+        section={
+          current && currentSlug !== sections[0]?.slug ? current : undefined
+        }
+        collapse={{
+          collapsed,
+          onToggle: () => setCollapsed((c) => !c),
+          labelOpen: "Ouvrir le sommaire",
+          labelClose: "Réduire le sommaire",
+        }}
+        bookId={bookId}
+        actions={
+          <a
+            href="/quadrature.pdf"
+            download="Quadrature.pdf"
+            className="top-bar-download"
+            title="Télécharger le PDF complet"
+            aria-label="Télécharger le document en PDF"
+          >
+            ⬇ PDF
+          </a>
+        }
+      />
 
       {/* ── Body : sidebar + book area ───────────────────────── */}
       <div className="book-body">

@@ -65,8 +65,11 @@ guards:
     cost:        { reactions: 1 }
     roll:        { characteristic: acuity, skill: vigilance }
     availability:
-      # « Avoir une arme en main » — proxy de compétence en attendant le modèle
-      # d'équipement (chantier armes & boucliers).
+      # « Avoir une arme en main », au sens propre : une arme équipée qui pare
+      # (donc pas un arc, § equipement — « Pas de parade avec un arc »).
+      requiresWeapon: true
+      # Repli pour les fiches dont l'équipement n'est pas modélisé — l'ancien
+      # proxy de compétence, conservé le temps que toutes les fiches migrent.
       requiresSkill: { skill: power, minValue: 1 }
     # On ne pare pas un projectile ; une arme de mêlée à allonge reste parable,
     # d'où le tag `ranged` et non la portée.
@@ -151,7 +154,9 @@ guards:
     cost:        { reactions: 1 }
     roll:        { characteristic: vigor, skill: endurance }
     availability:
-      # « Avoir un bouclier » — proxy de compétence, même chantier que la Parade.
+      # « Avoir un bouclier », au sens propre.
+      requiresShield: true
+      # Repli pour les fiches non équipées — l'ancien proxy de compétence.
       requiresSkill: { skill: robustness, minValue: 2 }
     contrecoup:
       text:  { fr: "l'initiative de votre Garde augmente de 1 jusqu'à la fin de la manche" }

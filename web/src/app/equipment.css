@@ -1,0 +1,198 @@
+/* ════ Catalogue d'équipement (/equipement) ════
+ *
+ * Deux registres visuels, comme sur /traits :
+ *  · la CARTE — parchemin, format mini (44 × 63 mm, la moitié d'une carte
+ *    d'action) : ce qui serait imprimé et découpé ;
+ *  · le CHÂSSIS de page — laiton sur bois sombre, comme le reste du site.
+ *
+ * La carte se dimensionne sur la largeur de son conteneur (`.eqp-slot` porte
+ * `container-type: inline-size`) et n'utilise que des `cqw`/`em` : le même
+ * balisage tient à 190 px à l'écran et à 44 mm au papier.
+ */
+
+/* La page vit sous la TopBar et la ToolBar communes, dans un `.book-app`
+   (hauteur figée, overflow caché) : c'est donc CE bloc qui défile. Les filtres
+   ne sont plus dedans — ils sont dans la ToolBar, qui ne défile pas du tout. */
+.eqp {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 1.5rem 4rem;
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+}
+
+.eqp-empty { color: var(--panel-muted); padding: 2rem; text-align: center; }
+
+/* ── Rubriques ───────────────────────────────────────────────────────────── */
+.eqp-section {
+  max-width: 1200px;
+  margin: 0 auto 2.5rem;
+  scroll-margin-top: 5rem;
+}
+.eqp-section__title {
+  margin: 0 0 1rem;
+  padding-bottom: .35rem;
+  border-bottom: 1px solid var(--brass-mid);
+  color: var(--brass-bright);
+  font-size: 1.25rem;
+}
+
+.eqp-group { margin-bottom: 1.75rem; }
+.eqp-group__title {
+  margin: 0 0 .3rem;
+  color: var(--panel-text);
+  font-size: 1rem;
+  font-variant: small-caps;
+  letter-spacing: .03em;
+}
+.eqp-group__hint {
+  margin: 0 0 .8rem;
+  max-width: 80ch;
+  color: var(--panel-muted);
+  font-size: .82rem;
+  line-height: 1.5;
+}
+
+.eqp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+/* ── La carte mini ───────────────────────────────────────────────────────── */
+
+/* Le conteneur de requête : c'est LUI qui donne l'échelle à tout l'intérieur. */
+.eqp-slot {
+  container-type: inline-size;
+  max-width: 15rem;
+}
+
+.eqp-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  aspect-ratio: 44 / 63;              /* mini américaine — ½ carte d'action */
+  overflow: hidden;
+  background: var(--card-paper);
+  color: var(--card-ink);
+  /* Angles droits : les cartes sont destinées à la découpe aux ciseaux. */
+  border-radius: 0;
+  border: 1px solid rgba(0,0,0,0.35);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.45);
+  font-size: 4.6cqw;
+  line-height: 1.3;
+}
+
+/* Teinte de nature, posée une fois puis consommée par l'en-tête et les pastilles.
+   Le code couleur reprend celui des cartes d'action : offensive rouge pour ce
+   qui frappe, défensive bleu pour ce qui protège, guérison vert pour ce qui se
+   consomme, amélioration violet pour le reste. */
+.eqp-card[data-kind="weapon"]     { --nat: var(--card-offensive); }
+.eqp-card[data-kind="armor"]      { --nat: var(--card-defensive); }
+.eqp-card[data-kind="shield"]     { --nat: var(--card-defensive); }
+.eqp-card[data-kind="container"]  { --nat: var(--card-mouvement); }
+.eqp-card[data-kind="consumable"] { --nat: var(--card-guerison); }
+.eqp-card[data-kind="gear"]       { --nat: var(--card-amelioration); }
+
+.eqp-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: .4em;
+  padding: .45em .6em;
+  min-height: 2.6em;
+  background: var(--nat);
+  color: var(--parchment);
+  flex-shrink: 0;
+}
+.eqp-card__name {
+  flex: 1;
+  font-size: 1.15em;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: .01em;
+}
+/* Emplacements en pictogrammes répétés : resserrés, pour qu'une armure lourde
+   (🔳🔳🔳🔳) tienne à côté de son nom sans l'écraser. */
+.eqp-card__cost {
+  flex-shrink: 0;
+  font-size: .8em;
+  letter-spacing: -.08em;
+  white-space: nowrap;
+}
+
+.eqp-card__sub {
+  padding: .2em .6em;
+  background: rgba(0,0,0,0.08);
+  border-bottom: 1px solid rgba(0,0,0,0.10);
+  font-size: .92em;
+  font-style: italic;
+  flex-shrink: 0;
+}
+
+.eqp-card__zones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25em;
+  padding: .35em .6em 0;
+  flex-shrink: 0;
+}
+.eqp-zone {
+  padding: 0 .35em;
+  border: 1px solid color-mix(in srgb, var(--nat) 55%, transparent);
+  border-radius: 999px;
+  color: var(--nat);
+  font-size: .82em;
+  white-space: nowrap;
+}
+
+.eqp-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: .18em;
+  padding: .35em .6em .4em;
+  overflow: hidden;
+}
+
+.eqp-stat { display: flex; gap: .35em; }
+.eqp-stat__icon { flex-shrink: 0; }
+.eqp-stat__val { min-width: 0; }
+.eqp-stat__note {
+  display: block;
+  color: rgba(42,34,24,0.6);
+  font-size: .85em;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.eqp-card__desc {
+  margin: .25em 0 0;
+  color: rgba(42,34,24,0.72);
+  font-size: .9em;
+  font-style: italic;
+}
+
+/* Mécanique : la prose du vault. Le liseré rappelle qu'elle n'est pas branchée
+   dans le moteur — les champs structurés au-dessus, eux, le sont. */
+.eqp-card__mech {
+  flex-shrink: 0;
+  padding: .35em .6em .4em;
+  border-top: 1px dashed rgba(42,34,24,0.35);
+  background: rgba(0,0,0,0.05);
+  font-size: .92em;
+}
+.eqp-card__mech.is-wired { border-top-style: solid; }
+.eqp-card__unwired {
+  display: block;
+  margin-top: .15em;
+  color: rgba(42,34,24,0.55);
+  font-size: .82em;
+  font-style: italic;
+}
+
+/* ── Étroit ──────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .eqp { padding: 1rem 1rem 3rem; }
+  .eqp-grid { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
+}

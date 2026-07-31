@@ -32,6 +32,8 @@ import { loadPlayerActionDefs, loadDisciplineActionDefs } from './actions-data'
 import { loadGuardDefs } from './guards-data'
 import { applyTraitOverlays } from './traits'
 import { rollSubstitutionRank, reactionGrants } from './perks'
+import type { AttackKind } from '../equipment/types'
+import { hasEquipment, availableAttacks, reachFor, minRangeFor } from '../equipment/inventory'
 
 // Grammaire et interpréteur déclaratifs : ré-exportés depuis effect-ops.ts
 // (les issues elles-mêmes vivent dans data/player_actions.yaml).
@@ -65,23 +67,34 @@ export interface ActionDef {
   /** Card typing (shared CardTag vocabulary, same as adversary cards). */
   tags:          CardTag[]
   /**
-   * How far the blow carries, in cases (1 = adjacent, 2 = arme d'allonge).
+   * Portée par DÉFAUT du coup, en cases (1 = au contact).
    *
-   * ⚠️ TEMPORAIRE. A character's reach is a property of the WEAPON, not of the
-   * action — the same Attaque armée is reach 1 with a dagger and reach 2 with a
-   * hast. Pinning it to the action is a stopgap until the weapons chantier
-   * (todo #18) gives characters equipment; it is the same shortcut that makes
-   * Attaque armée roll Puissance for everyone, rapier or not.
+   * La portée réelle vient de l'ARME dès que le porteur en a une (cf.
+   * `attackKind` et `actorReach`) : la même Attaque armée porte à 1 avec une
+   * dague et à 3 avec une lance. Cette valeur reste le repli des fiches dont
+   * l'équipement n'est pas modélisé, et la portée propre des actions qui ne
+   * passent par aucune arme (Attaque à mains nues, Charge, sorts).
    *
-   * ABSENT = ungated (social actions: the rules give no shouting distance).
+   * ABSENT = non gâté (actions sociales : les règles ne donnent pas de portée
+   * de voix).
    */
   reach?:        number
   /**
-   * Minimum distance the weapon needs, in cases (§ equipement). A bow can't fire
-   * when engaged: minRange 1 → the target must be strictly farther than 1 case.
-   * Absent / 0 = no minimum (melee connects at adjacency). Future: from the weapon.
+   * Distance MINIMALE, en cases (§ equipement). Un arc ne tire pas au contact :
+   * minRange 1 → la cible doit être à strictement plus d'une case. Même règle
+   * de préséance que `reach` : l'arme l'emporte quand il y en a une.
    */
   minRange?:     number
+  /**
+   * Attaque d'arme que cette action DÉLIVRE (§ equipement, bandeau des familles :
+   * « une arme permettant les attaques vives donne accès à la Frappe vive »).
+   *
+   * PRÉSENTE = l'action exige une arme qui l'ouvre, et lui emprunte sa portée.
+   * Absente = l'action ne passe par aucune arme : l'Attaque à mains nues (c'est
+   * sa définition) et la Charge (c'est l'élan du corps qui porte) gardent la
+   * leur.
+   */
+  attackKind?:   AttackKind
   /**
    * Déclencheur ⚡ (§ defense_reactions.md). PRÉSENT = l'action est une RÉACTION :
    * elle ne fait jamais partie du plan de manche, elle est proposée quand
@@ -528,9 +541,43 @@ export function resolveMovementAction(
  * True if the combatant meets all prerequisites and conditions to use this action.
  * Does NOT check resource costs (see canAffordAction).
  */
+/**
+ * Enveloppe d'attaque effective d'un combattant pour une action donnée : la
+ * portée de son ARME quand il en a une qui délivre ce coup, sinon celle écrite
+ * sur l'action.
+ *
+ * C'est LE point où la portée cesse d'être une propriété de l'action. Toute
+ * lecture de `def.reach` sur une action offensive doit passer par ici — sans
+ * quoi une lance frapperait à une case comme une dague.
+ *
+ * Une fiche sans inventaire retombe intégralement sur les valeurs de l'action :
+ * c'est le repli qui garantit qu'aucun comportement ne change tant qu'aucune
+ * fiche n'est équipée.
+ */
+export function actorReach(
+  state: CombatantState,
+  def:   ActionDef,
+): { reach?: number; minRange?: number } {
+  const inv = state.char.inventory
+  if (def.attackKind == null || !hasEquipment(inv))
+    return { reach: def.reach, minRange: def.minRange }
+
+  const reach = reachFor(inv, def.attackKind)
+  // Aucune arme en main n'ouvre ce coup : `canUseAction` l'a déjà écarté. On
+  // retombe sur la portée de l'action plutôt que de renvoyer une portée nulle,
+  // qui ferait silencieusement rater tous les coups au lieu de les interdire.
+  if (reach == null) return { reach: def.reach, minRange: def.minRange }
+  return { reach, minRange: minRangeFor(inv, def.attackKind) }
+}
+
 export function canUseAction(state: CombatantState, actionId: ActionId): boolean {
   if (isDefeated(state)) return false
   const def = ACTION_DEFS[actionId]
+  // Il faut une arme qui délivre ce coup — une lame courte ne fait pas de
+  // Frappe brutale, un arc ne frappe pas au corps à corps. Sans inventaire
+  // modélisé, aucune restriction : la fiche n'a pas encore d'armes.
+  if (def.attackKind != null && hasEquipment(state.char.inventory) &&
+      !availableAttacks(state.char.inventory).has(def.attackKind)) return false
   // Carte de discipline : réservée à qui possède la discipline (≥ 1 rang).
   if (def.discipline && (state.char.disciplines?.[def.discipline] ?? 0) < 1) return false
   if (def.prerequisite && state.skills[def.prerequisite.skill] < def.prerequisite.minValue) return false

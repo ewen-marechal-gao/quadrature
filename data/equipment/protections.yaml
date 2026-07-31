@@ -1,0 +1,134 @@
+# 🛡️ Protections — source machine
+#
+# Projection des tableaux « Matériel » (Tête, Torse, Jambes) de
+# rules/fr/core/equipement.md, plus le bouclier.
+#
+# ── Deux protections qui ne fonctionnent PAS pareil ──────────────────────────
+#  · ARMURE (`kind: armor`) — un STOCK qui se vide. Chaque point absorbe une 💔
+#    et ne revient pas : le vault dit « ignorer les PREMIÈRES blessures graves »
+#    (ressources.md), et le moteur décrémente sans jamais restaurer. Une armure
+#    lourde, c'est 4 blessures graves évitées sur TOUT le combat.
+#  · BOUCLIER (`kind: shield`) — une protection qui REVIENT à chaque manche.
+#
+# ⚠️ Ces deux régimes ne s'échangent pas à valeur égale : un écu à 1🛡️/manche
+# rattrape un harnois complet (4🛡️) dès la manche 4 pour un quart des 🔳. La
+# contrepartie est une MAIN — donc pas d'arme à deux mains, pas de combat à deux
+# armes. Reste à mesurer au banc : si l'écu domine, les leviers seront un
+# plafond par combat ou un rafraîchissement conditionné à la déclaration d'un
+# Blocage. Rien n'est ajusté ici avant d'avoir la courbe.
+#
+# ── Point d'INFÉRENCE ────────────────────────────────────────────────────────
+# Le heaume et les jambières renforcées portent « Bonus de protection +🛡️ » sans
+# valeur chiffrée. On lit 1 chacun, ce qui porte le maximum théorique à 6 (4 au
+# torse + 1 + 1). À confirmer : c'est beaucoup pour un stock qui ne se recharge
+# pas, mais c'est ce que le vault écrit.
+
+items:
+  # ── Torse : les armures ────────────────────────────────────────────────────
+
+  technical-garment:
+    kind: armor
+    vaultRow: Vêtement technique
+    name: { fr: "Vêtement technique" }
+    size: normal
+    slots: 1
+    zones: [body]
+    protection: 1
+    pockets: 2
+
+  light-armor:
+    kind: armor
+    vaultRow: Armure légère
+    name: { fr: "Armure légère" }
+    size: normal
+    slots: 2
+    zones: [body]
+    protection: 2
+    pockets: 2
+
+  medium-armor:
+    kind: armor
+    vaultRow: Armure moyenne
+    name: { fr: "Armure moyenne" }
+    size: normal
+    slots: 3
+    zones: [body]
+    protection: 3
+    pockets: 1
+
+  heavy-armor:
+    kind: armor
+    vaultRow: Armure lourde
+    name: { fr: "Armure lourde" }
+    size: normal
+    slots: 4
+    zones: [body]
+    protection: 4
+
+  # ── Mains : le bouclier ────────────────────────────────────────────────────
+
+  buckler:
+    kind: shield
+    name: { fr: "Écu" }
+    identity: { fr: "Standard" }
+    description:
+      {
+        fr: "Un bouclier de taille moyenne, sanglé à l'avant-bras : de quoi effacer un coup par échange sans immobiliser tout à fait le bras.",
+      }
+    size: normal
+    slots: 1
+    zones: [hands]
+    protectionPerRound: 1
+    canBlock: true
+
+  # ── Tête ───────────────────────────────────────────────────────────────────
+
+  helm:
+    kind: gear
+    vaultRow: Heaume
+    name: { fr: "Heaume" }
+    size: normal
+    slots: 1
+    zones: [head]
+    protection: 1
+    mechanic: { fr: "Bonus de protection +🛡️" }
+
+  hood:
+    kind: gear
+    vaultRow: Capuche
+    name: { fr: "Capuche" }
+    size: normal
+    slots: 1
+    zones: [head]
+    mechanic: { fr: "Confère 🟩 contre l'aveuglement" }
+
+  hat:
+    kind: gear
+    vaultRow: Chapeau
+    name: { fr: "Chapeau" }
+    size: small
+    slots: 1
+    zones: [head]
+    mechanic: { fr: "Confère … un style certain" }
+
+  # ── Jambes et pieds ────────────────────────────────────────────────────────
+
+  reinforced-greaves:
+    kind: gear
+    vaultRow: Jambières renforcées
+    name: { fr: "Jambières renforcées" }
+    size: normal
+    slots: 1
+    zones: [legs]
+    protection: 1
+    mechanic: { fr: "Bonus de protection +🛡️" }
+
+  light-boots:
+    kind: gear
+    vaultRow: Bottes légères
+    name: { fr: "Bottes légères" }
+    size: normal
+    slots: 1
+    zones: [legs]
+    advantageOn: [mobility]
+    mechanic: { fr: "Confère 🟩 sur les actions de course" }

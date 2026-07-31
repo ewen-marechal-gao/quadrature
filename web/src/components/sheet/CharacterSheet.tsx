@@ -21,6 +21,7 @@ import "@/app/sheet.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCharacter } from "@/lib/character/useCharacter";
 import { localize, type Locale, type LocalizedString } from "@/lib/nav";
+import { TopBar } from "@/components/TopBar";
 import { CharacterMenu } from "./CharacterMenu";
 import { SHEET_LABELS } from "./labels";
 import { PageBody } from "./PageBody";
@@ -82,17 +83,26 @@ export function CharacterSheet({ locale }: { locale: Locale }) {
 
   if (!ready) {
     return (
-      <div className="sheet-tool flex min-h-screen items-center justify-center">
-        <p className="font-antiqua text-parchment/70">{t(SHEET_LABELS.loading)}</p>
+      <div className="sheet-tool flex h-screen flex-col overflow-hidden">
+        <TopBar locale={locale} page="Personnage" />
+        <div className="flex flex-1 items-center justify-center">
+          <p className="font-antiqua text-parchment/70">{t(SHEET_LABELS.loading)}</p>
+        </div>
       </div>
     );
   }
 
+  /* `h-screen` et non `min-h-screen` : la feuille se met à l'échelle pour tenir
+     dans la place disponible (cf. `compute` ci-dessus), ce qui suppose une
+     hauteur CONTRAINTE. Avec un simple minimum, le conteneur grandissait de la
+     hauteur de la barre au lieu de faire rétrécir la page. L'impression annule
+     tout cela (sheet.css : height auto !important). */
   return (
-    <div className="sheet-tool flex min-h-screen flex-col">
+    <div className="sheet-tool flex h-screen flex-col overflow-hidden">
+      <TopBar locale={locale} page="Personnage" section={current?.name || undefined} />
+
       <SheetToolbar
         locale={locale}
-        name={current?.name ?? ""}
         hasCharacter={!!current}
         onNew={createCharacter}
         onDuplicate={duplicateCurrent}

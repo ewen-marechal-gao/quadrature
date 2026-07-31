@@ -108,7 +108,23 @@ Une fiche porte en plus, optionnellement :
 - **`traits`** — atouts de socle (§ traits.md), débloqués aux rangs 3/5 d'une compétence ;
 - **`disciplines`** — rang investi dans une discipline hors socle (`{ fencing: 1 }`) ;
 - **`perks`** — atouts de discipline (les Formes, Bottes…) ;
-- **`skillTags`** — choix de build enregistrés (arme de prédilection, style : `favweapon-broad`, `style-duelist`).
+- **`skillTags`** — choix de build enregistrés (arme de prédilection, style : `favweapon-broad`, `style-duelist`) ;
+- **`inventory.worn`** — équipement porté, par zone du corps (§ core/equipement.md) :
+
+  ```yaml
+  inventory:
+    worn:
+      hands: [scimitar]
+      body:  [light-armor]
+      waist: [quiver]
+  ```
+
+  Les ids viennent de `data/equipment/` (armes, protections, matériel). Tout ce
+  qui s'en déduit est **recalculé** : Protection 🛡️, portée de chaque attaque,
+  attaques ouvertes, Gardes disponibles, encombrement. Une fiche **sans**
+  `worn` retombe sur le comportement d'avant le modèle d'équipement — portées
+  lues sur l'action, aucune attaque gâtée, et la forme héritée
+  `inventory.protection: N` toujours honorée.
 
 `validateCharacter` refuse toute fiche incohérente : un perk dont les prérequis ne
 sont pas tenus, un choix d'arme non résolu, un rang de discipline au-delà du cap

@@ -1,3 +1,5 @@
+import type { Inventory } from '../equipment/inventory'
+
 /** All 10 characteristic names */
 export type CharacteristicName =
   // Corps (Body)
@@ -102,8 +104,18 @@ export interface Character {
    * Base protection 🛡️ from armor / equipment.
    * Each point absorbs one incoming heavy wound 💔; defaults to 0 if absent.
    * Hemorrhage bypasses this protection entirely.
+   *
+   * ⚠️ Saisie DIRECTE, héritée d'avant le modèle d'équipement. Elle n'est lue
+   * que si la fiche ne porte pas d'`inventory` : dès qu'un inventaire existe,
+   * la Protection se DÉRIVE des armures portées (cf. `equipmentProtection`).
    */
   protection?: number
+  /**
+   * Équipement porté (§ core/equipement.md) — objets par zone du corps.
+   * Absent = équipement non modélisé : le moteur se replie sur le comportement
+   * d'avant le chantier (portées lues sur l'action, aucune attaque gâtée).
+   */
+  inventory?: Inventory
 }
 
 /** Stats computed from the character sheet — never stored, always derived */

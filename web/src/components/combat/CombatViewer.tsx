@@ -26,21 +26,19 @@ import type { CombatCards } from "@/lib/combat-cards";
 import type { ActionCard as CardData } from "@/lib/cards";
 import { actionLabel, statusLabel, describeEffect, mentalIcon } from "@/lib/combat-labels";
 import { ActionCard } from "@/components/ActionCard";
-import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { TopBar } from "@/components/TopBar";
 import "@/app/combat.css";
 import "@/app/cards.css";
 
-/** Topbar façon shell du livre : retour landing (logo) + fil vers /encounters. */
+/** Fil de la rubrique : le nom du combat, sous une rubrique cliquable. */
 function ViewerTopBar({ locale, title }: { locale: Locale; title: string }) {
   return (
-    <header className="top-bar">
-      <Link href={`/${locale}/`} className="top-bar-logo">Quadrature</Link>
-      <span className="top-bar-sep">—</span>
-      <Link href={`/${locale}/encounters/`} className="top-bar-book">Rencontres</Link>
-      <span className="top-bar-sep">·</span>
-      <span className="top-bar-title">{title}</span>
-      <LocaleSwitcher locale={locale} />
-    </header>
+    <TopBar
+      locale={locale}
+      page="Rencontres"
+      pageHref={`/${locale}/encounters/`}
+      section={title}
+    />
   );
 }
 

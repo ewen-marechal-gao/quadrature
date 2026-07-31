@@ -9,9 +9,11 @@
  */
 
 import { useMemo, useState, useCallback } from "react";
-import Link from "next/link";
 import type { ActionCard as Card, CardFamily, CardType } from "@/lib/cards";
+import type { Locale } from "@/lib/nav";
 import { ActionCard } from "@/components/ActionCard";
+import { TopBar } from "@/components/TopBar";
+import { ToolBar, ToolChip, ToolGroup, ToolSearch } from "@/components/ToolBar";
 
 const FAMILY_LABELS: Record<CardFamily, string> = {
   melee:      "Mêlée",
@@ -62,7 +64,7 @@ function buildSheets(cards: Card[], selection: Map<string, number>): Card[][] {
   return sheets;
 }
 
-export function CardBrowser({ cards, locale }: { cards: Card[]; locale: string }) {
+export function CardBrowser({ cards, locale }: { cards: Card[]; locale: Locale }) {
   const [query, setQuery] = useState("");
   const [familyFilter, setFamilyFilter] = useState<CardFamily | null>(null);
   const [typeFilter, setTypeFilter] = useState<CardType | null>(null);
@@ -132,103 +134,104 @@ export function CardBrowser({ cards, locale }: { cards: Card[]; locale: string }
     <>
       {/* ── Interface écran ─────────────────────────────────────────────── */}
       <div className="cards-app" data-eco={ecoMode || undefined}>
-        <header className="cards-bar">
-          <Link href={`/${locale}/`} className="cards-back" title="Retour à l'accueil">
-            ←
-          </Link>
-          <span className="cards-title">Cartes d'action</span>
+        <TopBar
+          locale={locale}
+          page="Cartes d'action"
+          sticky
+          actions={
+            <div className="cards-print-summary">
+              {totalSelected > 0 ? (
+                <>
+                  <span>
+                    {totalSelected} carte{totalSelected > 1 ? "s" : ""} ·{" "}
+                    {pageCount} page{pageCount > 1 ? "s" : ""} A4
+                  </span>
+                  <label
+                    className="cards-eco-toggle"
+                    title="Fond des cartes blanc — économise l'encre"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={ecoMode}
+                      onChange={(e) => setEcoMode(e.target.checked)}
+                    />
+                    Mode éco
+                  </label>
+                  <button
+                    className="cards-btn cards-btn-clear"
+                    onClick={() => setSelection(new Map())}
+                  >
+                    Vider
+                  </button>
+                  <button className="cards-btn" onClick={() => window.print()}>
+                    🖨 Imprimer
+                  </button>
+                </>
+              ) : (
+                <span className="cards-hint">
+                  Sélectionnez des cartes pour les imprimer (8 par page A4)
+                </span>
+              )}
+            </div>
+          }
+        />
 
-          <input
-            type="search"
-            className="cards-search"
-            placeholder="Rechercher une carte…"
+        <ToolBar sticky ariaLabel="Filtres des cartes">
+          <ToolSearch
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Rechercher une carte"
+            onChange={setQuery}
+            placeholder="Rechercher une carte…"
+            ariaLabel="Rechercher une carte"
           />
 
-          <div className="cards-print-summary">
-            {totalSelected > 0 ? (
-              <>
-                <span>
-                  {totalSelected} carte{totalSelected > 1 ? "s" : ""} ·{" "}
-                  {pageCount} page{pageCount > 1 ? "s" : ""} A4
-                </span>
-                <label
-                  className="cards-eco-toggle"
-                  title="Fond des cartes blanc — économise l'encre"
-                >
-                  <input
-                    type="checkbox"
-                    checked={ecoMode}
-                    onChange={(e) => setEcoMode(e.target.checked)}
-                  />
-                  Mode éco
-                </label>
-                <button
-                  className="cards-btn cards-btn-clear"
-                  onClick={() => setSelection(new Map())}
-                >
-                  Vider
-                </button>
-                <button className="cards-btn" onClick={() => window.print()}>
-                  🖨 Imprimer
-                </button>
-              </>
-            ) : (
-              <span className="cards-hint">
-                Sélectionnez des cartes pour les imprimer (8 par page A4)
-              </span>
-            )}
-          </div>
-        </header>
-
-        <div className="cards-filters">
-          {(Object.keys(TYPE_LABELS) as CardType[]).map((t) => (
-            <button
-              key={t}
-              className={`cards-chip ${typeFilter === t ? "cards-chip--on" : ""}`}
-              onClick={() => setTypeFilter(typeFilter === t ? null : t)}
-            >
-              {TYPE_LABELS[t]}
-            </button>
-          ))}
-          <button
-            className={`cards-chip ${universalOnly ? "cards-chip--on" : ""}`}
-            onClick={() => setUniversalOnly(!universalOnly)}
-            title="Actions accessibles sans prérequis de compétence"
-          >
-            Universel
-          </button>
-          <span className="cards-filter-sep" />
-          {families.map((f) => (
-            <button
-              key={f}
-              className={`cards-chip ${familyFilter === f ? "cards-chip--on" : ""}`}
-              onClick={() => setFamilyFilter(familyFilter === f ? null : f)}
-            >
-              {FAMILY_LABELS[f] ?? f}
-            </button>
-          ))}
-        </div>
-
-        {/* Seconde ligne : filtres par DISCIPLINE (multi-sélection). Vide = tout
-            afficher ; sinon, seules les cartes des disciplines cochées. Absente
-            s'il n'existe aucune carte de discipline. */}
-        {disciplines.length > 0 && (
-          <div className="cards-filters cards-filters--disciplines">
-            {disciplines.map((d) => (
-              <button
-                key={d.id}
-                className={`cards-chip ${disciplineFilter.has(d.id) ? "cards-chip--on" : ""}`}
-                onClick={() => toggleDiscipline(d.id)}
-                aria-pressed={disciplineFilter.has(d.id)}
+          <ToolGroup label="Type">
+            {(Object.keys(TYPE_LABELS) as CardType[]).map((t) => (
+              <ToolChip
+                key={t}
+                on={typeFilter === t}
+                onClick={() => setTypeFilter(typeFilter === t ? null : t)}
               >
-                {d.label}
-              </button>
+                {TYPE_LABELS[t]}
+              </ToolChip>
             ))}
-          </div>
-        )}
+            <ToolChip
+              on={universalOnly}
+              onClick={() => setUniversalOnly(!universalOnly)}
+              title="Actions accessibles sans prérequis de compétence"
+            >
+              Universel
+            </ToolChip>
+          </ToolGroup>
+
+          <ToolGroup label="Famille">
+            {families.map((f) => (
+              <ToolChip
+                key={f}
+                on={familyFilter === f}
+                onClick={() => setFamilyFilter(familyFilter === f ? null : f)}
+              >
+                {FAMILY_LABELS[f] ?? f}
+              </ToolChip>
+            ))}
+          </ToolGroup>
+
+          {/* Filtres par DISCIPLINE (multi-sélection). Vide = tout afficher ;
+              sinon, seules les cartes des disciplines cochées. Groupe absent
+              s'il n'existe aucune carte de discipline. */}
+          {disciplines.length > 0 && (
+            <ToolGroup label="Discipline">
+              {disciplines.map((d) => (
+                <ToolChip
+                  key={d.id}
+                  on={disciplineFilter.has(d.id)}
+                  onClick={() => toggleDiscipline(d.id)}
+                >
+                  {d.label}
+                </ToolChip>
+              ))}
+            </ToolGroup>
+          )}
+        </ToolBar>
 
         <main className="cards-gallery">
           {visible.map((card) => {

@@ -20,6 +20,11 @@ import { useMemo, useState } from "react";
 import type {
   TraitCharGroup, TraitEntry, ReactiveModeGrant, CostDeltaGrant,
 } from "@/lib/traits";
+import type { Locale } from "@/lib/nav";
+import { TopBar } from "@/components/TopBar";
+import {
+  ToolBar, ToolChip, ToolGroup, ToolSearch, ToolSpacer, ToolToggle, ToolValue,
+} from "@/components/ToolBar";
 import "@/app/traits.css";
 
 /** Déclencheurs ⚡ — mêmes libellés que le visualiseur de combat. */
@@ -37,16 +42,6 @@ const SCOPE_LABEL: Record<string, string> = {
 };
 
 type KindFilter = "all" | "active" | "passive";
-
-/* Chaînes d'en-tête — hors JSX : elles portent des apostrophes, des « ; » et des
- * pictogrammes que le collage JSX découperait au fil des retours à la ligne. */
-const INTRO = (total: number) =>
-  `${total} traits. Un trait s'acquiert aux rangs 3 et 5 d'une compétence — plusieurs `
-  + `en proposent trois pour deux emplacements : on choisit. `
-  + `⚒️ modifie une action précise ; ♾️ agit en permanence.`;
-
-const WIRED_NOTE = (n: number) =>
-  `${n} sont branchés dans le simulateur — les autres n'ont encore que leur texte.`;
 
 /** Coût en pictogrammes : 2⚫ 1⚡ 1💧. Vide si le coût est nul. */
 function costPills(cost: { actions?: number; reactions?: number; fatigue?: number }): string[] {
@@ -75,19 +70,15 @@ function matches(t: TraitEntry, needle: string): boolean {
 }
 
 export function TraitsBrowser({
-  groups, total,
+  groups, total, locale,
 }: {
   groups: TraitCharGroup[];
   total: number;
+  locale: Locale;
 }) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<KindFilter>("all");
   const [wiredOnly, setWiredOnly] = useState(false);
-
-  const wiredCount = useMemo(
-    () => groups.flatMap((g) => g.skills).flatMap((s) => s.traits).filter((t) => t.grants).length,
-    [groups],
-  );
 
   // Filtrage : on reconstruit l'arbre en élaguant les branches devenues vides.
   const shown = useMemo(() => {
@@ -113,49 +104,41 @@ export function TraitsBrowser({
   );
 
   return (
-    <main className="trt">
-      <header className="trt-head">
-        <h1>Traits</h1>
-        <p className="trt-sub">{INTRO(total)}</p>
-        <p className="trt-sub trt-sub--wired">{WIRED_NOTE(wiredCount)}</p>
-      </header>
+    <div className="book-app">
+      <TopBar locale={locale} page="Traits" />
 
-      <div className="trt-filters">
-        <input
-          type="search"
-          className="trt-search"
-          placeholder="Rechercher un trait, une action, un effet…"
+      <ToolBar ariaLabel="Filtres des traits">
+        <ToolSearch
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Rechercher un trait"
+          onChange={setQuery}
+          placeholder="Rechercher un trait, une action, un effet…"
+          ariaLabel="Rechercher un trait"
         />
-        <div className="trt-kinds" role="group" aria-label="Type de trait">
+
+        <ToolGroup label="Type" ariaLabel="Type de trait">
           {([
             ["all", "Tous"],
             ["active", "⚒️ Actifs"],
             ["passive", "♾️ Passifs"],
           ] as const).map(([id, label]) => (
-            <button
-              key={id}
-              className={kind === id ? "trt-kind is-on" : "trt-kind"}
-              onClick={() => setKind(id)}
-              aria-pressed={kind === id}
-            >
+            <ToolChip key={id} on={kind === id} onClick={() => setKind(id)}>
               {label}
-            </button>
+            </ToolChip>
           ))}
-        </div>
-        <label className="trt-toggle">
-          <input
-            type="checkbox"
-            checked={wiredOnly}
-            onChange={(e) => setWiredOnly(e.target.checked)}
-          />
-          Simulés seulement
-        </label>
-        <span className="trt-count">{shownCount} / {total}</span>
-      </div>
+        </ToolGroup>
 
+        <ToolGroup>
+          <ToolToggle checked={wiredOnly} onChange={setWiredOnly}>
+            Simulés seulement
+          </ToolToggle>
+        </ToolGroup>
+
+        <ToolSpacer />
+        <ToolValue>{shownCount} / {total}</ToolValue>
+      </ToolBar>
+
+      <main className="trt">
+        <div className="trt-inner">
       {shown.length > 1 && (
         <nav className="trt-jump" aria-label="Aller à une caractéristique">
           {shown.map((c) => (
@@ -191,7 +174,9 @@ export function TraitsBrowser({
           </section>
         ))
       )}
-    </main>
+        </div>
+      </main>
+    </div>
   );
 }
 

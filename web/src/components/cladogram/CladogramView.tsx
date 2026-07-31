@@ -15,9 +15,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@/app/cladogram.css";
 import type { BiomeLetter, CladoNode, CladogramData } from "@/lib/cladogram";
+import type { Locale } from "@/lib/nav";
 import { ancestryOf, computeLayout } from "@/lib/cladogram-layout";
 import { type Anchor, lettersOf } from "./shared";
 import { usePanZoom, type StageSize } from "./usePanZoom";
+import { TopBar } from "@/components/TopBar";
 import { Toolbar } from "./Toolbar";
 import { NodeView } from "./NodeView";
 import { MutationBadge } from "./MutationBadge";
@@ -31,7 +33,7 @@ export function CladogramView({
   adversaryByUid,
 }: {
   data: CladogramData;
-  locale: string;
+  locale: Locale;
   /** uid du nœud → id de la fiche d'adversaire qui en dérive. */
   adversaryByUid: Record<string, string>;
 }) {
@@ -149,8 +151,9 @@ export function CladogramView({
 
   return (
     <div className="clado-app">
+      <TopBar locale={locale} page="Évolution" />
+
       <Toolbar
-        locale={locale}
         biomeFilter={biomeFilter}
         onToggleBiome={toggleBiome}
         showMut={showMut}

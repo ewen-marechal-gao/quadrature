@@ -17,7 +17,9 @@ import { SITE_URL } from "@/lib/site";
 export const dynamic = "force-static";
 
 /** Rubriques de premier niveau, hors livres. `trailingSlash: true` oblige. */
-const SECTIONS = ["", "cartes/", "traits/", "adversaires/", "evolution/", "personnage/"];
+const SECTIONS = [
+  "", "cartes/", "traits/", "equipement/", "adversaires/", "evolution/", "personnage/",
+];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();

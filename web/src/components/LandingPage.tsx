@@ -99,6 +99,17 @@ export function LandingPage({ locale }: Props) {
             </Link>
           )}
           {localeEnabled && (
+            <Link href={`/${locale}/equipement/`} className="landing-book-card">
+              <span className="landing-book-title">Équipement</span>
+              <span className="landing-book-subtitle">Outil de table</span>
+              <span className="landing-book-desc">
+                Parcourez le catalogue d&apos;objets : armes, armures, conteneurs
+                et consommables, en cartes prêtes à consulter.
+              </span>
+              <span className="landing-book-arrow">→</span>
+            </Link>
+          )}
+          {localeEnabled && (
             <Link href={`/${locale}/evolution/`} className="landing-book-card">
               <span className="landing-book-title">Évolution</span>
               <span className="landing-book-subtitle">Le monde d'Aeonir</span>

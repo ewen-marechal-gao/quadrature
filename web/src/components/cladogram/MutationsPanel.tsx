@@ -29,7 +29,7 @@ export function MutationsPanel({ mutations, counts, focusMut, onPick, onClose }:
     <aside className="clado-mutpanel" data-interactive aria-label="Registre des mutations d'Aeonir">
       <div className="clado-mutpanel-head">
         <span className="clado-mutpanel-title">Mutations d'Aeonir</span>
-        <button className="clado-btn clado-iconbtn" onClick={onClose} aria-label="Fermer">
+        <button className="tool-btn tool-btn--icon" onClick={onClose} aria-label="Fermer">
           ×
         </button>
       </div>

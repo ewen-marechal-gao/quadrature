@@ -1,0 +1,197 @@
+# 🎒 Conteneurs, consommables et divers — source machine
+#
+# Projection des tableaux « Matériel » (Torse, Dos, Taille, Petits objets) de
+# rules/fr/core/equipement.md.
+#
+# ── 🔸 et ▫️ ne sont pas deux tailles, mais deux ACCÈS ───────────────────────
+# Les deux sont `size: small`. Ce qui les sépare vit dans le conteneur qui les
+# fournit : `provides.accessible: true` = 🔸 poche, utilisable en combat au coût
+# normal en PA ; `false` = ▫️ paquet, inaccessible tant qu'on n'a pas posé son
+# arme et fouillé. Un même sachet de munitions est jouable dans un carquois de
+# taille et dormant dans un grand carquois.
+#
+# ── Les porteurs d'armes ─────────────────────────────────────────────────────
+# `carries: weapon` rend DÉGAINABLE une arme rangée dans la zone. Sans fourreau
+# ni harnais, une arme au Dos est transportée, pas jouable : l'arc voyage
+# décordé, l'épée de rechange est sanglée dans son paquetage. C'est la lecture
+# littérale du vault (« Permet un accès à une arme en combat »), confirmée en
+# arbitrage — et elle rend l'exemple de Lena du vault fautif (arc long au Dos
+# sans harnais, mais elle tire) : à corriger dans la passe doc.
+#
+# ── Pas de champ `stock` sur les consommables ────────────────────────────────
+# Le Stock du vault n'est pas une propriété de l'objet : c'est le nombre
+# d'exemplaires identiques rangés dans l'inventaire. « Rations, Stock 3 » = trois
+# rations occupant trois ▫️ — exactement ce que dit « 1 Point de Stock actuel =
+# 🔸 ou ▫️ ». La jauge est émergente ; la stocker en double serait la première
+# désynchronisation à venir. La rédaction du vault sera reprise en conséquence.
+
+items:
+  # ── Conteneurs : Torse ─────────────────────────────────────────────────────
+
+  shoulder-satchel:
+    kind: container
+    vaultRow: Sacoche bandoulière
+    name: { fr: "Sacoche bandoulière" }
+    size: normal
+    slots: 1
+    zones: [body]
+    provides: { size: small, count: 2, accessible: false }
+
+  shoulder-pouches:
+    kind: container
+    vaultRow: Poches bandoulière
+    name: { fr: "Poches bandoulière" }
+    size: normal
+    slots: 1
+    zones: [body]
+    provides: { size: small, count: 1, accessible: true }
+
+  # ── Conteneurs : Dos ───────────────────────────────────────────────────────
+
+  backpack:
+    kind: container
+    vaultRow: Sac à dos
+    name: { fr: "Sac à dos" }
+    size: normal
+    slots: 1
+    zones: [back]
+    provides: { size: small, count: 3, accessible: false }
+
+  large-backpack:
+    kind: container
+    vaultRow: Grand sac à dos
+    name: { fr: "Grand sac à dos" }
+    size: normal
+    slots: 2
+    zones: [back]
+    provides: { size: small, count: 6, accessible: false }
+
+  weapon-harness:
+    kind: container
+    vaultRow: Harnais d'arme
+    name: { fr: "Harnais d'arme" }
+    size: normal
+    slots: 2
+    zones: [back]
+    carries: weapon
+    mechanic: { fr: "Permet un accès à une arme en combat (deux mains)" }
+
+  large-quiver:
+    kind: container
+    vaultRow: Grand Carquois
+    name: { fr: "Grand Carquois" }
+    size: normal
+    slots: 1
+    zones: [back]
+    provides: { size: small, count: 5, accessible: false }
+    carries: ammunition
+
+  cloak:
+    kind: gear
+    vaultRow: Cape
+    name: { fr: "Cape" }
+    size: normal
+    slots: 1
+    zones: [back]
+    advantageOn: [disguise]
+    mechanic: { fr: "Confère 🟩 en dissimulation" }
+
+  # ── Conteneurs : Taille ────────────────────────────────────────────────────
+
+  scabbard:
+    kind: container
+    vaultRow: Fourreau
+    name: { fr: "Fourreau" }
+    size: normal
+    slots: 1
+    zones: [back, waist]
+    carries: weapon
+    mechanic: { fr: "Permet un accès à une arme en combat (une main)" }
+
+  quiver:
+    kind: container
+    vaultRow: Carquois
+    name: { fr: "Carquois" }
+    size: normal
+    slots: 1
+    zones: [back, waist]
+    provides: { size: small, count: 3, accessible: true }
+    carries: ammunition
+
+  utility-belt:
+    kind: container
+    vaultRow: Ceinture d'accessoires
+    name: { fr: "Ceinture d'accessoires" }
+    size: normal
+    slots: 1
+    zones: [waist]
+    provides: { size: small, count: 2, accessible: true }
+
+  climbing-harness:
+    kind: gear
+    vaultRow: Baudrier et corde
+    name: { fr: "Baudrier et corde" }
+    size: normal
+    slots: 1
+    zones: [waist]
+    mechanic: { fr: "Confère 🟩 en escalade" }
+
+  # ── Conteneurs : Jambes ────────────────────────────────────────────────────
+
+  hidden-sheath:
+    kind: container
+    vaultRow: Fourreau dissimulé
+    name: { fr: "Fourreau dissimulé" }
+    size: normal
+    slots: 1
+    zones: [legs]
+    carries: weapon
+    mechanic: { fr: "Permet un accès à une lame courte en combat (une main)" }
+
+  # ── Petits objets (consommables) ───────────────────────────────────────────
+
+  waterskin:
+    kind: consumable
+    vaultRow: Outre d'eau
+    name: { fr: "Outre d'eau" }
+    size: small
+    slots: 1
+    zones: [back, waist, legs]
+    usage: { fr: "1 / jour" }
+
+  travel-ration:
+    kind: consumable
+    vaultRow: Ration de voyage
+    name: { fr: "Ration de voyage" }
+    size: small
+    slots: 1
+    zones: [back, waist, legs]
+    usage: { fr: "1 / jour" }
+
+  ammunition:
+    kind: consumable
+    vaultRow: Munition
+    name: { fr: "Munition" }
+    size: small
+    slots: 1
+    zones: [back, waist]
+    usage: { fr: "1 / combat" }
+
+  torch:
+    kind: consumable
+    vaultRow: Torche
+    name: { fr: "Torche" }
+    size: small
+    slots: 1
+    zones: [hands, back, waist]
+    usage: { fr: "1 / heure" }
+
+  first-aid-kit:
+    kind: consumable
+    vaultRow: Trousse de premiers soins
+    name: { fr: "Trousse de premiers soins" }
+    size: small
+    slots: 1
+    zones: [back, waist]
+    usage: { fr: "1 / carac" }
+    mechanic: { fr: "Confère 🟩 sur le jet de récupération" }

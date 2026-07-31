@@ -1,0 +1,424 @@
+# ⚔️ Armes — source machine
+#
+# Projection des tableaux « Famille d'armes » de rules/fr/core/equipement.md.
+# Mêmes conventions que player_actions.yaml et guards.yaml : clés anglaises,
+# chaînes Locale { fr, en? }, une entrée par ligne du vault.
+#
+# ── La PORTÉE est absolue ────────────────────────────────────────────────────
+# Le vault note les armes d'allonge en « Allonge N » — un BONUS. On stocke la
+# portée, en cases, 1 = au contact : Allonge 1 devient `reach: 2`. Une seule
+# échelle, aucune addition silencieuse à faire en aval. Les tableaux du vault
+# seront réécrits en « Portée » dans la passe doc.
+#
+# ── Ce que `attacks` veut dire ───────────────────────────────────────────────
+# Le bandeau du vault : « une arme permettant les attaques vives donne accès à
+# la Frappe vive ; toute arme tenue en main permet l'Attaque armée ». `attacks`
+# est donc la liste des actions que l'arme OUVRE à son porteur — c'est elle qui
+# remplace le `reach` codé sur l'action.
+#
+# ── Ce qui est branché, et ce qui ne l'est pas ───────────────────────────────
+# `reach`, `minRange`, `attacks`, `canParry`, `slots`, `zones` sont LUS par le
+# moteur. La colonne « Mécanique » est reportée verbatim dans `mechanic` mais
+# n'est PAS appliquée : sa grammaire (relances conditionnelles, riders d'issue,
+# modes ⛞) est le lot suivant. Une entrée avec `mechanic` et sans `grants` est
+# une mécanique déclarée, pas jouée — et le test de cohérence le vérifie.
+#
+# ── Deux points d'INFÉRENCE, à confirmer ─────────────────────────────────────
+#  1. Le tableau des armes d'allonge ne porte pas de colonne 🤲. On infère deux
+#     mains, sauf Lance (« Utilisable à une main », donc le vault le précise
+#     parce que c'est l'exception) et Javelot (arme de jet).
+#  2. « Faucheur » est à la fois une arme d'allonge et une espèce du bestiaire
+#     (data/bestiary/species/faucheur.yaml). L'id est `reaper-polearm` pour que
+#     les deux registres ne se marchent pas dessus.
+
+weapons:
+  # ── Étalon de non-régression ───────────────────────────────────────────────
+  # L'arme d'un personnage qui n'en déclare aucune. Elle reproduit EXACTEMENT le
+  # comportement d'avant le modèle d'équipement : portée 1, toutes les attaques
+  # de mêlée ouvertes, parade possible. Sans elle, introduire l'équipement
+  # désarmerait toutes les fiches existantes d'un coup.
+  generic-melee:
+    name: { fr: "Arme de mêlée" }
+    identity: { fr: "Générique" }
+    family: long-blades
+    slots: 1
+    zones: [hands]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+
+  # Même rôle côté tir : reprend les valeurs de simulation d'avant le chantier
+  # (portée 24 cases, pas de tir au contact). L'échelle de portée réelle des
+  # arcs est un sujet de design ouvert — les quatre arcs du vault attendent.
+  generic-bow:
+    name: { fr: "Arc" }
+    identity: { fr: "Générique" }
+    family: bows
+    # Le tableau des arcs ne porte pas de colonne 🤲 ; l'exemple travaillé du
+    # vault range « l'arc long en bandoulière » sur 1 🔳. On suit l'exemple :
+    # l'arc se tient à deux mains mais ne pèse qu'un emplacement.
+    slots: 1
+    zones: [hands, back]
+    reach: 24
+    minRange: 1
+    attacks: [ranged-quick, ranged-aimed]
+    canParry: false
+
+  # ── Lames courtes ──────────────────────────────────────────────────────────
+  # ✔️ Attaques en mêlée VIVES uniquement, sur une créature adjacente.
+  # ✔️ Utilisables en main gauche, l'attaque subit alors 🟥.
+
+  dagger:
+    vaultRow: Dague
+    name: { fr: "Dague" }
+    identity: { fr: "Offensive" }
+    family: short-blades
+    slots: 1
+    zones: [hands, waist, legs]
+    reach: 1
+    attacks: [armed, quick]
+    canParry: true
+    mechanic: { fr: "+1 **renforcer** 🟨 en attaque" }
+
+  main-gauche:
+    vaultRow: Main gauche
+    name: { fr: "Main gauche" }
+    identity: { fr: "Parade" }
+    family: short-blades
+    slots: 1
+    zones: [hands, waist]
+    reach: 1
+    attacks: [armed, quick]
+    canParry: true
+    mechanic: { fr: "+1 **renforcer** 🟨 en parade" }
+
+  dirk:
+    vaultRow: Poignard
+    name: { fr: "Poignard" }
+    identity: { fr: "Finesse" }
+    family: short-blades
+    slots: 1
+    zones: [hands, waist, legs]
+    reach: 1
+    attacks: [armed, quick]
+    canParry: true
+    mechanic: { fr: "+🟩 sur les **Frappes opportunistes**" }
+
+  misericorde:
+    vaultRow: Miséricorde
+    name: { fr: "Miséricorde" }
+    identity: { fr: "Anti-armure" }
+    family: short-blades
+    slots: 1
+    zones: [hands, waist, legs]
+    reach: 1
+    attacks: [armed, quick]
+    canParry: true
+    mechanic: { fr: "Ignore la **Protection 🛡️** si l'adversaire est À terre" }
+
+  katar:
+    vaultRow: Katar
+    name: { fr: "Katar" }
+    identity: { fr: "Puissante" }
+    family: short-blades
+    slots: 1
+    zones: [hands, waist]
+    reach: 1
+    # La seule lame courte qui ouvre la Frappe brutale — c'est sa mécanique.
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "Peut effectuer des attaques en mêlée puissantes" }
+
+  throwing-knife:
+    vaultRow: Couteau de lancer
+    name: { fr: "Couteau de lancer" }
+    identity: { fr: "Lancer" }
+    family: short-blades
+    slots: 1
+    zones: [hands, waist, legs]
+    reach: 1
+    # Le mode lancé (portée 6 m = 4 cases) attend le chantier des armes à
+    # distance : l'ouvrir ici donnerait un tir à toute lame courte de la fiche.
+    attacks: [armed, quick]
+    canParry: true
+    mechanic:
+      {
+        fr: "Peut effectuer une attaque à distance rapide avec une portée de 6m",
+      }
+
+  # ── Lames longues ──────────────────────────────────────────────────────────
+  # ✔️ Attaques en mêlée vives OU puissantes, sur une créature adjacente.
+  # `category` résout les armes de prédilection de l'Escrime (favweapon-*).
+
+  rapier:
+    vaultRow: Rapière
+    name: { fr: "Rapière" }
+    identity: { fr: "Riposte" }
+    family: long-blades
+    category: light
+    slots: 1
+    zones: [hands, waist, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "+1 relance sur riposte" }
+
+  estoc:
+    vaultRow: Estoc
+    name: { fr: "Estoc" }
+    identity: { fr: "Anti-armure" }
+    family: long-blades
+    category: light
+    slots: 1
+    zones: [hands, waist, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "**⛞** : Ignore la **Protection 🛡️**" }
+
+  short-sword:
+    vaultRow: Épée courte
+    name: { fr: "Épée courte" }
+    identity: { fr: "Défensive" }
+    family: long-blades
+    category: light
+    slots: 1
+    zones: [hands, waist, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "+1 **Relance** 🟨 sur **Parade ⚡**" }
+
+  sabre:
+    vaultRow: Sabre
+    name: { fr: "Sabre" }
+    identity: { fr: "Critique" }
+    family: long-blades
+    category: broad
+    slots: 1
+    zones: [hands, waist, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "**⛞** : inflige **🔻** si succès" }
+
+  scimitar:
+    vaultRow: Cimeterre
+    name: { fr: "Cimeterre" }
+    identity: { fr: "Pression" }
+    family: long-blades
+    category: broad
+    slots: 1
+    zones: [hands, waist, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "**⛞** : inflige 💧 si succès" }
+
+  long-sword:
+    vaultRow: Épée longue
+    name: { fr: "Épée longue" }
+    identity: { fr: "Fiable" }
+    family: long-blades
+    category: broad
+    slots: 1
+    zones: [hands, waist, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "+1 **Relance** 🟨 sur **Attaque armée**" }
+
+  bastard-sword:
+    vaultRow: Épée bâtarde
+    name: { fr: "Épée bâtarde" }
+    identity: { fr: "Polyvalente" }
+    family: long-blades
+    category: heavy
+    # 🤲 « 1/2 » au vault : on retient l'encombrement minimal, le bonus à deux
+    # mains relève de la mécanique (non branchée).
+    slots: 1
+    zones: [hands, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic:
+      {
+        fr: "Utilisée à 2 mains : +1 **Relance** 🟨 sur les attaques puissantes",
+      }
+
+  greatsword:
+    vaultRow: Épée à deux mains
+    name: { fr: "Épée à deux mains" }
+    identity: { fr: "Brise-garde" }
+    family: long-blades
+    category: heavy
+    slots: 2
+    zones: [hands, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "🟥 au jet de parade adverse sur les attaques puissantes" }
+
+  claymore:
+    vaultRow: Claymore
+    name: { fr: "Claymore" }
+    identity: { fr: "Brutale" }
+    family: long-blades
+    category: heavy
+    slots: 2
+    zones: [hands, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "**⛞** sur une attaque puissante : +💔 si succès" }
+
+  # ── Armes d'impact ─────────────────────────────────────────────────────────
+  # ✔️ Attaques en mêlée vives ou puissantes, sur une créature adjacente.
+  # ✔️ Brutalité : sacrifier un 🟦 active de puissants effets — TOUTES en ⛞.
+
+  mace:
+    vaultRow: Masse
+    name: { fr: "Masse" }
+    identity: { fr: "Déstabilisation" }
+    family: impact
+    slots: 1
+    zones: [hands, waist, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic:
+      { fr: "**⛞** sur une attaque puissante : adversaire à terre si succès" }
+
+  warhammer:
+    vaultRow: Marteau de guerre
+    name: { fr: "Marteau de guerre" }
+    identity: { fr: "Anti-armure" }
+    family: impact
+    slots: 1
+    zones: [hands, waist, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic:
+      {
+        fr: "**⛞** sur une attaque puissante : Ignore les effets de protection",
+      }
+
+  flail:
+    vaultRow: Fléau
+    name: { fr: "Fléau" }
+    identity: { fr: "Brise-garde" }
+    family: impact
+    slots: 1
+    zones: [hands, waist, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic:
+      { fr: "**⛞** sur une attaque puissante : Impossible de parer l'attaque" }
+
+  axe:
+    vaultRow: Hache
+    name: { fr: "Hache" }
+    identity: { fr: "Brutale" }
+    family: impact
+    slots: 1
+    zones: [hands, waist, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "**⛞** sur une attaque puissante : +💔 si succès" }
+
+  greataxe:
+    vaultRow: Grande hache
+    name: { fr: "Grande hache" }
+    identity: { fr: "Balayage" }
+    family: impact
+    slots: 2
+    zones: [hands, back]
+    reach: 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "**⛞** sur une attaque puissante : cible deux adversaires" }
+
+  # ── Armes d'allonge ────────────────────────────────────────────────────────
+  # ✔️ Attaques en mêlée VIVES sur les ennemis à portée.
+  # ✔️ Attaques puissantes uniquement en cas de Charge — condition non branchée,
+  #    d'où l'absence de `powerful` (sauf Hallebarde, qui l'a « toujours »).
+  # ❌ Pénalité de 🟥 pour attaquer des adversaires adjacents — non branchée.
+
+  javelin:
+    vaultRow: Javelot
+    name: { fr: "Javelot" }
+    identity: { fr: "Jet" }
+    family: polearms
+    slots: 1 # arme de jet : une main
+    zones: [hands, back, waist]
+    reach: 2 # vault : Allonge 1
+    attacks: [armed, quick]
+    canParry: true
+    mechanic: { fr: "Peut effectuer une attaque à distance, portée 20m" }
+
+  halberd:
+    vaultRow: Hallebarde
+    name: { fr: "Hallebarde" }
+    identity: { fr: "Maniabilité" }
+    family: polearms
+    slots: 2
+    zones: [hands, back]
+    reach: 2 # vault : Allonge 1
+    attacks: [armed, quick, powerful]
+    canParry: true
+    mechanic: { fr: "Peut toujours effectuer des attaques puissantes" }
+
+  spear:
+    vaultRow: Lance
+    name: { fr: "Lance" }
+    identity: { fr: "Polyvalence" }
+    family: polearms
+    slots: 1 # vault : « Utilisable à une main »
+    zones: [hands, back]
+    reach: 3 # vault : Allonge 2
+    attacks: [armed, quick]
+    canParry: true
+    mechanic: { fr: "Utilisable à une main" }
+
+  reaper-polearm:
+    vaultRow: Faucheur
+    name: { fr: "Faucheur" }
+    identity: { fr: "Contrôle" }
+    family: polearms
+    slots: 2
+    zones: [hands, back]
+    reach: 3 # vault : Allonge 2
+    attacks: [armed, quick]
+    canParry: true
+    mechanic:
+      { fr: "Peut mettre l'adversaire à Terre en cas d'attaque réussie" }
+
+  glaive:
+    vaultRow: Glaive
+    name: { fr: "Glaive" }
+    identity: { fr: "Pression" }
+    family: polearms
+    slots: 2
+    zones: [hands, back]
+    reach: 3 # vault : Allonge 2
+    attacks: [armed, quick]
+    canParry: true
+    mechanic: { fr: "Dégâts de fatigue supplémentaires" }
+
+  pike:
+    vaultRow: Pique
+    name: { fr: "Pique" }
+    identity: { fr: "Anti-charge" }
+    family: polearms
+    slots: 2
+    zones: [hands, back]
+    reach: 4 # vault : Allonge 3
+    attacks: [armed, quick]
+    canParry: true
+    mechanic:
+      {
+        fr: "+🟩 et +💔 contre une Charge — 🟥 en défense si la cible est à une case ou moins",
+      }

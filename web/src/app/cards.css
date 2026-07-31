@@ -11,46 +11,10 @@
   background: var(--book-bg);
 }
 
-/* Barre des cartes — socle commun défini avec .top-bar ; ici seuls les écarts. */
-.cards-bar {
-  gap: 14px;
-  position: sticky;
-  top: 0;
-}
-
-.cards-back {
-  color: var(--panel-muted);
-  text-decoration: none;
-  font-size: 1.15rem;
-  line-height: 1;
-  padding: 4px 8px;
-  border-radius: 3px;
-  transition: color 0.15s, background 0.15s;
-}
-.cards-back:hover { color: var(--brass-bright); background: var(--brass-faint); }
-
-.cards-title {
-  font-size: 1rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--brass);
-  white-space: nowrap;
-}
-
-.cards-search {
-  flex: 1;
-  max-width: 420px;
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  color: var(--panel-text);
-  background: rgba(0,0,0,0.35);
-  border: 1px solid var(--brass-border);
-  border-radius: 3px;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.cards-search:focus { border-color: var(--brass-strong); }
-.cards-search::placeholder { color: var(--panel-muted); }
+/* Les deux barres de la rubrique sont les barres communes : la `.top-bar`
+   (components/TopBar.tsx) porte l'identité et le résumé d'impression, la
+   `.tool-bar` la recherche et les filtres. Ne restent ici que les contrôles
+   propres à l'impression, que la barre d'outils commune n'a pas à connaître. */
 
 .cards-print-summary {
   margin-left: auto;
@@ -100,45 +64,9 @@
   background: #ffffff;
 }
 
-/* ─── Filtres ────────────────────────────────────────────────────────────── */
-
-.cards-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-}
-
-/* Seconde ligne (disciplines) : collée à la ligne famille au-dessus. */
-.cards-filters--disciplines {
-  padding-top: 0;
-}
-
-.cards-chip {
-  padding: 4px 12px;
-  font-size: 0.76rem;
-  letter-spacing: 0.05em;
-  color: var(--panel-muted);
-  background: none;
-  border: 1px solid var(--brass-border);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-.cards-chip:hover { color: var(--panel-text); border-color: var(--brass-subtle); }
-.cards-chip--on {
-  color: var(--on-brass);
-  background: var(--brass);
-  border-color: var(--brass);
-}
-
-.cards-filter-sep {
-  width: 1px;
-  height: 18px;
-  background: var(--panel-border);
-  margin: 0 4px;
-}
+/* Les filtres (type, famille, discipline) vivent dans la `.tool-bar` commune
+   (components/ToolBar.tsx). Ils avaient ici leurs propres pastilles arrondies,
+   seules de leur espèce sur le site — cf. app/toolbar.css. */
 
 /* ─── Galerie ────────────────────────────────────────────────────────────── */
 

@@ -29,7 +29,7 @@ import { loadAdversary, loadAdversaryFile } from './adversary/io'
 import type { AdversarySheet } from './adversary/types'
 import { initAdversary } from './adversary/combatant'
 import { selectTargetPart, cardMoveBudget } from './adversary/agent'
-import { ACTION_DEFS } from './combat/actions'
+import { ACTION_DEFS, actorReach, canUseAction } from './combat/actions'
 import { type Actor, isAdversaryActor, actorDefeated, actorStartRound } from './adversary/actor'
 import {
   planRoundActions, planRoundAI, makeGuardProvider,
@@ -573,7 +573,11 @@ function makeProfile(p: Participant, state: Actor): CombatProfile {
     const def = ACTION_DEFS[id]
     // Les réactions ⚡ ne définissent pas l'enveloppe d'attaque « en action ».
     if (!def || def.movement || def.trigger || def.reach == null || !def.tags.includes('offensive')) continue
-    if (def.reach > reach) { reach = def.reach; minRange = def.minRange ?? 0 }
+    // L'action que l'armement n'ouvre pas ne compte pas dans l'enveloppe : un
+    // porteur de dague n'a pas la portée d'une lance qu'il ne tient pas.
+    if (!canUseAction(state, id)) continue
+    const env = actorReach(state, def)
+    if (env.reach != null && env.reach > reach) { reach = env.reach; minRange = env.minRange ?? 0 }
   }
   const moveOf = (id: ActionId): number => {
     const b = ACTION_DEFS[id]?.moveBudget

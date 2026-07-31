@@ -1,16 +1,21 @@
 "use client";
 
 /**
- * Toolbar — barre d'outils du cladogramme : retour, filtre biome,
- * bascule du registre des mutations, contrôles de zoom.
+ * Toolbar — barre d'outils du cladogramme : filtre biome, bascule du registre
+ * des mutations, contrôles de zoom.
+ *
+ * Elle portait aussi une flèche de retour et le titre « Évolution — la vie
+ * d'Aeonir » : les deux doublaient la TopBar juste au-dessus, qui nomme la
+ * rubrique et ramène à l'accueil. Une barre d'outils ne dit pas où l'on est.
  */
 
-import Link from "next/link";
 import type { BiomeLetter } from "@/lib/cladogram";
+import {
+  ToolBar, ToolButton, ToolChip, ToolGroup, ToolSpacer, ToolValue,
+} from "@/components/ToolBar";
 import { BIOME_LETTERS, BIOME_NAMES } from "./shared";
 
 export interface ToolbarProps {
-  locale: string;
   biomeFilter: ReadonlySet<BiomeLetter>;
   onToggleBiome: (l: BiomeLetter) => void;
   showMut: boolean;
@@ -22,7 +27,6 @@ export interface ToolbarProps {
 }
 
 export function Toolbar({
-  locale,
   biomeFilter,
   onToggleBiome,
   showMut,
@@ -33,50 +37,38 @@ export function Toolbar({
   onFit,
 }: ToolbarProps) {
   return (
-    <header className="clado-bar">
-      <Link href={`/${locale}/`} className="clado-back" title="Retour à l'accueil" aria-label="Retour à l'accueil">
-        ←
-      </Link>
-      <span className="clado-title">Évolution — la vie d'Aeonir</span>
-
-      <span className="clado-bar-spacer" />
-
-      <div className="clado-group" role="group" aria-label="Filtre biome">
-        <span className="clado-label">Biome</span>
+    <ToolBar ariaLabel="Outils du cladogramme">
+      <ToolGroup label="Biome" ariaLabel="Filtre biome">
         {BIOME_LETTERS.map((L) => (
-          <button
+          <ToolChip
             key={L}
-            className={`clado-chip ${biomeFilter.has(L) ? "clado-chip--on" : ""}`}
+            on={biomeFilter.has(L)}
             onClick={() => onToggleBiome(L)}
             title={BIOME_NAMES[L]}
           >
             {L}
-          </button>
+          </ToolChip>
         ))}
-      </div>
+      </ToolGroup>
 
-      <div className="clado-group">
-        <button
-          className={`clado-btn ${showMut ? "clado-chip--on" : ""}`}
-          onClick={onToggleMut}
-          aria-pressed={showMut}
-        >
+      <ToolGroup>
+        <ToolChip on={showMut} onClick={onToggleMut}>
           Mutations
-        </button>
-      </div>
+        </ToolChip>
+      </ToolGroup>
 
-      <div className="clado-group" role="group" aria-label="Zoom">
-        <button className="clado-btn clado-iconbtn" onClick={onZoomOut} aria-label="Dézoomer">
+      <ToolSpacer />
+
+      <ToolGroup label="Zoom" first>
+        <ToolButton variant="icon" onClick={onZoomOut} ariaLabel="Dézoomer">
           −
-        </button>
-        <span className="clado-zoom-val">{Math.round(zoom * 100)}%</span>
-        <button className="clado-btn clado-iconbtn" onClick={onZoomIn} aria-label="Zoomer">
+        </ToolButton>
+        <ToolValue>{Math.round(zoom * 100)}%</ToolValue>
+        <ToolButton variant="icon" onClick={onZoomIn} ariaLabel="Zoomer">
           +
-        </button>
-        <button className="clado-btn" onClick={onFit}>
-          Ajuster
-        </button>
-      </div>
-    </header>
+        </ToolButton>
+        <ToolButton onClick={onFit}>Ajuster</ToolButton>
+      </ToolGroup>
+    </ToolBar>
   );
 }

@@ -38,5 +38,11 @@ export default async function TraitsPage({
 
   const traits = getAllTraits(locale);
 
-  return <TraitsBrowser groups={groupTraits(traits, locale)} total={traits.length} />;
+  return (
+    <TraitsBrowser
+      groups={groupTraits(traits, locale)}
+      total={traits.length}
+      locale={locale}
+    />
+  );
 }

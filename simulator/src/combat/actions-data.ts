@@ -17,6 +17,7 @@ import path from 'path'
 import { parse } from 'yaml'
 import type { CharacteristicName, SkillName, DisciplineId } from '../character/types'
 import type { ActionId, ActionCost, CardTag, StatusEffect, CombatantState, ActionTrigger } from './types'
+import type { AttackKind } from '../equipment/types'
 import {
   makeResolve, type ActionOutcome, type ActionOutcomes, type EffectOp,
 } from './effect-ops'
@@ -57,6 +58,11 @@ interface RawPlayerAction {
    * distance > 1 requise (pas de tir au contact).
    */
   minRange?:    number
+  /**
+   * Attaque d'arme délivrée par l'action — c'est elle qui va chercher la portée
+   * et la disponibilité dans l'armement du porteur (cf. ActionDef.attackKind).
+   */
+  attackKind?:  AttackKind
   /** Déclencheur ⚡ : présent = l'action est une RÉACTION (cf. ActionDef.trigger). */
   trigger?:     ActionTrigger
   prerequisite?: { skill: SkillName; minValue: number }
@@ -129,6 +135,7 @@ export function toActionDef(id: ActionId, raw: RawPlayerAction, locale: string):
     ...((raw.reach ?? raw.effectiveRange) != null && { reach: raw.reach ?? raw.effectiveRange }),
     // Portée MIN : un tir ne part pas au contact (§ equipement — arc engagé).
     ...(raw.minRange != null && { minRange: raw.minRange }),
+    ...(raw.attackKind && { attackKind: raw.attackKind }),
     ...(raw.trigger && { trigger: raw.trigger }),
     ...(raw.prerequisite && { prerequisite: raw.prerequisite }),
     mentalConditions: raw.mentalConditions ?? [],

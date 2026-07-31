@@ -19,7 +19,12 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // Types du simulateur, en LECTURE SEULE et en `import type` uniquement.
+      // Les imports de type s'effacent à la compilation : rien du simulateur
+      // n'entre dans le bundle, et le site reste un projet autonome à l'exécution.
+      // C'est ce qui évite de recopier ici les unions de data/*.yaml.
+      "@sim/*": ["../simulator/src/*"]
     },
     "types": ["node"]
   },

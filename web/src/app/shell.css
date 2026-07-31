@@ -11,13 +11,14 @@
 }
 
 /* ─── Top bar ────────────────────────────────────────────────────────────── */
-/* Socle commun des barres de panneau — top-bar du livre et barre des cartes.
-   Mêmes dégradé, texture, bordure, ombre et gabarit ; elles ne diffèrent que
-   par le gap et le positionnement (voir les règles individuelles). */
-.top-bar,
-.cards-bar {
+/* La barre d'identité de TOUTES les rubriques (cf. components/TopBar.tsx).
+   Elle était auparavant déclinée par rubrique — `.cards-bar` en était une copie
+   qui ne différait que par son gap et son positionnement ; les deux écarts sont
+   devenus des options du composant. */
+.top-bar {
   display: flex;
   align-items: center;
+  gap: 12px;
   height: var(--bar-height);
   padding: 0 16px;
   flex-shrink: 0;
@@ -30,7 +31,8 @@
   box-shadow: 0 2px 16px rgba(0,0,0,0.55);
 }
 
-.top-bar { gap: 12px; }
+/* Rubriques dont la PAGE défile (et non un panneau interne) : la barre suit. */
+.top-bar--sticky { position: sticky; top: 0; }
 
 /* Bouton collapse de la sidebar */
 .top-bar-collapse {
@@ -83,10 +85,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
+  /* Se laisse comprimer (ellipse) mais ne pousse plus : c'est `.top-bar-spacer`
+     qui occupe la place libre, sinon les deux se la partageraient. */
+  flex: 0 1 auto;
   min-width: 0;
   letter-spacing: 0.04em;
 }
+
+/* Cale tout ce qui suit le titre — contrôles de rubrique, sélecteur de langue —
+   sur le bord droit de la barre. */
+.top-bar-spacer { flex: 1; min-width: 0; }
 
 /* ─── Sélecteur de langue ─────────────────────────────────────────────────── */
 

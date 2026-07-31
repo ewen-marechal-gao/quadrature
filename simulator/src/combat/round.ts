@@ -45,7 +45,7 @@ import type {
 import {
   resolveAction, resolveMovementAction, type ActionContext,
   ACTION_DEFS, GUARD_DEFS, defFor,
-  availableGuards, guardCritMove,
+  availableGuards, guardCritMove, actorReach,
 } from './actions'
 import {
   spendActionCost, processRoundEnd,
@@ -355,7 +355,9 @@ function resolvePlans(
           ...(targetPart && { targetPart }),
         }
         actionLogs.push(entry)
-        if (def.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: def.reach, minRange: def.minRange })
+        // Portee EFFECTIVE : celle de l'arme du porteur quand il en a une.
+        const envAdv = actorReach(actorSnap, def)
+        if (envAdv.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: envAdv.reach, minRange: envAdv.minRange })
         continue
       }
 
@@ -377,7 +379,8 @@ function resolvePlans(
       phaseEffects.push(...resolved.effects)
       const entry = toActionLogEntry(resolved, preActions, preReactions, plan.battleCry, plan.reasoning)
       actionLogs.push(entry)
-      if (def.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: def.reach, minRange: def.minRange })
+      const envPc = actorReach(actorSnap, def)
+      if (envPc.reach != null) reachChecks.push({ entry, targetId: plan.targetId, reach: envPc.reach, minRange: envPc.minRange })
     }
 
     // c. Expand move intents, then apply everything at once.
@@ -768,7 +771,8 @@ function resolveReactionWindow(
   let resolved: ResolvedAction
   let targetPart: string | undefined
   if (isAdversaryActor(target)) {
-    targetPart = selectTargetPart(target, def.reach != null && def.reach > 1 ? 'ranged' : 'melee')?.type
+    const envReach = actorReach(reactor, def).reach
+    targetPart = selectTargetPart(target, envReach != null && envReach > 1 ? 'ranged' : 'melee')?.type
     resolved = resolveAction(spent, chosen.action as ActionId, {
       dc:            effectiveGuard(target),   // garde fixe de la créature
       guardReaction: { effects: [], notes: [] },

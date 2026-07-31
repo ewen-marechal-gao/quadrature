@@ -1,4 +1,20 @@
 name: Lena
+# Inventaire repris LITTÉRALEMENT de l'exemple travaillé de
+# rules/fr/core/equipement.md § 5 : cimeterre en main, arc long en bandoulière
+# au Dos, carquois à la Taille. 3 🔳 pour une Charge Maximale de 4 — aucune
+# surcharge, et pas d'armure : sa défense, c'est sa Parade.
+#
+# ⚠️ Conséquence à arbitrer : sous la règle du fourreau (« permet un accès à une
+# arme en combat »), cet arc rangé SANS harnais n'est pas jouable — Lena ne peut
+# pas tirer. L'exemple du vault la fait pourtant tirer. Lui ajouter un harnais
+# d'arme coûte 2 🔳, ce qui la porterait à 5 et la mettrait en surcharge (−1 🟦
+# sur tous ses jets physiques). Le conflit est dans le vault, pas dans la fiche :
+# on le laisse visible plutôt que de le masquer ici.
+inventory:
+  worn:
+    hands: [scimitar]
+    back:  [generic-bow]
+    waist: [quiver]
 people:
   name: Peuple des arbres
   caracs:

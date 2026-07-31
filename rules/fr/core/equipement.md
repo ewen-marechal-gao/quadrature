@@ -114,22 +114,22 @@ Pour matérialiser la place que prennent vos provisions, le niveau de stock est 
 
 ### Tête
 
-| Nom | 🔳 | Effets |
-| :---- | :---- | :---- |
-| Heaume | 1 | Bonus de protection +🛡️ |
-| Capuche | 1 | Confère 🟩 contre l'aveuglement |
-| Chapeau | 0 | Confère … un style certain |
+| Nom     | 🔳  | Effets                          |
+| :------ | :-- | :------------------------------ |
+| Heaume  | 1   | Bonus de protection +🛡️        |
+| Capuche | 1   | Confère 🟩 contre l'aveuglement |
+| Chapeau | ▫️  | Confère … un style certain      |
 
 ### Torse
 
-| Nom | 🔳 | Effets |
-| :---- | :---- | :---- |
-| Sacoche bandoulière | 1 | Fournit ▫️▫️ |
-| Poches bandoulière | 1 | Fournit 🔸 |
-| Vêtement technique | 1 | 🛡️ Protection (1) et 🔸🔸 |
-| Armure légère | 2 | 🛡️ Protection (2) et 🔸🔸 |
-| Armure moyenne | 3 | 🛡️ Protection (3) et 🔸 |
-| Armure lourde | 4 | 🛡️ Protection (4) |
+| Nom                 | 🔳  | Effets                     |
+| :------------------ | :-- | :------------------------- |
+| Sacoche bandoulière | 1   | Fournit ▫️▫️               |
+| Poches bandoulière  | 1   | Fournit 🔸                 |
+| Vêtement technique  | 1   | 🛡️ Protection (1) et 🔸🔸 |
+| Armure légère       | 2   | 🛡️ Protection (2) et 🔸🔸 |
+| Armure moyenne      | 3   | 🛡️ Protection (3) et 🔸   |
+| Armure lourde       | 4   | 🛡️ Protection (4)         |
 
 ### Dos
 
@@ -162,13 +162,13 @@ Pour matérialiser la place que prennent vos provisions, le niveau de stock est 
 
 ### Petits objets (consommables)
 
-| Nom | ▫️ | Jet d'usage | Effet |
-| :---- | :---- | :---- | :---- |
-| Outre d'eau | 1 | 1 / jour | — |
-| Ration de voyage | 1 | 1 / jour | — |
-| Munition | 1 | 1 / combat | — |
-| Torche | 1 | 1 / heure | — |
-| Trousse de premiers soins | 1 | 1 / carac | Confère 🟩 sur le jet de récupération |
+| Nom                       | ▫️  | Jet d'usage | Effet                                 |
+| :------------------------ | :-- | :---------- | :------------------------------------ |
+| Outre d'eau               | 1   | 1 / jour    | —                                     |
+| Ration de voyage          | 1   | 1 / jour    | —                                     |
+| Munition                  | 1   | 1 / combat  | —                                     |
+| Torche                    | 1   | 1 / heure   | —                                     |
+| Trousse de premiers soins | 1   | 1 / carac   | Confère 🟩 sur le jet de récupération |
 
 ---
 

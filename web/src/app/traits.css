@@ -7,88 +7,25 @@
  * pas un trou d'affichage.
  */
 
+/* La page vit sous la `top-bar` commune, dans un `.book-app` : c'est CE bloc qui
+   défile, et lui qui ancre le sticky de la barre de filtres. La largeur de
+   lecture est portée par `.trt-inner`, pour que l'ascenseur reste au bord de la
+   fenêtre et non au milieu de l'écran. */
+/* La page vit sous la TopBar et la ToolBar communes, dans un `.book-app` :
+   c'est CE bloc qui défile. La largeur de lecture est portée par `.trt-inner`,
+   pour que l'ascenseur reste au bord de la fenêtre et non au milieu de l'écran. */
 .trt {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 1.5rem 4rem;
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+}
+
+.trt-inner {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
-  color: var(--panel-text);
-  font-family: var(--font-ui);
-}
-
-/* ── En-tête ─────────────────────────────────────────────────────────────── */
-.trt-head h1 { color: var(--brass-bright); margin: 0 0 .4rem; }
-.trt-sub {
-  color: var(--panel-muted);
-  margin: 0 0 .35rem;
-  max-width: 68ch;
-  line-height: 1.55;
-}
-.trt-sub--wired { color: var(--panel-muted); }
-
-/* ── Barre de filtres ────────────────────────────────────────────────────── */
-.trt-filters {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: .6rem;
-  margin: 1.25rem 0 1rem;
-  padding: .7rem 0;
-  border-top: 1px solid var(--brass-border);
-  border-bottom: 1px solid var(--brass-border);
-  background: var(--book-bg);
-}
-.trt-search {
-  flex: 1 1 18rem;
-  min-width: 12rem;
-  padding: .45rem .7rem;
-  border: 1px solid var(--brass-border);
-  border-radius: 6px;
-  background: var(--brass-faint);
-  color: var(--panel-text);
-  font-family: var(--font-ui);
-  font-size: .95rem;
-}
-.trt-search::placeholder { color: var(--panel-muted); }
-.trt-search:focus { outline: none; border-color: var(--brass-strong); }
-
-.trt-kinds { display: flex; gap: .3rem; }
-.trt-kind {
-  padding: .4rem .7rem;
-  border: 1px solid var(--brass-border);
-  border-radius: 6px;
-  background: var(--brass-faint);
-  color: var(--panel-text);
-  font-family: var(--font-ui);
-  font-size: .9rem;
-  cursor: pointer;
-  transition: background .12s, border-color .12s, color .12s;
-}
-.trt-kind:hover { background: var(--brass-glow); border-color: var(--brass-subtle); }
-.trt-kind.is-on {
-  background: var(--brass);
-  color: var(--on-brass);
-  border-color: var(--brass-bright);
-  font-weight: 700;
-}
-
-.trt-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  color: var(--panel-muted);
-  font-size: .9rem;
-  cursor: pointer;
-}
-.trt-toggle input { accent-color: var(--brass); }
-
-.trt-count {
-  margin-left: auto;
-  color: var(--panel-muted);
-  font-family: var(--font-mono);
-  font-size: .85rem;
+  padding-top: 1.5rem;
 }
 
 /* ── Accès rapide aux caractéristiques ───────────────────────────────────── */
@@ -277,7 +214,7 @@
 
 /* ── Étroit ──────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .trt { padding: 1.25rem 1rem 3rem; }
-  .trt-count { margin-left: 0; }
+  .trt { padding: 0 1rem 3rem; }
+  .trt-inner { padding-top: 1rem; }
   .trt-mech__row { grid-template-columns: 1fr; gap: .1rem; }
 }

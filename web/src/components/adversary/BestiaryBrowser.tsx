@@ -3,8 +3,8 @@
 /**
  * BestiaryBrowser — rubrique Bestiaire : chrome applicatif + sélection + impression.
  *
- * Réutilise le shell du site (top-bar + sidebar, cf. shell.css) :
- *   - top-bar : logo, titre « Bestiaire », sélecteur de langue
+ * Réutilise le shell du site (TopBar + sidebar, cf. shell.css) :
+ *   - TopBar : rubrique « Bestiaire » · créature sélectionnée
  *   - sidebar : champ de recherche + liste des créatures (filtrable)
  *   - zone principale : fiche de la créature + panneau d'impression
  *
@@ -13,10 +13,9 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import type { Adversary } from "@/lib/bestiary";
 import { type Locale } from "@/lib/nav";
-import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { TopBar } from "@/components/TopBar";
 import { AdversarySheet, DIE_GLYPH } from "@/components/adversary/AdversarySheet";
 import { BestiaryPrint } from "@/components/adversary/BestiaryPrint";
 import "@/app/adversaries.css";
@@ -113,31 +112,17 @@ export function BestiaryBrowser({
   return (
     <>
       <div className="book-app adv-app">
-        {/* ── Top bar ──────────────────────────────────────────────────── */}
-        <header className="top-bar">
-          <button
-            className="top-bar-collapse"
-            onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? "Ouvrir la liste" : "Réduire la liste"}
-            title={collapsed ? "Ouvrir la liste" : "Réduire la liste"}
-          >
-            {collapsed ? "›" : "‹"}
-          </button>
-
-          <Link href={`/${locale}/`} className="top-bar-logo">
-            Quadrature
-          </Link>
-          <span className="top-bar-sep">—</span>
-          <span className="top-bar-book">Bestiaire</span>
-          {selected && (
-            <>
-              <span className="top-bar-sep">·</span>
-              <span className="top-bar-title">{selected.name}</span>
-            </>
-          )}
-
-          <LocaleSwitcher locale={locale} />
-        </header>
+        <TopBar
+          locale={locale}
+          page="Bestiaire"
+          section={selected?.name}
+          collapse={{
+            collapsed,
+            onToggle: () => setCollapsed((c) => !c),
+            labelOpen: "Ouvrir la liste",
+            labelClose: "Réduire la liste",
+          }}
+        />
 
         {/* ── Body : sidebar + fiche ─────────────────────────────────────── */}
         <div className="book-body">

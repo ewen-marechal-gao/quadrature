@@ -1,0 +1,169 @@
+/* ════ Barre d'outils (components/ToolBar.tsx) ════
+ *
+ * La bande de contrôles qui vit SOUS la top bar : filtres, bascules, zoom,
+ * actions de rubrique. Un seul langage visuel, là où chaque rubrique avait le
+ * sien — pastilles arrondies pour les cartes, boutons carrés pour le
+ * cladogramme, classes Tailwind pour la feuille de personnage.
+ *
+ * Elle reprend la matière de la top bar (grain + laiton) en plus discret : la
+ * top bar dit OÙ l'on est, la barre d'outils ce qu'on peut y faire.
+ */
+
+.tool-bar {
+  /* Hauteur COMMUNE à tous les contrôles : sans elle, une barre portant un champ
+     de recherche était trois pixels plus haute que les autres, ce qui se voit en
+     passant d'une rubrique à l'autre. */
+  --tool-control-h: 1.95rem;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.45rem 1rem;
+  min-height: 2.9rem;
+  z-index: 3;
+
+  border-bottom: 1px solid var(--brass-border);
+  background: rgba(0, 0, 0, 0.25);
+  background-image: var(--noise-panel);
+  color: var(--panel-text);
+  font-family: var(--font-ui);
+}
+
+/* Rubriques dont la PAGE défile (les cartes) : la barre se cale sous la top bar,
+   dont la hauteur est le seul décalage possible. Ailleurs, la barre est un
+   élément de la colonne et ne défile pas du tout. */
+.tool-bar--sticky {
+  position: sticky;
+  top: var(--bar-height);
+  z-index: 9;
+}
+
+/* ── Groupes ─────────────────────────────────────────────────────────────── */
+/* Un filet vertical sépare les groupes — hérité du cladogramme, c'est ce qui
+   rend une barre chargée lisible sans l'espacer davantage. */
+.tool-group {
+  display: inline-flex;
+  align-items: center;
+  /* Un groupe trop long pour la largeur se replie au lieu de déborder : sans
+     cela, ses dernières pastilles étaient rognées par le conteneur (dont
+     l'overflow est caché) — invisibles et inatteignables. */
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--brass-border);
+}
+.tool-group:first-child,
+.tool-group--first { padding-left: 0; border-left: 0; }
+
+.tool-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--panel-muted);
+  margin-right: 0.1rem;
+  white-space: nowrap;
+}
+
+/* Pousse tout ce qui suit vers la droite. */
+.tool-spacer { flex: 1 1 auto; min-width: 0; }
+
+/* ── Contrôles ───────────────────────────────────────────────────────────── */
+
+.tool-chip,
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--tool-control-h, 1.95rem);
+  padding: 0 0.65rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: var(--panel-text);
+  background: var(--brass-faint);
+  border: 1px solid var(--brass-border);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.tool-chip:hover,
+.tool-btn:hover { background: var(--brass-glow); border-color: var(--brass-subtle); }
+
+/* Un `<select>` peut porter `.tool-chip` (le filtre de zone de l'équipement) :
+   il n'est pas un conteneur flex, on lui rend son rendu natif. */
+select.tool-chip { display: inline-block; padding-right: 0.4rem; }
+
+/* État actif d'une bascule : laiton plein — la seule couleur pleine de la barre,
+   donc le seul endroit où l'œil s'arrête. */
+.tool-chip.is-on {
+  background: var(--brass);
+  color: var(--on-brass);
+  border-color: var(--brass-bright);
+  font-weight: 700;
+}
+
+/* Action principale (créer un personnage) : même forme, poids plein. */
+.tool-btn--primary {
+  background: var(--brass);
+  color: var(--on-brass);
+  border-color: var(--brass-bright);
+  font-weight: 600;
+}
+.tool-btn--primary:hover { background: var(--brass-bright); border-color: var(--brass-bright); }
+
+/* Bouton carré : zoom, fermeture de panneau. */
+.tool-btn--icon {
+  width: var(--tool-control-h, 1.95rem);
+  padding: 0;
+  font-size: 1rem;
+}
+
+.tool-search {
+  flex: 0 1 22rem;
+  min-width: 10rem;
+  height: var(--tool-control-h, 1.95rem);
+  padding: 0 0.7rem;
+  color: var(--panel-text);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--brass-border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.tool-search::placeholder { color: var(--panel-muted); }
+.tool-search:focus { border-color: var(--brass-strong); }
+
+/* Case à cocher accompagnée de son libellé. */
+.tool-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--panel-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tool-toggle:hover { color: var(--panel-text); }
+.tool-toggle input { accent-color: var(--brass); cursor: pointer; }
+
+/* Valeur en lecture seule : compteur de résultats, niveau de zoom. */
+.tool-value {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--panel-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ── Étroit ──────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .tool-bar { padding: 0.4rem 0.7rem; gap: 0.4rem; }
+  /* Les filets verticaux n'ont plus de sens quand la barre passe sur 3 lignes. */
+  .tool-group { padding-left: 0; border-left: 0; }
+  .tool-search { flex: 1 1 100%; }
+}

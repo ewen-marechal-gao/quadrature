@@ -26,6 +26,7 @@ import type { ActionCost, CardTag, GuardId, StatusEffect, CombatantState, Combat
 import { opsToCombatEffects, type EffectOp } from './effect-ops'
 import type { GuardDef } from './actions'
 import { localize, type LocalizedString } from '../locale'
+import { hasEquipment, canParry, canBlock } from '../equipment/inventory'
 
 // ─── Raw YAML shapes ──────────────────────────────────────────────────────────
 
@@ -41,8 +42,16 @@ interface RawGuardOutcome {
 }
 
 interface RawGuardAvailability {
-  /** Proxy d'équipement en attendant le modèle d'armes/boucliers. */
+  /**
+   * REPLI d'équipement : lu uniquement quand la fiche n'a pas d'inventaire
+   * modélisé. Une fiche équipée est jugée sur ce qu'elle tient réellement
+   * (`requiresWeapon` / `requiresShield`), pas sur un proxy de compétence.
+   */
   requiresSkill?:   { skill: SkillName; minValue: number }
+  /** Exige une arme en main capable de parer (§ equipement — pas de parade à l'arc). */
+  requiresWeapon?:  boolean
+  /** Exige un bouclier en main. */
+  requiresShield?:  boolean
   blockedByStatus?: StatusEffect[]
   /** Aucune case n'est occultée 🌑 tant que la furtivité n'est pas simulée. */
   requiresOccultedSquare?: boolean
@@ -84,7 +93,19 @@ function makeIsAvailable(a: RawGuardAvailability = {}) {
     // Terrain occulté : la Dérobade est déclarée mais structurellement
     // indisponible tant que la furtivité n'est pas simulée.
     if (a.requiresOccultedSquare) return false
-    if (a.requiresSkill && d.skills[a.requiresSkill.skill] < a.requiresSkill.minValue) return false
+
+    // Condition d'ÉQUIPEMENT. Deux régimes qui ne se mélangent pas : une fiche
+    // équipée est jugée sur ce qu'elle tient (on ne pare pas à mains nues, on
+    // ne bloque pas sans bouclier) ; une fiche dont l'équipement n'est pas
+    // modélisé retombe sur le proxy de compétence d'avant le chantier.
+    const inv = d.char.inventory
+    if (hasEquipment(inv)) {
+      if (a.requiresWeapon && !canParry(inv)) return false
+      if (a.requiresShield && !canBlock(inv)) return false
+    } else if (a.requiresSkill && d.skills[a.requiresSkill.skill] < a.requiresSkill.minValue) {
+      return false
+    }
+
     if (a.blockedByStatus?.some(s => d.status.includes(s))) return false
     return true
   }

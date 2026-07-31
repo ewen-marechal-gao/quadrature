@@ -13,7 +13,7 @@ import type { LocalizedString } from "@/lib/nav";
 
 export const SHEET_LABELS = {
   // Chrome — barre d'outils & menu
-  home: { fr: "← Accueil" },
+  // (« ← Accueil » retiré : la TopBar porte le retour, la barre d'outils non.)
   unnamed: { fr: "Sans nom" },
   newCharacter: { fr: "+ Nouveau" },
   duplicate: { fr: "Dupliquer" },

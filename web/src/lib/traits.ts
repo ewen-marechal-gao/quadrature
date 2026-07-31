@@ -21,24 +21,20 @@ import { localize, type LocalizedString } from "@/lib/nav";
 import { CHARACTERISTICS } from "@/lib/character/constants";
 import type { CharId, SkillId } from "@/lib/character/types";
 
-// ─── Types (miroir de simulator/src/character/traits.ts) ─────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-export interface ReactiveModeGrant {
-  on: string;
-  scope?: string;
-  cost: { actions?: number; reactions?: number; fatigue?: number };
-}
+/**
+ * La grammaire des grants vient du SIMULATEUR (`@sim/*`, cf. tsconfig.json), pas
+ * d'une copie locale : c'est elle que `data/traits.yaml` remplit et que le moteur
+ * applique. Seuls des TYPES sont importés — ils s'effacent à la compilation, donc
+ * rien du simulateur n'entre dans le bundle. Ré-exportés ici pour que les
+ * composants n'aient qu'une porte d'entrée.
+ */
+export type {
+  ReactiveModeGrant, CostDeltaGrant, TraitGrants,
+} from "@sim/character/grants";
 
-export interface CostDeltaGrant {
-  actions?: number;
-  reactions?: number;
-  fatigue?: number;
-}
-
-export interface TraitGrants {
-  reactiveMode?: ReactiveModeGrant;
-  costDelta?: CostDeltaGrant;
-}
+import type { TraitGrants } from "@sim/character/grants";
 
 export interface TraitEntry {
   id: string;

@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Locale } from "@/lib/nav";
 import type { EncounterGroup, ReportSummary, CombatOutcome } from "@/lib/combat-report";
-import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { TopBar } from "@/components/TopBar";
 import "@/app/combat.css";
 
 const ORPHAN_KEY = "__orphans__";
@@ -121,13 +121,7 @@ export function EncountersBrowser({
 
   return (
     <>
-      <header className="top-bar">
-        <Link href={`/${locale}/`} className="top-bar-logo">Quadrature</Link>
-        <span className="top-bar-sep">—</span>
-        <span className="top-bar-book">Rencontres</span>
-        <span className="top-bar-title" />
-        <LocaleSwitcher locale={locale} />
-      </header>
+      <TopBar locale={locale} page="Rencontres" />
 
     <main className="enc">
       <header className="enc-head">

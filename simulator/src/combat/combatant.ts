@@ -19,6 +19,7 @@ import { PHYSICAL_CHARACTERISTICS, MENTAL_CHARACTERISTICS } from '../character/d
 import { MENTAL_STATES } from './types'
 import { initialMentalState } from './perks'
 import { roll, buildPool } from '../dieSystem'
+import { effectiveProtection } from '../equipment/inventory'
 
 // ─── Initialisation ───────────────────────────────────────────────────────────
 
@@ -49,7 +50,9 @@ export function initCombatant(char: Character): CombatantState {
     mentalWounds:      0,
     status:            [],
     inertia:           0,
-    protection:        char.protection ?? 0,
+    // Dérivée des armures portées dès que la fiche a un inventaire ; sinon la
+    // valeur saisie (§ equipment/inventory — effectiveProtection).
+    protection:        effectiveProtection(char.inventory, char.protection ?? 0),
     tempProtection:    0,
     actions:           3,
     reactions:         reactivity,

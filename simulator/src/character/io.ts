@@ -6,6 +6,10 @@ import type {
 } from './types'
 import { ALL_CHARACTERISTICS, ALL_SKILLS, CARAC_SKILLS, deriveCharacteristicValue } from './data'
 import { validateCharacter } from './character'
+import type { Inventory } from '../equipment/inventory'
+import type { BodyZone } from '../equipment/types'
+import { ALL_BODY_ZONES } from '../equipment/types'
+import { getItem } from '../equipment/items-data'
 
 // ─── YAML shape (matches the human-readable format) ──────────────────────────
 
@@ -16,8 +20,13 @@ interface YamlCharacteristicBlock {
 }
 
 interface YamlInventory {
-  /** Base protection points 🛡️ from armor/equipment */
+  /**
+   * Protection 🛡️ saisie directement — forme héritée d'avant le modèle
+   * d'équipement. Ignorée dès que `worn` porte quelque chose.
+   */
   protection?: number
+  /** Objets portés, par zone du corps (§ core/equipement.md). */
+  worn?: Record<string, string[]>
 }
 
 interface YamlShape {
@@ -60,6 +69,8 @@ export function serializeToYaml(char: Character): string {
 
   const inventoryBlock: YamlInventory = {}
   if ((char.protection ?? 0) > 0) inventoryBlock.protection = char.protection
+  if (char.inventory && Object.keys(char.inventory.worn).length > 0)
+    inventoryBlock.worn = char.inventory.worn as Record<string, string[]>
 
   const yamlObj: YamlShape = {
     name: char.name,
@@ -116,6 +127,21 @@ export function deserializeFromYaml(yamlStr: string): Character {
     ? Number(raw.inventory.protection)
     : undefined
 
+  // `worn` est validé à la volée : `getItem` lève sur un id inconnu, pour qu'une
+  // faute de frappe dans une fiche se voie au chargement et non trois manches plus tard.
+  let inventory: Inventory | undefined
+  if (raw.inventory?.worn && Object.keys(raw.inventory.worn).length > 0) {
+    const worn: Inventory['worn'] = {}
+    for (const [zone, ids] of Object.entries(raw.inventory.worn)) {
+      if (!ALL_BODY_ZONES.includes(zone as BodyZone))
+        throw new Error(`Zone d'inventaire inconnue « ${zone} » (fiche « ${raw.name} »)`)
+      const list = (ids ?? []).map(String)
+      list.forEach(getItem)
+      worn[zone as BodyZone] = list
+    }
+    inventory = { worn }
+  }
+
   const char: Character = {
     name: raw.name,
     ...(Array.isArray(raw.traits) && raw.traits.length > 0 && { traits: raw.traits.map(String) }),
@@ -130,6 +156,7 @@ export function deserializeFromYaml(yamlStr: string): Character {
     ...(raw.origin    && { origin:     raw.origin   as OriginChoice }),
     ...(raw.training  && { training:   raw.training as TrainingChoice }),
     ...(protection != null && protection > 0 && { protection }),
+    ...(inventory && { inventory }),
     characteristics,
     skills,
   }

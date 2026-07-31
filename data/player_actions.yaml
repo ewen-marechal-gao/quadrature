@@ -9,12 +9,19 @@
 #     (montants dynamiques, effets inconditionnels), enregistré dans
 #     simulator/src/combat/action-resolvers.ts (qui porte aussi le getDC).
 #
-# `reach` = portée du coup, en cases (1 = au contact). ⚠️ TEMPORAIRE : la portée
-# d'un personnage vient de son ARME, pas de l'action — la même Attaque armée est
-# à portée 1 avec une dague et 2 avec une hast. Codée en dur ici en attendant le
-# chantier des armes (même raccourci que le jet de Puissance pour tous). Absente
-# = non gâtée : les règles ne donnent pas de portée de voix pour les actions
-# sociales, et l'inventer serait une décision de règles.
+# `attackKind` = attaque d'arme que l'action délivre (armed | quick | powerful |
+# ranged-quick | ranged-aimed). PRÉSENTE, elle décide de deux choses : l'action
+# exige une arme qui l'ouvre (§ equipement — « une arme permettant les attaques
+# vives donne accès à la Frappe vive »), et elle lui EMPRUNTE sa portée. C'est
+# ce qui fait qu'une même Attaque armée porte à 1 avec une dague et à 3 avec une
+# lance. Absente = l'action ne passe par aucune arme : l'Attaque à mains nues
+# (c'est sa définition) et la Charge (c'est l'élan du corps) gardent la leur.
+#
+# `reach` = portée du coup, en cases (1 = au contact). C'est désormais un REPLI :
+# lu tel quel pour les actions sans `attackKind`, et pour les fiches dont
+# l'équipement n'est pas encore modélisé. Absente = non gâtée : les règles ne
+# donnent pas de portée de voix pour les actions sociales, et l'inventer serait
+# une décision de règles.
 #
 # `vaultCard` = id de la carte française rules/fr/cartes/*.yaml : sert au test
 # de cohérence (coût/initiative/nom) en attendant la projection générée (3b).
@@ -31,6 +38,7 @@ actions:
     initiative: 5
     cost: { actions: 2 }
     tags: [offensive, melee, physical, physicalDamage]
+    attackKind: armed        # toute arme en main ouvre l'Attaque armée
     reach: 1
     roll: { characteristic: strength, skill: power }
     onSuccess: { text: { fr: "Touché — 3💢" }, effect: [{ wound: 3 }] }
@@ -82,6 +90,7 @@ actions:
     initiative: 8
     cost: { actions: 2, fatigue: 2 }
     tags: [offensive, melee, physical, physicalDamage]
+    attackKind: powerful     # lames longues, impact, hallebarde, katar
     reach: 1
     prerequisite: { skill: power, minValue: 1 }
     roll: { characteristic: strength, skill: power }
@@ -107,6 +116,7 @@ actions:
     initiative: 3
     cost: { actions: 1, fatigue: 1 }
     tags: [offensive, melee, physical, physicalDamage]
+    attackKind: quick        # toute arme de mêlée
     reach: 1
     prerequisite: { skill: precision, minValue: 1 }
     roll: { characteristic: agility, skill: precision }
@@ -124,10 +134,11 @@ actions:
       }
 
   # ── Attaques à distance (§ attribute_actions.md « Actions offensives (distance) ») ──
-  # La PORTÉE est un choix de simulation (comme la portée 1 des attaques de mêlée) :
-  # les règles ne chiffrent pas de distance de tir, et la vraie portée viendra de
-  # l'arme équipée (chantier armes #18). En attendant, on pose des valeurs jouables
-  # sur le tapis 34×22 — assez pour que le kiting ait un sens face à une Course (~8).
+  # Portée et distance minimale viennent de l'ARC équipé ; les valeurs ci-dessous
+  # ne servent qu'aux fiches non encore équipées. Elles restent des valeurs de
+  # SIMULATION : l'échelle du vault (50 à 100 m, soit 33 à 67 cases) ne discrimine
+  # rien sur un tapis de 34 cases de diagonale — les quatre arcs y sont
+  # indiscernables. Refondre cette échelle est un chantier de design à part.
   # Non modélisés ici (⚒️/nuances) : « avantage 🟩 contre Parade », le mode réactif
   # du Tir rapide, la relance 🟦 du Tir ajusté.
   quick-shot:
@@ -141,8 +152,9 @@ actions:
     initiative: 3
     cost: { actions: 1, fatigue: 1 }
     tags: [offensive, ranged, physical, physicalDamage]
-    minRange: 1              # pas de tir si engagé (§ equipement — arc)
-    effectiveRange: 24       # portée sans pénalité (future : dérivée de l'arme)
+    attackKind: ranged-quick
+    minRange: 1              # repli : l'arme équipée impose la sienne
+    effectiveRange: 24       # repli : l'arme équipée impose la sienne
     prerequisite: { skill: intuition, minValue: 1 }
     roll: { characteristic: lucidity, skill: intuition }
     onSuccess: { text: { fr: "Touché — 2💢" }, effect: [{ wound: 2 }] }
@@ -167,8 +179,9 @@ actions:
     initiative: 7
     cost: { actions: 2, fatigue: 1 }
     tags: [offensive, ranged, physical, physicalDamage]
-    minRange: 1              # pas de tir si engagé (§ equipement — arc)
-    effectiveRange: 24       # portée sans pénalité (future : dérivée de l'arme)
+    attackKind: ranged-aimed
+    minRange: 1              # repli : l'arme équipée impose la sienne
+    effectiveRange: 24       # repli : l'arme équipée impose la sienne
     prerequisite: { skill: observation, minValue: 1 }
     roll: { characteristic: acuity, skill: observation }
     onSuccess: { text: { fr: "Touché — 1💔 blessure grave" }, effect: [{ heavyWound: 1 }] }
@@ -369,6 +382,7 @@ actions:
     initiative: 2
     cost: { actions: 0, reactions: 1, fatigue: 1 }
     tags: [offensive, melee, physical, physicalDamage]
+    attackKind: quick        # ⚒️ mode réactif de la Frappe vive
     reach: 1
     trigger: { on: movement-initiated, scope: adjacent }
     roll: { characteristic: intelligence, skill: reactivity }
