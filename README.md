@@ -93,7 +93,9 @@ partage le même historique git.
 Quadrature/
 ├── rules/        # Vault Obsidian (core/, disciplines/, univers/, cartes/…) — SOURCE DE VÉRITÉ des règles
 │   └── fr/       #   entrée : _index.md
-├── data/         # Données structurées (cladogramme, mutations, bestiaire) — lues par web/ & tools/
+├── data/         # Données structurées — SOURCE DE VÉRITÉ des données de jeu
+│              #   actions, traits, gardes, équipement, disciplines,
+│              #   cladogramme, mutations, bestiaire — lues par web/, simulator/ & tools/
 ├── web/          # Site Next.js (lit rules/fr/ + data/ au build)
 ├── simulator/    # Moteur de combat TypeScript
 ├── tools/        # astronomy.py · cladogram.ts · consolidate-bestiary.ts
@@ -124,11 +126,25 @@ npm run build          # build serveur (.next/) ; servir via `npm run start`
 npm run generate-pdf   # génère le PDF du livre (Puppeteer + pdf-lib)
 ```
 Rubriques notables : `/fr` (accueil), `/fr/volumen/<livre>` (lecture paginée),
-`/fr/cartes` (cartes d'action imprimables), `/fr/adversaires` (fiches de bestiaire),
+`/fr/cartes` (cartes d'action imprimables), `/fr/traits` (traits de compétence),
+`/fr/equipement` (catalogue d'objets), `/fr/adversaires` (fiches de bestiaire),
 `/fr/evolution` (cladogramme), `/fr/personnage` (feuille de personnage interactive :
 édition, sauvegarde locale multi-personnages, export/import JSON, impression PDF).
 
-`/fr/combat` est un **outil local** de mise au point : il rejoue un rapport du
+Les rubriques `/fr/traits` et `/fr/equipement` lisent `data/*.yaml` — la même
+source que le simulateur — et affichent donc l'état **réel** du branchement
+moteur, trous compris : une mécanique décrite dans les règles mais que le moteur
+n'applique pas encore y est signalée comme telle.
+
+Toutes les rubriques partagent le même chrome (`components/TopBar.tsx` puis
+`components/ToolBar.tsx`) : la **TopBar** dit *où l'on est* — identité, rubrique,
+retour à l'accueil, langue — et la **ToolBar** ce qu'on peut y *faire* — filtrer,
+rechercher, zoomer. Une barre d'outils ne porte donc ni titre de page ni lien de
+retour, et le sélecteur de langue est toujours le dernier élément de la TopBar.
+Chaque rubrique suit le même gabarit de mise en page : hauteur figée, barres
+fixes, un seul bloc défilant en dessous.
+
+`/fr/encounters` est un **outil local** de mise au point : il rejoue un rapport du
 simulateur **manche par manche** (plateau et trajectoires, log par bandes façon
 chat, dés et effets, vitaux physique/mental). Les rapports vivant dans
 `simulator/combatReports/` (non versionné), la rubrique reste vide sur un build

@@ -36,7 +36,7 @@ versionnage [sémantique](https://semver.org/lang/fr/).
 - **Traumas (blessures mentales)** : aux extrêmes de la piste mentale (Enragé /
   Terrifié), un choc de trop retire un point de **caractéristique mentale** et fait
   rebondir la piste d'un cran vers le centre.
-- **Web — visualiseur de combat** (`/fr/combat`, **outil local**) : rejeu **manche
+- **Web — visualiseur de combat** (`/fr/encounters`, **outil local**) : rejeu **manche
   par manche** d'un rapport du simulateur — plateau et trajectoires, log par bandes
   façon chat (PJ à droite, adversaires à gauche), dés et effets détaillés au survol,
   vitaux physique / mental. Lit directement les rapports 1-run de
@@ -55,6 +55,16 @@ versionnage [sémantique](https://semver.org/lang/fr/).
 - **Actions mentales** de personnage : Provocation / Intimidation (assèchent le ◇
   de la cible, la poussent vers ses états extrêmes), consolidation (Préservation,
   Résolution…), et **Stabiliser** (retire l'hémorragie).
+- **Web — rubrique `/equipement`** : catalogue des objets de `data/equipment/*.yaml`
+  (la source que lit le simulateur), rangé par nature — armes par famille, armures
+  et boucliers, conteneurs, consommables, divers. Chaque objet est une **carte mini
+  44 × 63 mm**, la moitié d'une carte d'action, au format « mini américaine » : elle
+  porte l'encombrement en 🔳/▫️ répétés, les zones portables, les caractéristiques
+  lues par le moteur, puis la mécanique du vault *verbatim*. Cette dernière est
+  marquée « ✎ texte seul » — le moteur ne lit pas la prose, même quand un champ
+  structuré au-dessus en applique déjà l'effet. Les familles absentes de la donnée
+  (arcs, arbalètes, protections avancées) n'apparaissent pas : les groupes vides
+  sont élagués, le trou se voit sans être codé en dur.
 - **Web** — rubrique **`/adversaires`** : fiches A5 imprimables (recto/verso) et
   cartes de deck ; seuils de fatigue, encadré Défenses (garde), et **coût de
   fatigue 💧** des cartes.
@@ -62,6 +72,21 @@ versionnage [sémantique](https://semver.org/lang/fr/).
   Cimes, Cuirassard, Happe-fond, Évoluant.
 
 ### Modifié
+- **Web — chrome unifié sur toutes les rubriques** : deux composants uniques,
+  `TopBar` (identité, rubrique · section, repli optionnel, actions de page, langue)
+  et `ToolBar` (recherche, filtres, bascules, zoom). Chaque rubrique avait le sien,
+  avec son propre langage visuel — pastilles arrondies pour les cartes, boutons
+  carrés pour le cladogramme, classes Tailwind pour la feuille de personnage — et
+  deux d'entre elles répétaient dans leur barre d'outils un titre et un lien de
+  retour que la TopBar affichait déjà. La règle est désormais structurelle : la
+  TopBar dit **où l'on est**, la ToolBar ce qu'on peut **faire**. Toutes les
+  rubriques ont les deux, avec la même hauteur de contrôles et le même gabarit de
+  page (hauteur figée, un seul bloc défilant sous des barres fixes).
+- **Web — les types d'équipement et de traits viennent du simulateur** : le site
+  n'en garde plus de copie. Alias `@sim/*` en `import type` seul — les imports de
+  type s'effacent à la compilation, donc rien du simulateur n'entre dans le bundle.
+  Une union recopiée (familles d'armes, zones du corps…) pouvait diverger en
+  silence ; le type-check du site casse maintenant à la place.
 - **La Course n'essouffle plus directement** (équilibrage) : elle creuse la
   fatigue 💧, et l'**Essoufflé** ne survient que par l'échec au **test d'Endurance**
   (fatigue ≥ 10). L'essoufflement auto-infligé était trop punitif — il interdisait
