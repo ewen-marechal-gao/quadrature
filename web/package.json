@@ -8,6 +8,7 @@
     "prebuild": "node scripts/copy-pagedjs.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-web-images.mjs && node scripts/generate-content-index.mjs fr",
     "build": "next build",
     "build:public": "node scripts/copy-pagedjs.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-web-images.mjs && node scripts/generate-content-index.mjs fr && node scripts/build-public.mjs",
+    "check:ci": "node scripts/check-ci.mjs",
     "start": "next start",
     "refresh-content": "node scripts/generate-content-index.mjs fr",
     "generate-pdf": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs fr && node scripts/generate-pdf.mjs"

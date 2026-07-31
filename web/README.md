@@ -19,8 +19,15 @@ npm run dev
 | `npm run dev` | Serveur de dev sur http://localhost:3000 |
 | `npm run build` | Build serveur (`.next/`), servi par `npm run start` |
 | `npm run build:public` | Build **public** statique (`out/`) — ce qui part en ligne |
+| `npm run check:ci` | Le même build, mais dans les conditions du runner |
 | `npm run generate-pdf` | PDF du livre (Puppeteer + pdf-lib) |
 | `npx tsc --noEmit` | Type-check — à passer avant tout commit |
+
+`check:ci` masque `simulator/node_modules` le temps du build, puis le restaure.
+Le job de déploiement ne fait `npm ci` que dans `web/` : un build qui passe ici
+mais échoue là-bas signale que le site a fini par dépendre d'un paquet du
+simulateur — voir « [D'où vient le contenu](#doù-vient-le-contenu) ». À lancer
+avant de pousser un changement touchant aux types partagés.
 
 ## Deux modes de build
 
@@ -53,6 +60,13 @@ Les **types** de ces données viennent du simulateur via l'alias `@sim/*`
 (cf. [tsconfig.json](tsconfig.json)), en `import type` **uniquement** : les imports
 de type s'effacent à la compilation, donc rien du simulateur n'entre dans le
 bundle et le site reste autonome à l'exécution.
+
+⚠️ Autonome à l'*exécution*, pas à la *compilation*. Pour résoudre un type,
+TypeScript charge tout le graphe d'imports du fichier qui le déclare — dépendances
+comprises. Un fichier du simulateur atteint par ce graphe et qui importe un paquet
+à lui (`yaml`…) fait échouer le type-check du site sur le runner, qui n'installe
+que `web/node_modules`. Les modules du simulateur exposant des types au site
+doivent donc rester **sans dépendance externe**. `npm run check:ci` le vérifie.
 
 ## Chrome commun
 
