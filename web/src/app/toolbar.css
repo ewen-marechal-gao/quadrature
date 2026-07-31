@@ -31,14 +31,9 @@
   font-family: var(--font-ui);
 }
 
-/* Rubriques dont la PAGE défile (les cartes) : la barre se cale sous la top bar,
-   dont la hauteur est le seul décalage possible. Ailleurs, la barre est un
-   élément de la colonne et ne défile pas du tout. */
-.tool-bar--sticky {
-  position: sticky;
-  top: var(--bar-height);
-  z-index: 9;
-}
+/* La barre est toujours un ÉLÉMENT DE LA COLONNE, jamais un bandeau collant :
+   rien ne passe dessous. C'est ce qui compte ici — son fond est translucide, un
+   contenu défilant derrière resterait visible au travers. */
 
 /* ── Groupes ─────────────────────────────────────────────────────────────── */
 /* Un filet vertical sépare les groupes — hérité du cladogramme, c'est ce qui

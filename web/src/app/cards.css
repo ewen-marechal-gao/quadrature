@@ -4,8 +4,13 @@
 
 /* ─── Shell de la rubrique ───────────────────────────────────────────────── */
 
+/* Même modèle que les autres rubriques (`.book-app`) : hauteur FIGÉE, débord
+   caché, et un seul bloc qui défile — la galerie. La page défilait auparavant
+   dans le body, avec deux barres collantes : les cartes passaient dessous, et
+   la barre d'outils étant translucide, elles restaient visibles au travers. */
 .cards-app {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--book-bg);
@@ -70,11 +75,15 @@
 
 /* ─── Galerie ────────────────────────────────────────────────────────────── */
 
+/* Le seul bloc qui défile de la rubrique — les deux barres au-dessus sont des
+   éléments de la colonne, jamais recouverts. */
 .cards-gallery {
+  flex: 1;
+  overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
   gap: 18px;
-  padding: 8px 16px 48px;
+  padding: 16px 16px 48px;
   align-items: start;
 }
 

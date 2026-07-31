@@ -23,17 +23,14 @@ import "@/app/toolbar.css";
 
 export function ToolBar({
   children,
-  sticky,
   ariaLabel,
 }: {
   children: React.ReactNode;
-  /** Rubriques dont la page entière défile : la barre se cale sous la top bar. */
-  sticky?: boolean;
   ariaLabel?: string;
 }) {
   return (
     <div
-      className={sticky ? "tool-bar tool-bar--sticky" : "tool-bar"}
+      className="tool-bar"
       role="toolbar"
       aria-label={ariaLabel ?? "Barre d'outils"}
     >

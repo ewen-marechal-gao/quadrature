@@ -137,7 +137,6 @@ export function CardBrowser({ cards, locale }: { cards: Card[]; locale: Locale }
         <TopBar
           locale={locale}
           page="Cartes d'action"
-          sticky
           actions={
             <div className="cards-print-summary">
               {totalSelected > 0 ? (
@@ -176,7 +175,7 @@ export function CardBrowser({ cards, locale }: { cards: Card[]; locale: Locale }
           }
         />
 
-        <ToolBar sticky ariaLabel="Filtres des cartes">
+        <ToolBar ariaLabel="Filtres des cartes">
           <ToolSearch
             value={query}
             onChange={setQuery}

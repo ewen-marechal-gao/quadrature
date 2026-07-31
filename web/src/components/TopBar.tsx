@@ -47,17 +47,15 @@ interface Props {
   collapse?: TopBarCollapse;
   /** Passé au sélecteur de langue, qui bascule alors vers le même livre. */
   bookId?: string;
-  /** Barre qui suit le défilement (rubriques dont la page entière défile). */
-  sticky?: boolean;
   /** Contrôles calés à droite : imprimer, télécharger — ce qu'on FAIT de la page. */
   actions?: React.ReactNode;
 }
 
 export function TopBar({
-  locale, page, pageHref, section, collapse, bookId, sticky, actions,
+  locale, page, pageHref, section, collapse, bookId, actions,
 }: Props) {
   return (
-    <header className={sticky ? "top-bar top-bar--sticky" : "top-bar"}>
+    <header className="top-bar">
       {collapse && (
         <button
           className="top-bar-collapse"
