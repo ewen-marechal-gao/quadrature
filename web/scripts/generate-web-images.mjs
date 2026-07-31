@@ -1,15 +1,19 @@
 /**
  * scripts/generate-web-images.mjs — dérive les images web de la carte d'Aeonir.
  *
- * `public/images/map.jpg` est l'original : 8000×2000, ~8 Mo. C'est la bonne
- * source à conserver, mais la servir telle quelle en fond de page d'accueil fait
- * payer 8 Mo à chaque visiteur avant le premier écran. On en dérive donc :
+ * `assets/map.jpg` est l'original : 8000×2000, ~8 Mo. C'est la bonne source à
+ * conserver, mais la servir telle quelle en fond de page d'accueil fait payer
+ * 8 Mo à chaque visiteur avant le premier écran. On en dérive donc :
  *
  *   map-web.jpg  fond de la landing, réduit à une taille d'écran réaliste
  *   og.jpg       carte de partage (1200×630, le format attendu par les réseaux)
  *
  * Les deux sont des ARTEFACTS (gitignorés, régénérés à chaque build) : seul
  * l'original est versionné.
+ *
+ * Il vit dans `assets/` et non dans `public/` : tout ce que contient `public/`
+ * est copié tel quel dans l'export, et ces 8 Mo y représentaient un tiers du
+ * poids déployé pour zéro requête — personne ne demande jamais l'original.
  *
  * `sharp` arrive avec Next.js. Si un jour il disparaît de l'arbre de
  * dépendances, ce script échoue franchement plutôt que de produire un site
@@ -22,7 +26,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const ROOT = path.dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
-const SOURCE = path.join(ROOT, "public", "images", "map.jpg");
+const SOURCE = path.join(ROOT, "assets", "map.jpg");
 const OUT_DIR = path.join(ROOT, "public", "images");
 
 if (!existsSync(SOURCE)) {
