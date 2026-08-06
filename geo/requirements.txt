@@ -1,0 +1,13 @@
+# Chantier geo/ — dépendances directes.
+# Installation : voir README.md
+#
+# Bibliothèques natives embarquées par ces roues (aucun GDAL système requis) :
+#   GDAL 3.12.1   via rasterio
+#   PROJ 9.5.1    via pyproj
+#   GEOS 3.13.1   via shapely
+
+numpy==2.5.1
+pyproj==3.7.2
+rasterio==1.5.0
+shapely==2.1.2
+pytest==9.1.1

@@ -1,0 +1,14 @@
+# Environnement Python local
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Produits générés — reproductibles par le pipeline, jamais versionnés.
+# Le MNT global fait ~500 Mo, les pyramides de tuiles davantage.
+out/
+*.tif
+*.tiff
+*.pmtiles
+*.mbtiles
+*.gpkg
