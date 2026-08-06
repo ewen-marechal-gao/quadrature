@@ -20,15 +20,31 @@ dans un module unique.
 | Gravité | 7,34 m/s² | `astronomie.md` |
 | Rapport de rayon avec la Terre | 0,7486 | 4 775 / 6 378,137 |
 | Facteur d'exagération du relief | 1,336 | inverse du précédent |
-| Largeur du terminateur | 1 500 km ≈ 18° d'arc | `climat.md` |
-| Étendue de la table du gradient solaire | −21° à +6° = 27° ≈ 2 250 km | `climat.md` |
+| Terminateur du **Levant** | −18° (Front du Levant) → +6° (Mur des Tempêtes) = 2 000 km | `climat.md` |
+| Terminateur du **Couchant** | +3 à +6° (Front du Couchant) → −21° (Linceul) = ~2 125 km | `climat.md` |
+| Zone **habitée et explorée** | ~1 500 km — ordre de grandeur, bornes non fixées | `climat.md` |
 | Inclinaison de l'axe | 3° | `astronomie.md` |
-| Période de rotation | 56 ans 9 mois | `astronomie.md` |
-| Traversée du terminateur à l'équateur | 71 ans | `climat.md` |
+| Période de rotation sidérale | 56 ans 9 mois | `astronomie.md` |
+| Période orbitale | 54 ans ½ | `astronomie.md` |
+| **Jour solaire** | ~1 375 ans dérivé, 1 414 annoncé | `astronomie.md` |
+| Excentricité de l'orbite | 0,20 — périhélie 14 UA, aphélie 21 UA | `climat.md` |
+| Vitesse du terminateur à l'équateur | 21,8 km/an | dérivée |
+| Traversée de la zone habitée à l'équateur | 71 ans | `climat.md` |
 
-> **Incohérence connue.** Les 1 500 km annoncés valent 18° d'arc, alors que la
-> table du gradient solaire couvre 27°, soit 2 250 km. À trancher côté règles ;
-> le pipeline prendra la table comme source, étant plus détaillée.
+> ⚠️ **Le terminateur se déplace à la vitesse du jour solaire, pas de la
+> rotation.** C'est l'écart de 4 % entre rotation et orbite qui le promène. Le
+> caler sur la rotation sidérale le rend **vingt-cinq fois trop rapide** — 2,8
+> ans pour franchir la zone habitée au lieu de 71.
+
+> **Les deux moitiés ne sont pas symétriques.** La croûte traverse la bande deux
+> fois par rotation, en sens opposés, et les seuils diffèrent : on émerge des
+> glaces à −18° au **Levant**, on y retourne à −21° au **Couchant**. Trois degrés
+> d'hystérésis, soit 250 km. Conséquence : le climat est `f(lat', hémisphère)`,
+> jamais `f(lat')` seule.
+>
+> ⚠️ **Question ouverte** — les 1 500 km de largeur annoncés par `climat.md` ne
+> correspondent à aucune des deux moitiés, qui font ~2 000 et ~2 125 km. À
+> trancher côté règles : cœur vivable, ou étendue front à front ?
 
 ---
 

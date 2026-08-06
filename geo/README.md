@@ -49,7 +49,7 @@ reproductibilité est assurée par le code, pas par le stockage.
 
 | Lot | Contenu | État |
 |---|---|---|
-| **0** | Référentiels Croûte et Étoile, rotation datée entre eux | en cours |
+| **0** | Référentiels Croûte et Étoile, rotation datée entre eux | ✅ 79 tests |
 | **1** | MNT global — fBm échantillonné en 3D sur la sphère → GeoTIFF → COG | |
 | **2** | Hydrologie — comblement, D8, accumulation pondérée, réseau, bassins → GeoPackage | |
 | **3** | Tuileur maison — pyramide XYZ, terrain-RGB, empaquetage PMTiles | |
@@ -93,12 +93,11 @@ En plaçant les **pôles de projection au point substellaire et au point
 antistellaire**, le terminateur devient l'équateur. Trois conséquences :
 
 - **La latitude *est* l'angle d'élévation de l'étoile.** La table du gradient
-  solaire de `rules/fr/univers/climat.md` (−21° Linceul → +6° Mur des Tempêtes)
-  devient littéralement une table de latitudes. L'insolation se calcule en
-  `f(lat)`, les biomes deviennent des bandes horizontales.
-- **La bande habitable tombe où Mercator déforme le moins.** À ±18°, le facteur
-  d'échelle vaut 1/cos(18°) = **1,05**. Cinq pour cent d'étirement sur toute la
-  civilisation.
+  solaire de `rules/fr/univers/climat.md` devient littéralement une table de
+  latitudes. L'identité est **exacte**, pas approchée — mesurée plus bas.
+- **La bande habitable tombe où Mercator déforme le moins.** Le facteur d'échelle
+  vaut 1/cos(lat) : **1,02** au bord de la bande habitable (−12°), 1,07 jusqu'au
+  Linceul (−21°). Deux pour cent d'étirement sur toute la civilisation.
 - **La coupure de Mercator ne coûte plus rien.** Elle retire deux calottes de
   **412 km de rayon** — (90° − 85,0511°) × π/180 × 4 775 km — centrées sur la
   roche vitrifiée de la Face Ardente et sur le Linceul. Les deux endroits où
@@ -106,6 +105,89 @@ antistellaire**, le terminateur devient l'équateur. Trois conséquences :
 
 C'est un **aspect oblique** : même cylindre, même formule, pôle déplacé. Rien
 d'exotique — les grilles climatiques CORDEX et COSMO fonctionnent ainsi.
+
+## La géographie qui en résulte
+
+Les pôles fixés, deux paramètres restaient : où tombe la longitude zéro, et dans
+quel sens comptent les latitudes.
+
+### Latitude — l'identité est exacte
+
+`lat' = 90° − distance angulaire au point substellaire`, c'est-à-dire l'élévation
+de l'étoile au-dessus de l'horizon, **positive vers la Face Ardente**. Vérifié
+sur dix points répartis : écart maximal **5 × 10⁻¹⁴ degré**, la précision
+machine. Aucune constante d'ajustement — `+o_lat_p=0` avec le point substellaire
+en pôle nord tourné produit l'identité par construction.
+
+Mais **la latitude ne suffit pas à dire le climat** — voir la section suivante.
+Elle dit l'insolation, ce qui n'est pas la même chose.
+
+| `lat'` | Distance | Levant — la terre monte | Couchant — la terre descend |
+|---:|---:|---|---|
+| +6° | +500 km | **Mur des Tempêtes** — sortie | **Front du Couchant** — entrée |
+| +3° | +250 km | Savane aride | *entrée, selon l'hygrométrie* |
+| **0°** | **0** | **Cœur tempéré — cités** | **Cœur tempéré — cités** |
+| −3° | −250 km | Jungle Indigo | Jungle Indigo |
+| −6° | −500 km | Steppes crépusculaires | Steppes crépusculaires |
+| −12° | −1 000 km | Zone d'absorption | *non nommé par le vault* |
+| −18° | −1 500 km | **Front du Levant** — entrée | *descente vers le Linceul* |
+| −21° | −1 750 km | *encore sous la glace* | **Le Linceul** — sortie |
+
+**Le zéro n'est pas au centre de la bande, et c'est voulu.** `lat' = 0` est la
+surface où l'étoile rase l'horizon, définie physiquement — c'est ce que doit être
+l'origine d'un CRS géographique. Décaler le datum ferait de `lat'` une grandeur
+sans signification et mettrait une constante magique dans chaque formule
+d'insolation.
+
+Le centrage d'une feuille est un **paramètre de projection** : les cartes locales
+porteront un `+lat_0` adapté. C'est exactement à cela que sert ce paramètre.
+
+### Longitude — origine au pôle Nord géographique
+
+`+o_lon_p = 0` place le pôle Nord géographique à `lon' = 0`, et le pôle Sud à
+`lon' = 180`.
+
+La propriété qui décide du choix : **cette origine ne dérive jamais.** Mesuré sur
+six époques réparties sur une rotation complète, les deux pôles géographiques
+restent exactement à `lat' = 0`, `lon' = 0` et `180`. Logique après coup —
+`+lon_0` fait tourner autour de l'axe polaire de la Croûte, dont les pôles sont
+les points fixes. Un lieu polaire garde donc sa longitude Étoile pendant les
+56 ans de rotation, sans aucun recalage entre deux époques.
+
+### Levant et Couchant sont des longitudes
+
+La table du gradient solaire laisse croire le contraire en listant un « Front du
+Couchant » à −18°, comme s'il s'agissait d'un parallèle. Or un parallèle ceinture
+toute la planète : le même −18° est la sortie des glaces d'un côté du monde, et
+l'enfoncement vers le Linceul de l'autre.
+
+| Demi-terminateur | Longitudes Étoile | Sens | Entrée | Sortie |
+|---|---|---|---|---|
+| **Levant** | `lon' ∈ (−180, 0)` | la terre **monte** | Front du Levant, −18° | Mur des Tempêtes, +6° |
+| **Couchant** | `lon' ∈ (0, 180)` | la terre **descend** | Front du Couchant, +3 à +6° | Le Linceul, −21° |
+
+**Les deux moitiés ne sont pas symétriques**, et c'est le point qui structure
+toute la carte des biomes. On émerge des glaces à −18° côté Levant, on y
+retourne à −21° côté Couchant : trois degrés d'écart, soit **250 km**. C'est une
+**hystérésis**, physiquement banale — le seuil de dégel n'est jamais celui du
+gel.
+
+La cause du Mur des Tempêtes l'explique. Ce sont les mers et les nappes d'une
+terre *qui vient de traverser la zone tempérée* qui s'évaporent d'un coup. Une
+terre qui émerge de la face brûlante côté Couchant est déjà sèche : pas de mur
+d'orages, seulement un front dont la position dépend de l'humidité résiduelle du
+terrain — d'où une plage de +3 à +6° et non un seuil.
+
+> **Le climat n'est donc pas `f(lat')`, mais `f(lat', hémisphère)`.**
+> L'insolation, elle, reste bien une fonction de la seule latitude. Mais à −20°,
+> le Levant garde ses terres sous la glace pendant que le Couchant y voit l'azote
+> se solidifier. La distinction Levant/Couchant cesse d'être du vocabulaire pour
+> devenir **un axe de la classification raster** du Lot 2.
+
+Il en découle aussi que **les pôles géographiques, à `lon' = 0` et `180`, sont la
+charnière entre les deux moitiés** — géométriquement obligatoire, la vitesse de
+la croûte y étant nulle. Les civilisations polaires vivent au seul endroit du
+monde où la terre ne se lève ni ne se couche.
 
 ## Il faut deux référentiels, pas un
 
@@ -120,12 +202,74 @@ Mais la croûte tourne sous le climat : 71 ans pour que le terminateur parcoure
 
 | Référentiel | Fixé à | Ce qui y vit |
 |---|---|---|
-| **Aeonir-Croûte** | la planète | relief, fleuves, villes bâties |
-| **Aeonir-Étoile** | l'étoile | terminateur, climat, biomes, insolation |
+| **Aeonir-Croûte** | la planète | relief, fleuves, villes bâties, **anticyclones polaires**, vents méridiens |
+| **Aeonir-Étoile** | l'étoile | terminateur, insolation, biomes |
 
 La transformation entre eux est **une rotation dépendant de l'époque**. Ce n'est
 pas une bizarrerie de monde inventé : c'est le problème de l'ITRF sur Terre, où
 les coordonnées sont datées parce que les plaques bougent.
+
+### Le climat n'est pas une fonction de la seule latitude Étoile
+
+L'insolation l'est — c'est l'identité `lat' = élévation`. Mais la stabilité des
+pôles vient des **anticyclones de subsidence** : `climat.md` est explicite, le
+dôme d'air subsident repousse les perturbations du Terminateur, et « c'est cette
+barrière invisible qui rend possible l'existence de cités sédentaires ». Ce sont
+eux, et non la géométrie, qui donnent aux pôles leur température et leur humidité
+stables.
+
+Or ces anticyclones sont ancrés sur l'axe de **rotation** — donc dans le repère
+Croûte, à une latitude géographique β, pas à une latitude Étoile.
+
+### Ce que le lore établit, et ce que le modèle en déduit
+
+La frontière entre les deux doit rester lisible, sous peine de faire passer un
+calcul pour un fait du monde.
+
+**Établi par le lore.** Les durées de traversée du terminateur — 71 ans à
+l'équateur, 100 ans à 45°, 140 ans à 60° — varient en `1/cos β` et divergent au
+pôle : la croûte y est immobile par rapport au terminateur. Les pôles
+géographiques ne quittent donc jamais la bande, aux ±3° d'inclinaison près qui
+produisent les jours et nuits polaires. La stabilité qui rend les cités possibles
+est **atmosphérique** — les anticyclones de subsidence — et l'asymétrie entre les
+deux pôles est **orbitale**.
+
+**Déduit par le modèle, absent du lore.** Dans le repère Étoile, **aucun lieu de
+la croûte n'est immobile**, pas même le pôle. Deux effets se superposent :
+
+- la **rotation** (56,75 ans) fait osciller la latitude Étoile de `±(90° − β)` ;
+- l'**inclinaison de 3°**, portée par l'orbite (54,5 ans), ajoute `±3°`.
+
+Mesuré sur 3 000 ans, les deux s'additionnent exactement :
+
+| β | Amplitude de `lat'` |
+|---:|---:|
+| 90° — pôle exact | ±3° |
+| 87° | ±6° |
+| 84° | ±9° |
+| 80° | ±13° |
+
+**Le pôle géographique exact n'est pas fixe non plus** : sa latitude Étoile suit
+la déclinaison du point substellaire, entre −3° et +3°. C'est exactement le jour
+et la nuit polaires. Il ne serait fixe que si l'inclinaison était nulle.
+
+En prenant le Mur des Tempêtes (+6°) pour limite franche, la calotte qui ne le
+franchit jamais est `β ≥ 87°`, soit **250 km de rayon** — la moitié de ce qu'on
+obtient en négligeant l'inclinaison. Mais le maillon faible reste le seuil : rien
+ne dit qu'une cité doive ne *jamais* dépasser +6° plutôt que le tolérer quelques
+années, ou être évacuée. **La calotte n'est pas une frontière de peuplement.** Ce
+qui sert au Lot 2, c'est la fonction `lat'(β, λ, t)` elle-même.
+
+> **Les deux horloges battent.** 56,75 et 54,5 ans donnent un battement de
+> **~1 375 ans**. Un lieu proche du pôle ne retrouve son climat exact ni au bout
+> d'une rotation, ni au bout d'une orbite, mais au bout du battement. L'histoire
+> climatique d'un pixel a donc une période millénaire — ce qui conditionne la
+> durée qu'il faudra simuler au Lot 2.
+
+> **Conséquence pour le Lot 2** — toute carte climatique se calcule dans les
+> **deux repères à la fois** : insolation en `f(lat')`, subsidence polaire et
+> vents méridiens en `f(β)`. Les deux référentiels ne sont pas un raffinement de
+> présentation, ils sont porteurs du modèle.
 
 ## Aeonir est une sphère — exactement, pas approximativement
 
@@ -181,10 +325,6 @@ nous touche jamais.
 C'est d'ailleurs la pratique de l'UAI pour la quasi-totalité des corps
 planétaires, Mars étant l'exception notable avec un vrai ellipsoïde aplati.
 
-> **Vérification annexe** — les 14 et 21 UA du lore donnent un demi-grand axe de
-> 17,5 UA et une excentricité de **0,20**, exactement la valeur annoncée dans
-> `climat.md`. Le lore est numériquement cohérent avec lui-même.
-
 ## PMTiles plutôt que MBTiles
 
 Le site Quadrature est un export statique déployé par GitHub Actions. MBTiles est
@@ -207,6 +347,34 @@ inchangée. Seules les grandeurs métriques mentent. D'où l'arbitrage :
   angulaire correcte à l'écran.
 
 Une seule vérité, un seul endroit où elle est déformée, documenté.
+
+## Deux types de carte, un seul datum
+
+**A — globale, centrée sur un pôle géographique.** Axe horizontal `lon'`, axe
+vertical `lat'`. Le terminateur est la ligne médiane, le pôle Nord au centre, le
+Levant et le Couchant aux tiers, le pôle Sud coupé aux deux bords, la Face
+Ardente en haut et la Face Obscure en bas. Version centrée sud : `+o_lon_p=180`,
+un seul paramètre change.
+
+Avertissement : en Web Mercator, la bande habitable n'occupe que **7,6 % de la
+hauteur** de la carte — 15 % en équirectangulaire. MapLibre ne sachant faire que
+du Mercator, le viewer s'ouvrira sur une carte dont l'essentiel est du désert
+vitrifié dilaté. Correctif : `maxBounds` et `fitBounds` sur la bande à
+l'initialisation.
+
+**B — locale, dans l'esprit de la carte dessinée.** Axes échangés, gradient
+climatique lu de gauche à droite, du chaud vers le froid.
+
+> **C'est un choix de projection, pas un nouveau datum.** On garde deux CRS
+> géographiques — Croûte et Étoile — et on dérive autant de CRS *projetés* que de
+> types de feuille. Multiplier les datums est ce qui rend un SIG ingérable ;
+> multiplier les projections est le fonctionnement normal.
+
+Pour une feuille imprimée, une projection en aspect transverse dérivée du repère
+Étoile, avec `+lat_0=-3` pour centrer la bande. Pour le viewer, beaucoup plus
+simple : **`bearing: 90`** fait tourner la vue de MapLibre à l'écran. Près de
+l'équateur, où le facteur d'échelle vaut 1,02, c'est indiscernable d'une vraie
+projection tournée — et cela évite une seconde pyramide de tuiles.
 
 ---
 
@@ -260,6 +428,13 @@ l'aplatissement inverse, et **zéro y signifie sphère**, par convention.
 > broncher et sans effet. Une chaîne `+proj=` qui ne lève pas d'erreur ne prouve
 > **rien** sur ce qu'elle fait. Toujours vérifier le résultat, jamais la syntaxe.
 
+> **Second piège vérifié** — `ID["AEONIR",1]` est bien conservé dans le WKT et
+> survit à toute re-sérialisation, mais **`to_authority()` renvoie `None`** et
+> `list_authority()` une liste vide. Ces méthodes interrogent la **base de
+> données** de PROJ plutôt que de relire le nœud `ID`, et une autorité maison n'y
+> est pas enregistrée. L'identité est donc dans le fichier, jamais confirmée par
+> l'API. Tester la présence de la chaîne, pas le retour de la méthode.
+
 ## `ob_tran` — la transformation oblique
 
 *Réf. [Operations → Projections →
@@ -308,7 +483,25 @@ Trois enseignements :
 > **Conséquence pour le Lot 0** — si `λₛ(t)` désigne la longitude du point
 > substellaire dans le repère Croûte à l'époque *t*, alors la transformation
 > Croûte → Étoile s'écrit avec **`+lon_0 = λₛ(t) − 180`**. Toute la dépendance
-> temporelle du datum tient dans un seul paramètre PROJ.
+> rotationnelle du datum tient dans un seul paramètre PROJ.
+
+### Invariance de l'origine des longitudes — mesuré
+
+Six époques réparties sur une rotation complète, avec `+o_lon_p=0` :
+
+```
+λₛ (époque) |   pôle Nord géo   |   pôle Sud géo    | substellaire
+          0 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+         45 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+         90 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+        180 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+        270 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+        359 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+```
+
+Les pôles géographiques sont les points fixes de la rotation qu'applique
+`+lon_0`. L'origine des longitudes Étoile ne dérive donc jamais, et le point
+substellaire reste à `lat' = 90` par construction.
 
 ### `ob_tran` est sphérique — mesuré
 
@@ -335,6 +528,35 @@ La distinction est essentielle : **`omerc` incline la projection** — l'ellipso
 reste aligné sur l'axe de rotation — alors qu'Aeonir demanderait d'**incliner
 l'ellipsoïde lui-même**, ce que personne ne sait faire. C'est la projection de la
 Suisse, de la Malaisie et de la zone 1 de l'Alaska.
+
+### Mais `ob_tran` n'est pas ce qu'on a retenu
+
+PROJ sait exposer un `ob_tran` comme CRS **dérivé** — mais avec une méthode
+privée :
+
+```
+METHOD["PROJ ob_tran o_proj=longlat"]
+```
+
+Aucun autre logiciel ne saurait la lire. La convention **netCDF CF**
+`rotated_latitude_longitude` — celle des grilles climatiques CORDEX et COSMO —
+donne le même résultat avec une méthode normalisée :
+
+```
+METHOD["Pole rotation (netCDF CF convention)"]
+    PARAMETER["Grid north pole latitude",  <déclinaison>]
+    PARAMETER["Grid north pole longitude", <longitude substellaire>]
+    PARAMETER["North pole grid longitude", 0]
+```
+
+Deux avantages, mesurés. La méthode est **portable**. Et les paramètres sont
+**naturels** : le pôle est donné directement par les coordonnées du point
+substellaire, sans le détour par `lon_0 = λₛ − 180` qu'impose `ob_tran`. Les
+deux voies donnent le même résultat à **1,1 × 10⁻¹³ degré**.
+
+C'est cette déclaration qui est retenue pour `AEONIR:2`. Bénéfice supplémentaire
+vérifié : avec l'inclinaison, le pôle Nord géographique conserve `lon' = 0`
+exactement — seule sa latitude bouge.
 
 ### `+o_proj=longlat` renvoie des radians
 
@@ -364,18 +586,135 @@ print(ell(10, 45), sph(10, 45))     # identiques → ob_tran est sphérique
 
 ---
 
+# Contrôles du modèle contre le lore
+
+Le pipeline n'a pas à croire le lore sur parole : là où le texte donne des
+chiffres, le modèle géométrique doit les retrouver. Trois contrôles passés.
+
+## Deux largeurs, qui ne mesurent pas la même chose
+
+J'avais d'abord écrit que les 1 500 km du lore valaient exactement la plage
+`−12° → +6°`, en « cohérence vérifiée ». C'était une **coïncidence arithmétique
+promue en fait** — le même travers que la calotte polaire. Le −12° n'a aucun
+statut particulier.
+
+La structure réelle distingue deux grandeurs :
+
+| | Étendue | Largeur |
+|---|---|---:|
+| **Franchissable**, Levant | −18° → +6° | 24° = 2 000 km |
+| **Franchissable**, Couchant | +4,5° → −21° | 25,5° = 2 125 km |
+| **Habitée et explorée** | bornes non fixées par le lore | ~**1 500 km** |
+
+Les extrémités sont traversées mais pas peuplées : trop hostiles. Les 1 500 km
+sont un ordre de grandeur pour le cœur habité — et c'est bien cette largeur-là
+qu'`climat.md` utilise pour ses durées de traversée, « soixante et onze ans à
+l'équateur pour franchir les mille cinq cents kilomètres ».
+
+Le pipeline encode les quatre seuils, qui sont des données sûres, et la largeur
+habitée comme ordre de grandeur. **Il n'invente pas les bornes en latitude du
+cœur habité**, que le lore ne donne pas.
+
+## Les durées de traversée — et l'horloge qu'il ne faut pas confondre
+
+Le terminateur **ne se déplace pas à la vitesse de rotation**. Sur un monde
+quasi-verrouillé, rotation et orbite ne diffèrent que de 4 %, et c'est cet écart
+qui promène le point substellaire autour de la croûte : la période est le **jour
+solaire**, ~1 375 ans, pas les 56,75 ans de la rotation sidérale.
+
+Confondre les deux donne un terminateur **vingt-cinq fois trop rapide** — la
+zone habitée franchie en 2,8 ans au lieu de 71. C'est l'erreur que le pipeline a
+faite avant correction, et un test la garde fermée.
+
+Avec la bonne horloge, la vitesse à l'équateur vaut 21,8 km/an, modulée par
+`cos β` puisque la croûte tourne moins vite aux hautes latitudes :
+
+| Latitude géographique | Modèle | `climat.md` |
+|---|---:|---:|
+| 0° | 68,7 ans | 71 ans |
+| 45° | 97,2 ans | 100 ans |
+| 60° | 137,4 ans | 140 ans |
+
+Les trois valeurs sortent du jour solaire et des 1 500 km, sans qu'on ait fourni
+ni la loi en `1/cos β` ni aucune des durées. L'écart de 3 % est exactement celui
+qui sépare notre jour solaire de 1 375 ans des 1 414 du vault — une différence
+d'arrondi sur la période orbitale.
+
+## Les étés polaires
+
+Tout le tableau d'asymétrie de `climat.md` se reconstruit depuis Kepler avec
+**deux entrées seulement** : périhélie 14 UA, aphélie 21 UA.
+
+| | Modèle | `climat.md` |
+|---|---:|---:|
+| Excentricité | 0,2000 | 0,20 |
+| Été du Nord (périhélie) | 20,4 ans | 20,4 ans |
+| Été du Sud (aphélie) | 34,1 ans | 34,2 ans |
+| Flux au solstice, Nord / Sud | 1,56 / 0,69 F₀ | 1,56 / 0,69 F₀ |
+| Flux moyen, Nord / Sud | 1,37 / 0,81 F₀ | 1,37 / 0,82 F₀ |
+
+Et l'affirmation la plus contre-intuitive du texte se vérifie exactement :
+
+```
+Nord    20,4 ans × 1,366 F₀ = 27,81 F₀·an
+Sud     34,1 ans × 0,815 F₀ = 27,81 F₀·an
+```
+
+Énergie totale identique aux quatre chiffres significatifs — l'analogie du
+chalumeau et de la bougie est littéralement exacte, pas seulement imagée.
+
+Contrôle indépendant : en modélisant la **déclinaison** du point substellaire,
+`δ(t) = 3° × cos(ν(t))`, et en comptant les années où `δ > 0`, on retrouve
+20,4 ans de jour polaire Nord et 34,1 de nuit. Deux routes distinctes — l'angle
+balayé de Kepler, et le signe de la déclinaison — donnent le même résultat.
+
+Bénéfice pour le Lot 2 : `flux(pôle, phase orbitale)` est entièrement déterminé,
+sans paramètre libre.
+
+---
+
 # Ce qui reste ouvert
 
-Le Lot 0 n'est pas clos. Décisions en attente, dans l'ordre où elles se posent :
-
-| # | Décision | Pourquoi elle compte |
+| # | Décision | État |
 |---|---|---|
-| ✅ 1 | **Forme du corps** — sphère de 4 775 km | tranché ci-dessus |
-| 2 | **Origine des longitudes** de chaque repère | `+o_lon_p`. Le pôle Nord géographique, qui est sur le terminateur, est le candidat naturel |
-| 3 | **Sens et signe des latitudes** du repère Étoile | pour que la latitude soit littéralement l'angle d'élévation, le positif va vers la Face Ardente |
-| 4 | **Déclaration d'un CRS non terrestre** que GDAL, PROJ et QGIS acceptent | `EPSG:3857` est *défini sur WGS84* : la Web Mercator d'Aeonir devra être la nôtre, avec un SRID privé |
-| 5 | **Définition numérique de l'époque** | origine du temps, unité, et si le repère Étoile mérite d'être un CRS ou seulement une fonction dérivée |
-| 6 | **Zéro altimétrique d'un monde sans océan** | `climat.md` est explicite : « il n'existe pas d'océan global ». Détermine le `NoData`, l'encodage terrain-RGB et la lecture de toutes les cartes |
+| 1 | **Forme du corps** — sphère de 4 775 km, exacte et non approchée | ✅ |
+| 2 | **Origine des longitudes** — pôle Nord géographique à `lon' = 0` | ✅ |
+| 3 | **Latitudes** — `lat'` = élévation de l'étoile, positive vers la Face Ardente | ✅ |
+| 4 | **Déclaration des CRS** — autorité `AEONIR`, WKT2, ordre d'axes ISO | ✅ |
+| 5 | **Époque** — origine au périhélie, unité l'année, `λₛ(0) = 0` | ✅ |
+| 6 | **Zéro altimétrique d'un monde sans océan** | ⏳ `climat.md` : « il n'existe pas d'océan global ». Détermine le `NoData`, l'encodage terrain-RGB et la lecture de toutes les cartes |
+
+Les cinq premières sont figées dans `aeonir_gis/crs.py` et verrouillées par
+`tests/`. Le point 6 relève du Lot 1 : il ne bloque pas le référentiel.
+
+## Les identités déclarées
+
+| SRID | Nom | Nature |
+|---|---|---|
+| `AEONIR:1` | Aeonir Crust | géographique, fixé à la planète |
+| `AEONIR:2` | Aeonir Star | géographique dérivé, fixé à l'étoile, daté |
+| `AEONIR:3` | Aeonir Mercator | projeté, mètres — pour l'analyse métrique |
+
+**On ne squatte aucun code EPSG.** Il circule des conventions consistant à
+prendre un code libre dans les 9xxxxx : c'est une mauvaise habitude, le registre
+évoluant. L'espace de noms `AEONIR` est à nous.
+
+## Point 5 — il y a deux horloges, pas une
+
+| Horloge | Période | Ce qu'elle pilote |
+|---|---|---|
+| **Rotation** | 56 ans 9 mois | `λₛ`, la position du terminateur sur la croûte — donc `+lon_0` |
+| **Orbite** | 54 ans ½ | l'inclinaison ±3° (jours et nuits polaires de 27 ans) et le flux via l'excentricité 0,20 |
+
+Le jour polaire, la nuit polaire et toute l'asymétrie Nord/Sud sont **orbitaux**,
+pas rotationnels. Une époque ne peut donc pas se réduire à `λₛ(t)` : il faut
+aussi la phase orbitale, sans quoi on perd exactement ce qui distingue le Peuple
+des Pluies du Peuple des Neiges.
+
+Mise en garde : les 1 414 ans du jour solaire sont le **battement** entre les deux
+périodes, et ce battement est extrêmement sensible aux arrondis — 54,5 ans
+donnent 1 375 ans, 54,56 ans donnent 1 414. Ce chiffre ne peut pas servir de
+contrôle de cohérence, seulement d'ordre de grandeur.
 
 ---
 
@@ -384,8 +723,3 @@ Le Lot 0 n'est pas clos. Décisions en attente, dans l'ordre où elles se posent
 Les constantes physiques viennent de `rules/fr/univers/astronomie.md` et
 `rules/fr/univers/climat.md`. Elles ne seront recopiées nulle part : un module
 unique les portera, et tout le reste s'y réfèrera.
-
-**Incohérence connue à trancher côté règles** — les 1 500 km de largeur du
-terminateur valent 18° d'arc au rayon d'Aeonir, alors que la table du gradient
-solaire couvre −21° à +6°, soit 27° ≈ 2 250 km. Le pipeline prendra la table
-comme source, étant la plus détaillée.
