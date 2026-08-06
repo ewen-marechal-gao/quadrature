@@ -141,6 +141,72 @@ ECCENTRICITY: Final[float] = ((APHELION_AU - PERIHELION_AU)
 #  retourne à −21°. C'est une HYSTÉRÉSIS, et elle est physiquement banale — le
 #  seuil de dégel n'est jamais celui du gel.
 
+# ─────────────────────────────────────────────────────────────────────────
+#  Datum altimétrique — un monde sans océan
+# ─────────────────────────────────────────────────────────────────────────
+#
+#  `climat.md` est explicite : « il n'existe pas d'océan global ». Il n'y a donc
+#  pas de niveau de la mer, et le zéro des altitudes doit être défini autrement.
+#
+#  Retenu : le zéro EST la sphère de référence.
+#
+#      altitude = distance au centre − RADIUS_M
+#
+#  Un zéro calé sur la moyenne du terrain généré bougerait à chaque
+#  régénération — le datum dépendrait de la donnée, ce qui est l'inverse de ce
+#  qu'un datum doit être. La sphère, elle, ne bouge pas.
+#
+#  Conséquence géodésique : sur Terre, la séparation géoïde/ellipsoïde atteint
+#  ±100 m, d'où la distinction entre hauteur ellipsoïdale et altitude
+#  orthométrique. Sur Aeonir la déformation du corps vaut 0,09 mm, donc les deux
+#  se confondent : UNE SEULE ÉCHELLE D'ALTITUDE, aucun modèle de séparation.
+#
+#  ⚠️ Choix de modèle, pas fait démontré : les ondulations du géoïde terrestre
+#  viennent surtout des anomalies de densité du manteau, qu'on ne modélise pas.
+#  On DÉCLARE que le géoïde est la sphère.
+
+VERTICAL_DATUM_RADIUS_M: Final[float] = RADIUS_M
+"""Surface de référence des altitudes — la sphère elle-même."""
+
+NODATA: Final[float] = -32768.0
+"""Valeur « pas de mesure ». Hors de toute altitude plausible, et confondue avec
+le plancher de l'encodage terrarium, ce qui évite un cas particulier au tuilage.
+"""
+
+GRAVITY_RATIO: Final[float] = SURFACE_GRAVITY_MS2 / 9.807
+"""Rapport de pesanteur à la Terre.
+
+Il vaut, à 0,1 % près, le **rapport des rayons** — parce que `g ∝ ρR` et que la
+densité d'Aeonir est celle de la Terre à 0,1 % près (0,42 M⊕ pour 0,7486 R⊕).
+
+Le même facteur 1,336 gouverne donc deux choses sans rapport apparent :
+l'exagération du relief à l'écran, et la hauteur maximale qu'un pic peut
+atteindre pour une résistance de roche donnée.
+"""
+
+MAX_RELIEF_M: Final[float] = 11_800.0
+"""Amplitude maximale du relief, en mètres au-dessus du datum.
+
+**Paramètre de modélisation, absent du lore.** Obtenu en appliquant le rapport de
+pesanteur à l'Everest : `8 850 m × 1,336`. Une montagne est limitée par
+`σ / (ρ g)`, donc une gravité plus faible en autorise de plus hautes — ce que
+`astronomie.md` énonce déjà pour la végétation.
+
+À confirmer au Lot 1 quand le générateur produira des chiffres.
+"""
+
+TERRAIN_RGB_ENCODING: Final[str] = "terrarium"
+"""Encodage des tuiles de terrain — **décidé par l'amplitude, pas par habitude**.
+
+L'encodage Mapbox, le plus répandu, a son plancher à **−10 000 m**. Aeonir peut
+descendre à −11 800 : il écrêterait les bassins profonds sans prévenir.
+
+L'encodage terrarium couvre ±32 768 m *et* offre un pas de 4 mm contre 10 cm,
+soit vingt-cinq fois mieux. MapLibre lit les deux, il suffit de le déclarer dans
+la source. Aucune raison de préférer Mapbox : sa seule vertu est d'être servi par
+Mapbox, ce dont on n'a pas l'usage.
+"""
+
 INHABITED_WIDTH_M: Final[float] = 1_500_000.0
 """Largeur de la zone **habitée et explorée**, ordre de grandeur.
 

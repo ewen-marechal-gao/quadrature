@@ -454,8 +454,18 @@ Mapbox     : altitude = -10000 + (R × 65536 + G × 256 + B) × 0,1
 Terrarium  : altitude = R × 256 + G + B / 256 - 32768
 ```
 
-L'encodage Mapbox donne 10 cm de précision sur une plage de 10 km. MapLibre lit
-les deux ; il faut le déclarer dans la source (`encoding`).
+| Encodage | Plancher | Plafond | Pas |
+|---|---:|---:|---:|
+| Mapbox | **−10 000 m** | +1 667 721 m | 10 cm |
+| Terrarium | −32 768 m | +32 768 m | ~4 mm |
+
+> **Aeonir prend le terrarium.** Le plancher de l'encodage Mapbox est à
+> −10 000 m, alors que le relief peut descendre à −11 800 : il **écrêterait les
+> bassins profonds en silence**. Contre-intuitif, puisque son plafond monte à
+> 1 667 km — la plage est très asymétrique. Le terrarium couvre ±32 768 m avec un
+> pas vingt-cinq fois plus fin.
+
+MapLibre lit les deux ; il faut le déclarer dans la source (`encoding`).
 
 **Ombrage** *(hillshade)* — rendu du relief calculé en éclairant le MNT depuis
 une position de lumière fictive. C'est du **2D qui donne l'illusion** du relief,
@@ -658,7 +668,7 @@ caractères) et l'atlas d'icônes.
     "aeonir-dem": {
       "type": "raster-dem",
       "url": "pmtiles://./aeonir-dem.pmtiles",
-      "encoding": "mapbox",
+      "encoding": "terrarium",
       "tileSize": 512,
       "maxzoom": 6
     },

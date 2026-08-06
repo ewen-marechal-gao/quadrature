@@ -178,6 +178,64 @@ def test_aeonir_is_a_sphere():
     assert k.FLATTENING == 0.0
 
 
+# ─────────────────────────────────────────────────────────────────────────
+#  Datum altimétrique
+# ─────────────────────────────────────────────────────────────────────────
+
+def test_the_vertical_datum_is_the_reference_sphere_itself():
+    """Un monde sans océan n'a pas de niveau de la mer.
+
+    Le zéro est la sphère, donc il ne bouge pas quand on régénère le terrain —
+    contrairement à un zéro calé sur la moyenne du MNT, qui ferait dépendre le
+    datum de la donnée.
+    """
+    assert k.VERTICAL_DATUM_RADIUS_M == k.RADIUS_M
+
+
+def test_gravity_ratio_equals_radius_ratio():
+    """Conséquence de `g ∝ ρR` et d'une densité identique à celle de la Terre.
+
+    Le même facteur gouverne donc l'exagération du relief à l'écran et la
+    hauteur maximale d'un pic.
+    """
+    assert k.GRAVITY_RATIO == pytest.approx(k.RADIUS_RATIO, rel=2e-3)
+    assert 1 / k.GRAVITY_RATIO == pytest.approx(k.TERRAIN_EXAGGERATION,
+                                                rel=2e-3)
+
+
+def test_aeonir_density_matches_earth():
+    """Vérifie la prémisse du test précédent, plutôt que de la supposer.
+
+    0,42 M⊕ pour 0,7486 R⊕ — `astronomie.md` annonce « une densité proche de
+    celle de la Terre », et le calcul le confirme à 0,1 % près.
+    """
+    density_ratio = 0.42 / k.RADIUS_RATIO ** 3
+    assert density_ratio == pytest.approx(1.0, abs=5e-3)
+
+
+def test_mapbox_encoding_is_too_shallow_for_aeonir():
+    """Ce qui décide l'encodage des tuiles.
+
+    Le plancher de l'encodage Mapbox est à −10 000 m — plus haut que les
+    −11 800 m que le relief peut atteindre. Il écrêterait les bassins profonds
+    en silence.
+    """
+    mapbox_floor = -10_000.0
+    assert -k.MAX_RELIEF_M < mapbox_floor
+
+
+def test_terrarium_encoding_holds_the_whole_relief():
+    """±32 768 m, et un pas vingt-cinq fois plus fin par-dessus le marché."""
+    assert -32_768.0 < -k.MAX_RELIEF_M
+    assert k.MAX_RELIEF_M < 32_768.0
+    assert (0.1 / (1 / 256)) == pytest.approx(25.6)
+    assert k.TERRAIN_RGB_ENCODING == "terrarium"
+
+
+def test_nodata_is_outside_any_plausible_elevation():
+    assert abs(k.NODATA) > 2 * k.MAX_RELIEF_M
+
+
 def test_rotational_flattening_is_negligible():
     """Justification du test précédent, refaite ici plutôt que recopiée.
 

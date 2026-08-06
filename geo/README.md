@@ -682,10 +682,52 @@ sans paramètre libre.
 | 3 | **Latitudes** — `lat'` = élévation de l'étoile, positive vers la Face Ardente | ✅ |
 | 4 | **Déclaration des CRS** — autorité `AEONIR`, WKT2, ordre d'axes ISO | ✅ |
 | 5 | **Époque** — origine au périhélie, unité l'année, `λₛ(0) = 0` | ✅ |
-| 6 | **Zéro altimétrique d'un monde sans océan** | ⏳ `climat.md` : « il n'existe pas d'océan global ». Détermine le `NoData`, l'encodage terrain-RGB et la lecture de toutes les cartes |
+| 6 | **Zéro altimétrique** — la sphère de référence elle-même | ✅ |
 
-Les cinq premières sont figées dans `aeonir_gis/crs.py` et verrouillées par
-`tests/`. Le point 6 relève du Lot 1 : il ne bloque pas le référentiel.
+Toutes figées dans `aeonir_gis/` et verrouillées par `tests/`.
+
+## Point 6 — le zéro est la sphère
+
+`climat.md` est explicite : « il n'existe pas d'océan global ». Pas de niveau de
+la mer, donc. Retenu : `altitude = distance au centre − 4 775 000 m`.
+
+**Parce que c'est stable.** Un zéro calé sur la moyenne du terrain généré
+bougerait à chaque régénération : le datum dépendrait de la donnée, l'inverse de
+ce qu'un datum doit être.
+
+**Et parce que le géoïde *est* l'ellipsoïde.** Sur Terre, la séparation
+géoïde/ellipsoïde atteint ±100 m, d'où la distinction entre hauteur ellipsoïdale
+et altitude orthométrique et tout un modèle de conversion. Sur Aeonir, la
+déformation du corps vaut 0,09 mm : les deux se confondent. **Une seule échelle
+d'altitude, aucun modèle de séparation.**
+
+> Choix de modèle, pas fait démontré : les ondulations du géoïde terrestre
+> viennent surtout des anomalies de densité du manteau, qu'on ne modélise pas. On
+> *déclare* que le géoïde est la sphère.
+
+Le générateur du Lot 1 sera écrit **à moyenne nulle par construction** : le
+terrain enjambe la sphère sans qu'on ait à le recentrer après coup.
+
+### Ce que la gravité impose au relief
+
+La densité d'Aeonir vaut celle de la Terre à **0,1 % près** — 0,42 M⊕ pour
+0,7486 R⊕, vérifié par un test. Or `g ∝ ρR`, donc à densité égale le rapport de
+pesanteur **est** le rapport des rayons.
+
+Le même **1,336** gouverne donc deux choses sans rapport apparent : l'exagération
+du relief à l'écran, et la hauteur maximale d'un pic — une montagne limitée par
+`σ/(ρg)` monte 1,336 fois plus haut. D'où `MAX_RELIEF_M = 11 800 m`, l'Everest
+transposé. `astronomie.md` énonce déjà la même loi pour la végétation.
+
+### Ce qui a décidé l'encodage des tuiles
+
+Contrôle inattendu du datum : le plancher de l'encodage **Mapbox est à
+−10 000 m**, alors que le relief peut descendre à −11 800. Il écrêterait les
+bassins profonds en silence — et sa plage est très asymétrique, puisque son
+plafond monte à 1 667 km.
+
+L'encodage **terrarium** couvre ±32 768 m avec un pas de 4 mm contre 10 cm. C'est
+lui qui est retenu, et un test garde la contrainte.
 
 ## Les identités déclarées
 
