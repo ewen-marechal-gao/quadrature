@@ -54,6 +54,29 @@ vont pas de soi, parce que la donnée n'est pas terrestre.
 Les aperçus internes du COG (`[2, 4, 8, 16, 32]`) sont utilisés
 automatiquement : le panoramique reste fluide malgré les 442 Mio.
 
+### Le projet `QGISviz.qgs`
+
+Versionné pour ce qu'il porte : le montage des couches, et surtout le **style**
+du MNT, qui a demandé plusieurs tâtonnements — rampe divergente bornée à
+**±9 300 m** pour que le zéro tombe au milieu, min/max sur **emprise entière** et
+non sur l'emprise courante, ombrage à **1,2 × 10⁻⁵** sur une couche dupliquée en
+mode de fusion *Multiplier*.
+
+Enregistré en `.qgs` et non `.qgz` : le second est un zip, illisible en diff. Les
+chemins sont relatifs, la seule source externe étant `./out/aeonir_crust_dem.tif`
+— absent du dépôt, régénérable en cinq minutes.
+
+**Deux choses qu'il ne porte pas**, pour éviter la surprise :
+
+- **Les couches de graticule rouvriront vides.** Ce sont des couches temporaires
+  en mémoire ; le projet n'enregistre que leur schéma. À regénérer par *Créer une
+  grille* + *Densifier*, ou par script le jour où le pipeline aura un écrivain
+  vectoriel — ce que le Lot 2 apportera.
+- **Une couche référence son SCR par code** (`USER:100002`) plutôt qu'en WKT.
+  Ce code n'a de sens que dans une base QGIS où les trois SCR d'`out/*.wkt` ont
+  été déclarés dans le même ordre. C'est le piège n° 18 du glossaire en action :
+  un identifiant ne vaut que relativement à son registre.
+
 ## Structure
 
 ```

@@ -423,27 +423,35 @@ Se tromper retourne la carte verticalement. Piège concret : **MBTiles stocke en
 TMS** alors que MapLibre consomme en XYZ ; tout lecteur MBTiles fait la bascule
 silencieusement.
 
-## Résolution par niveau (Aeonir, tuiles de 512 px)
+## Résolution par niveau (Aeonir, tuiles de 256 px)
 
-`résolution = 30 003 km / (2^z × 512)`
+`résolution = 30 003 km / (2^z × T)`, avec **T = 256** — terrarium est un format
+256, et une tuile plus petite donne une échelle de zoom plus fine.
 
 | z | Résolution | Tuiles (monde) | Tuiles (bande ±25°) |
 |---:|---:|---:|---:|
-| 0 | 58,6 km/px | 1 | 1 |
-| 3 | 7,3 km/px | 64 | ~10 |
-| 5 | 1,83 km/px | 1 024 | ~148 |
-| 6 | 916 m/px | 4 096 | ~590 |
-| 8 | 229 m/px | 65 536 | ~9 440 |
-| 9 | 114 m/px | 262 144 | ~37 700 |
+| 0 | 117,2 km/px | 1 | 1 |
+| 3 | 14,65 km/px | 64 | ~10 |
+| 5 | 3,66 km/px | 1 024 | ~148 |
+| **6** | **1,83 km/px** | **4 096** | **~590** |
+| 8 | 458 m/px | 65 536 | ~9 440 |
+| 9 | 229 m/px | 262 144 | ~37 700 |
 
 La bande ±25° ne représente que **14 %** de la surface en Web Mercator — d'où le
 rapport de 7 entre les deux colonnes.
 
-> **La contrainte réelle n'est pas technique mais logique** : sur un MNT
-> synthétique, il n'y a aucune information sous la plus petite octave du bruit.
-> Descendre à 114 m/px alors que la plus fine octave fait 2 km ne produit que de
-> l'interpolation. La question n'est pas « jusqu'où puis-je tuiler » mais
-> « quelle est la plus petite forme de relief que je veux modéliser ».
+**C'est cette relation qui dimensionne le raster source, et non l'inverse.** Une
+grille équirectangulaire et une pyramide Mercator portent le même `cos φ` :
+poser `W = 2^z · T` rend l'accord E-O exact à toutes les latitudes d'un coup.
+D'où les 16 384 × 8 192 du MNT, qui sont le miroir de z=6.
+
+> **La contrainte n'est ni technique ni logique, elle est en aval.** Sur un MNT
+> synthétique il n'y a aucune information sous la plus petite octave du bruit —
+> celle d'Aeonir fait **4,7 km, soit 2,5 pixels**, juste au-dessus de Nyquist.
+> Mais ce qui a réellement plafonné le zoom à 6, c'est le **Lot 2** :
+> comblement de cuvettes et accumulation D8 restent en mémoire sur 134 Mpx et
+> deviennent un problème hors-mémoire au-delà. La question n'est pas « jusqu'où
+> puis-je tuiler » mais « qu'est-ce que l'analyse pourra encore traiter ».
 
 ## Encodages de terrain
 
@@ -822,3 +830,72 @@ Les erreurs qui coûtent une demi-journée, rangées par fréquence.
     est ignoré — écart mesuré nul à la précision machine entre `+ellps=WGS84` et
     `+R=6378137`. Pour de l'oblique réellement ellipsoïdal, il faut `omerc`
     (Hotine), qui incline la *projection* et non l'ellipsoïde.
+
+12. **Le garde-fou du corps céleste, et sa dérogation trompeuse.** PROJ refuse de
+    transformer entre un SCR non terrestre et un SCR terrestre : *« Source and
+    target ellipsoid do not belong to the same celestial body »*. Le refus est
+    **correct**. La dérogation `PROJ_IGNORE_CELESTIAL_BODY=YES` existe et ne
+    répare rien : mesurée, elle produit un `Ballpark geographic offset`,
+    c'est-à-dire l'identité — `(60, 45) → (60, 45)`. Elle superpose deux mondes
+    en prétendant que leurs rayons sont égaux.
+
+13. **Plus proche voisin + opérateur de dérivée = maillage fantôme.** En zoom
+    avant, le plus proche voisin fait de chaque pixel un plateau constant. La
+    pente y vaut zéro et explose à la frontière : l'ombrage dessine alors la
+    grille de pixels en cernes noirs et blancs. Ce ne sont pas les marches qui
+    sont grandes — 10 m de médiane entre voisins sur Aeonir — c'est le diviseur
+    qui rétrécit du facteur de zoom : 0,31° de pente réelle affichée à 4,71° au
+    zoom ×15. **Tout produit dérivé** — pente, exposition, courbure, **D8** —
+    partage cette sensibilité. Corollaire dur : l'hydrologie tourne sur la
+    grille native, jamais sur un raster reprojeté ou rééchantillonné.
+
+14. **L'étirement de contraste calculé sur l'emprise visible.** Défaut de QGIS.
+    La rampe se recalcule à chaque déplacement, donc deux endroits de même
+    altitude n'ont pas la même couleur, et le contraste local révèle des
+    artefacts invisibles à l'échelle globale — sur Aeonir, une marche de 10 m
+    vaut 0,14 niveau de gris sur la plage complète et 2,3 niveaux sur une
+    fenêtre de 140 km. Régler *Étendue* sur **emprise entière**.
+
+15. **La reprojection vectorielle ne densifie pas.** Seuls les *sommets* sont
+    transformés ; ils restent reliés par des segments droits. Un parallèle
+    stocké comme une ligne à deux sommets devient une corde rectiligne dans le
+    repère cible. Densifier **avant** reprojection. Le raster n'a pas ce
+    problème : chaque pixel étant transformé isolément, la courbure sort seule.
+
+16. **L'enroulement à l'antiméridien.** Une géométrie dont deux sommets
+    consécutifs tombent de part et d'autre de ±180° est dessinée en reliant
+    `+179` à `−179` *à travers* la carte. Symptôme : de longues droites
+    horizontales traversant toute la vue. C'est le pendant vectoriel de la
+    couture que le raster évite en échantillonnant en 3D — le vecteur l'a parce
+    qu'il porte de la **topologie** entre ses sommets.
+
+17. **Le facteur Z d'ombrage en SCR géographique.** Les pixels sont en degrés,
+    les altitudes en mètres : sans facteur correctif, le calcul de pente divise
+    des mètres par des degrés et l'image sort noire. Le facteur neutre vaut
+    `1/(mètres par degré)`, donc **1,2 × 10⁻⁵ sur Aeonir** contre 9 × 10⁻⁶ sur
+    Terre. Il est **propre à la planète** : recopier la valeur terrestre écrase
+    le relief d'un tiers.
+
+18. **Un SCR de fichier n'est pas un SCR enregistré.** Un WKT porté par l'en-tête
+    d'un GeoTIFF est lu et utilisé pour la couche, mais n'entre pas dans la base
+    de SCR du logiciel : il n'apparaît dans aucun sélecteur. Même racine que le
+    `to_authority()` qui renvoie `None` alors qu'`ID["AEONIR",1]` survit dans le
+    WKT — ces API interrogent la **base de données**, pas le nœud `ID`. Pour
+    qu'un SCR maison soit choisissable, il faut le déclarer séparément.
+
+19. **Espérance nulle n'est pas moyenne d'échantillon nulle.** Un générateur
+    « à moyenne nulle par construction » l'est en *espérance* ; une réalisation
+    donnée ne l'est pas. Sur Aeonir, le décalage de surface d'un tirage a un
+    écart-type de 305 m et atteint 869 m. Vérifier la propriété sur la
+    réalisation, pas sur la théorie.
+
+20. **Moyenne par pixel ≠ moyenne par aire.** Sur une grille équirectangulaire,
+    un pixel polaire couvre `cos φ` fois moins de sol qu'un pixel équatorial.
+    Sur le MNT d'Aeonir l'écart est d'un facteur 77 : −108,1 m par pixel contre
+    −1,4 m par aire. C'est la seconde qui juge un datum. Pondérer par `cos φ`.
+
+21. **Le pilote COG de GDAL ne sait que `CreateCopy`.** Impossible d'ouvrir un
+    COG en écriture pour le remplir fenêtre par fenêtre. Il faut écrire un
+    GeoTIFF tuilé ordinaire puis le recopier — c'est cette recopie qui construit
+    les aperçus et remonte l'en-tête en tête de fichier, les deux propriétés qui
+    rendent le COG lisible par requêtes HTTP Range.
