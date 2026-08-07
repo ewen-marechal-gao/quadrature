@@ -32,6 +32,28 @@ natives.
 
 **QGIS** est recommandé en complément — non pour produire, pour *inspecter*.
 
+### Ouvrir les produits dans QGIS
+
+Le COG est un GeoTIFF ordinaire : glisser-déposer suffit. Trois points qui ne
+vont pas de soi, parce que la donnée n'est pas terrestre.
+
+1. **Fixer le SCR du projet depuis la couche** — clic droit sur la couche, *SCR*
+   → *Définir le SCR du projet depuis la couche*. À défaut, QGIS tente une
+   reprojection vers `EPSG:4326` que PROJ refuse : les deux ellipsoïdes
+   n'appartiennent pas au même corps céleste. Le refus est correct, et la
+   dérogation `PROJ_IGNORE_CELESTIAL_BODY` ne ferait que le masquer par une
+   identité.
+2. **La couche s'affiche « Aeonir Crust », sans code d'autorité.** Le nom et la
+   définition survivent dans le WKT ; c'est seulement `AEONIR:1` que la base de
+   PROJ ne connaît pas. Normal, documenté plus bas.
+3. **L'ombrage a besoin d'un facteur Z.** Le SCR est géographique : les pixels
+   sont en degrés, les altitudes en mètres. Un degré valant 83 340 m sur Aeonir,
+   le facteur neutre est **1,2 × 10⁻⁵** — à multiplier pour exagérer. Sur Terre
+   on utilise 9 × 10⁻⁶, qui écraserait le relief d'un tiers ici.
+
+Les aperçus internes du COG (`[2, 4, 8, 16, 32]`) sont utilisés
+automatiquement : le panoramique reste fluide malgré les 442 Mio.
+
 ## Structure
 
 ```
@@ -45,16 +67,32 @@ Tout produit vit dans `out/` et n'est jamais versionné : le MNT global pèse
 plusieurs centaines de mégaoctets, les pyramides de tuiles davantage. La
 reproductibilité est assurée par le code, pas par le stockage.
 
+## Commandes
+
+Depuis `geo/`, avec le venv actif :
+
+```bash
+.venv/Scripts/python.exe -m pytest -q
+```
+
+```bash
+.venv/Scripts/python.exe -m aeonir_gis.dem -o out/aeonir_crust_dem.tif
+```
+
+`-z` fixe le zoom maximal visé, donc la taille du raster (`-z 3` pour un aperçu
+en quelques secondes) ; `-s` la graine ; `--plain` saute la conversion COG.
+
 ## Lots
 
 | Lot | Contenu | État |
 |---|---|---|
 | **0** | Référentiels Croûte et Étoile, rotation datée entre eux | ✅ 79 tests |
-| **1** | MNT global — fBm échantillonné en 3D sur la sphère → GeoTIFF → COG | |
+| **1** | MNT global — fBm échantillonné en 3D sur la sphère → GeoTIFF → COG | ✅ 139 tests |
 | **2** | Hydrologie — comblement, D8, accumulation pondérée, réseau, bassins → GeoPackage | |
 | **3** | Tuileur maison — pyramide XYZ, terrain-RGB, empaquetage PMTiles | |
 | **4** | Viewer MapLibre — style spec, `hillshade`, `terrain`, projection globe | |
 | **5** | Tuiles vectorielles MVT — fleuves, lacs, biomes | |
+| **6** | Relief tectonique — plancher dominant, chaînes de collision, fosses en eau dans le seul terminateur, croûte dilatée/contractée | |
 
 ---
 
@@ -378,6 +416,208 @@ projection tournée — et cela évite une seconde pyramide de tuiles.
 
 ---
 
+# Lot 1 — le MNT global
+
+## La résolution ne se choisit pas, elle se déduit
+
+Une grille équirectangulaire et une pyramide Mercator portent le **même
+`cos φ`** :
+
+```
+équirectangulaire   E-O : C·cos φ / W          N-S : C / W   (constant)
+Mercator, zoom z    les deux : C·cos φ / (2^z·T)   — conforme, donc isotrope
+```
+
+En posant **`W = 2^z · T`**, l'accord E-O devient exact à *toutes* les latitudes
+d'un coup. C'est la seule origine légitime de la largeur du raster ; tout nombre
+rond saisi à la main serait un chiffre orphelin.
+
+| z | W | rés. équat. | bande habitée | tuiles cumulées | source f32 | génération |
+|---:|---:|---:|---:|---:|---:|---:|
+| 5 | 8 192 | 3,66 km | 410 px | 1 365 | 0,12 Gio | 1 min |
+| **6** | **16 384** | **1,83 km** | **819 px** | **5 461** | **0,50 Gio** | **5 min 24** |
+| 7 | 32 768 | 0,92 km | 1 638 px | 21 845 | 2,0 Gio | ~22 min |
+| 8 | 65 536 | 0,46 km | 3 277 px | 87 381 | 8,0 Gio | ~1 h 25 |
+
+La ligne z=6 est **mesurée** ; les deux suivantes sont extrapolées au facteur 4.
+Le COG produit pèse **442 Mio** — la compression DEFLATE avec prédicteur
+flottant ne gagne que 14 % sur les 512 Mio bruts, le bruit se comprimant mal.
+
+**Retenu : z = 6**, avec `T = 256` — terrarium est un format 256, et une tuile
+plus petite donne une échelle de zoom plus fine.
+
+Ce qui plafonne n'est ni le disque ni le calcul, qui tiendraient jusqu'à z=8,
+mais le **Lot 2** : comblement de cuvettes et accumulation D8 restent tractables
+en mémoire sur 134 Mpx et deviennent un problème hors-mémoire au-delà. La
+contrainte de sortie converge : à 40 Kio la tuile — hypothèse à mesurer au
+Lot 3 — la pyramide pèse 210 Mio en z=6 contre 830 en z=7, et GitHub plafonne un
+fichier à 100 Mo. Un PMTiles global devra de toute façon être tranché.
+
+La profondeur au-delà se règle au Lot 3, par une **pyramide locale sur la seule
+bande** et le surzoom de MapLibre entre les deux.
+
+### Le coût accepté, et où il tombe
+
+En N-S l'accord n'existe pas : Mercator réclame `1/cos φ` fois plus fin que le
+pas constant de l'équirectangulaire — 1,07 à ±21°, 2,00 à 60°, **11,59** à la
+coupure. Le tuileur interpolera donc en N-S dans les hautes latitudes. Comme la
+pyramide sera en repère **Étoile**, ces hautes latitudes sont les deux faces
+mortes, et la bande habitée tombe sur l'équateur Mercator, où l'accord est exact
+dans les deux directions.
+
+Second coût, mesuré : la coupure à ±85,0511° occupe **5,5 % des lignes du raster
+pour 0,37 % de la surface réelle**, et le pixel de la première ligne fait 40 cm
+de large. Gaspillage assumé.
+
+## Le bruit s'évalue en 3D, il se stocke en 2D
+
+Deux questions distinctes, et c'est de leur découplage que tout dépend.
+
+| | Réponse |
+|---|---|
+| **Où on évalue** le bruit | la **sphère unité, dans ℝ³** |
+| **Où on stocke** le résultat | une grille **équirectangulaire** |
+
+Pour chaque pixel on calcule `(lon, lat)`, on convertit en vecteur unitaire, et
+on évalue le bruit *là*. La fonction ne voit jamais ni longitude ni latitude :
+elle vit dans ℝ³, où la sphère est plongée sans point privilégié. Les deux
+pathologies du bruit 2D sur `(lon, lat)` disparaissent, et elles sont chiffrées :
+
+- **La couture.** Les deux pixels de bord (`lon = ±180`) sont distants de
+  **1 791 m** en 3D à la latitude 12° — exactement le pas d'un voisin ordinaire
+  à cette latitude. Il n'y a pas de raccord à faire.
+- **Le pincement polaire.** Les 16 384 pixels de la première ligne tiennent dans
+  une calotte de **1 831 m**, et le bruit y varie comme sur trois pixels
+  équatoriaux. En 2D, cette même ligne balaierait tout le domaine du bruit.
+
+Le coût est un facteur trois sur le nombre de cellules du réseau — on
+échantillonne une surface dans un champ volumique. Il n'y en a pas d'autre.
+
+`test_noise.py` teste chaque propriété **avec son contre-exemple 2D à côté** :
+sans lui, on vérifierait qu'un problème est absent sans avoir montré qu'il
+pouvait être présent.
+
+## Pourquoi on ne pave pas la sphère
+
+Le problème est réel et porte un nom normalisé : **DGGS**, *Discrete Global Grid
+System*. Les candidats sérieux :
+
+| Pavage | Propriété | Qui l'utilise |
+|---|---|---|
+| **Équirectangulaire** | ni équi-aire ni conforme, singulier aux pôles | tout le SIG raster |
+| **Cube map** (`+proj=qsc`) | distorsion bornée ~1,3×, pas de pôle | rendu temps réel |
+| **HEALPix** (`+proj=healpix`) | **équi-aire exact**, hiérarchique | astronomie — Planck, WMAP |
+| **H3 / S2** | hexagones / quadtree sphérique | Uber, Google |
+
+On ne pave pas, et pas par paresse. Un pavage résout un problème
+d'**échantillonnage** — obtenir des cellules comparables partout — qu'on vient de
+dissoudre autrement, en sortant le bruit de la grille. Il resterait un problème
+de *stockage*, et là aucun pavage ne vaut le coût : rasterio, la
+géotransformation, `gdalwarp`, le COG et QGIS attendent tous une grille
+régulière.
+
+L'argument qui emporte la décision est en aval. La sortie du Lot 3 est une
+pyramide XYZ, elle-même un pavage. Une source équirectangulaire s'y accorde
+exactement en E-O par la relation `W = 2^z·T`. Une source HEALPix équi-aire
+obligerait au contraire à **sur**-interpoler pour nourrir les tuiles polaires :
+on aurait payé un pavage exotique pour dégrader le résultat.
+
+## Le raster est global, seules les tuiles seront coupées
+
+L'équirectangulaire n'a aucune singularité aux pôles — seulement de la
+redondance. Le ±85,0511° est une amputation du **rendu**, jamais de la donnée.
+
+La conséquence est ce qui achève l'arbitrage du référentiel. La roche
+actuellement sous le point substellaire porte son altitude dans le COG ; quand
+la croûte l'aura menée dans le terminateur, on ne régénère rien, on **retuile à
+la nouvelle époque**. Un raster Croûte est sans époque et sans coupure : il ne
+peut pas, structurellement, perdre ce qui servira plus tard.
+
+Et si les faces devaient un jour être affichées, le métier ne réaligne pas les
+référentiels, il **change de pavage** — une seconde pyramide en stéréographique
+polaire, comme `UPSArcticWGS84Quad` au registre OGC.
+
+## Espérance nulle n'est pas moyenne nulle
+
+Le point 6 exige un générateur à moyenne nulle *par construction*, pour n'avoir
+pas à recentrer. Les douze gradients allant par paires opposées, le champ est
+bien d'espérance nulle — et `test_noise.py` vérifie la symétrie plutôt que de la
+supposer.
+
+**Mais une réalisation ne l'est pas.** Mesuré sur trois cents graines, le
+décalage de surface d'un tirage a un écart-type de **305 m** et peut atteindre
+869 m. La première graine essayée donnait **−445 m** : le sol moyen d'Aeonir un
+demi-kilomètre sous son propre datum.
+
+Deux mesures ont débloqué la situation :
+
+1. le décalage est **invariant en résolution** — identique à 0,1 m près de z=2 à
+   z=5. C'est une propriété de la réalisation du bruit, pas de l'échantillonnage ;
+2. il se calcule donc sur une grille 1 024 × 512 en une seconde, et le résultat
+   vaut pour le raster complet.
+
+D'où le critère retenu, explicite : **la graine est choisie parmi les trois cents
+premières pour que la moyenne de surface tombe à moins de deux mètres de la
+sphère de référence.** La graine 77 donne −1,5 m, avec des extrêmes symétriques.
+
+> Sélectionner une réalisation n'est **pas** recentrer la donnée. Le zéro reste
+> la sphère, il ne bouge pas, et il ne dépend d'aucune statistique du terrain.
+> Un test le vérifie en sens inverse : deux graines doivent donner deux
+> décalages *différents*. S'ils étaient tous nuls, c'est qu'on aurait recentré.
+
+La moyenne qui juge le datum est **pondérée par l'aire** : sur une grille
+équirectangulaire un pixel polaire couvre `cos φ` fois moins de sol, et la
+moyenne par pixel n'est donc pas la moyenne de surface.
+
+## Le générateur est volontairement pauvre
+
+Dix octaves depuis la fréquence 2, lacunarité 2, persistance 0,5. La plus fine
+tombe à 1 024, soit une cellule de 4,7 km — **2,5 pixels**, juste au-dessus de
+Nyquist. L'échelle vise `σ = MAX_RELIEF_M / 4 = 2 950 m`, et **on n'écrête pas** :
+un écrêtage créerait des plateaux et briserait la moyenne nulle.
+
+La normalisation est **analytique**, `σ₁·√Σp²ⁱ` — les octaves étant décorrélées,
+leurs variances s'ajoutent. Aucune statistique du terrain produit n'entre dans le
+calcul, sans quoi une même altitude ne signifierait pas la même chose d'une
+graine à l'autre. `σ₁ = 0,2702` est une propriété **mesurée** de cette
+implémentation, à 1,5 % près selon la graine.
+
+Rien de plus, et c'est délibéré. La géographie d'Aeonir sera **tectonique** :
+sans océan global l'essentiel de la surface est du plancher, les collisions de
+plaques font des chaînes massives, les fosses ne sont en eau que dans le
+terminateur, et la dilatation de la croûte en face chaude contre sa contraction
+en face froide brise le relief. Aucun empilement d'octaves ne produit ça. Le
+tenter donnerait un faux réalisme plus coûteux qu'un bruit franchement
+synthétique — d'où le **Lot 6**.
+
+## Ce que le raster de production vaut
+
+```
+Grille 16384 × 8192 — W = 2^6 × 256, graine 77
+  min / max             -9266.9 / +9288.6 m
+  écart-type             2890.6 m
+  moyenne par pixel       -108.1 m
+  moyenne par aire          -1.4 m   (-0.05 % de σ)
+  durée                    323.7 s
+  → 442 Mio, tuiles internes 512×512, aperçus [2, 4, 8, 16, 32]
+```
+
+Trois vérifications au passage.
+
+**Le choix de graine tient à l'échelle de production.** Prédit à −1,5 m sur la
+grille 1 024 × 512, mesuré à **−1,4 m** sur 134 Mpx. L'invariance en résolution
+n'était pas une commodité de test, elle porte la méthode.
+
+**Moyenne par pixel ≠ moyenne par aire.** −108 m contre −1,4 m : l'écart est
+entièrement dû au poids excessif des pixels polaires sur une grille
+équirectangulaire. C'est la seconde qui juge le datum, jamais la première.
+
+**Le plafond de relief n'a pas été atteint**, donc rien n'a été écrêté. Les
+extrêmes sortent à ±9,3 km pour un `MAX_RELIEF_M` de 11,8 km — la convention à
+4σ était bien calibrée, et symétriques à 0,2 % près.
+
+---
+
 # PROJ : les commandes, paramètre par paramètre
 
 Documentation de référence : **[proj.org](https://proj.org/)**. La navigation
@@ -428,7 +668,24 @@ l'aplatissement inverse, et **zéro y signifie sphère**, par convention.
 > broncher et sans effet. Une chaîne `+proj=` qui ne lève pas d'erreur ne prouve
 > **rien** sur ce qu'elle fait. Toujours vérifier le résultat, jamais la syntaxe.
 
-> **Second piège vérifié** — `ID["AEONIR",1]` est bien conservé dans le WKT et
+> **Piège vérifié, et celui-ci est une bonne nouvelle** — PROJ **refuse** de
+> transformer entre `AEONIR:1` et `EPSG:4326` :
+>
+> ```
+> Source and target ellipsoid do not belong to the same celestial body
+> (Non-Earth body vs Earth)
+> ```
+>
+> Il déduit du rayon qu'Aeonir n'est pas la Terre, et bloque. C'est exactement ce
+> qu'on veut : reprojeter des degrés d'une sphère de 4 775 km vers WGS84 n'a
+> aucun sens. Conséquence pratique dans QGIS — voir plus bas.
+>
+> La dérogation `PROJ_IGNORE_CELESTIAL_BODY=YES` existe, et **il ne faut pas
+> s'en servir** : elle produit un `Ballpark geographic offset`, c'est-à-dire une
+> identité. Mesurée, elle rend `(60, 45) → (60, 45)`. Elle ne transforme rien,
+> elle se contente de mentir en silence.
+
+> **Troisième piège vérifié** — `ID["AEONIR",1]` est bien conservé dans le WKT et
 > survit à toute re-sérialisation, mais **`to_authority()` renvoie `None`** et
 > `list_authority()` une liste vide. Ces méthodes interrogent la **base de
 > données** de PROJ plutôt que de relire le nœud `ID`, et une autorité maison n'y
@@ -683,6 +940,7 @@ sans paramètre libre.
 | 4 | **Déclaration des CRS** — autorité `AEONIR`, WKT2, ordre d'axes ISO | ✅ |
 | 5 | **Époque** — origine au périhélie, unité l'année, `λₛ(0) = 0` | ✅ |
 | 6 | **Zéro altimétrique** — la sphère de référence elle-même | ✅ |
+| 7 | **Grille du MNT** — `W = 2^z·T`, z=6, T=256, repère Croûte | ✅ |
 
 Toutes figées dans `aeonir_gis/` et verrouillées par `tests/`.
 
@@ -765,3 +1023,52 @@ contrôle de cohérence, seulement d'ordre de grandeur.
 Les constantes physiques viennent de `rules/fr/univers/astronomie.md` et
 `rules/fr/univers/climat.md`. Elles ne seront recopiées nulle part : un module
 unique les portera, et tout le reste s'y réfèrera.
+
+---
+
+# Références
+
+Vérifiées, pas citées de mémoire.
+
+**Pavages sphériques — le vocabulaire DGGS**
+
+- [OGC — Discrete Global Grid Systems](https://www.ogc.org/standard/dggs/) —
+  Topic 21 (`20-040r3`) pour l'abstrait, *OGC API - DGGS Part 1: Core*
+  (`21-038r1`) pour l'API.
+- [HEALPix](https://healpix.sourceforge.io/), le pavage équi-aire de
+  l'astronomie, et son implémentation
+  [`+proj=healpix`](https://proj.org/en/stable/operations/projections/healpix.html)
+  avec sa variante `rhealpix` hiérarchique.
+- [`+proj=qsc`](https://proj.org/en/stable/operations/projections/qsc.html) —
+  *quadrilateralized spherical cube*, le cube map côté SIG.
+- [H3](https://h3geo.org/docs/) (Uber, hexagones) et
+  [S2](https://s2geometry.io/) (Google, quadtree sur le cube).
+
+**Le pavage qu'on utilise vraiment — la pyramide de tuiles**
+
+- [OGC Two Dimensional Tile Matrix Set 2.0](https://www.ogc.org/standard/tms/)
+  (`17-083r4`) — la formalisation de ce que tout le monde appelle « XYZ ».
+  Le registre contient `WebMercatorQuad`, `WorldCRS84Quad`,
+  `WorldMercatorWGS84Quad`, `WGS1984Quad`, `UPSArcticWGS84Quad`,
+  `UPSAntarcticWGS84Quad`, `EuropeanETRS89_LAEAQuad`, `UTM31WGS84Quad`,
+  `CanadianNAD83_LCC`, `GNOSISGlobalGrid`, `CDB1GlobalGrid`.
+- [Slippy map tilenames](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames)
+  — l'article canonique, formules et code.
+- [WMTS](https://www.ogc.org/standard/wmts/) — l'ancêtre orienté service, encore
+  vivant côté IGN.
+
+**Encodages et conteneurs**
+
+- [Terrarium](https://github.com/tilezen/joerd/blob/master/docs/formats.md) — la
+  doc d'origine. Formule vérifiée : `(R·256 + G + B/256) − 32768`. Le `−32768`
+  est exactement notre `NODATA` : un pixel noir décode en plancher, d'où
+  l'absence de cas particulier au tuilage.
+- [Mapbox Terrain-RGB](https://docs.mapbox.com/data/tilesets/guides/access-elevation-data/)
+  — l'autre encodage, écarté pour son plancher à −10 000 m.
+- [PMTiles](https://github.com/protomaps/PMTiles),
+  [MBTiles](https://github.com/mapbox/mbtiles-spec),
+  [Mapbox Vector Tile](https://github.com/mapbox/vector-tile-spec),
+  [COG](https://cogeo.org/).
+
+**PROJ** — [proj.org](https://proj.org/). Navigation utile : *Operations →
+Projections → `<nom>`* pour une projection, *Usage → Ellipsoids* pour la forme.
