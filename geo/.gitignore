@@ -20,3 +20,6 @@ debug/
 # porte que la bibliothèque de styles du projet, vide ici ; le style appliqué
 # aux couches vit dans le .qgs lui-même, qui se suffit.
 *_attachments.zip
+
+# Sauvegarde de la version précédente, écrite par QGIS à chaque enregistrement.
+*.qgs~
