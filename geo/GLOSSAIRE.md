@@ -869,6 +869,21 @@ Les erreurs qui coûtent une demi-journée, rangées par fréquence.
     couture que le raster évite en échantillonnant en 3D — le vecteur l'a parce
     qu'il porte de la **topologie** entre ses sommets.
 
+    ⚠️ **Et l'antiméridien qui compte est celui du repère d'AFFICHAGE, pas celui
+    du fichier.** Découper une fois ne met à l'abri de rien : une géométrie
+    propre dans son repère natif est déchirée dès qu'un autre SCR la reprojette,
+    puisque son antiméridien tombe ailleurs sur le globe. Vérifié sur le
+    GeoPackage d'Aeonir, découpé en Croûte : affiché en repère Étoile, 18
+    tronçons et 5 anneaux de bassin repartent en sauts de 360°, à des latitudes
+    qui prédisent au pixel près les bandes observées. **Le découpage est un
+    produit dérivé du repère de rendu**, au même titre que les tuiles.
+
+    Corollaire qui n'est pas évident : le clippage par tuile du MVT **n'absorbe
+    pas** le problème, alors même que l'antiméridien est une frontière de tuile.
+    Le segment reliant `+179` à `−179` traverse, en espace tuile, toutes les
+    tuiles de sa ligne, et le clippage y dépose un éclat dans chacune. Couper au
+    niveau du repère **avant** de tuiler.
+
 17. **Le facteur Z d'ombrage en SCR géographique.** Les pixels sont en degrés,
     les altitudes en mètres : sans facteur correctif, le calcul de pente divise
     des mètres par des degrés et l'image sort noire. Le facteur neutre vaut
@@ -899,3 +914,25 @@ Les erreurs qui coûtent une demi-journée, rangées par fréquence.
     GeoTIFF tuilé ordinaire puis le recopier — c'est cette recopie qui construit
     les aperçus et remonte l'en-tête en tête de fichier, les deux propriétés qui
     rendent le COG lisible par requêtes HTTP Range.
+
+22. **Le D8 sur la plus forte dénivelée au lieu de la plus forte pente.** Il faut
+    diviser par la distance au voisin, et ce n'est pas une correction sphérique :
+    **la diagonale est √2 fois plus longue**, donc comparer des dénivelées brutes
+    la privilégie systématiquement, même sur une grille projetée parfaitement
+    carrée. Mesuré sur Aeonir : les deux méthodes divergent sur **35 % des
+    cellules à l'équateur**, là où le `cos φ` ne joue pourtant aucun rôle.
+
+23. **L'anisotropie polaire d'une grille géographique.** Le pas E-O vaut
+    `cos φ` fois le pas N-S : sur Aeonir, 16,9 m contre 7 325 m à 89,87°, un
+    facteur 434. La grille résout la direction tangentielle absurdement finement
+    et la méridienne grossièrement, ce qui étire les bassins en bandes zonales —
+    la part d'écoulement restant dans sa ligne passe de 28,7 % à l'équateur à
+    51,6 % près du pôle. Ce n'est pas un bug du D8, c'est la grille : le remède
+    professionnel est de traiter les calottes dans une **projection
+    stéréographique polaire**, où les cellules redeviennent isotropes. Pendant,
+    pour l'analyse, de la pyramide `UPSArcticWGS84Quad` du rendu.
+
+    ⚠️ Piège de diagnostic rencontré : classer les directions en « zonal /
+    méridien / diagonal » **ment près du pôle**, où le voisin sud-est est à 17 m
+    à l'est pour 7 325 m au sud — donc méridien à 99,8 %. Mesurer si la cellule
+    **change de ligne**, pas quelle étiquette porte sa direction.

@@ -783,6 +783,59 @@ directions désigne déjà. Pic mémoire ramené de 8,13 Go à 1,65 Go à z=6.
 par un contre 0,5 s en lot — un facteur 82, parce que chaque appel isolé engage
 sa propre transaction SQLite. Sur l'écriture complète : **411,7 s → 1,7 s**.
 
+## Le découpage est un produit du repère de rendu
+
+Le GeoPackage est découpé à l'antiméridien **Croûte**, où sa donnée vit. C'est
+tout ce qu'un fichier peut garantir — et ce n'est pas suffisant.
+
+Affiché en repère **Étoile**, dont l'antiméridien tombe ailleurs sur le globe,
+**18 tronçons et 5 anneaux de bassin** repartent en sauts de 360°. Vérifié : les
+latitudes Étoile de ces cinq anneaux — 71,8° · 69,0° · 50,3° · −23,2° · −56,9° —
+prédisent au pixel près les bandes horizontales observées dans QGIS.
+
+D'où une étape que le Lot 5 devra porter, et qui suit la même séparation que tout
+le reste du chantier :
+
+```
+Croûte, sans époque     géométrie du drainage — l'archive
+      ↓  rotation à l'époque T
+Étoile, datée           reprojection + REDÉCOUPAGE à l'antiméridien
+      ↓  tuilage
+MVT                     découpage par tuile + buffer
+```
+
+**Les deux découpages ne se remplacent pas**, et c'est le point non évident. On
+pourrait croire que le clippage par tuile absorbe le problème, l'antiméridien
+étant une frontière de tuile. Il ne l'absorbe pas : le segment reliant `+179` à
+`−179` traverse, en espace tuile, toutes les tuiles de sa ligne, et le clippage y
+dépose un éclat dans chacune.
+
+Le raster est épargné — chaque pixel se transforme isolément, il ne porte aucune
+topologie. Le **Lot 3 n'est donc pas concerné**, seul le Lot 5 l'est.
+
+## L'anisotropie polaire, limite assumée
+
+Les entités les plus étirées sont toutes au-delà de 76° de latitude — jusqu'à
+32,3° de longitude pour un bassin haut de 9°. La grille en est la cause :
+
+| Latitude | Voisin est | Voisin sud | Rapport |
+|---:|---:|---:|---:|
+| 0° | 7 325 m | 7 325 m | 1 |
+| 81,2° | 1 125 m | 7 325 m | 6,5 |
+| 89,87° | **16,9 m** | 7 325 m | **434** |
+
+La part d'écoulement restant dans sa ligne passe de **28,7 %** à l'équateur à
+**51,6 %** près du pôle. Ce n'est pas un défaut du D8 mais de la grille, et le
+remède professionnel est de traiter les calottes en **stéréographique polaire**.
+Non fait : ça mord sur les deux civilisations polaires, mais le livrable du
+chantier est le pipeline, et la limite est mesurée plutôt que subie.
+
+> **Et la normalisation par la distance n'est pas une correction sphérique.**
+> Sans elle, les deux D8 divergent sur **35 % des cellules à l'équateur**, là où
+> `cos φ` vaut 1 — parce que la diagonale est √2 fois plus longue et qu'une
+> comparaison de dénivelées brutes la privilégie. C'est une correction du D8
+> lui-même, valable sur n'importe quelle grille.
+
 ## Ce que le GeoPackage garde et que le GeoTIFF perd
 
 ```
