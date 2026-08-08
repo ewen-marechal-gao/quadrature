@@ -24,7 +24,7 @@ Aeonir tourne si lentement — une rotation complète toutes les cinquante-sept 
 
 Le moteur de cette machine est le gradient de température entre les deux faces — un écart de plusieurs centaines de kelvins entre le point substellaire et les régions polaires du côté nocturne.
 
-**Le piston : le Mur des Tempêtes.** Au front du Levant, là où la glace éternelle entre pour la première fois en contact avec la lumière oblique, se produit une sublimation massive. Des millions de kilomètres cubes de glace, d'azote solide et d'eau accumulés depuis des décennies s'évaporent en quelques décennies. L'air saturé d'humidité monte verticalement en colonnes de cumulonimbus atteignant la mésosphère. Cette zone d'ascendance brutale — le **Mur des Tempêtes** — constitue la chaudière de tout le système atmosphérique planétaire. Elle produit des vents ascendants de plusieurs dizaines de mètres par seconde, des orages permanents visibles depuis l'orbite, et des éclairs dont certains durent plusieurs minutes.
+**Le piston : le Mur des Tempêtes.** À la **fin** du Levant, là où la terre bascule vers la Face Ardente et où les lacs et les mers se retrouvent pour la première fois en pleine lumière, se produit une évaporation massive. Des millions de kilomètres cubes d'eau, accumulés pendant toute la traversée du Terminateur, s'évaporent en quelques décennies. L'air saturé d'humidité monte verticalement en colonnes de cumulonimbus atteignant la mésosphère. Cette zone d'ascendance brutale — le **Mur des Tempêtes** — constitue la chaudière de tout le système atmosphérique planétaire. Elle produit des vents ascendants de plusieurs dizaines de mètres par seconde, des orages permanents visibles depuis l'orbite, et des éclairs dont certains durent plusieurs minutes.
 
 **Le circuit : la haute altitude.** L'air chaud expulsé au sommet du Mur des Tempêtes se propage dans toutes les directions en haute altitude. La fraction qui se dirige vers la Face Obscure contribue directement à transporter une chaleur résiduelle vers le côté nocturne — sans quoi ce dernier serait encore plus froid. La fraction qui se dirige vers les pôles donne naissance à la **Circulation Méridienne**, l'artère vitale de l'ensemble du réseau hydrologique.
 
@@ -53,13 +53,13 @@ Le Terminateur n'est pas une zone uniforme. Il est structuré par l'**angle d'é
 | Angle | Zone | Caractéristiques |
 |:---:|:---|:---|
 | −21° | **Le Linceul** | Azote atmosphérique solide, chute de « neige d'air ». Mort instantanée. Vu de loin seulement. |
-| −18° | **Front du Couchant** | Fonte des premières glaces, sublimation de l'azote. Source des grands vents méridiens. |
+| −18° | **Front du Levant** | Fonte des premières glaces, sublimation de l'azote. La terre émerge de la Face Obscure. |
 | −12° | **Zone d'absorption** | Les troncs pétrifiés libèrent leurs semences encapsulées dans la résine silicatée. Fracas cristallin. |
 | −6° | **Steppes crépusculaires** | Herbe haute d'un lie-de-vin sombre, arbres épars de trente mètres. Faune migratrice. |
 | −3° | **Jungle Indigo** | Voûte végétale à cent mètres, sans canopée fermée. Obscurité et humidité croissantes. |
 | 0° | **Cœur tempéré** | Lumière rasante dorée et permanente. Canopée complète, biodiversité maximale. Cités. |
 | +3° | **Savane aride** | Perte de la canopée, aridification rapide. Premières fleurs de l'Arbre-Anneau au Couchant. |
-| +6° | **Mur des Tempêtes** | Cumulonimbus permanents, évaporation du sol, incendies. Franchissable en urgence seulement. |
+| +6° | **Mur des Tempêtes** | Évaporation totale des lacs et des mers, cumulonimbus permanents, incendies. Source des grands vents méridiens. Franchissable en urgence seulement. |
 
 ### Le Levant : la naissance chaotique
 
