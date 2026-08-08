@@ -105,13 +105,21 @@ Depuis `geo/`, avec le venv actif :
 `-z` fixe le zoom maximal visé, donc la taille du raster (`-z 3` pour un aperçu
 en quelques secondes) ; `-s` la graine ; `--plain` saute la conversion COG.
 
+```bash
+.venv/Scripts/python.exe -m aeonir_gis.export
+```
+
+Produit `out/aeonir_hydro.gpkg` — fleuves, exutoires, bassins. `--width` fixe la
+résolution de travail, `--stream-km2` la densité du réseau, `--basin-km2` le
+filtre de polygonisation.
+
 ## Lots
 
 | Lot | Contenu | État |
 |---|---|---|
 | **0** | Référentiels Croûte et Étoile, rotation datée entre eux | ✅ 79 tests |
 | **1** | MNT global — fBm échantillonné en 3D sur la sphère → GeoTIFF → COG | ✅ 139 tests |
-| **2** | Hydrologie — comblement, D8, accumulation pondérée, réseau, bassins → GeoPackage | |
+| **2** | Hydrologie — D8, accumulation, réseau, Strahler, bassins → GeoPackage | ✅ 176 tests |
 | **3** | Tuileur maison — pyramide XYZ, terrain-RGB, empaquetage PMTiles | |
 | **4** | Viewer MapLibre — style spec, `hillshade`, `terrain`, projection globe | |
 | **5** | Tuiles vectorielles MVT — fleuves, lacs, biomes | |
@@ -638,6 +646,153 @@ entièrement dû au poids excessif des pixels polaires sur une grille
 **Le plafond de relief n'a pas été atteint**, donc rien n'a été écrêté. Les
 extrêmes sortent à ±9,3 km pour un `MAX_RELIEF_M` de 11,8 km — la convention à
 4σ était bien calibrée, et symétriques à 0,2 % près.
+
+---
+
+# Lot 2 — l'hydrologie, réduite au minimum exploitable
+
+**Périmètre volontairement coupé.** La cible est un poste frontend orienté
+MapLibre : ce sont les Lots 3 et 4 qui portent l'entretien. Le Lot 2 doit
+produire une couche vectorielle honnête à tuiler, rien de plus. Précipitations
+uniformes, donc l'accumulation est une **surface drainée** et pas un débit.
+
+## Le modèle hydrique complet, conçu puis mis de côté
+
+Il est consigné ici parce qu'il ne coûte rien à laisser dormir, et qu'il est
+juste. Reporté au **Lot 6**, quand le terrain le méritera.
+
+Sur une sphère fermée sans océan, le comblement de cuvettes classique est
+**dégénéré** : chaque bassin se remplirait jusqu'à son seuil, déverserait dans le
+voisin, et la planète deviendrait un lac unique. Il n'y a pas d'exutoire.
+
+La physique en donne un autre : **l'évaporation**. Un bassin fermé n'est pas
+indéterminé, il est en équilibre — `E(lat') · A_lac(h) = P · A_bassin`, une
+recherche de racine à une dimension sur la courbe hypsométrique. Ce sont les
+lacs endoréiques terminaux : Caspienne, Tchad, Aral, mer Morte. Aeonir n'est pas
+un cas exotique, c'est une planète où le cas particulier terrestre devient
+général.
+
+Le cycle complet, établi avec l'auteur du lore :
+
+| Étape | `lat'` | Bilan local |
+|---|---:|---|
+| **Front du Levant** | −18° | la glace du tour précédent fond — apport |
+| **Levant** | −18° → +6° | **équilibre** : fonte contre évaporation croissante |
+| **Mur des Tempêtes** | +6° | lacs et mers en pleine lumière — perte totale, c'est le piston |
+| *Face Ardente* | > +6° | aucune eau liquide — 44,8 % de la surface |
+| **Front du Couchant** | +6…+3° | la terre émerge sèche |
+| **Couchant** | +6° → −21° | pluies des vents polaires, **aucune évaporation** — accumulation |
+| **Le Linceul** | −21° | tout gèle |
+| *Face Obscure* | < −21° | rien ne bouge — 32,1 % de la surface |
+
+Le transport atmosphérique referme la boucle : ascendance à +6°, Circulation
+Méridienne vers les pôles en altitude, subsidence sous les anticyclones, puis
+vents polaires au sol qui redescendent vers le Couchant en précipitant. La masse
+se conserve sur le tour, ce qui fait du calcul un **point fixe** en deux passes :
+la première donne la distribution de glace sortant du Couchant, la seconde la
+réinjecte en fonte au Levant.
+
+> **Étiquetage.** Le cycle et les seuils sont **du lore**. La circulation
+> atmosphérique est une **intuition de mécanicien des fluides de l'auteur**, pas
+> un modèle calculé — si un vrai modèle diverge, la *rule of cool* tranche. D'où
+> une conséquence d'architecture : le champ de précipitations sera une **entrée
+> interchangeable**, jamais câblée dans le pipeline.
+
+La bande ne fait pas « quelques pour cent » de la surface mais **23,1 %**, dont
+11,6 % pour le seul demi-terminateur du Couchant.
+
+## Ce que le terrain fBm ne permet pas
+
+Mesuré avant de construire, et décisif.
+
+| Profondeur minimale d'une cuvette | |
+|---|---:|
+| p50 | **3,63 m** |
+| p90 | 12,22 m |
+| max | **42,2 m** |
+
+À comparer aux **21,1 m** d'écart médian entre deux cellules voisines. La cuvette
+médiane est six fois moins profonde que le pas normal du terrain : ce ne sont pas
+des dépressions, ce sont les minima locaux d'un champ aléatoire lisse.
+
+Et le seuil de fusion n'est pas un paramètre — 58 578 bassins à 0 m, 9 021 à
+10 m, 1 025 à 20 m, **zéro** à 50 m. Aucun plateau, aucune décrochement : il n'y
+a pas deux populations à séparer. Les vraies dépressions fermées d'une planète
+sont **tectoniques** — rifts, grabens, calderas — et le fBm n'en produit aucune.
+
+> **Critère d'acceptation pour le Lot 6, obtenu gratuitement.** Le jour où la
+> tectonique arrivera, relancer cette mesure doit donner une distribution
+> **bimodale** : un mode de bruit peu profond, un mode de vraies dépressions à
+> des centaines de mètres, séparés par un creux.
+
+Second contrôle du même ordre : la répartition de Strahler donne un **rapport de
+bifurcation de Horton** de 4,8 au premier saut — dans la fourchette terrestre de
+3 à 5 — puis 13 et 50. La ramification s'effondre au-delà de l'ordre 2.
+
+## Ce que la sphère impose au D8
+
+Deux corrections qu'un portage naïf d'un code terrestre oublierait, et la
+première n'est pas un raffinement :
+
+- **Les huit voisins ne sont pas équidistants.** À la latitude 81°, le voisin est
+  est à **1,147 km** contre **7,325 km** vers le sud — un facteur 6,4. Prendre la
+  plus forte dénivelée au lieu de la plus forte **pente** enverrait toute l'eau
+  des hautes latitudes vers l'est ou l'ouest. Un test le prouve par
+  contre-exemple.
+- **La grille s'enroule en longitude.** Colonnes 0 et W−1 voisines.
+
+Les distances sont calculées en **orthodromie exacte**, table de `H × 8` — elles
+ne dépendent que de la ligne, donc l'approximation en plan tangent ne coûtait
+rien à éviter.
+
+## Deux seuils qui sont des choix, et le disent
+
+`STREAM_THRESHOLD_KM2 = 5 000` et `MIN_BASIN_KM2 = 50 000`. Ni l'un ni l'autre
+n'est dérivable : **il n'existe pas de « vrai » nombre de fleuves**, seulement
+une densité de drainage qu'on décide. C'est un des points que le métier connaît
+et que les tutoriels taisent. Exprimés en km² et non en cellules, pour survivre à
+un changement de résolution.
+
+## Résultats
+
+```
+Grille 4096 × 2048 — 8.4 Mpx
+  bassins                58578
+  réseau ≥ 5000 km²     184801 cellules, ordre de Strahler max 4
+  chemin le plus long     2179 cellules
+  fleuves                18870      (dont 29 coupés à l'antiméridien)
+  exutoires              58578
+  bassins                  627      (451 bassins ≥ 50 000 km²)
+  analyse 2.5 s, écriture 1.7 s → 14,4 Mio
+```
+
+## Trois mesures qui ont changé le code
+
+**Le doublement de pointeurs rend tout tractable.** Résoudre les bassins prend
+13 passes vectorisées au lieu de 8 192 pas à pas — 630 fois moins de travail.
+L'accumulation, séquentielle par nature, se déplie par **profondeur** : deux
+cellules de même profondeur ne peuvent pas s'alimenter, donc elles se traitent
+d'un coup.
+
+**Les tableaux plats de zéros étaient un mur.** Compter les bassins par
+`bincount` sur les racines produisait 2 Go remplis à 99,4 % de zéros. Et il n'y
+avait rien à découvrir : **les bassins sont les puits**, que le raster de
+directions désigne déjà. Pic mémoire ramené de 8,13 Go à 1,65 Go à z=6.
+
+**`writerecords` et jamais `write` en boucle.** 58 578 points prennent 41 s un
+par un contre 0,5 s en lot — un facteur 82, parce que chaque appel isolé engage
+sa propre transaction SQLite. Sur l'écriture complète : **411,7 s → 1,7 s**.
+
+## Ce que le GeoPackage garde et que le GeoTIFF perd
+
+```
+gpkg_spatial_ref_sys :  ('Aeonir Crust', 1, 'AEONIR', 1)
+```
+
+L'autorité privée survit **comme donnée**, dans des colonnes dédiées,
+interrogeable en SQL. C'est le seul format de la chaîne où `AEONIR:1` existe
+autrement que noyé dans un WKT — au Lot 0, `to_authority()` renvoyait `None` sur
+le GeoTIFF.
 
 ---
 
