@@ -12,6 +12,7 @@ import pytest
 import rasterio
 from rasterio.crs import CRS
 
+from aeonir_gis import calibration
 from aeonir_gis import constants as k
 from aeonir_gis import dem
 from aeonir_gis.crs import CRUST_WKT
@@ -115,14 +116,33 @@ def test_the_surface_offset_does_not_depend_on_resolution():
     C'est ce qui rend le choix de graine bon marché : on mesure sur une petite
     grille, et le résultat vaut pour le raster de production.
     """
-    coarse = _weighted_mean(128, dem.DEFAULT_SEED)
-    fine = _weighted_mean(512, dem.DEFAULT_SEED)
-    assert coarse == pytest.approx(fine, abs=1.0)
+    enregistre = calibration.load()
+    seed = enregistre.seed
+    grossier = _weighted_mean(enregistre.scan_width, seed)
+    fin = _weighted_mean(enregistre.scan_width * 2, seed)
+    assert grossier == pytest.approx(fin, abs=enregistre.offset_tolerance_m)
+
+    # ⚠️ L'invariance vaut **à partir de la grille de balayage**, pas en
+    # dessous : à 128 px le pas fait 234 km, plus grossier que l'octave la plus
+    # basse du bruit, et la moyenne de surface s'en trouve biaisée de plusieurs
+    # mètres. Mesurer plus grossier que ce qu'on échantillonne ne dit rien.
+    assert enregistre.scan_width >= 512
 
 
 def test_the_chosen_seed_sits_on_the_reference_sphere():
-    """Le critère de sélection de :data:`dem.DEFAULT_SEED`, re-vérifié."""
-    assert abs(_weighted_mean(512, dem.DEFAULT_SEED)) < 2.0
+    """**Le critère de `calibrate`, rejoué sur la graine qu'il a retenue.**
+
+    C'est le contrat entre le code et `calibration.json` : le critère vit ici,
+    la valeur vit là-bas. Changer un paramètre du générateur sans relancer la
+    calibration fait tomber ce test, au lieu de produire silencieusement un
+    terrain décalé sous son propre datum.
+    """
+    enregistre = calibration.load()
+    mesure = _weighted_mean(enregistre.scan_width, enregistre.seed)
+
+    assert abs(mesure) <= enregistre.offset_tolerance_m
+    # Et la valeur consignée doit être celle qu'on retrouve, pas une autre.
+    assert mesure == pytest.approx(enregistre.area_weighted_offset_m, abs=0.01)
 
 
 def test_an_arbitrary_seed_would_not_have():
@@ -147,16 +167,61 @@ def test_the_terrain_is_not_recentred_after_the_fact():
                                                       abs=10.0)
 
 
-def test_the_relief_scale_is_derived_from_the_gravity_ceiling():
-    assert dem.RELIEF_SIGMA_M == pytest.approx(k.MAX_RELIEF_M / 4)
-    assert dem.RELIEF_SIGMA_M == pytest.approx(2950.0, abs=1.0)
+def test_the_relief_scale_is_derived_from_the_measured_peak():
+    """`RELIEF_SIGMA_M = MAX_RELIEF_M / pic`, et pas une convention à 4σ.
+
+    Le Lot 1 posait `MAX_RELIEF_M / 4`. Ce n'était juste que pour `p = 0,5` :
+    le rapport pic/σ suit la cascade, et il vaut 4,23 à la persistance
+    actuelle. Conservée, la convention faisait sortir le relief à ±12,7 km
+    pour un plafond de 11,8.
+    """
+    enregistre = calibration.load()
+    assert dem.default_relief_sigma_m() == pytest.approx(
+        k.MAX_RELIEF_M / enregistre.peak_to_sigma)
+    # Le contre-exemple : l'ancienne convention ne convient plus.
+    assert dem.default_relief_sigma_m() != pytest.approx(k.MAX_RELIEF_M / 4,
+                                                         rel=0.01)
+
+
+def test_the_relief_never_reaches_the_gravity_ceiling():
+    """Le générateur n'écrête pas — c'est l'échelle qui doit tenir.
+
+    Un écrêtage créerait des plateaux et briserait la moyenne nulle. La seule
+    protection est donc que `RELIEF_SIGMA_M` soit assez petit, ce que
+    `calibrate` garantit en mesurant le pic au lieu de le supposer.
+    """
+    enregistre = calibration.load()
+    assert max(abs(enregistre.minimum_m),
+               abs(enregistre.maximum_m)) <= k.MAX_RELIEF_M
 
 
 def test_the_generated_relief_has_the_scale_it_claims():
     values = np.concatenate([band.ravel() for _, band
-                             in dem.elevation_bands(512, 256,
-                                                    seed=dem.DEFAULT_SEED)])
-    assert values.std() == pytest.approx(dem.RELIEF_SIGMA_M, rel=0.10)
+                             in dem.elevation_bands(512, 256)])
+    assert values.std() == pytest.approx(dem.default_relief_sigma_m(),
+                                         rel=0.10)
+
+
+def test_the_persistence_is_derived_from_the_hurst_exponent():
+    """`p = l^(−H)` — la persistance ne se saisit pas, elle se déduit.
+
+    Même discipline que `W = 2^z·T` : le paramètre libre est celui qui a un
+    sens — l'exposant de Hurst, qui gouverne la rugosité — et le réglage du
+    générateur s'en déduit. Écrire 0,7071 en ferait un chiffre orphelin.
+    """
+    assert dem.PERSISTENCE == pytest.approx(
+        dem.LACUNARITY ** (-dem.HURST_TARGET))
+
+    # Le contre-exemple porte sur la DÉRIVATION, pas sur une valeur : deux
+    # exposants distincts doivent donner deux persistances distinctes, sans
+    # quoi la formule ne piloterait rien.
+    #
+    # Repères mesurés : H = 1 → p = 0,5, un relief invariant d'échelle (0,3° de
+    # pente à toutes les portées) ; H = 0,5 → p = 0,7071, essayé puis écarté
+    # pour ce qu'il faisait à l'hydrologie. Voir la docstring de HURST_TARGET.
+    assert dem.LACUNARITY ** (-1.0) == pytest.approx(0.5)
+    assert dem.LACUNARITY ** (-0.5) == pytest.approx(0.70710678)
+    assert dem.LACUNARITY ** (-1.0) != pytest.approx(dem.LACUNARITY ** (-0.5))
 
 
 def test_the_finest_octave_stays_above_nyquist():

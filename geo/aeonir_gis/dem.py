@@ -49,6 +49,7 @@ from rasterio.shutil import copy as rio_copy
 from rasterio.transform import from_origin
 from rasterio.windows import Window
 
+from . import calibration
 from . import constants as k
 from .crs import CRUST_WKT
 from .noise import GradientNoise3D, fbm, unit_vectors
@@ -87,42 +88,106 @@ RESOLUTION_M: float = k.CIRCUMFERENCE_M / WIDTH
 #  ça : le tenter donnerait un faux réalisme plus coûteux qu'un bruit
 #  franchement synthétique. Repoussé au Lot 6.
 
-DEFAULT_SEED: int = 77
-"""Graine **choisie, et sur un critère explicite** : parmi les trois cents
-premières, celles dont la moyenne de surface tombe à moins de deux mètres de la
-sphère de référence. Celle-ci vaut −1,5 m, pour des extrêmes symétriques
-(−9 241 / +9 237 m à basse résolution).
+def default_seed() -> int:
+    """Graine du générateur — **un résultat de mesure, pas une constante**.
 
-Pourquoi il faut choisir. Le champ est d'espérance nulle, mais une *réalisation*
-ne l'est pas : le décalage de surface d'un tirage a un écart-type de **305 m**,
-et peut atteindre 869 m. La première graine essayée donnait −445 m, ce qui
-aurait mis le sol moyen d'Aeonir un demi-kilomètre sous son propre datum.
+    Elle est produite par `python -m aeonir_gis.calibrate`, qui balaie les
+    graines et retient la première dont la moyenne de surface tombe sous la
+    tolérance. Le critère vit dans `calibrate`, la valeur dans
+    `calibration.json`, et un test rejoue l'un sur l'autre.
 
-Sélectionner une réalisation n'est pas recentrer la donnée : le zéro reste la
-sphère, il ne bouge pas, et il ne dépend d'aucune statistique du terrain. Le
-point 6 est respecté.
+    Pourquoi il faut choisir. Le champ est d'espérance nulle, mais une
+    *réalisation* ne l'est pas : le décalage de surface d'un tirage a un
+    écart-type de plusieurs centaines de mètres. La première graine essayée au
+    Lot 1 donnait −445 m, ce qui mettait le sol moyen d'Aeonir un
+    demi-kilomètre sous son propre datum.
 
-Le balayage est bon marché parce que le décalage est **invariant en
-résolution** — mesuré identique à 0,1 m près de z=2 à z=5. On choisit donc sur
-une grille 1 024 × 512 en une seconde, et le choix vaut pour le raster complet.
-"""
+    Sélectionner une réalisation n'est pas recentrer la donnée : le zéro reste
+    la sphère, il ne bouge pas, et il ne dépend d'aucune statistique du
+    terrain. Le point 6 est respecté.
+
+    ⚠️ Fonction et non constante de module : `calibrate` importe `dem` pour
+    fabriquer ses grilles, et une lecture du fichier à l'import interdirait de
+    le régénérer une fois perdu.
+    """
+    return calibration.load().seed
+
 
 OCTAVES: int = 10
 BASE_FREQUENCY: float = 2.0
 LACUNARITY: float = 2.0
-PERSISTENCE: float = 0.5
-"""Dix octaves depuis la fréquence 2 portent la plus fine à 1 024, soit une
-cellule de 4,7 km — **2,5 pixels**. On s'arrête juste au-dessus de Nyquist :
-descendre plus bas ne fabriquerait que du repliement."""
 
-RELIEF_SIGMA_M: float = k.MAX_RELIEF_M / 4.0
-"""Écart-type visé du relief, en mètres.
+HURST_TARGET: float = 1.0
+"""Exposant de Hurst visé — **choix de modélisation, pas fait d'Aeonir.**
 
-Convention à 4σ : `MAX_RELIEF_M` est le plafond physique d'un pic, et le fBm
-étant borné par la somme de ses amplitudes, ses extrêmes s'en approchent sans
-qu'on ait à écrêter. **On n'écrête pas** — un écrêtage créerait des plateaux et
-briserait la moyenne nulle.
+`H` est l'exposant de la fonction de structure : l'écart d'altitude typique
+entre deux points croît comme `d^H`. À `H = 1` le relief est **invariant
+d'échelle** — pente médiane mesurée à 0,33° pour 3,7 km de portée et 0,16° pour
+938 km, soit une plaine alluviale à tous les zooms.
+
+## Pourquoi 1 et non 0,5, alors que 0,5 est la valeur terrestre
+
+Essayé, mesuré, écarté. `H = 0,5` a bien été produit (mesuré 0,499) et rendait
+le relief légèrement plus lisible en 3D. Mais il multipliait par 4,9 le nombre
+de bassins — 58 578 → 287 657, d'aire médiane 680 km² — et effondrait le réseau
+hydrographique : 18 870 fleuves → 370, Strahler max 4 → 2, et **plus aucun
+bassin** au-dessus du seuil de polygonisation. Un terrain plus rugueux à petite
+échelle a plus de minima locaux, donc plus de cuvettes, donc rien qui draine.
+
+Le gain visuel ne payait pas cette perte. Et il ne pouvait pas la payer : le
+relief n'est pas plat *à cause de l'exposant*, il est plat parce qu'à ce zoom
+et cette altitude de caméra le déplacement vertical vaut quelques pixels quel
+que soit `H`. La lisibilité 3D se règle donc à l'affichage — curseur
+d'exagération du visualiseur — et non dans la donnée.
+
+**Ce que la tentative laisse.** La persistance se **déduit** désormais de cet
+exposant au lieu d'être saisie, `RELIEF_SIGMA_M` se déduit du pic mesuré au
+lieu d'une convention à 4σ, et la graine sort d'une procédure. Ces trois-là
+restent, indépendamment de la valeur retenue ici.
+
+Le vrai remède est ailleurs, et il est daté : un zoom plus profond dans le
+terminateur — de l'ordre de z=10 — pour que le relief occupe enfin assez de
+pixels. C'est le Lot 7.
 """
+
+PERSISTENCE: float = LACUNARITY ** (-HURST_TARGET)
+"""Amplitude relative d'une octave à la suivante — **déduite, jamais saisie**.
+
+    H = −log(persistance) / log(lacunarité)      ⟹      p = l^(−H)
+
+C'est la même discipline que `W = 2^z·T` pour la largeur du raster : le
+paramètre libre est celui qui a un sens physique — ici l'exposant de Hurst — et
+le réglage du générateur s'en déduit. Écrire `0,7071` directement en ferait un
+chiffre orphelin.
+
+Dix octaves depuis la fréquence 2 portent la plus fine à 1 024, soit une
+cellule de 4,7 km — **2,5 pixels**. On s'arrête juste au-dessus de Nyquist :
+descendre plus bas ne fabriquerait que du repliement.
+
+⚠️ Monter la persistance déplace les extrêmes. La somme des amplitudes croît
+comme `Σpⁱ` quand l'écart-type ne croît que comme `√Σp²ⁱ` : le rapport des deux
+passe de 1,73 à 2,36 entre `p = 0,5` et `p = 0,7071`. C'est `calibrate` qui
+vérifie que le plafond de relief tient, et il n'y a **jamais** d'écrêtage.
+"""
+
+def default_relief_sigma_m() -> float:
+    """Écart-type visé du relief, en mètres — **déduit du pic mesuré**.
+
+        RELIEF_SIGMA = MAX_RELIEF_M / (pic du champ normalisé)
+
+    de sorte que les extrêmes atteignent exactement le plafond physique sans
+    jamais le dépasser. **On n'écrête pas** — un écrêtage créerait des plateaux
+    et briserait la moyenne nulle.
+
+    ⚠️ Ce n'était pas une constante mais une **convention** : le Lot 1 posait
+    `MAX_RELIEF_M / 4`, et cette valeur n'était juste que pour `p = 0,5`. Le
+    rapport pic/σ d'un fBm suit la cascade — la somme des amplitudes croît
+    comme `Σpⁱ` quand l'écart-type ne croît que comme `√Σp²ⁱ` — et il passe de
+    3,15 σ à 4,26 σ en montant la persistance à `2^(−1/2)`. Conservée telle
+    quelle, la convention faisait sortir le relief à ±12,7 km pour un plafond
+    de 11,8. `calibrate` mesure donc le pic au lieu de le supposer.
+    """
+    return k.MAX_RELIEF_M / calibration.load().peak_to_sigma
 
 BAND_ROWS: int = 128
 """Hauteur d'une passe. Le raster complet ferait 512 Mio en float32 et bien
@@ -154,12 +219,12 @@ class DemStats:
 
 
 def elevation_bands(width: int = WIDTH, height: int = HEIGHT, *,
-                    seed: int = DEFAULT_SEED,
+                    seed: int | None = None,
                     octaves: int = OCTAVES,
                     base_frequency: float = BASE_FREQUENCY,
                     lacunarity: float = LACUNARITY,
                     persistence: float = PERSISTENCE,
-                    relief_sigma_m: float = RELIEF_SIGMA_M,
+                    relief_sigma_m: float | None = None,
                     band_rows: int = BAND_ROWS):
     """Produit le MNT bande par bande — `(première ligne, altitudes float32)`.
 
@@ -167,7 +232,9 @@ def elevation_bands(width: int = WIDTH, height: int = HEIGHT, *,
     rende le raster symétrique : sans le demi-pixel, la première ligne
     tomberait exactement sur le pôle et la dernière un pixel avant l'autre.
     """
-    noise = GradientNoise3D(seed)
+    noise = GradientNoise3D(default_seed() if seed is None else seed)
+    echelle = (default_relief_sigma_m() if relief_sigma_m is None
+               else relief_sigma_m)
     longitudes = -180.0 + (np.arange(width) + 0.5) * (360.0 / width)
 
     for first_row in range(0, height, band_rows):
@@ -179,7 +246,7 @@ def elevation_bands(width: int = WIDTH, height: int = HEIGHT, *,
                     base_frequency=base_frequency, lacunarity=lacunarity,
                     persistence=persistence)
 
-        yield first_row, (field * relief_sigma_m).astype(np.float32)
+        yield first_row, (field * echelle).astype(np.float32)
 
 
 def crust_transform(width: int = WIDTH, height: int = HEIGHT):
@@ -193,7 +260,7 @@ def crust_transform(width: int = WIDTH, height: int = HEIGHT):
 
 
 def write_dem(path, *, width: int = WIDTH, height: int = HEIGHT,
-              seed: int = DEFAULT_SEED, cog: bool = True,
+              seed: int | None = None, cog: bool = True,
               **generator) -> DemStats:
     """Écrit le MNT et renvoie ses statistiques réelles.
 
@@ -275,7 +342,8 @@ def main(argv=None) -> int:
                         type=Path, help="fichier de sortie")
     parser.add_argument("-z", "--zoom", type=int, default=MAX_ZOOM,
                         help="zoom maximal visé ; fixe la taille du raster")
-    parser.add_argument("-s", "--seed", type=int, default=DEFAULT_SEED)
+    parser.add_argument("-s", "--seed", type=int, default=None,
+                        help="par défaut, la graine de calibration.json")
     parser.add_argument("--octaves", type=int, default=OCTAVES)
     parser.add_argument("--plain", action="store_true",
                         help="GeoTIFF simple, sans conversion COG")
@@ -283,11 +351,15 @@ def main(argv=None) -> int:
 
     width = grid_width(args.zoom)
     height = width // 2
+    seed = default_seed() if args.seed is None else args.seed
+    origine = "calibration.json" if args.seed is None else "ligne de commande"
     print(f"Grille {width} × {height} — W = 2^{args.zoom} × {TILE_SIZE}")
     print(f"  {k.CIRCUMFERENCE_M / width / 1000:.3f} km/px à l'équateur, "
-          f"{width * height / 1e6:.1f} Mpx, graine {args.seed}")
+          f"{width * height / 1e6:.1f} Mpx")
+    print(f"  graine {seed} ({origine}), persistance {PERSISTENCE:.4f} "
+          f"= {LACUNARITY:g}^−{HURST_TARGET:g}")
 
-    stats = write_dem(args.out, width=width, height=height, seed=args.seed,
+    stats = write_dem(args.out, width=width, height=height, seed=seed,
                       octaves=args.octaves, cog=not args.plain)
     print(stats)
     print(f"  → {args.out} ({args.out.stat().st_size / 2**20:.1f} Mio)")
