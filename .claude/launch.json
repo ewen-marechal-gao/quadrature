@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "geo-viewer",
+      "runtimeExecutable": "geo/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "geo"],
+      "port": 8765
+    },
+    {
       "name": "cv-web",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-l", "3456", "C:\\Users\\Ewen\\Documents\\Emploi\\cv-web"],

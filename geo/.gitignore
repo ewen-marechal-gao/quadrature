@@ -4,6 +4,12 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
+# Bibliothèque du visualiseur — épinglée dans viewer/package.json, restituée
+# par `npm install`. MapLibre pèse ~1,6 Mo de dist, sans intérêt en dépôt.
+# Le package-lock.json, lui, est VERSIONNÉ : package.json ne fige que la
+# dépendance directe, le lock fige les 23 transitives.
+viewer/node_modules/
+
 # Produits générés — reproductibles par le pipeline, jamais versionnés.
 # Le MNT global fait ~500 Mo, les pyramides de tuiles davantage.
 out/

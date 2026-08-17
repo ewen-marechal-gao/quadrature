@@ -1,0 +1,11 @@
+{
+  "name": "aeonir-viewer",
+  "private": true,
+  "description": "Visualiseur local du relief d'Aeonir — sert la pyramide de tuiles produite par aeonir_gis.pyramid.",
+  "dependencies": {
+    "maplibre-gl": "6.2.0"
+  },
+  "scripts": {
+    "start": "../.venv/Scripts/python.exe -m http.server 8765 --directory .."
+  }
+}
