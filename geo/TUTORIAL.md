@@ -30,7 +30,7 @@ les empêche de regonfler :
 | **1** | MNT global — fBm échantillonné en 3D sur la sphère → GeoTIFF → COG | ✅ |
 | **2** | Hydrologie — D8, accumulation, réseau, Strahler, bassins → GeoPackage | ✅ |
 | **3** | Tuileur maison — pyramide XYZ, terrarium, TileJSON | ✅ |
-| **4** | Viewer MapLibre — style spec, `hillshade`, `terrain` | 🚧 visualiseur local en place |
+| **4** | Viewer MapLibre — style spec, `hillshade`, `terrain` | 🚧 visualiseur local en place, CI `geo` en place |
 | **5** | Tuiles vectorielles MVT — fleuves, lacs, biomes | |
 | **6** | Tuileur **dynamique** — le même code déclenché par requête HTTP, lisant des plages dans le COG, l'époque en paramètre d'URL | |
 | **7** | Relief tectonique — plancher dominant, chaînes de collision, fosses en eau dans le seul terminateur, croûte dilatée/contractée | |
@@ -212,13 +212,13 @@ et c'est gratuit, la passe qui calcule le décalage rendait déjà les extrêmes
 
 # Les dettes ouvertes
 
-- **`geo/` n'a aucun job dans `ci.yml`** : les 241 tests ne tournent qu'en
-  local.
 - **Aucun code versionné ne produit les `out/*.wkt`** dont le README a besoin
   pour déclarer les SCR dans QGIS. À intégrer à `export.py`.
 - **`.claude/launch.json` est versionné avec des chemins absolus** : trois de
   ses quatre configurations sont inopérantes sur une autre machine.
-- **`requirements.txt` épingle les bibliothèques mais pas l'interpréteur.**
+- **`requirements.txt` épingle les bibliothèques mais pas l'interpréteur.** La
+  version ne vit que dans le job `geo` de `ci.yml` ; rien n'empêche une machine
+  locale d'installer les mêmes roues sur un autre Python — donc un autre GDAL.
 - **L'anisotropie polaire du D8** est mesurée et documentée, pas corrigée : le
   remède professionnel est de traiter les calottes en stéréographique polaire.
 - **L'artefact d'ombrage de MapLibre** — les colonnes de tuiles ne s'ombrent pas
