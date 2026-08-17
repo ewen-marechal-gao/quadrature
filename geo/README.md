@@ -52,7 +52,7 @@ vont pas de soi, parce que la donnée n'est pas terrestre.
    on utilise 9 × 10⁻⁶, qui écraserait le relief d'un tiers ici.
 
 Les aperçus internes du COG (`[2, 4, 8, 16, 32]`) sont utilisés
-automatiquement : le panoramique reste fluide malgré les 442 Mio.
+automatiquement : le panoramique reste fluide malgré les 421,9 Mio.
 
 ### Le projet `QGISviz.qgs`
 
@@ -120,10 +120,19 @@ filtre de polygonisation.
 | **0** | Référentiels Croûte et Étoile, rotation datée entre eux | ✅ 79 tests |
 | **1** | MNT global — fBm échantillonné en 3D sur la sphère → GeoTIFF → COG | ✅ 139 tests |
 | **2** | Hydrologie — D8, accumulation, réseau, Strahler, bassins → GeoPackage | ✅ 176 tests |
-| **3** | Tuileur maison — pyramide XYZ, terrain-RGB, empaquetage PMTiles | |
-| **4** | Viewer MapLibre — style spec, `hillshade`, `terrain`, projection globe | |
+| **3** | Tuileur maison — pyramide XYZ, terrarium, TileJSON | ✅ 228 tests |
+| **4** | Viewer MapLibre — style spec, `hillshade`, `terrain` | 🚧 visualiseur local en place |
 | **5** | Tuiles vectorielles MVT — fleuves, lacs, biomes | |
-| **6** | Relief tectonique — plancher dominant, chaînes de collision, fosses en eau dans le seul terminateur, croûte dilatée/contractée | |
+| **6** | Tuileur **dynamique** — le même code déclenché par requête HTTP, lisant des plages dans le COG, l'époque en paramètre d'URL | |
+| **7** | Relief tectonique — plancher dominant, chaînes de collision, fosses en eau dans le seul terminateur, croûte dilatée/contractée | |
+
+L'empaquetage **PMTiles** a quitté le Lot 3 : les deux sources déclarées côté
+client suppriment les 404 qui le rendaient nécessaire, et il redevient utile au
+Lot 6, quand les tuiles seront servies plutôt que posées à côté du viewer.
+
+Les lots 6 et 7 ont **échangé leurs numéros** le 11/08/2026 : le poste visé
+porte sur l'analyse d'images satellite, où la donnée est dynamique et servie.
+Exercer ce régime prime sur l'embellissement de la géographie.
 
 ---
 
@@ -150,6 +159,11 @@ s'agit de comprendre — les déléguer reviendrait à sauter le chapitre.
 
 Règle générale du chantier : **on délègue la plomberie, on implémente les
 concepts.** GDAL produit les COG et reprojette ; le tuilage s'écrit.
+
+La frontière s'est déplacée d'elle-même au Lot 3, et pas dans le sens prévu :
+PROJ **refusant** un Mercator bâti sur le repère Étoile, la reprojection a dû
+rentrer dans le tuileur sous forme de cartographie inverse. La plomberie qu'on
+comptait déléguer n'existait pas.
 
 ## Le repère a ses pôles au point substellaire
 
@@ -401,6 +415,13 @@ une base SQLite : il faudrait un serveur de tuiles. PMTiles porte son index en
 interne et se lit par **requêtes HTTP Range** — le navigateur récupère directement
 les octets d'un fichier posé sur un hébergement statique.
 
+⚠️ **Reporté au Lot 6.** On attendait de PMTiles qu'il règle la bordure dentelée
+d'une pyramide creuse, TileJSON n'ayant qu'une `bounds` et ne sachant pas dire
+« global jusqu'à z, ruban au-delà ». Deux sources déclarées côté client le font
+sans lui, et les 404 disparaissent. À 50,3 Mio sur 822 fichiers, l'arborescence
+se déploie telle quelle ; l'argument du fichier unique redevient décisif quand
+les tuiles seront **servies** plutôt que posées à côté du viewer.
+
 ## Le mensonge de rayon vit à un seul endroit
 
 MapLibre est câblé sur Web Mercator et un rayon terrestre. Aeonir fait 4 775 km
@@ -471,8 +492,15 @@ rond saisi à la main serait un chiffre orphelin.
 | 8 | 65 536 | 0,46 km | 3 277 px | 87 381 | 8,0 Gio | ~1 h 25 |
 
 La ligne z=6 est **mesurée** ; les deux suivantes sont extrapolées au facteur 4.
-Le COG produit pèse **442 Mio** — la compression DEFLATE avec prédicteur
-flottant ne gagne que 14 % sur les 512 Mio bruts, le bruit se comprimant mal.
+Le COG produit pèse **421,9 Mio** — 442 394 953 octets exactement — soit un gain
+de **17,6 %** de la compression DEFLATE avec prédicteur flottant sur les 512 Mio
+bruts. Le bruit se comprime mal.
+
+⚠️ Ce chiffre a longtemps été faux ici, et l'erreur mérite d'être nommée : on
+avait relevé « 442 Mio » en lisant 442 **Mo** décimaux. Comparés aux 512 **Mio**
+binaires — justes, eux — ils donnaient un gain de 14 %. **Deux unités dans une
+même soustraction.** Sur un projet où une même valeur calculée deux fois se
+teste par égalité, c'est le genre de faute qui se propage dans les dérivés.
 
 **Retenu : z = 6**, avec `T = 256` — terrarium est un format 256, et une tuile
 plus petite donne une échelle de zoom plus fine.
@@ -630,7 +658,7 @@ Grille 16384 × 8192 — W = 2^6 × 256, graine 77
   moyenne par pixel       -108.1 m
   moyenne par aire          -1.4 m   (-0.05 % de σ)
   durée                    323.7 s
-  → 442 Mio, tuiles internes 512×512, aperçus [2, 4, 8, 16, 32]
+  → 421,9 Mio, tuiles internes 512×512, aperçus [2, 4, 8, 16, 32]
 ```
 
 Trois vérifications au passage.
@@ -846,6 +874,318 @@ L'autorité privée survit **comme donnée**, dans des colonnes dédiées,
 interrogeable en SQL. C'est le seul format de la chaîne où `AEONIR:1` existe
 autrement que noyé dans un WKT — au Lot 0, `to_authority()` renvoyait `None` sur
 le GeoTIFF.
+
+---
+
+# Lot 3 — le tuileur
+
+Deux modules : `tiles.py` fabrique **une** tuile — adressage, cartographie
+inverse, échantillonnage, encodage — et `pyramid.py` en fabrique la pyramide,
+écrit les PNG et le TileJSON. Le visualiseur MapLibre vit dans `viewer/`.
+
+Production : **821 tuiles, 50,3 Mio, ~107 s** sur un i5-7300HQ.
+
+## Le schéma XYZ ne référence aucun rayon
+
+C'est ce qui autorise Aeonir à employer `WebMercatorQuad` **sans mentir** :
+passer de `(lon, lat)` à `(z, x, y)` n'emploie que des angles et un logarithme.
+
+```
+x = (λ + 180)/360 · 2^z            y = ½(1 − ln(tan φ + sec φ)/π) · 2^z
+```
+
+Le rayon n'y figure nulle part. Il ne réapparaît qu'à l'affichage, via
+`TERRAIN_EXAGGERATION`. `crs.MERCATOR_WKT` ne sert donc **pas** au tuilage — il
+est là pour l'analyse métrique, et les confondre ferait croire qu'il faut un CRS
+par planète pour tuiler.
+
+Le choix n'existait de toute façon pas : MapLibre GL JS ne rend qu'en Web
+Mercator, les projections alternatives sont encore sur sa feuille de route.
+
+### 85,0511287798066° est une forme close, pas une convention
+
+Un seul arbitraire en amont — *le monde doit être carré*, pour être divisible en
+quadrants. Le nombre en découle sans choix :
+
+```
+ln(tan φ + sec φ) = π   ⟹   φ_max = gd(π) = arctan(sinh π) = 2·arctan(e^π) − π/2
+                            = 85,05112877980660357480…°
+```
+
+Les deux formes closes retombent sur la constante **au bit près**, et le
+contrôle inverse rend π à l'ULP.
+
+## La cartographie inverse : la donnée et la transformation vont en sens opposés
+
+La donnée va Croûte → Étoile ; la transformation employée fait le chemin
+**inverse**. Ce n'est pas une inadvertance, c'est ainsi que fonctionne tout
+rééchantillonnage d'image : on itère sur les pixels de **destination**.
+
+```
+pour chaque pixel de la tuile (Étoile)
+    d'où est-ce que je viens sur la croûte ?      ← star_to_crust
+    lire le MNT à cet endroit                     ← échantillonnage
+```
+
+Le sens direct — parcourir le MNT et projeter chaque pixel vers sa tuile — est
+le *forward mapping*, et il ne marche pas. Mesuré à z=4, avec pourtant **40 % de
+pixels source de plus** que de cases de destination :
+
+| répartition des cellules de destination | |
+|---|---:|
+| 0 échantillon — **trou** | **39,6 %** |
+| 1 échantillon | 32,5 % |
+| 2 ou plus — **collision** | **27,9 %** |
+| pire cellule | 1 221 échantillons |
+
+Les 1 221 collisions sont les pôles géographiques, où les pixels de la Croûte se
+serrent et s'écrasent dans la même case Étoile — l'anisotropie polaire vue de
+l'autre côté. La cartographie inverse rend **exactement une valeur par cellule**,
+par construction.
+
+Corollaire pour `crs.py` : `star_to_crust` n'y est pas la commodité symétrique
+de `crust_to_star`. **C'est la réciproque qui travaille**, la fonction directe
+ne servant qu'aux contrôles.
+
+### Un « Mercator Étoile » est impossible
+
+On aurait pu gauchir en une passe si PROJ acceptait un `PROJCRS` bâti sur le
+repère Étoile. Il refuse — `Missing DATUM or ENSEMBLE node` — parce qu'un
+`PROJCRS` exige une base portant un `DATUM` et que le repère Étoile est un CRS
+géographique **dérivé**. L'autre voie, gauchir vers une grille Étoile puis
+remapper ses lignes en Mercator, coûterait **deux interpolations successives**
+là où la cartographie inverse n'en demande qu'une.
+
+## Le bilinéaire ne suffit pas quand on va dériver le résultat
+
+Un ombrage **est** une dérivée. Le bilinéaire est **C⁰** : la surface est
+continue, mais sa dérivée est constante à l'intérieur de chaque cellule source
+et saute à chaque frontière. Elle dessine donc ces frontières en **blocs
+rectangulaires** de la taille du pixel source — d'autant plus gros que Mercator
+étire la latitude, puisqu'une ligne de tuile y couvre moins de degrés qu'une
+ligne de source. Mesuré à −79° de latitude Étoile : des blocs de **cinq pixels**.
+
+**Catmull-Rom est C¹, et l'artefact disparaît entièrement — à source
+identique.** Ce n'était donc pas un problème de résolution : lire le MNT en
+pleine résolution au lieu de la résolution du niveau rend le résultat *pire*, du
+crénelage à la place des blocs.
+
+Contrepartie d'un noyau cubique : il dépasse légèrement l'intervalle de ses
+voisins près d'une rupture de pente. Sans conséquence sur un champ fBm, à
+surveiller quand le relief aura des arêtes franches.
+
+> **La leçon dépasse ce cas.** On savait qu'il ne fallait pas de plus-proche-
+> voisin pour un MNT ; on s'arrêtait un cran trop tôt. Dès qu'une sortie sera
+> **dérivée** — ombrage, pente, exposition, courbure — le noyau doit être C¹.
+
+## La pyramide a deux régimes, et le seuil est imposé
+
+```
+z ≤ 4   monde entier, rendu DIRECTEMENT depuis le MNT
+z > 4   bande du terminateur seule, construite PAR LE BAS
+```
+
+Construire par le bas exige que **les quatre enfants d'un parent existent** :
+
+```
+parent [a, b] à z−1   exige   enfants [2a, 2b+1] à z
+```
+
+La bande vérifie cette fermeture entre z=6 et z=5 — les enfants de
+`row_range(5) = (15, 17)` sont exactement `(30, 35) = row_range(6)` — et la
+**rompt** à z=4, dont les parents `(7, 8)` réclament des lignes `(14, 17)` que
+la bande ne contient pas. Le coût de la poursuivre :
+
+| minzoom visé | lignes à z=6 | tuiles z=6 | pyramide |
+|---:|---|---:|---:|
+| 5 | 30..35 | 384 | 480 |
+| 4 | 28..35 | 512 | 672 |
+| 3 | 24..39 | 1 024 | 1 360 |
+| 2 | 16..47 | 2 048 | 2 728 |
+| 1 | **0..63** | **4 096** | 5 460 |
+
+**En dessous de z=4 on ne tuile plus une bande mais une planète.** Le régime
+direct prend donc le relais exactement là où la fermeture cesse d'être gratuite,
+et le monde entier de z=0 à z=4 ne coûte que 341 tuiles.
+
+Deux conséquences heureuses. **Aucune moyenne n'est jamais partielle**, donc le
+`NODATA` ne se pose pas — une valeur manquante moyennée à −32 768 m creuserait
+une falaise. Et la pyramide est **globale depuis z=0**, ce que la fermeture
+seule n'offrait pas.
+
+⚠️ Les niveaux de bande ne se déduisent **pas** de `row_range` appliqué à
+chacun : il faut les descendre par la fermeture. Les deux définitions coïncident
+entre z=5 et z=6, ce qui est une **coïncidence de cette bande-ci**. À z=7,
+`row_range` commence à la ligne 61 quand la fermeture en réclame 60 — la
+réduction manquerait un enfant.
+
+### Ce que la construction par le bas achète
+
+Un pixel de `z−1` est **exactement** la moyenne de ses quatre enfants. Vérifié
+sur les fichiers écrits : écart médian **0,25 m**, maximum 0,75 — exactement les
+multiples de ¼ que produit la moyenne de quatre valeurs quantifiées au mètre. Il
+n'y a aucune autre source d'écart.
+
+Sans cette égalité, l'ombrage saute au franchissement d'un seuil de zoom.
+
+On aurait pu évaluer chaque niveau analytiquement, le terrain étant aujourd'hui
+une fonction pure. **Écarté à dessein** : cette propriété disparaîtra au premier
+modèle tectonique, et le tuileur doit prendre un raster en entrée — c'est
+l'interface réaliste, et la seule qui survivra au changement de générateur.
+
+### Lire la source à la résolution du niveau
+
+`source_shape(zoom)` fait lire une grille de même pas que le niveau, ce qui fait
+choisir à GDAL l'aperçu adapté du COG — et nos aperçus sont en moyenne, donc une
+vraie moyenne d'aire plutôt qu'un échantillonnage ponctuel.
+
+Un pixel de destination à z=2 couvre 16 × 16 pixels source ; l'interpolation
+n'en regarde que quatre, et les 252 autres se replieraient en crénelage.
+
+⚠️ Mesuré sur le terrain actuel, l'écart entre lecture adaptée et pleine
+résolution vaut **1,6 % de σ**. C'est faible **parce que ce terrain-ci est
+lisse** — bande limitée à 4,66 km, dominé par ses basses fréquences. Ne pas en
+conclure que le crénelage est négligeable en général.
+
+## L'encodage terrarium, canal bleu à zéro
+
+Mesuré sur 36 tuiles réelles :
+
+| encodage | précision | poids |
+|---|---|---:|
+| terrarium complet | 4 mm | 137,0 Kio |
+| **canal B à zéro** | **1 m** | **54,9 Kio** (−60 %) |
+| canal R seul | 256 m | 4,7 Kio |
+| brut non compressé | — | 192,0 Kio |
+
+**Le canal B coûte 82 Kio par tuile pour encoder des millimètres sur un monde
+qui a 11,8 km de relief.** La partie fractionnaire d'un champ flottant est du
+bruit : incompressible par construction.
+
+Ce n'est pas un écart au standard — un décodeur terrarium lit `B = 0` et rend
+des mètres entiers, la source MapLibre reste `"encoding": "terrarium"`. C'est un
+choix de précision *à l'intérieur* du format.
+
+Et `k.NODATA` n'a besoin d'aucun cas particulier : à −32 768 m, les trois canaux
+valent 0. La valeur « pas de mesure » est le plancher exact de l'encodage.
+
+> **Jamais de compression avec perte.** Un JPEG sur du terrain-RGB ne dégrade
+> pas l'image, il **fabrique des altitudes fausses** : une erreur de 1 sur le
+> canal rouge vaut 256 m. PNG ou WebP sans perte, rien d'autre.
+
+## Ce que le tuilage a mesuré
+
+| mesure | valeur | ce qu'elle a changé |
+|---|---|---|
+| poids réel d'une tuile | **129,6 Kio**, pas 40 | toutes les projections de volume étaient fausses d'un facteur 3,2 |
+| tuiles grossières | **105 Kio à z=0** contre 58 à z=6 | la compression suit la **douceur locale**, pas la surface couverte |
+| rendu d'une tuile | 21 ms | mais **79 ms** avec le PNG : le compresseur pèse les ¾ |
+| autocorrélation du relief | demi-valeur à **491 km** | à z=1 le motif fait 4 px |
+| tuile vs bruit évalué directement | **44,7 m** médian pour σ = 2 333 | il n'y avait pas de bug à corriger |
+
+Deux de ces lignes méritent un paragraphe.
+
+**Les tuiles grossières sont plus lourdes, une par une.** Contre-intuitif
+jusqu'à ce qu'on y pense : une tuile z=0 étale les 11,8 km de relief de la
+planète sur 256 pixels, donc chaque pixel diffère beaucoup de son voisin et le
+filtre prédictif du PNG n'a plus rien à prédire.
+
+**Le fBm ne tient pas la vue planétaire.** Son échelle dominante est 491 km ; à
+z=1 un pixel couvre 117 km, donc le motif caractéristique fait quatre pixels et
+ne peut ressembler qu'à du bruit. Ce n'est pas un défaut de rendu — comparée au
+bruit évalué directement aux positions des pixels, notre tuile s'en écarte de
+1,9 % et se trouve même *plus lisse*, ce qui est correct. **Le Lot 7 n'est pas
+un raffinement esthétique : c'est ce qui rendra les zooms 0 à 3 lisibles.**
+
+## Le contrat avec le client
+
+`tiles.json` suit TileJSON 3.0.0 et porte en plus un objet `aeonir` — le
+standard tolère les clés inconnues, les clients les ignorent. Sans lui, le
+visualiseur recopierait des constantes qui vivent dans `constants.py`, et les
+deux dériveraient.
+
+⚠️ **Deux emprises distinctes, et les confondre coûte cher :**
+
+| champ | valeur | ce qu'il dit |
+|---|---|---|
+| `aeonir.band` | −21° … +6° | ce que la bande **signifie** — les seuils de `climat.md` |
+| `aeonir.band_bounds` | −21,94° … +11,18° | ce que le client peut **demander** |
+
+Une ligne de tuiles entamée est rendue en entier, donc l'emprise réelle déborde
+les seuils de près de six degrés côté face ardente. Annoncer les seuils du lore
+ferait renoncer le client à des tuiles qui existent ; annoncer plus large lui
+ferait réclamer des tuiles absentes.
+
+## Deux sources côté client, pour une pyramide creuse
+
+Une source `raster-dem` n'a **qu'un** couple `bounds`/`maxzoom` : elle ne sait
+pas dire « global jusqu'à 4, ruban au-delà ». Déclarée globale jusqu'à z=6, elle
+réclame hors bande des tuiles absentes et laisse un trou.
+
+Le style en déclare donc **deux, sur le même jeu de fichiers** :
+
+| source | zooms | emprise |
+|---|---|---|
+| `monde` | 0 → 4 | globale |
+| `bande` | 5 → 6 | `band_bounds` |
+
+Le mécanisme qui fait tout marcher : **sous son `minzoom`, MapLibre ne couvre
+pas une source du tout.** `bande` n'existe qu'à partir du zoom 5, et jamais hors
+de son emprise. **Plus aucun 404** — ce qu'on croyait réservé à PMTiles se règle
+par une déclaration honnête.
+
+Contrepartie assumée : dans la bande, deux ombrages du même relief se
+superposent. On a tenté de faire décroître l'exagération du fond au profit de la
+bande ; **le remède était pire** — hors bande, où le fond est seul, il ne restait
+presque rien à voir au-delà de z=5. Exagération constante, donc, et la frontière
+se lit comme un gain de netteté, ce qui est l'information juste.
+
+Le relief 3D ne peut viser qu'**une** source ; il vise la source globale, seule
+à couvrir à la fois tous les niveaux et tout le globe.
+
+## Ce que MapLibre fait, et ne fait pas
+
+**Il ne précharge rien.** La demande d'anticipation pendant les mouvements de
+caméra est [l'issue #116](https://github.com/maplibre/maplibre-gl-js/issues/116),
+toujours ouverte ; le vide est comblé par des greffons tiers. Ce qui existe
+nativement va dans l'autre sens : `prefetchZoomDelta`, **à 4 par défaut**, charge
+les tuiles **parentes** — donc plus grossières — pour afficher une version basse
+résolution pendant que les fines arrivent.
+
+L'asymétrie est de l'économie. Dézoomer demande 1 parent pour 4 enfants, souvent
+déjà en cache ; zoomer demande 4 enfants par tuile visible, soit ×4 de la vue
+par niveau, pour un mouvement que l'utilisateur ne fera peut-être pas. **On ne
+parie pas sur le futur, on garantit le présent.**
+
+**Il reconstitue les bordures des tuiles MNT** depuis leurs voisines —
+`backfillBorder` et `neighboringTiles` sont dans le bundle. Le calcul des
+normales ne fabrique donc pas de couture, sauf transitoirement.
+
+Et `map.showTileBoundaries = true` trace le contour de chaque tuile **et son
+triplet z/x/y**, sans avoir besoin de `glyphs` : il embarque sa propre fonte.
+Voisins utiles : `showCollisionBoxes`, `showPadding`, `showOverdrawInspector`.
+
+## Le visualiseur
+
+`viewer/index.html`, MapLibre 6 vendue localement et épinglée dans
+`package.json`. Quatre bascules : relief 3D, une source / deux sources,
+graticule, bords de tuiles.
+
+**MapLibre 6 est ESM uniquement** — plus de bundle UMD, plus de variable globale
+`maplibregl`, et **aucun export `default`** : il faut `import * as maplibregl`.
+Corollaire, un module ES ne se charge **jamais** depuis `file://` — origine
+opaque, la requête n'est pas HTTP. Un serveur statique est obligatoire :
+
+```
+cd geo/viewer && npm start        puis  http://localhost:8765/viewer/
+```
+
+La graticule est fabriquée en GeoJSON, MapLibre n'en fournit aucune. Le style
+n'ayant pas de `glyphs`, aucun calque `symbol` n'est possible — pas de libellés,
+l'information passe par la couleur. Dans le repère Étoile la latitude **est**
+l'élévation de l'étoile, donc l'équateur est le milieu du terminateur, +6° le
+Mur des Tempêtes et −21° le Linceul : la graticule dit quelque chose du monde,
+pas seulement de la grille.
 
 ---
 

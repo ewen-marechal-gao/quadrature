@@ -428,17 +428,23 @@ silencieusement.
 `résolution = 30 003 km / (2^z × T)`, avec **T = 256** — terrarium est un format
 256, et une tuile plus petite donne une échelle de zoom plus fine.
 
-| z | Résolution | Tuiles (monde) | Tuiles (bande ±25°) |
+| z | Résolution | Tuiles (monde) | Tuiles (bande −21°…+6°) |
 |---:|---:|---:|---:|
 | 0 | 117,2 km/px | 1 | 1 |
-| 3 | 14,65 km/px | 64 | ~10 |
-| 5 | 3,66 km/px | 1 024 | ~148 |
-| **6** | **1,83 km/px** | **4 096** | **~590** |
-| 8 | 458 m/px | 65 536 | ~9 440 |
-| 9 | 229 m/px | 262 144 | ~37 700 |
+| 3 | 14,65 km/px | 64 | 16 |
+| 5 | 3,66 km/px | 1 024 | 96 |
+| **6** | **1,83 km/px** | **4 096** | **384** |
+| 8 | 458 m/px | 65 536 | 5 376 |
+| 9 | 229 m/px | 262 144 | 20 480 |
 
-La bande ±25° ne représente que **14 %** de la surface en Web Mercator — d'où le
-rapport de 7 entre les deux colonnes.
+La bande traversable — du Linceul au Mur des Tempêtes — occupe **7,64 % de la
+hauteur Mercator**, et non de la surface : c'est un ruban qui fait le tour du
+monde, pas une région.
+
+⚠️ **Une ligne entamée est une ligne payée.** Le plancher fait toujours coûter
+la bande plus que sa part exacte, et l'excédent ne s'amenuise qu'en descendant :
+**23 % de gâchis à z=6, 2 % à z=10**. Dire « 384 tuiles valent 7,64 % du globe »
+est faux — c'est 9,4 %, et l'écart est la découpe, pas la géographie.
 
 **C'est cette relation qui dimensionne le raster source, et non l'inverse.** Une
 grille équirectangulaire et une pyramide Mercator portent le même `cos φ` :
@@ -473,7 +479,33 @@ Terrarium  : altitude = R × 256 + G + B / 256 - 32768
 > 1 667 km — la plage est très asymétrique. Le terrarium couvre ±32 768 m avec un
 > pas vingt-cinq fois plus fin.
 
-MapLibre lit les deux ; il faut le déclarer dans la source (`encoding`).
+MapLibre lit les deux ; il faut le déclarer dans la source (`encoding`). ⚠️ Sans
+cette déclaration il décode en Mapbox par défaut et rend des altitudes fausses
+de plusieurs milliers de mètres, **sans erreur**.
+
+> **Le canal de précision fine coûte 60 % du volume, pour rien.** Mesuré sur 36
+> tuiles réelles d'Aeonir : 137,0 Kio avec le canal B, **54,9 Kio sans**. Il
+> code des pas de 4 mm sur un monde qui a 11,8 km de relief, et la partie
+> fractionnaire d'un champ flottant est du **bruit incompressible**. Le mettre à
+> zéro n'est pas un écart au standard : un décodeur lit `B = 0` et rend des
+> mètres entiers. C'est un choix de précision *à l'intérieur* du format.
+>
+> Ordres de grandeur du même jeu : canal R seul (pas de 256 m) 4,7 Kio, brut non
+> compressé 192 Kio.
+
+**Une valeur « pas de mesure » se choisit avec l'encodage.** À −32 768 m, les
+trois canaux terrarium valent 0 : le `NODATA` est le **plancher exact** du
+format, ce qui évite un cas particulier dans le tuileur.
+
+> ⚠️ **Jamais de compression avec perte sur du terrain-RGB.** Un JPEG ne dégrade
+> pas l'image, il **fabrique des altitudes fausses** : une erreur de 1 sur le
+> canal rouge vaut **256 m**. PNG ou WebP sans perte, rien d'autre.
+
+**Le poids d'une tuile suit la douceur locale, pas la surface couverte.** Mesuré
+sur Aeonir : **105 Kio à z=0 contre 58 Kio à z=6**. Une tuile z=0 étale les
+11,8 km de relief de la planète sur 256 pixels, donc chaque pixel diffère
+beaucoup de son voisin et le filtre prédictif du PNG n'a plus rien à prédire.
+Contre-intuitif, et fatal pour une estimation de volume faite au jugé.
 
 **Ombrage** *(hillshade)* — rendu du relief calculé en éclairant le MNT depuis
 une position de lumière fictive. C'est du **2D qui donne l'illusion** du relief,
@@ -493,8 +525,31 @@ Nécessite un serveur pour être lu par un navigateur. Stocke en **TMS**.
 
 **PMTiles** — format à index interne conçu pour **HTTP Range** : le navigateur
 lit directement des octets d'un fichier posé sur un hébergement statique, sans
-serveur de tuiles. **C'est le format retenu**, parce que le site Quadrature est
-un export statique.
+serveur de tuiles. Les tuiles y sont ordonnées le long d'une **courbe de
+Hilbert**, si bien que des tuiles voisines sur la carte le sont dans le fichier —
+une lecture ramène des voisins utiles plutôt que des octets au hasard.
+
+> **PMTiles est au pavage ce que le COG est au raster.** Tous deux déplacent
+> l'index dans le fichier et laissent HTTP Range faire la pagination.
+
+**L'arborescence `{z}/{x}/{y}.png` est un format à part entière**, pas une étape
+intermédiaire : n'importe quel serveur statique la sert sans configuration, le
+CDN d'OpenStreetMap ne fait pas autre chose, et elle a la vertu d'être
+**inspectable à la main**. Trois choses la font céder à l'échelle :
+
+- **les petites tuiles** — sous un cluster de 4 Kio, une tuile vectorielle de
+  500 octets gaspille huit fois sa taille. Mesuré sur nos 822 fichiers à 62 Kio
+  de moyenne, la perte n'est que de **3,35 %** ; le relief a la chance d'être
+  lourd ;
+- **le nombre** — 822 fichiers pour six niveaux sur un ruban, mais 27 805 à z=9
+  et 1,3 million à z=12. Le coût bascule alors des octets vers les
+  **allers-retours par fichier** : un `rsync` devient dominé par la latence ;
+- **l'absence d'atomicité** — une synchronisation interrompue laisse une
+  pyramide mi-ancienne mi-nouvelle, sans moyen de le savoir.
+
+**Retenu pour Aeonir : l'arborescence en sortie de référence, PMTiles en
+empaquetage** — pas l'un contre l'autre. L'argument du fichier unique redevient
+décisif au Lot 6, quand les tuiles seront servies.
 
 ## Tuiles vectorielles
 
@@ -664,7 +719,47 @@ sélectionné), utilisable dans les expressions sans toucher aux données.
 plusieurs tuiles.
 
 **`glyphs` / `sprite`** — les polices (en PBF, découpées par plages de 256
-caractères) et l'atlas d'icônes.
+caractères) et l'atlas d'icônes. ⚠️ **Sans `glyphs`, aucun calque `symbol` n'est
+possible** — donc aucun texte sur la carte. Un style autonome doit vendre ses
+fontes localement.
+
+**`renderWorldCopies`** — option du constructeur, à `true` par défaut : le monde
+se répète indéfiniment en longitude. Explique le défilement horizontal sans
+butée, les « bandes verticales » aux zooms faibles, et les longitudes hors de
+`[−180, 180[` que la carte rapporte — un survol dans la copie de gauche donne
+−204,244° pour un point qui est à +155,756°, d'où des indices de tuile
+**négatifs** si l'on ne replie pas.
+
+**`prefetchZoomDelta`** — à **4** par défaut. Charge les tuiles **parentes**,
+quatre niveaux plus grossières, pour afficher une version basse résolution
+pendant que les fines arrivent. C'est le flou-puis-net universel. ⚠️ MapLibre ne
+précharge **rien** dans l'autre sens : l'anticipation pendant les mouvements de
+caméra reste une [demande ouverte](https://github.com/maplibre/maplibre-gl-js/issues/116).
+L'asymétrie est économique — dézoomer demande 1 parent pour 4 enfants, souvent
+déjà en cache ; zoomer demande ×4 de la vue par niveau, pour un mouvement
+hypothétique.
+
+**`maxTileCacheSize`, `maxTileCacheZoomLevels`** — rétention. Le `SourceCache`
+garde les tuiles chargées et **substitue parent ou enfants** pendant qu'une
+tuile cible se charge.
+
+**`backfillBorder`** — mécanisme interne des sources `raster-dem` : la bordure
+d'une tuile MNT est reconstituée depuis ses **voisines**, faute de quoi le
+calcul des normales manquerait de contexte au bord et dessinerait une grille de
+coutures. Autrement dit, pour le relief, **la promesse de continuité est tenue
+côté client**.
+
+**Drapeaux de débogage** — `showTileBoundaries` trace le contour de chaque tuile
+**et son triplet z/x/y**, sans `glyphs` : il embarque sa propre fonte. C'est
+l'outil qui distingue une couture de tuiles d'un bord de monde. Voisins :
+`showCollisionBoxes`, `showPadding`, `showOverdrawInspector`.
+
+**Sources multiples pour une pyramide creuse** — une source n'a qu'un couple
+`bounds`/`maxzoom`, donc elle ne sait pas exprimer « global jusqu'à z, ruban
+au-delà ». On en déclare **deux sur le même jeu de fichiers**, distinguées par
+la plage de zoom et l'emprise. Le mécanisme qui le rend possible : **sous son
+`minzoom`, MapLibre ne couvre pas une source du tout** — elle n'est donc jamais
+demandée hors de son domaine, et les 404 disparaissent.
 
 ## Le style visé au Lot 4
 
@@ -936,3 +1031,66 @@ Les erreurs qui coûtent une demi-journée, rangées par fréquence.
     méridien / diagonal » **ment près du pôle**, où le voisin sud-est est à 17 m
     à l'est pour 7 325 m au sud — donc méridien à 99,8 %. Mesurer si la cellule
     **change de ligne**, pas quelle étiquette porte sa direction.
+
+24. **Un `PROJCRS` ne peut pas se bâtir sur un CRS géographique dérivé.** PROJ
+    exige une base portant un `DATUM` ; une base obtenue par rotation de pôle
+    n'en a pas, et la tentative rend `Missing DATUM or ENSEMBLE node`. Il n'y a
+    donc pas de « Mercator Étoile », et le gauchissement en une passe vers un
+    repère dérivé est impossible. Bonne nouvelle déguisée : la cartographie
+    inverse, qui reste seule praticable, divise par deux le nombre
+    d'interpolations.
+
+25. **La donnée et la transformation vont en sens opposés.** Tout
+    rééchantillonnage d'image itère sur les pixels de **destination** et demande
+    d'où ils viennent — donc on emploie `star_to_crust` alors que la donnée va
+    Croûte → Étoile. Le sens direct (*forward mapping*) ne marche pas : mesuré
+    avec **40 % de pixels source de plus** que de cases de destination,
+    **39,6 % des cellules restent vides** et 27,9 % en reçoivent plusieurs,
+    jusqu'à 1 221 pour la pire — les pôles géographiques. Corollaire de lecture
+    de code : dans une paire aller/retour, **c'est souvent la réciproque qui
+    travaille**, l'aller ne servant qu'aux contrôles.
+
+26. **Le bilinéaire ne suffit pas dès qu'on va DÉRIVER le résultat.** Il est
+    C⁰ : sa dérivée est constante dans chaque cellule source et saute aux
+    frontières. Un ombrage étant une dérivée, il dessine ces frontières en
+    **blocs rectangulaires** de la taille du pixel source — cinq pixels mesurés
+    à −79° de latitude, là où Mercator étire la latitude. Catmull-Rom est C¹ et
+    l'artefact disparaît **à source identique**. Vaut pour toute sortie dérivée :
+    ombrage, pente, exposition, courbure. ⚠️ Contrepartie d'un noyau cubique :
+    il dépasse légèrement près d'une rupture de pente.
+
+27. **Lire la source à la résolution du niveau, pas en pleine résolution.**
+    Contre-intuitif : la pleine résolution rend le résultat *pire* — du
+    crénelage à la place des blocs — parce qu'un pixel de destination couvre
+    alors des centaines de pixels source dont l'interpolation n'en regarde que
+    quatre. Lire à la bonne taille fait choisir à GDAL l'aperçu adapté du COG,
+    qui est en moyenne. ⚠️ L'écart mesuré ici n'est que de 1,6 % de σ, mais
+    **parce que ce terrain-ci est lisse** : ne pas généraliser.
+
+28. **Une ligne qui remplit l'étendue mondiale ne survit pas au retuilage
+    GeoJSON.** Symptôme : les parallèles ne s'affichaient que dans les tuiles
+    `x = 0`, alors que les méridiens s'affichaient partout. La source GeoJSON de
+    MapLibre duplique les entités dans les **copies du monde**, et cette
+    duplication n'opère qu'en longitude — d'où l'asymétrie entre les deux
+    familles. **Tracer les parallèles par tronçons**, comme le font les vraies
+    graticules.
+
+29. **`line-dasharray` n'est pas pilotable par entité.** Le motif est rendu via
+    une texture construite **par calque**, donc un `["get", …]` y est refusé à
+    la validation — alors que `line-color` et `line-width` l'acceptent.
+    Contournement : deux calques et un filtre.
+
+30. **MapLibre 6 est ESM uniquement.** Plus de bundle UMD, plus de variable
+    globale `maplibregl`, et **aucun export `default`** : il faut
+    `import * as maplibregl`. Corollaire — un module ES ne se charge **jamais**
+    depuis `file://`, l'origine y étant opaque et la requête n'étant pas HTTP.
+    Toute page qui en importe exige un serveur statique.
+
+31. **Ne pas comparer une jointure de tuiles à la moyenne d'une tuile.** En
+    Mercator l'espacement des lignes varie du simple au décuple entre le haut et
+    le bas d'une tuile ; l'écart médian sous-estime donc la référence locale et
+    fait conclure à une couture inexistante — rapports de 2,5 à 3,3 obtenus
+    ainsi. La bonne référence est l'écart entre les **deux dernières lignes**, à
+    la même latitude : les vingt jointures testées retombent alors entre 0,89 et
+    1,14. Vaut au-delà du tuilage — **une mesure de discontinuité n'a de sens
+    que contre une référence prise au même endroit.**
