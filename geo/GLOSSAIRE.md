@@ -1,10 +1,15 @@
 # Glossaire géomatique
 
-Vocabulaire de travail du chantier `geo/`. Chaque entrée est ancrée sur une
+**Le vocabulaire du domaine, et lui seul.** Chaque entrée est ancrée sur une
 décision concrète du pipeline Aeonir plutôt que sur une définition abstraite.
 
 Ce document est **vivant** : il s'enrichit à chaque lot. Ce qui n'a pas encore
 servi est marqué *(pas encore utilisé)*.
+
+Les deux autres fichiers du chantier ont des rôles disjoints — [README.md](README.md)
+porte l'organisation du code et le pipeline, [TUTORIAL.md](TUTORIAL.md) la
+feuille de route, les enseignements et **les pièges**, qui vivaient ici en
+annexe jusqu'à la consolidation.
 
 ---
 
@@ -761,67 +766,6 @@ la plage de zoom et l'emprise. Le mécanisme qui le rend possible : **sous son
 `minzoom`, MapLibre ne couvre pas une source du tout** — elle n'est donc jamais
 demandée hors de son domaine, et les 404 disparaissent.
 
-## Le style visé au Lot 4
-
-```json
-{
-  "version": 8,
-  "name": "Aeonir — relief",
-  "sources": {
-    "aeonir-dem": {
-      "type": "raster-dem",
-      "url": "pmtiles://./aeonir-dem.pmtiles",
-      "encoding": "terrarium",
-      "tileSize": 512,
-      "maxzoom": 6
-    },
-    "aeonir-rivers": {
-      "type": "vector",
-      "url": "pmtiles://./aeonir-vectors.pmtiles",
-      "promoteId": "river_id"
-    }
-  },
-  "terrain": { "source": "aeonir-dem", "exaggeration": 1.336 },
-  "sky": { "sky-color": "#c98a4b", "horizon-fog-blend": 0.6 },
-  "layers": [
-    { "id": "bg", "type": "background",
-      "paint": { "background-color": "#3a2f28" } },
-
-    { "id": "relief", "type": "hillshade", "source": "aeonir-dem",
-      "paint": {
-        "hillshade-shadow-color": "#2b1d16",
-        "hillshade-highlight-color": "#e8c9a0",
-        "hillshade-illumination-direction": 0
-      } },
-
-    { "id": "rivers", "type": "line",
-      "source": "aeonir-rivers", "source-layer": "rivers",
-      "paint": {
-        "line-color": "#6fa8b8",
-        "line-width": [
-          "interpolate", ["linear"], ["zoom"],
-          3, ["*", 0.2, ["get", "strahler"]],
-          8, ["*", 1.5, ["get", "strahler"]]
-        ],
-        "line-opacity": [
-          "case", ["boolean", ["feature-state", "hover"], false], 1, 0.7
-        ]
-      } }
-  ]
-}
-```
-
-Trois points valent d'être remarqués :
-
-- **`exaggeration: 1.336`** est le *seul* endroit où le mensonge de rayon vit.
-  MapLibre raisonne en mètres terrestres ; ce facteur restitue la proportion
-  angulaire correcte pour une planète de 4 775 km. Le COG, lui, conserve les
-  altitudes vraies.
-- **`hillshade-illumination-direction: 0`** place la lumière au nord — soit,
-  dans le repère tourné, **depuis la Face Ardente**. Physiquement exact.
-- **La largeur des fleuves lit l'ordre de Strahler** calculé au Lot 2 : la donnée
-  hydrologique pilote le rendu sans regénérer une tuile.
-
 ## Résolution variable : les trois mécanismes
 
 1. **`maxzoom` sur la source** — au-delà, MapLibre surzoome. Aucun trou, aucune
@@ -880,217 +824,229 @@ l'information géolocalisée.
 
 ---
 
-# Annexe — Les pièges
+---
 
-Les erreurs qui coûtent une demi-journée, rangées par fréquence.
+# PROJ : les commandes, paramètre par paramètre
 
-1. **Ordre des axes.** `EPSG:4326` définit officiellement **latitude, longitude**.
-   GeoJSON, MapLibre, PostGIS utilisent **longitude, latitude**. Selon la
-   bibliothèque et sa version, la même chaîne donne l'un ou l'autre. Symptôme :
-   des points dans l'océan Indien. Remède : `always_xy=True` en pyproj.
+Documentation de référence : **[proj.org](https://proj.org/)**. La navigation
+utile est *Operations → Projections → `<nom>`* pour une projection donnée, et
+*Usage → Ellipsoids* pour les paramètres de forme.
 
-2. **Degrés traités comme des mètres.** Une distance euclidienne sur des degrés
-   est fausse, et fausse différemment selon la latitude. Toujours projeter avant
-   de mesurer, ou utiliser une fonction géodésique.
+## Paramètres communs à toutes les projections
 
-3. **XYZ vs TMS.** Y inversé → carte retournée verticalement. MBTiles stocke en
-   TMS, MapLibre consomme en XYZ.
+*Réf. [Usage → Projections](https://proj.org/en/stable/usage/projections.html)*
 
-4. **`GT[5]` positif.** La taille de pixel en Y doit être négative dans le cas
-   normal. Positive → image à l'envers.
+| Paramètre | Rôle |
+|---|---|
+| `+proj=` | nom de la projection. `longlat` signifie « pas de projection », coordonnées géographiques |
+| `+lon_0=` | méridien central, en degrés. PROJ le **soustrait** de la longitude d'entrée avant tout calcul |
+| `+lat_0=` | parallèle d'origine |
+| `+x_0=` `+y_0=` | *false easting* / *false northing*, en mètres — décalage pour éviter les coordonnées négatives |
+| `+k_0=` (ou `+k=`) | facteur d'échelle au point d'origine |
+| `+units=` | unité linéaire de sortie, `m` par défaut |
+| `+no_defs` | n'applique aucune valeur par défaut issue des fichiers de définition. Vestige historique, inoffensif |
+| `+type=crs` | déclare que la chaîne décrit un **CRS** et non une simple opération. Nécessaire pour `CRS.from_proj4()` |
 
-5. **Nodata dans un calcul.** Une moyenne qui avale des −9999 donne n'importe
-   quoi. Masquer avant d'agréger.
+## Paramètres de forme
 
-6. **Interpolation sur des catégories.** Rééchantillonner une carte de biomes en
-   bilinéaire crée des biomes qui n'existent pas. Plus proche voisin, toujours.
+*Réf. [Usage → Ellipsoids](https://proj.org/en/stable/usage/ellipsoids.html)*
 
-7. **Transformation de datum implicite.** Il en existe plusieurs, d'exactitudes
-   différentes ; le résultat dépend des grilles installées. À documenter.
+| Paramètre | Rôle |
+|---|---|
+| `+ellps=` | ellipsoïde nommé du catalogue — `WGS84`, `GRS80`, `clrk66`… |
+| `+a=` | demi-grand axe (équatorial), en mètres |
+| `+b=` | demi-petit axe (polaire), en mètres |
+| `+f=` | aplatissement, `(a−b)/a` |
+| `+rf=` | aplatissement **inverse**, `a/(a−b)` — la forme sous laquelle il est habituellement publié (298,257 pour WGS84) |
+| `+R=` | **rayon d'une sphère.** Forme idiomatique quand `a = b` |
 
-8. **La tuile vectorielle prise pour la vérité.** Géométrie quantifiée sur 4096
-   unités, clippée, attributs partiels. La source de vérité est le GeoPackage.
+Pour Aeonir, les deux écritures sont équivalentes ; `+R` est préférée car elle
+énonce l'intention :
 
-9. **PROJ ignore silencieusement les paramètres inconnus.** Vérifié sur
-   PROJ 9.5.1 : `+c=6300000`, `+axis_rot=45` et `+ceci_nexiste_pas=42` sont
-   acceptés sans erreur et sans le moindre effet sur le résultat. **Une chaîne
-   `+proj=` qui ne lève pas d'exception ne prouve rien sur ce qu'elle fait.**
-   Toujours contrôler la sortie, jamais la syntaxe.
+```
++R=4775000                      ← retenu
++a=4775000 +b=4775000           ← équivalent
+```
 
-10. **`ob_tran` avec `+o_proj=longlat` renvoie des radians.** Rien dans la chaîne
-    ne l'annonce. Les sorties métriques (`eqc`, `merc`) se comportent
-    normalement.
+En WKT, cela s'écrit `ELLIPSOID["Aeonir", 4775000, 0]` — le second nombre est
+l'aplatissement inverse, et **zéro y signifie sphère**, par convention.
 
-11. **`ob_tran` est sphérique par construction.** L'ellipsoïde passé en paramètre
-    est ignoré — écart mesuré nul à la précision machine entre `+ellps=WGS84` et
-    `+R=6378137`. Pour de l'oblique réellement ellipsoïdal, il faut `omerc`
-    (Hotine), qui incline la *projection* et non l'ellipsoïde.
+> **Piège vérifié** — PROJ **ignore silencieusement les paramètres inconnus**.
+> `+c=6300000`, `+axis_rot=45` et même `+ceci_nexiste_pas=42` sont acceptés sans
+> broncher et sans effet. Une chaîne `+proj=` qui ne lève pas d'erreur ne prouve
+> **rien** sur ce qu'elle fait. Toujours vérifier le résultat, jamais la syntaxe.
 
-12. **Le garde-fou du corps céleste, et sa dérogation trompeuse.** PROJ refuse de
-    transformer entre un SCR non terrestre et un SCR terrestre : *« Source and
-    target ellipsoid do not belong to the same celestial body »*. Le refus est
-    **correct**. La dérogation `PROJ_IGNORE_CELESTIAL_BODY=YES` existe et ne
-    répare rien : mesurée, elle produit un `Ballpark geographic offset`,
-    c'est-à-dire l'identité — `(60, 45) → (60, 45)`. Elle superpose deux mondes
-    en prétendant que leurs rayons sont égaux.
+> **Piège vérifié, et celui-ci est une bonne nouvelle** — PROJ **refuse** de
+> transformer entre `AEONIR:1` et `EPSG:4326` :
+>
+> ```
+> Source and target ellipsoid do not belong to the same celestial body
+> (Non-Earth body vs Earth)
+> ```
+>
+> Il déduit du rayon qu'Aeonir n'est pas la Terre, et bloque. C'est exactement ce
+> qu'on veut : reprojeter des degrés d'une sphère de 4 775 km vers WGS84 n'a
+> aucun sens. Conséquence pratique dans QGIS — voir plus bas.
+>
+> La dérogation `PROJ_IGNORE_CELESTIAL_BODY=YES` existe, et **il ne faut pas
+> s'en servir** : elle produit un `Ballpark geographic offset`, c'est-à-dire une
+> identité. Mesurée, elle rend `(60, 45) → (60, 45)`. Elle ne transforme rien,
+> elle se contente de mentir en silence.
 
-13. **Plus proche voisin + opérateur de dérivée = maillage fantôme.** En zoom
-    avant, le plus proche voisin fait de chaque pixel un plateau constant. La
-    pente y vaut zéro et explose à la frontière : l'ombrage dessine alors la
-    grille de pixels en cernes noirs et blancs. Ce ne sont pas les marches qui
-    sont grandes — 10 m de médiane entre voisins sur Aeonir — c'est le diviseur
-    qui rétrécit du facteur de zoom : 0,31° de pente réelle affichée à 4,71° au
-    zoom ×15. **Tout produit dérivé** — pente, exposition, courbure, **D8** —
-    partage cette sensibilité. Corollaire dur : l'hydrologie tourne sur la
-    grille native, jamais sur un raster reprojeté ou rééchantillonné.
+> **Troisième piège vérifié** — `ID["AEONIR",1]` est bien conservé dans le WKT et
+> survit à toute re-sérialisation, mais **`to_authority()` renvoie `None`** et
+> `list_authority()` une liste vide. Ces méthodes interrogent la **base de
+> données** de PROJ plutôt que de relire le nœud `ID`, et une autorité maison n'y
+> est pas enregistrée. L'identité est donc dans le fichier, jamais confirmée par
+> l'API. Tester la présence de la chaîne, pas le retour de la méthode.
 
-14. **L'étirement de contraste calculé sur l'emprise visible.** Défaut de QGIS.
-    La rampe se recalcule à chaque déplacement, donc deux endroits de même
-    altitude n'ont pas la même couleur, et le contraste local révèle des
-    artefacts invisibles à l'échelle globale — sur Aeonir, une marche de 10 m
-    vaut 0,14 niveau de gris sur la plage complète et 2,3 niveaux sur une
-    fenêtre de 140 km. Régler *Étendue* sur **emprise entière**.
+## `ob_tran` — la transformation oblique
 
-15. **La reprojection vectorielle ne densifie pas.** Seuls les *sommets* sont
-    transformés ; ils restent reliés par des segments droits. Un parallèle
-    stocké comme une ligne à deux sommets devient une corde rectiligne dans le
-    repère cible. Densifier **avant** reprojection. Le raster n'a pas ce
-    problème : chaque pixel étant transformé isolément, la courbure sort seule.
+*Réf. [Operations → Projections →
+ob_tran](https://proj.org/en/stable/operations/projections/ob_tran.html)*
 
-16. **L'enroulement à l'antiméridien.** Une géométrie dont deux sommets
-    consécutifs tombent de part et d'autre de ±180° est dessinée en reliant
-    `+179` à `−179` *à travers* la carte. Symptôme : de longues droites
-    horizontales traversant toute la vue. C'est le pendant vectoriel de la
-    couture que le raster évite en échantillonnant en 3D — le vecteur l'a parce
-    qu'il porte de la **topologie** entre ses sommets.
+C'est l'opération qui déplace le pôle. Elle applique une rotation sphérique aux
+coordonnées, puis exécute une projection ordinaire dans le repère tourné.
 
-    ⚠️ **Et l'antiméridien qui compte est celui du repère d'AFFICHAGE, pas celui
-    du fichier.** Découper une fois ne met à l'abri de rien : une géométrie
-    propre dans son repère natif est déchirée dès qu'un autre SCR la reprojette,
-    puisque son antiméridien tombe ailleurs sur le globe. Vérifié sur le
-    GeoPackage d'Aeonir, découpé en Croûte : affiché en repère Étoile, 18
-    tronçons et 5 anneaux de bassin repartent en sauts de 360°, à des latitudes
-    qui prédisent au pixel près les bandes observées. **Le découpage est un
-    produit dérivé du repère de rendu**, au même titre que les tuiles.
+| Paramètre | Rôle |
+|---|---|
+| `+o_proj=` | la projection à appliquer **après** rotation — `eqc`, `merc`, `longlat`… |
+| `+o_lat_p=` | latitude du pôle tourné |
+| `+o_lon_p=` | **origine des longitudes** du repère tourné (voir mesure ci-dessous) |
+| `+lon_0=` | fixe la **longitude** du pôle tourné |
 
-    Corollaire qui n'est pas évident : le clippage par tuile du MVT **n'absorbe
-    pas** le problème, alors même que l'antiméridien est une frontière de tuile.
-    Le segment reliant `+179` à `−179` traverse, en espace tuile, toutes les
-    tuiles de sa ligne, et le clippage y dépose un éclat dans chacune. Couper au
-    niveau du repère **avant** de tuiler.
+Deux paramétrages alternatifs existent pour définir la rotation autrement :
+`+o_alpha` avec `+o_lon_c`/`+o_lat_c` (par azimut), ou `+o_lon_1`/`+o_lat_1` avec
+`+o_lon_2`/`+o_lat_2` (par deux points).
 
-17. **Le facteur Z d'ombrage en SCR géographique.** Les pixels sont en degrés,
-    les altitudes en mètres : sans facteur correctif, le calcul de pente divise
-    des mètres par des degrés et l'image sort noire. Le facteur neutre vaut
-    `1/(mètres par degré)`, donc **1,2 × 10⁻⁵ sur Aeonir** contre 9 × 10⁻⁶ sur
-    Terre. Il est **propre à la planète** : recopier la valeur terrestre écrase
-    le relief d'un tiers.
+### Sémantique mesurée, pas recopiée
 
-18. **Un SCR de fichier n'est pas un SCR enregistré.** Un WKT porté par l'en-tête
-    d'un GeoTIFF est lu et utilisé pour la couche, mais n'entre pas dans la base
-    de SCR du logiciel : il n'apparaît dans aucun sélecteur. Même racine que le
-    `to_authority()` qui renvoie `None` alors qu'`ID["AEONIR",1]` survit dans le
-    WKT — ces API interrogent la **base de données**, pas le nœud `ID`. Pour
-    qu'un SCR maison soit choisissable, il faut le déclarer séparément.
+La convention de pôle d'`ob_tran` est ambiguë selon les communautés. Voici ce
+que PROJ 9.5.1 fait réellement, mesuré avec `+o_lat_p=0` (la configuration
+d'Aeonir) :
 
-19. **Espérance nulle n'est pas moyenne d'échantillon nulle.** Un générateur
-    « à moyenne nulle par construction » l'est en *espérance* ; une réalisation
-    donnée ne l'est pas. Sur Aeonir, le décalage de surface d'un tirage a un
-    écart-type de 305 m et atteint 869 m. Vérifier la propriété sur la
-    réalisation, pas sur la théorie.
+```
+o_lat_p  o_lon_p  lon_0 |  pôle Nord géo.  |  pôle nord tourné
+      0        0      0 | lat'=0  lon'=  0 | (180, 0)  → lat'= 90
+      0       45      0 | lat'=0  lon'= 45 | (180, 0)  → lat'= 90
+      0       90      0 | lat'=0  lon'= 90 | (180, 0)  → lat'= 90
+      0      -90      0 | lat'=0  lon'=-90 | (180, 0)  → lat'= 90
+      0        0     45 | lat'=0  lon'=  0 | (180, 0)  → lat'= 45
+```
 
-20. **Moyenne par pixel ≠ moyenne par aire.** Sur une grille équirectangulaire,
-    un pixel polaire couvre `cos φ` fois moins de sol qu'un pixel équatorial.
-    Sur le MNT d'Aeonir l'écart est d'un facteur 77 : −108,1 m par pixel contre
-    −1,4 m par aire. C'est la seconde qui juge un datum. Pondérer par `cos φ`.
+Trois enseignements :
 
-21. **Le pilote COG de GDAL ne sait que `CreateCopy`.** Impossible d'ouvrir un
-    COG en écriture pour le remplir fenêtre par fenêtre. Il faut écrire un
-    GeoTIFF tuilé ordinaire puis le recopier — c'est cette recopie qui construit
-    les aperçus et remonte l'en-tête en tête de fichier, les deux propriétés qui
-    rendent le COG lisible par requêtes HTTP Range.
+1. **`+o_lon_p` ne déplace pas le pôle.** Il fait tourner le repère *autour* de
+   l'axe polaire, c'est-à-dire qu'il choisit où tombe `lon' = 0`. Avec
+   `o_lon_p=0`, le pôle Nord géographique reçoit `lon' = 0`.
+2. **`+lon_0` déplace le pôle.** Le pôle nord tourné se trouve au point
+   d'entrée de longitude `180 + lon_0`, latitude `o_lat_p`.
+3. **Avec `o_lat_p = 0`, les pôles géographiques réels atterrissent sur
+   l'équateur tourné** (`lat' = 0`). C'est exactement la géométrie d'Aeonir, et
+   elle sort du paramétrage sans effort.
 
-22. **Le D8 sur la plus forte dénivelée au lieu de la plus forte pente.** Il faut
-    diviser par la distance au voisin, et ce n'est pas une correction sphérique :
-    **la diagonale est √2 fois plus longue**, donc comparer des dénivelées brutes
-    la privilégie systématiquement, même sur une grille projetée parfaitement
-    carrée. Mesuré sur Aeonir : les deux méthodes divergent sur **35 % des
-    cellules à l'équateur**, là où le `cos φ` ne joue pourtant aucun rôle.
+> **Conséquence pour le Lot 0** — si `λₛ(t)` désigne la longitude du point
+> substellaire dans le repère Croûte à l'époque *t*, alors la transformation
+> Croûte → Étoile s'écrit avec **`+lon_0 = λₛ(t) − 180`**. Toute la dépendance
+> rotationnelle du datum tient dans un seul paramètre PROJ.
 
-23. **L'anisotropie polaire d'une grille géographique.** Le pas E-O vaut
-    `cos φ` fois le pas N-S : sur Aeonir, 16,9 m contre 7 325 m à 89,87°, un
-    facteur 434. La grille résout la direction tangentielle absurdement finement
-    et la méridienne grossièrement, ce qui étire les bassins en bandes zonales —
-    la part d'écoulement restant dans sa ligne passe de 28,7 % à l'équateur à
-    51,6 % près du pôle. Ce n'est pas un bug du D8, c'est la grille : le remède
-    professionnel est de traiter les calottes dans une **projection
-    stéréographique polaire**, où les cellules redeviennent isotropes. Pendant,
-    pour l'analyse, de la pyramide `UPSArcticWGS84Quad` du rendu.
+### Invariance de l'origine des longitudes — mesuré
 
-    ⚠️ Piège de diagnostic rencontré : classer les directions en « zonal /
-    méridien / diagonal » **ment près du pôle**, où le voisin sud-est est à 17 m
-    à l'est pour 7 325 m au sud — donc méridien à 99,8 %. Mesurer si la cellule
-    **change de ligne**, pas quelle étiquette porte sa direction.
+Six époques réparties sur une rotation complète, avec `+o_lon_p=0` :
 
-24. **Un `PROJCRS` ne peut pas se bâtir sur un CRS géographique dérivé.** PROJ
-    exige une base portant un `DATUM` ; une base obtenue par rotation de pôle
-    n'en a pas, et la tentative rend `Missing DATUM or ENSEMBLE node`. Il n'y a
-    donc pas de « Mercator Étoile », et le gauchissement en une passe vers un
-    repère dérivé est impossible. Bonne nouvelle déguisée : la cartographie
-    inverse, qui reste seule praticable, divise par deux le nombre
-    d'interpolations.
+```
+λₛ (époque) |   pôle Nord géo   |   pôle Sud géo    | substellaire
+          0 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+         45 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+         90 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+        180 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+        270 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+        359 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
+```
 
-25. **La donnée et la transformation vont en sens opposés.** Tout
-    rééchantillonnage d'image itère sur les pixels de **destination** et demande
-    d'où ils viennent — donc on emploie `star_to_crust` alors que la donnée va
-    Croûte → Étoile. Le sens direct (*forward mapping*) ne marche pas : mesuré
-    avec **40 % de pixels source de plus** que de cases de destination,
-    **39,6 % des cellules restent vides** et 27,9 % en reçoivent plusieurs,
-    jusqu'à 1 221 pour la pire — les pôles géographiques. Corollaire de lecture
-    de code : dans une paire aller/retour, **c'est souvent la réciproque qui
-    travaille**, l'aller ne servant qu'aux contrôles.
+Les pôles géographiques sont les points fixes de la rotation qu'applique
+`+lon_0`. L'origine des longitudes Étoile ne dérive donc jamais, et le point
+substellaire reste à `lat' = 90` par construction.
 
-26. **Le bilinéaire ne suffit pas dès qu'on va DÉRIVER le résultat.** Il est
-    C⁰ : sa dérivée est constante dans chaque cellule source et saute aux
-    frontières. Un ombrage étant une dérivée, il dessine ces frontières en
-    **blocs rectangulaires** de la taille du pixel source — cinq pixels mesurés
-    à −79° de latitude, là où Mercator étire la latitude. Catmull-Rom est C¹ et
-    l'artefact disparaît **à source identique**. Vaut pour toute sortie dérivée :
-    ombrage, pente, exposition, courbure. ⚠️ Contrepartie d'un noyau cubique :
-    il dépasse légèrement près d'une rupture de pente.
+### `ob_tran` est sphérique — mesuré
 
-27. **Lire la source à la résolution du niveau, pas en pleine résolution.**
-    Contre-intuitif : la pleine résolution rend le résultat *pire* — du
-    crénelage à la place des blocs — parce qu'un pixel de destination couvre
-    alors des centaines de pixels source dont l'interpolation n'en regarde que
-    quatre. Lire à la bonne taille fait choisir à GDAL l'aperçu adapté du COG,
-    qui est en moyenne. ⚠️ L'écart mesuré ici n'est que de 1,6 % de σ, mais
-    **parce que ce terrain-ci est lisse** : ne pas généraliser.
+Même calcul avec `+ellps=WGS84` puis avec `+R=6378137` :
 
-28. **Une ligne qui remplit l'étendue mondiale ne survit pas au retuilage
-    GeoJSON.** Symptôme : les parallèles ne s'affichaient que dans les tuiles
-    `x = 0`, alors que les méridiens s'affichaient partout. La source GeoJSON de
-    MapLibre duplique les entités dans les **copies du monde**, et cette
-    duplication n'opère qu'en longitude — d'où l'asymétrie entre les deux
-    familles. **Tracer les parallèles par tronçons**, comme le font les vraies
-    graticules.
+```
+(10, 45)  ellipsoïde  1096616.7771  -4913200.3255
+          sphère      1096616.7771  -4913200.3255    écart 0.000000 m
+```
 
-29. **`line-dasharray` n'est pas pilotable par entité.** Le motif est rendu via
-    une texture construite **par calque**, donc un `["get", …]` y est refusé à
-    la validation — alors que `line-color` et `line-width` l'acceptent.
-    Contournement : deux calques et un filtre.
+Zéro à la précision machine, sur les trois points testés. Ce n'est pas une
+négligence de PROJ : faire tourner le pôle d'un ellipsoïde n'a pas de sens comme
+opération conservant la forme.
 
-30. **MapLibre 6 est ESM uniquement.** Plus de bundle UMD, plus de variable
-    globale `maplibregl`, et **aucun export `default`** : il faut
-    `import * as maplibregl`. Corollaire — un module ES ne se charge **jamais**
-    depuis `file://`, l'origine y étant opaque et la requête n'étant pas HTTP.
-    Toute page qui en importe exige un serveur statique.
+**Contrôle** avec `omerc` (Hotine oblique Mercator), qui est authentiquement
+ellipsoïdal :
 
-31. **Ne pas comparer une jointure de tuiles à la moyenne d'une tuile.** En
-    Mercator l'espacement des lignes varie du simple au décuple entre le haut et
-    le bas d'une tuile ; l'écart médian sous-estime donc la référence locale et
-    fait conclure à une couture inexistante — rapports de 2,5 à 3,3 obtenus
-    ainsi. La bonne référence est l'écart entre les **deux dernières lignes**, à
-    la même latitude : les vingt jointures testées retombent alors entre 0,89 et
-    1,14. Vaut au-delà du tuilage — **une mesure de discontinuité n'a de sens
-    que contre une référence prise au même endroit.**
+```
+(30, 60)  écart ellipsoïde/sphère   2711.24 m
+( 0, 80)  écart ellipsoïde/sphère   3678.55 m
+```
+
+La distinction est essentielle : **`omerc` incline la projection** — l'ellipsoïde
+reste aligné sur l'axe de rotation — alors qu'Aeonir demanderait d'**incliner
+l'ellipsoïde lui-même**, ce que personne ne sait faire. C'est la projection de la
+Suisse, de la Malaisie et de la zone 1 de l'Alaska.
+
+### Mais `ob_tran` n'est pas ce qu'on a retenu
+
+PROJ sait exposer un `ob_tran` comme CRS **dérivé** — mais avec une méthode
+privée :
+
+```
+METHOD["PROJ ob_tran o_proj=longlat"]
+```
+
+Aucun autre logiciel ne saurait la lire. La convention **netCDF CF**
+`rotated_latitude_longitude` — celle des grilles climatiques CORDEX et COSMO —
+donne le même résultat avec une méthode normalisée :
+
+```
+METHOD["Pole rotation (netCDF CF convention)"]
+    PARAMETER["Grid north pole latitude",  <déclinaison>]
+    PARAMETER["Grid north pole longitude", <longitude substellaire>]
+    PARAMETER["North pole grid longitude", 0]
+```
+
+Deux avantages, mesurés. La méthode est **portable**. Et les paramètres sont
+**naturels** : le pôle est donné directement par les coordonnées du point
+substellaire, sans le détour par `lon_0 = λₛ − 180` qu'impose `ob_tran`. Les
+deux voies donnent le même résultat à **1,1 × 10⁻¹³ degré**.
+
+C'est cette déclaration qui est retenue pour `AEONIR:2`. Bénéfice supplémentaire
+vérifié : avec l'inclinaison, le pôle Nord géographique conserve `lon' = 0`
+exactement — seule sa latitude bouge.
+
+### `+o_proj=longlat` renvoie des radians
+
+Piège vérifié, qui ne s'annonce nulle part dans la chaîne :
+
+```
+o_proj=longlat  ->  x=       0.886077   y=      -0.659058     ← radians
+o_proj=latlong  ->  x=       0.886077   y=      -0.659058     ← radians
+o_proj=eqc      ->  x= 5645197.355683   y= -4198858.746250    ← mètres
+o_proj=merc     ->  x= 5645197.355683   y= -4540665.672151    ← mètres
+```
+
+Les projections métriques se comportent normalement ; seule la sortie
+géographique sort en radians et doit être convertie.
+
+## Reproduire les mesures
+
+Les sondes qui ont produit tous les chiffres ci-dessus sont jetables et ne sont
+pas versionnées. Elles se réécrivent en quelques lignes :
+
+```python
+from pyproj import Proj
+common = "+proj=ob_tran +o_proj=eqc +o_lat_p=0 +o_lon_p=0 +lon_0=0"
+ell, sph = Proj(f"{common} +ellps=WGS84"), Proj(f"{common} +R=6378137")
+print(ell(10, 45), sph(10, 45))     # identiques → ob_tran est sphérique
+```
+
+---

@@ -7,8 +7,20 @@ rendu 3D dans un navigateur.
 La génération procédurale du relief n'est **pas** l'objet du chantier — elle n'en
 est que la source de données. L'objet, c'est le pipeline qui l'entoure.
 
-Le vocabulaire du domaine est consigné dans [GLOSSAIRE.md](GLOSSAIRE.md).
-Ce fichier-ci consigne les **décisions et leur justification**.
+**Ce fichier porte le code** : son organisation, son pipeline, et les décisions
+de conception qui lui donnent sa forme. Les deux autres ont des rôles disjoints :
+
+| | |
+|---|---|
+| [GLOSSAIRE.md](GLOSSAIRE.md) | le **vocabulaire** du domaine, et la référence PROJ |
+| [TUTORIAL.md](TUTORIAL.md) | la **trajectoire** — feuille de route, enseignements, **pièges** |
+
+> **Aucun nombre de tirage n'est écrit ici.** Graine, décalage au datum,
+> extrêmes, écart-type, pic : tout cela vit dans
+> [`aeonir_gis/calibration.json`](aeonir_gis/calibration.json), produit par
+> `python -m aeonir_gis.calibrate`. Ce document ne porte que les nombres de
+> **conception** — ceux qui se déduisent, et qu'un changement de graine ne
+> déplace pas.
 
 ---
 
@@ -52,29 +64,28 @@ vont pas de soi, parce que la donnée n'est pas terrestre.
    on utilise 9 × 10⁻⁶, qui écraserait le relief d'un tiers ici.
 
 Les aperçus internes du COG (`[2, 4, 8, 16, 32]`) sont utilisés
-automatiquement : le panoramique reste fluide malgré les 421,9 Mio.
+automatiquement : le panoramique reste fluide malgré la taille du fichier.
 
 ### Le projet `QGISviz.qgs`
 
 Versionné pour ce qu'il porte : le montage des couches, et surtout le **style**
-du MNT, qui a demandé plusieurs tâtonnements — rampe divergente bornée à
-**±9 300 m** pour que le zéro tombe au milieu, min/max sur **emprise entière** et
+du MNT, qui a demandé plusieurs tâtonnements — rampe divergente bornée symétriquement pour que le zéro tombe au milieu, min/max sur **emprise entière** et
 non sur l'emprise courante, ombrage à **1,2 × 10⁻⁵** sur une couche dupliquée en
 mode de fusion *Multiplier*.
 
 Enregistré en `.qgs` et non `.qgz` : le second est un zip, illisible en diff. Les
 chemins sont relatifs, la seule source externe étant `./out/aeonir_crust_dem.tif`
-— absent du dépôt, régénérable en cinq minutes.
+— absent du dépôt, régénérable par une commande.
 
 **Deux choses qu'il ne porte pas**, pour éviter la surprise :
 
 - **Les couches de graticule rouvriront vides.** Ce sont des couches temporaires
   en mémoire ; le projet n'enregistre que leur schéma. À regénérer par *Créer une
   grille* + *Densifier*, ou par script le jour où le pipeline aura un écrivain
-  vectoriel — ce que le Lot 2 apportera.
+  vectoriel — ce que le Lot 5 apportera.
 - **Une couche référence son SCR par code** (`USER:100002`) plutôt qu'en WKT.
   Ce code n'a de sens que dans une base QGIS où les trois SCR d'`out/*.wkt` ont
-  été déclarés dans le même ordre. C'est le piège n° 18 du glossaire en action :
+  été déclarés dans le même ordre. C'est le piège n° 18 du TUTORIAL en action :
   un identifiant ne vaut que relativement à son registre.
 
 ## Structure
@@ -82,61 +93,157 @@ chemins sont relatifs, la seule source externe étant `./out/aeonir_crust_dem.ti
 ```
 geo/
   aeonir_gis/     code du pipeline
+    calibration.json   produit par calibrate, versionné
   tests/          suite pytest
+  viewer/         visualiseur MapLibre
   out/            produits générés (gitignoré)
 ```
 
-Tout produit vit dans `out/` et n'est jamais versionné : le MNT global pèse
+Tout produit vit dans `out/` et n'est **jamais** versionné : le MNT pèse
 plusieurs centaines de mégaoctets, les pyramides de tuiles davantage. La
 reproductibilité est assurée par le code, pas par le stockage.
 
+L'exception est `calibration.json`, qui est produit *et* versionné — c'est un
+résultat de mesure, pas un artefact : quelques dizaines d'octets qui rendent le
+terrain reproductible à l'identique.
+
 ## Commandes
 
-Depuis `geo/`, avec le venv actif :
+Depuis `geo/`, avec le venv actif.
 
 ```bash
 .venv/Scripts/python.exe -m pytest -q
 ```
 
+Les tests passent **avant** qu'aucune donnée n'existe : c'est la preuve que le
+générateur est la source de vérité.
+
 ```bash
-.venv/Scripts/python.exe -m aeonir_gis.dem -o out/aeonir_crust_dem.tif
+.venv/Scripts/python.exe -m aeonir_gis.calibrate
 ```
 
-`-z` fixe le zoom maximal visé, donc la taille du raster (`-z 3` pour un aperçu
-en quelques secondes) ; `-s` la graine ; `--plain` saute la conversion COG.
+Établit la graine et l'échelle du relief, et écrit `calibration.json`. À
+relancer **à chaque changement du générateur** — un test le rappelle en tombant.
+`--dry-run` mesure sans écrire.
+
+```bash
+.venv/Scripts/python.exe -m aeonir_gis.dem
+```
+
+Le MNT global. `-z` fixe le zoom visé donc la taille du raster (`-z 3` pour un
+aperçu en quelques secondes), `-s` force une graine, `--plain` saute la
+conversion COG.
 
 ```bash
 .venv/Scripts/python.exe -m aeonir_gis.export
 ```
 
-Produit `out/aeonir_hydro.gpkg` — fleuves, exutoires, bassins. `--width` fixe la
-résolution de travail, `--stream-km2` la densité du réseau, `--basin-km2` le
-filtre de polygonisation.
+Fleuves, exutoires et bassins en GeoPackage. `--width` fixe la résolution de
+travail, `--stream-km2` la densité du réseau, `--basin-km2` le filtre de
+polygonisation.
 
-## Lots
+```bash
+.venv/Scripts/python.exe -m aeonir_gis.pyramid
+```
 
-| Lot | Contenu | État |
-|---|---|---|
-| **0** | Référentiels Croûte et Étoile, rotation datée entre eux | ✅ 79 tests |
-| **1** | MNT global — fBm échantillonné en 3D sur la sphère → GeoTIFF → COG | ✅ 139 tests |
-| **2** | Hydrologie — D8, accumulation, réseau, Strahler, bassins → GeoPackage | ✅ 176 tests |
-| **3** | Tuileur maison — pyramide XYZ, terrarium, TileJSON | ✅ 228 tests |
-| **4** | Viewer MapLibre — style spec, `hillshade`, `terrain` | 🚧 visualiseur local en place |
-| **5** | Tuiles vectorielles MVT — fleuves, lacs, biomes | |
-| **6** | Tuileur **dynamique** — le même code déclenché par requête HTTP, lisant des plages dans le COG, l'époque en paramètre d'URL | |
-| **7** | Relief tectonique — plancher dominant, chaînes de collision, fosses en eau dans le seul terminateur, croûte dilatée/contractée | |
+La pyramide de tuiles terrarium. `--split-zoom` déplace la bascule monde/bande,
+`--epoch` change l'époque du repère Étoile, `--full-precision` encode le canal
+bleu.
 
-L'empaquetage **PMTiles** a quitté le Lot 3 : les deux sources déclarées côté
-client suppriment les 404 qui le rendaient nécessaire, et il redevient utile au
-Lot 6, quand les tuiles seront servies plutôt que posées à côté du viewer.
+Le visualiseur se sert en **HTTP** — un module ES ne se charge jamais depuis
+`file://` :
 
-Les lots 6 et 7 ont **échangé leurs numéros** le 11/08/2026 : le poste visé
-porte sur l'analyse d'images satellite, où la donnée est dynamique et servie.
-Exercer ce régime prime sur l'embellissement de la géographie.
+```bash
+cd viewer && npm install && npm start
+```
+
+puis <http://localhost:8765/viewer/>.
 
 ---
 
-# Les décisions
+# Le pipeline
+
+```
+calibrate.py ──→ calibration.json   graine et échelle, mesurées
+                        │
+noise.py ──→ dem.py ────┴──→ COG ─┬─→ hydro.py + export.py ──→ GeoPackage
+                                  └─→ tiles.py + pyramid.py ──→ PNG + TileJSON ──→ viewer/
+```
+
+Chaque module porte sa propre justification en docstring — **ce tableau ne la
+répète pas**, il dit où chercher.
+
+| module | rôle | la décision qui le structure |
+|---|---|---|
+| `constants.py` | les grandeurs d'Aeonir, tirées du vault | une seule source, jamais recopiée |
+| `crs.py` | les trois SCR et la rotation datée | `star_to_crust` est la réciproque **qui travaille** |
+| `calibrate.py` | balayage de graines, pic, invariance, Hurst | le critère au code, la valeur au fichier |
+| `noise.py` | bruit de gradient et fBm | pur — il ignore tout d'Aeonir |
+| `dem.py` | le MNT global → GeoTIFF → COG | `W = 2^z · T` |
+| `hydro.py` | D8, accumulation, Strahler, bassins | doublement de pointeurs, décomposition par profondeur |
+| `export.py` | raster → vecteur, GeoPackage | découpage à l'antiméridien du repère |
+| `tiles.py` | adressage XYZ, cartographie inverse, terrarium | le schéma XYZ ne référence **aucun rayon** |
+| `pyramid.py` | empilement, PNG, TileJSON | deux régimes, seuil imposé par la fermeture |
+| `viewer/` | MapLibre 6, ESM, vendu localement | une source dédiée au terrain |
+
+## La grille se déduit, elle ne se choisit pas
+
+Une grille équirectangulaire et une pyramide Mercator portent le même `cos φ`
+en E-O. En posant **`W = 2^z · T`**, l'accord devient exact à *toutes* les
+latitudes d'un coup — c'est la seule origine légitime de la largeur du raster.
+
+Retenu : **z = 6**, `T = 256`, donc `W = 16 384`. Ce qui plafonne n'est ni le
+disque ni le calcul, qui tiendraient jusqu'à z=8, mais la mémoire de l'analyse
+hydrologique. Le détail du calcul est dans la docstring de `dem.py`.
+
+En N-S l'accord n'existe pas : Mercator réclame `1/cos φ` fois plus fin. Comme
+la pyramide est en repère **Étoile**, ces hautes latitudes sont les deux faces
+mortes, et la bande habitée tombe sur l'équateur Mercator où l'accord est exact
+dans les deux directions.
+
+## Le bruit s'évalue en 3D, il se stocke en 2D
+
+Deux questions distinctes, et c'est de leur découplage que tout dépend : on
+**évalue** sur la sphère unité dans ℝ³, on **stocke** sur une grille
+équirectangulaire. La fonction ne voit jamais ni longitude ni latitude, donc ni
+la couture de l'antiméridien ni le pincement polaire ne peuvent exister.
+
+`tests/test_noise.py` teste chaque propriété **avec son contre-exemple 2D à
+côté** : sans lui, on vérifierait qu'un problème est absent sans avoir montré
+qu'il pouvait être présent.
+
+## Pourquoi on ne pave pas la sphère
+
+Le problème est réel et porte un nom normalisé — **DGGS**. On ne pave pas, et
+pas par paresse : un pavage résout un problème d'**échantillonnage** qu'on vient
+de dissoudre autrement, en sortant le bruit de la grille. Resterait un problème
+de *stockage*, où rasterio, la géotransformation, `gdalwarp`, le COG et QGIS
+attendent tous une grille régulière.
+
+L'argument qui emporte la décision est en aval : la sortie est une pyramide XYZ,
+elle-même un pavage, et une source équirectangulaire s'y accorde exactement par
+`W = 2^z·T`. Une source HEALPix équi-aire obligerait à **sur**-interpoler pour
+nourrir les tuiles polaires.
+
+## Ce que la calibration produit
+
+La graine du générateur et l'échelle du relief sont des **résultats de mesure**,
+pas des constantes. `calibrate` les établit et les écrit ; `dem` les lit.
+
+```
+p = l^(−H)                       la persistance se déduit de l'exposant visé
+σ = MAX_RELIEF_M / pic mesuré    l'échelle utilise tout le budget, sans écrêter
+graine = première du balayage    dont la moyenne de surface tient sous ±2 m
+```
+
+Le contrat : **le critère vit dans le code et dans les tests**, la valeur vit
+dans `calibration.json`. Changer un paramètre du générateur sans relancer la
+calibration fait tomber la suite, au lieu de produire un terrain silencieusement
+décalé sous son propre datum.
+
+---
+
+# Les décisions de conception
 
 ## Python pour le pipeline, TypeScript pour le viewer
 
@@ -151,6 +258,8 @@ porté en route du site qu'une fois fonctionnel : le Next.js de `web/` a des
 particularités documentées dans son `AGENTS.md`, et déboguer du rendu serveur
 pendant qu'on apprend MapLibre est une mauvaise dépense.
 
+
+
 ## Le tuileur est écrit à la main
 
 `rio-rgbify` ferait le travail en une commande. La pyramide de tuiles, la
@@ -164,6 +273,8 @@ La frontière s'est déplacée d'elle-même au Lot 3, et pas dans le sens prévu
 PROJ **refusant** un Mercator bâti sur le repère Étoile, la reprojection a dû
 rentrer dans le tuileur sous forme de cartographie inverse. La plomberie qu'on
 comptait déléguer n'existait pas.
+
+
 
 ## Le repère a ses pôles au point substellaire
 
@@ -188,6 +299,8 @@ antistellaire**, le terminateur devient l'équateur. Trois conséquences :
 
 C'est un **aspect oblique** : même cylindre, même formule, pôle déplacé. Rien
 d'exotique — les grilles climatiques CORDEX et COSMO fonctionnent ainsi.
+
+
 
 ## La géographie qui en résulte
 
@@ -272,6 +385,8 @@ charnière entre les deux moitiés** — géométriquement obligatoire, la vites
 la croûte y étant nulle. Les civilisations polaires vivent au seul endroit du
 monde où la terre ne se lève ni ne se couche.
 
+
+
 ## Il faut deux référentiels, pas un
 
 L'axe de rotation d'Aeonir est perpendiculaire au plan orbital et le point
@@ -354,6 +469,8 @@ qui sert au Lot 2, c'est la fonction `lat'(β, λ, t)` elle-même.
 > vents méridiens en `f(β)`. Les deux référentiels ne sont pas un raffinement de
 > présentation, ils sont porteurs du modèle.
 
+
+
 ## Aeonir est une sphère — exactement, pas approximativement
 
 Le premier réflexe serait de traiter la sphère comme un pis-aller faute de donnée
@@ -408,19 +525,7 @@ nous touche jamais.
 C'est d'ailleurs la pratique de l'UAI pour la quasi-totalité des corps
 planétaires, Mars étant l'exception notable avec un vrai ellipsoïde aplati.
 
-## PMTiles plutôt que MBTiles
 
-Le site Quadrature est un export statique déployé par GitHub Actions. MBTiles est
-une base SQLite : il faudrait un serveur de tuiles. PMTiles porte son index en
-interne et se lit par **requêtes HTTP Range** — le navigateur récupère directement
-les octets d'un fichier posé sur un hébergement statique.
-
-⚠️ **Reporté au Lot 6.** On attendait de PMTiles qu'il règle la bordure dentelée
-d'une pyramide creuse, TileJSON n'ayant qu'une `bounds` et ne sachant pas dire
-« global jusqu'à z, ruban au-delà ». Deux sources déclarées côté client le font
-sans lui, et les 404 disparaissent. À 50,3 Mio sur 822 fichiers, l'arborescence
-se déploie telle quelle ; l'argument du fichier unique redevient décisif quand
-les tuiles seront **servies** plutôt que posées à côté du viewer.
 
 ## Le mensonge de rayon vit à un seul endroit
 
@@ -432,11 +537,27 @@ inchangée. Seules les grandeurs métriques mentent. D'où l'arbitrage :
 
 - Le **COG conserve les altitudes vraies en mètres** — c'est la donnée d'analyse,
   celle sur laquelle tourne l'hydrologie.
-- Le mensonge est confiné à **un unique paramètre de style**,
-  `terrain.exaggeration = 1.336` (= 6378/4775), qui restitue la proportion
-  angulaire correcte à l'écran.
+- Le relief 3D le corrige par `terrain.exaggeration = 1.336` (= 6378/4775), qui
+  restitue la proportion angulaire correcte à l'écran.
 
-Une seule vérité, un seul endroit où elle est déformée, documenté.
+⚠️ **Il a longtemps été écrit ici que le mensonge tenait à ce seul paramètre.
+C'est faux, et mesuré.** L'ombrage est un second consommateur du même MNT, et il
+porte le même mensonge sans correctif : la circonférence terrestre est **en dur**
+dans le nuanceur de préparation de MapLibre, sous la forme de la constante
+`28.2562 = log₂(8 × 40 075 016,7)` — vérifiée à 0,1 ppm sur sept niveaux de
+tuiles. Toute pente y est donc sous-estimée de 1,3357, exactement le facteur que
+le relief 3D corrige.
+
+Et la correction est **inapplicable** : `hillshade-exaggeration` plafonne à 1
+dans la spec. Sans conséquence visible, cependant — un facteur constant sur une
+grandeur qui n'a pas de référence absolue ne se voit pas. Le détail, et le
+second terme bien plus visible qui l'accompagne, sont au piège n° 32 du
+[TUTORIAL](TUTORIAL.md).
+
+Une seule vérité, deux endroits où elle est déformée, un seul corrigible — et
+c'est écrit.
+
+
 
 ## Deux types de carte, un seul datum
 
@@ -468,1038 +589,9 @@ projection tournée — et cela évite une seconde pyramide de tuiles.
 
 ---
 
-# Lot 1 — le MNT global
-
-## La résolution ne se choisit pas, elle se déduit
-
-Une grille équirectangulaire et une pyramide Mercator portent le **même
-`cos φ`** :
-
-```
-équirectangulaire   E-O : C·cos φ / W          N-S : C / W   (constant)
-Mercator, zoom z    les deux : C·cos φ / (2^z·T)   — conforme, donc isotrope
-```
-
-En posant **`W = 2^z · T`**, l'accord E-O devient exact à *toutes* les latitudes
-d'un coup. C'est la seule origine légitime de la largeur du raster ; tout nombre
-rond saisi à la main serait un chiffre orphelin.
-
-| z | W | rés. équat. | bande habitée | tuiles cumulées | source f32 | génération |
-|---:|---:|---:|---:|---:|---:|---:|
-| 5 | 8 192 | 3,66 km | 410 px | 1 365 | 0,12 Gio | 1 min |
-| **6** | **16 384** | **1,83 km** | **819 px** | **5 461** | **0,50 Gio** | **5 min 24** |
-| 7 | 32 768 | 0,92 km | 1 638 px | 21 845 | 2,0 Gio | ~22 min |
-| 8 | 65 536 | 0,46 km | 3 277 px | 87 381 | 8,0 Gio | ~1 h 25 |
-
-La ligne z=6 est **mesurée** ; les deux suivantes sont extrapolées au facteur 4.
-Le COG produit pèse **421,9 Mio** — 442 394 953 octets exactement — soit un gain
-de **17,6 %** de la compression DEFLATE avec prédicteur flottant sur les 512 Mio
-bruts. Le bruit se comprime mal.
-
-⚠️ Ce chiffre a longtemps été faux ici, et l'erreur mérite d'être nommée : on
-avait relevé « 442 Mio » en lisant 442 **Mo** décimaux. Comparés aux 512 **Mio**
-binaires — justes, eux — ils donnaient un gain de 14 %. **Deux unités dans une
-même soustraction.** Sur un projet où une même valeur calculée deux fois se
-teste par égalité, c'est le genre de faute qui se propage dans les dérivés.
-
-**Retenu : z = 6**, avec `T = 256` — terrarium est un format 256, et une tuile
-plus petite donne une échelle de zoom plus fine.
-
-Ce qui plafonne n'est ni le disque ni le calcul, qui tiendraient jusqu'à z=8,
-mais le **Lot 2** : comblement de cuvettes et accumulation D8 restent tractables
-en mémoire sur 134 Mpx et deviennent un problème hors-mémoire au-delà. La
-contrainte de sortie converge : à 40 Kio la tuile — hypothèse à mesurer au
-Lot 3 — la pyramide pèse 210 Mio en z=6 contre 830 en z=7, et GitHub plafonne un
-fichier à 100 Mo. Un PMTiles global devra de toute façon être tranché.
-
-La profondeur au-delà se règle au Lot 3, par une **pyramide locale sur la seule
-bande** et le surzoom de MapLibre entre les deux.
-
-### Le coût accepté, et où il tombe
-
-En N-S l'accord n'existe pas : Mercator réclame `1/cos φ` fois plus fin que le
-pas constant de l'équirectangulaire — 1,07 à ±21°, 2,00 à 60°, **11,59** à la
-coupure. Le tuileur interpolera donc en N-S dans les hautes latitudes. Comme la
-pyramide sera en repère **Étoile**, ces hautes latitudes sont les deux faces
-mortes, et la bande habitée tombe sur l'équateur Mercator, où l'accord est exact
-dans les deux directions.
-
-Second coût, mesuré : la coupure à ±85,0511° occupe **5,5 % des lignes du raster
-pour 0,37 % de la surface réelle**, et le pixel de la première ligne fait 40 cm
-de large. Gaspillage assumé.
-
-## Le bruit s'évalue en 3D, il se stocke en 2D
-
-Deux questions distinctes, et c'est de leur découplage que tout dépend.
-
-| | Réponse |
-|---|---|
-| **Où on évalue** le bruit | la **sphère unité, dans ℝ³** |
-| **Où on stocke** le résultat | une grille **équirectangulaire** |
-
-Pour chaque pixel on calcule `(lon, lat)`, on convertit en vecteur unitaire, et
-on évalue le bruit *là*. La fonction ne voit jamais ni longitude ni latitude :
-elle vit dans ℝ³, où la sphère est plongée sans point privilégié. Les deux
-pathologies du bruit 2D sur `(lon, lat)` disparaissent, et elles sont chiffrées :
-
-- **La couture.** Les deux pixels de bord (`lon = ±180`) sont distants de
-  **1 791 m** en 3D à la latitude 12° — exactement le pas d'un voisin ordinaire
-  à cette latitude. Il n'y a pas de raccord à faire.
-- **Le pincement polaire.** Les 16 384 pixels de la première ligne tiennent dans
-  une calotte de **1 831 m**, et le bruit y varie comme sur trois pixels
-  équatoriaux. En 2D, cette même ligne balaierait tout le domaine du bruit.
-
-Le coût est un facteur trois sur le nombre de cellules du réseau — on
-échantillonne une surface dans un champ volumique. Il n'y en a pas d'autre.
-
-`test_noise.py` teste chaque propriété **avec son contre-exemple 2D à côté** :
-sans lui, on vérifierait qu'un problème est absent sans avoir montré qu'il
-pouvait être présent.
-
-## Pourquoi on ne pave pas la sphère
-
-Le problème est réel et porte un nom normalisé : **DGGS**, *Discrete Global Grid
-System*. Les candidats sérieux :
-
-| Pavage | Propriété | Qui l'utilise |
-|---|---|---|
-| **Équirectangulaire** | ni équi-aire ni conforme, singulier aux pôles | tout le SIG raster |
-| **Cube map** (`+proj=qsc`) | distorsion bornée ~1,3×, pas de pôle | rendu temps réel |
-| **HEALPix** (`+proj=healpix`) | **équi-aire exact**, hiérarchique | astronomie — Planck, WMAP |
-| **H3 / S2** | hexagones / quadtree sphérique | Uber, Google |
-
-On ne pave pas, et pas par paresse. Un pavage résout un problème
-d'**échantillonnage** — obtenir des cellules comparables partout — qu'on vient de
-dissoudre autrement, en sortant le bruit de la grille. Il resterait un problème
-de *stockage*, et là aucun pavage ne vaut le coût : rasterio, la
-géotransformation, `gdalwarp`, le COG et QGIS attendent tous une grille
-régulière.
-
-L'argument qui emporte la décision est en aval. La sortie du Lot 3 est une
-pyramide XYZ, elle-même un pavage. Une source équirectangulaire s'y accorde
-exactement en E-O par la relation `W = 2^z·T`. Une source HEALPix équi-aire
-obligerait au contraire à **sur**-interpoler pour nourrir les tuiles polaires :
-on aurait payé un pavage exotique pour dégrader le résultat.
-
-## Le raster est global, seules les tuiles seront coupées
-
-L'équirectangulaire n'a aucune singularité aux pôles — seulement de la
-redondance. Le ±85,0511° est une amputation du **rendu**, jamais de la donnée.
-
-La conséquence est ce qui achève l'arbitrage du référentiel. La roche
-actuellement sous le point substellaire porte son altitude dans le COG ; quand
-la croûte l'aura menée dans le terminateur, on ne régénère rien, on **retuile à
-la nouvelle époque**. Un raster Croûte est sans époque et sans coupure : il ne
-peut pas, structurellement, perdre ce qui servira plus tard.
-
-Et si les faces devaient un jour être affichées, le métier ne réaligne pas les
-référentiels, il **change de pavage** — une seconde pyramide en stéréographique
-polaire, comme `UPSArcticWGS84Quad` au registre OGC.
-
-## Espérance nulle n'est pas moyenne nulle
-
-Le point 6 exige un générateur à moyenne nulle *par construction*, pour n'avoir
-pas à recentrer. Les douze gradients allant par paires opposées, le champ est
-bien d'espérance nulle — et `test_noise.py` vérifie la symétrie plutôt que de la
-supposer.
-
-**Mais une réalisation ne l'est pas.** Mesuré sur trois cents graines, le
-décalage de surface d'un tirage a un écart-type de **305 m** et peut atteindre
-869 m. La première graine essayée donnait **−445 m** : le sol moyen d'Aeonir un
-demi-kilomètre sous son propre datum.
-
-Deux mesures ont débloqué la situation :
-
-1. le décalage est **invariant en résolution** — identique à 0,1 m près de z=2 à
-   z=5. C'est une propriété de la réalisation du bruit, pas de l'échantillonnage ;
-2. il se calcule donc sur une grille 1 024 × 512 en une seconde, et le résultat
-   vaut pour le raster complet.
-
-D'où le critère retenu, explicite : **la graine est choisie parmi les trois cents
-premières pour que la moyenne de surface tombe à moins de deux mètres de la
-sphère de référence.** La graine 77 donne −1,5 m, avec des extrêmes symétriques.
-
-> Sélectionner une réalisation n'est **pas** recentrer la donnée. Le zéro reste
-> la sphère, il ne bouge pas, et il ne dépend d'aucune statistique du terrain.
-> Un test le vérifie en sens inverse : deux graines doivent donner deux
-> décalages *différents*. S'ils étaient tous nuls, c'est qu'on aurait recentré.
-
-La moyenne qui juge le datum est **pondérée par l'aire** : sur une grille
-équirectangulaire un pixel polaire couvre `cos φ` fois moins de sol, et la
-moyenne par pixel n'est donc pas la moyenne de surface.
-
-## Le générateur est volontairement pauvre
-
-Dix octaves depuis la fréquence 2, lacunarité 2, persistance 0,5. La plus fine
-tombe à 1 024, soit une cellule de 4,7 km — **2,5 pixels**, juste au-dessus de
-Nyquist. L'échelle vise `σ = MAX_RELIEF_M / 4 = 2 950 m`, et **on n'écrête pas** :
-un écrêtage créerait des plateaux et briserait la moyenne nulle.
-
-La normalisation est **analytique**, `σ₁·√Σp²ⁱ` — les octaves étant décorrélées,
-leurs variances s'ajoutent. Aucune statistique du terrain produit n'entre dans le
-calcul, sans quoi une même altitude ne signifierait pas la même chose d'une
-graine à l'autre. `σ₁ = 0,2702` est une propriété **mesurée** de cette
-implémentation, à 1,5 % près selon la graine.
-
-Rien de plus, et c'est délibéré. La géographie d'Aeonir sera **tectonique** :
-sans océan global l'essentiel de la surface est du plancher, les collisions de
-plaques font des chaînes massives, les fosses ne sont en eau que dans le
-terminateur, et la dilatation de la croûte en face chaude contre sa contraction
-en face froide brise le relief. Aucun empilement d'octaves ne produit ça. Le
-tenter donnerait un faux réalisme plus coûteux qu'un bruit franchement
-synthétique — d'où le **Lot 6**.
-
-## Ce que le raster de production vaut
-
-```
-Grille 16384 × 8192 — W = 2^6 × 256, graine 77
-  min / max             -9266.9 / +9288.6 m
-  écart-type             2890.6 m
-  moyenne par pixel       -108.1 m
-  moyenne par aire          -1.4 m   (-0.05 % de σ)
-  durée                    323.7 s
-  → 421,9 Mio, tuiles internes 512×512, aperçus [2, 4, 8, 16, 32]
-```
-
-Trois vérifications au passage.
-
-**Le choix de graine tient à l'échelle de production.** Prédit à −1,5 m sur la
-grille 1 024 × 512, mesuré à **−1,4 m** sur 134 Mpx. L'invariance en résolution
-n'était pas une commodité de test, elle porte la méthode.
-
-**Moyenne par pixel ≠ moyenne par aire.** −108 m contre −1,4 m : l'écart est
-entièrement dû au poids excessif des pixels polaires sur une grille
-équirectangulaire. C'est la seconde qui juge le datum, jamais la première.
-
-**Le plafond de relief n'a pas été atteint**, donc rien n'a été écrêté. Les
-extrêmes sortent à ±9,3 km pour un `MAX_RELIEF_M` de 11,8 km — la convention à
-4σ était bien calibrée, et symétriques à 0,2 % près.
 
 ---
 
-# Lot 2 — l'hydrologie, réduite au minimum exploitable
-
-**Périmètre volontairement coupé.** La cible est un poste frontend orienté
-MapLibre : ce sont les Lots 3 et 4 qui portent l'entretien. Le Lot 2 doit
-produire une couche vectorielle honnête à tuiler, rien de plus. Précipitations
-uniformes, donc l'accumulation est une **surface drainée** et pas un débit.
-
-## Le modèle hydrique complet, conçu puis mis de côté
-
-Il est consigné ici parce qu'il ne coûte rien à laisser dormir, et qu'il est
-juste. Reporté au **Lot 6**, quand le terrain le méritera.
-
-Sur une sphère fermée sans océan, le comblement de cuvettes classique est
-**dégénéré** : chaque bassin se remplirait jusqu'à son seuil, déverserait dans le
-voisin, et la planète deviendrait un lac unique. Il n'y a pas d'exutoire.
-
-La physique en donne un autre : **l'évaporation**. Un bassin fermé n'est pas
-indéterminé, il est en équilibre — `E(lat') · A_lac(h) = P · A_bassin`, une
-recherche de racine à une dimension sur la courbe hypsométrique. Ce sont les
-lacs endoréiques terminaux : Caspienne, Tchad, Aral, mer Morte. Aeonir n'est pas
-un cas exotique, c'est une planète où le cas particulier terrestre devient
-général.
-
-Le cycle complet, établi avec l'auteur du lore :
-
-| Étape | `lat'` | Bilan local |
-|---|---:|---|
-| **Front du Levant** | −18° | la glace du tour précédent fond — apport |
-| **Levant** | −18° → +6° | **équilibre** : fonte contre évaporation croissante |
-| **Mur des Tempêtes** | +6° | lacs et mers en pleine lumière — perte totale, c'est le piston |
-| *Face Ardente* | > +6° | aucune eau liquide — 44,8 % de la surface |
-| **Front du Couchant** | +6…+3° | la terre émerge sèche |
-| **Couchant** | +6° → −21° | pluies des vents polaires, **aucune évaporation** — accumulation |
-| **Le Linceul** | −21° | tout gèle |
-| *Face Obscure* | < −21° | rien ne bouge — 32,1 % de la surface |
-
-Le transport atmosphérique referme la boucle : ascendance à +6°, Circulation
-Méridienne vers les pôles en altitude, subsidence sous les anticyclones, puis
-vents polaires au sol qui redescendent vers le Couchant en précipitant. La masse
-se conserve sur le tour, ce qui fait du calcul un **point fixe** en deux passes :
-la première donne la distribution de glace sortant du Couchant, la seconde la
-réinjecte en fonte au Levant.
-
-> **Étiquetage.** Le cycle et les seuils sont **du lore**. La circulation
-> atmosphérique est une **intuition de mécanicien des fluides de l'auteur**, pas
-> un modèle calculé — si un vrai modèle diverge, la *rule of cool* tranche. D'où
-> une conséquence d'architecture : le champ de précipitations sera une **entrée
-> interchangeable**, jamais câblée dans le pipeline.
-
-La bande ne fait pas « quelques pour cent » de la surface mais **23,1 %**, dont
-11,6 % pour le seul demi-terminateur du Couchant.
-
-## Ce que le terrain fBm ne permet pas
-
-Mesuré avant de construire, et décisif.
-
-| Profondeur minimale d'une cuvette | |
-|---|---:|
-| p50 | **3,63 m** |
-| p90 | 12,22 m |
-| max | **42,2 m** |
-
-À comparer aux **21,1 m** d'écart médian entre deux cellules voisines. La cuvette
-médiane est six fois moins profonde que le pas normal du terrain : ce ne sont pas
-des dépressions, ce sont les minima locaux d'un champ aléatoire lisse.
-
-Et le seuil de fusion n'est pas un paramètre — 58 578 bassins à 0 m, 9 021 à
-10 m, 1 025 à 20 m, **zéro** à 50 m. Aucun plateau, aucune décrochement : il n'y
-a pas deux populations à séparer. Les vraies dépressions fermées d'une planète
-sont **tectoniques** — rifts, grabens, calderas — et le fBm n'en produit aucune.
-
-> **Critère d'acceptation pour le Lot 6, obtenu gratuitement.** Le jour où la
-> tectonique arrivera, relancer cette mesure doit donner une distribution
-> **bimodale** : un mode de bruit peu profond, un mode de vraies dépressions à
-> des centaines de mètres, séparés par un creux.
-
-Second contrôle du même ordre : la répartition de Strahler donne un **rapport de
-bifurcation de Horton** de 4,8 au premier saut — dans la fourchette terrestre de
-3 à 5 — puis 13 et 50. La ramification s'effondre au-delà de l'ordre 2.
-
-## Ce que la sphère impose au D8
-
-Deux corrections qu'un portage naïf d'un code terrestre oublierait, et la
-première n'est pas un raffinement :
-
-- **Les huit voisins ne sont pas équidistants.** À la latitude 81°, le voisin est
-  est à **1,147 km** contre **7,325 km** vers le sud — un facteur 6,4. Prendre la
-  plus forte dénivelée au lieu de la plus forte **pente** enverrait toute l'eau
-  des hautes latitudes vers l'est ou l'ouest. Un test le prouve par
-  contre-exemple.
-- **La grille s'enroule en longitude.** Colonnes 0 et W−1 voisines.
-
-Les distances sont calculées en **orthodromie exacte**, table de `H × 8` — elles
-ne dépendent que de la ligne, donc l'approximation en plan tangent ne coûtait
-rien à éviter.
-
-## Deux seuils qui sont des choix, et le disent
-
-`STREAM_THRESHOLD_KM2 = 5 000` et `MIN_BASIN_KM2 = 50 000`. Ni l'un ni l'autre
-n'est dérivable : **il n'existe pas de « vrai » nombre de fleuves**, seulement
-une densité de drainage qu'on décide. C'est un des points que le métier connaît
-et que les tutoriels taisent. Exprimés en km² et non en cellules, pour survivre à
-un changement de résolution.
-
-## Résultats
-
-```
-Grille 4096 × 2048 — 8.4 Mpx
-  bassins                58578
-  réseau ≥ 5000 km²     184801 cellules, ordre de Strahler max 4
-  chemin le plus long     2179 cellules
-  fleuves                18870      (dont 29 coupés à l'antiméridien)
-  exutoires              58578
-  bassins                  627      (451 bassins ≥ 50 000 km²)
-  analyse 2.5 s, écriture 1.7 s → 14,4 Mio
-```
-
-## Trois mesures qui ont changé le code
-
-**Le doublement de pointeurs rend tout tractable.** Résoudre les bassins prend
-13 passes vectorisées au lieu de 8 192 pas à pas — 630 fois moins de travail.
-L'accumulation, séquentielle par nature, se déplie par **profondeur** : deux
-cellules de même profondeur ne peuvent pas s'alimenter, donc elles se traitent
-d'un coup.
-
-**Les tableaux plats de zéros étaient un mur.** Compter les bassins par
-`bincount` sur les racines produisait 2 Go remplis à 99,4 % de zéros. Et il n'y
-avait rien à découvrir : **les bassins sont les puits**, que le raster de
-directions désigne déjà. Pic mémoire ramené de 8,13 Go à 1,65 Go à z=6.
-
-**`writerecords` et jamais `write` en boucle.** 58 578 points prennent 41 s un
-par un contre 0,5 s en lot — un facteur 82, parce que chaque appel isolé engage
-sa propre transaction SQLite. Sur l'écriture complète : **411,7 s → 1,7 s**.
-
-## Le découpage est un produit du repère de rendu
-
-Le GeoPackage est découpé à l'antiméridien **Croûte**, où sa donnée vit. C'est
-tout ce qu'un fichier peut garantir — et ce n'est pas suffisant.
-
-Affiché en repère **Étoile**, dont l'antiméridien tombe ailleurs sur le globe,
-**18 tronçons et 5 anneaux de bassin** repartent en sauts de 360°. Vérifié : les
-latitudes Étoile de ces cinq anneaux — 71,8° · 69,0° · 50,3° · −23,2° · −56,9° —
-prédisent au pixel près les bandes horizontales observées dans QGIS.
-
-D'où une étape que le Lot 5 devra porter, et qui suit la même séparation que tout
-le reste du chantier :
-
-```
-Croûte, sans époque     géométrie du drainage — l'archive
-      ↓  rotation à l'époque T
-Étoile, datée           reprojection + REDÉCOUPAGE à l'antiméridien
-      ↓  tuilage
-MVT                     découpage par tuile + buffer
-```
-
-**Les deux découpages ne se remplacent pas**, et c'est le point non évident. On
-pourrait croire que le clippage par tuile absorbe le problème, l'antiméridien
-étant une frontière de tuile. Il ne l'absorbe pas : le segment reliant `+179` à
-`−179` traverse, en espace tuile, toutes les tuiles de sa ligne, et le clippage y
-dépose un éclat dans chacune.
-
-Le raster est épargné — chaque pixel se transforme isolément, il ne porte aucune
-topologie. Le **Lot 3 n'est donc pas concerné**, seul le Lot 5 l'est.
-
-## L'anisotropie polaire, limite assumée
-
-Les entités les plus étirées sont toutes au-delà de 76° de latitude — jusqu'à
-32,3° de longitude pour un bassin haut de 9°. La grille en est la cause :
-
-| Latitude | Voisin est | Voisin sud | Rapport |
-|---:|---:|---:|---:|
-| 0° | 7 325 m | 7 325 m | 1 |
-| 81,2° | 1 125 m | 7 325 m | 6,5 |
-| 89,87° | **16,9 m** | 7 325 m | **434** |
-
-La part d'écoulement restant dans sa ligne passe de **28,7 %** à l'équateur à
-**51,6 %** près du pôle. Ce n'est pas un défaut du D8 mais de la grille, et le
-remède professionnel est de traiter les calottes en **stéréographique polaire**.
-Non fait : ça mord sur les deux civilisations polaires, mais le livrable du
-chantier est le pipeline, et la limite est mesurée plutôt que subie.
-
-> **Et la normalisation par la distance n'est pas une correction sphérique.**
-> Sans elle, les deux D8 divergent sur **35 % des cellules à l'équateur**, là où
-> `cos φ` vaut 1 — parce que la diagonale est √2 fois plus longue et qu'une
-> comparaison de dénivelées brutes la privilégie. C'est une correction du D8
-> lui-même, valable sur n'importe quelle grille.
-
-## Ce que le GeoPackage garde et que le GeoTIFF perd
-
-```
-gpkg_spatial_ref_sys :  ('Aeonir Crust', 1, 'AEONIR', 1)
-```
-
-L'autorité privée survit **comme donnée**, dans des colonnes dédiées,
-interrogeable en SQL. C'est le seul format de la chaîne où `AEONIR:1` existe
-autrement que noyé dans un WKT — au Lot 0, `to_authority()` renvoyait `None` sur
-le GeoTIFF.
-
----
-
-# Lot 3 — le tuileur
-
-Deux modules : `tiles.py` fabrique **une** tuile — adressage, cartographie
-inverse, échantillonnage, encodage — et `pyramid.py` en fabrique la pyramide,
-écrit les PNG et le TileJSON. Le visualiseur MapLibre vit dans `viewer/`.
-
-Production : **821 tuiles, 50,3 Mio, ~107 s** sur un i5-7300HQ.
-
-## Le schéma XYZ ne référence aucun rayon
-
-C'est ce qui autorise Aeonir à employer `WebMercatorQuad` **sans mentir** :
-passer de `(lon, lat)` à `(z, x, y)` n'emploie que des angles et un logarithme.
-
-```
-x = (λ + 180)/360 · 2^z            y = ½(1 − ln(tan φ + sec φ)/π) · 2^z
-```
-
-Le rayon n'y figure nulle part. Il ne réapparaît qu'à l'affichage, via
-`TERRAIN_EXAGGERATION`. `crs.MERCATOR_WKT` ne sert donc **pas** au tuilage — il
-est là pour l'analyse métrique, et les confondre ferait croire qu'il faut un CRS
-par planète pour tuiler.
-
-Le choix n'existait de toute façon pas : MapLibre GL JS ne rend qu'en Web
-Mercator, les projections alternatives sont encore sur sa feuille de route.
-
-### 85,0511287798066° est une forme close, pas une convention
-
-Un seul arbitraire en amont — *le monde doit être carré*, pour être divisible en
-quadrants. Le nombre en découle sans choix :
-
-```
-ln(tan φ + sec φ) = π   ⟹   φ_max = gd(π) = arctan(sinh π) = 2·arctan(e^π) − π/2
-                            = 85,05112877980660357480…°
-```
-
-Les deux formes closes retombent sur la constante **au bit près**, et le
-contrôle inverse rend π à l'ULP.
-
-## La cartographie inverse : la donnée et la transformation vont en sens opposés
-
-La donnée va Croûte → Étoile ; la transformation employée fait le chemin
-**inverse**. Ce n'est pas une inadvertance, c'est ainsi que fonctionne tout
-rééchantillonnage d'image : on itère sur les pixels de **destination**.
-
-```
-pour chaque pixel de la tuile (Étoile)
-    d'où est-ce que je viens sur la croûte ?      ← star_to_crust
-    lire le MNT à cet endroit                     ← échantillonnage
-```
-
-Le sens direct — parcourir le MNT et projeter chaque pixel vers sa tuile — est
-le *forward mapping*, et il ne marche pas. Mesuré à z=4, avec pourtant **40 % de
-pixels source de plus** que de cases de destination :
-
-| répartition des cellules de destination | |
-|---|---:|
-| 0 échantillon — **trou** | **39,6 %** |
-| 1 échantillon | 32,5 % |
-| 2 ou plus — **collision** | **27,9 %** |
-| pire cellule | 1 221 échantillons |
-
-Les 1 221 collisions sont les pôles géographiques, où les pixels de la Croûte se
-serrent et s'écrasent dans la même case Étoile — l'anisotropie polaire vue de
-l'autre côté. La cartographie inverse rend **exactement une valeur par cellule**,
-par construction.
-
-Corollaire pour `crs.py` : `star_to_crust` n'y est pas la commodité symétrique
-de `crust_to_star`. **C'est la réciproque qui travaille**, la fonction directe
-ne servant qu'aux contrôles.
-
-### Un « Mercator Étoile » est impossible
-
-On aurait pu gauchir en une passe si PROJ acceptait un `PROJCRS` bâti sur le
-repère Étoile. Il refuse — `Missing DATUM or ENSEMBLE node` — parce qu'un
-`PROJCRS` exige une base portant un `DATUM` et que le repère Étoile est un CRS
-géographique **dérivé**. L'autre voie, gauchir vers une grille Étoile puis
-remapper ses lignes en Mercator, coûterait **deux interpolations successives**
-là où la cartographie inverse n'en demande qu'une.
-
-## Le bilinéaire ne suffit pas quand on va dériver le résultat
-
-Un ombrage **est** une dérivée. Le bilinéaire est **C⁰** : la surface est
-continue, mais sa dérivée est constante à l'intérieur de chaque cellule source
-et saute à chaque frontière. Elle dessine donc ces frontières en **blocs
-rectangulaires** de la taille du pixel source — d'autant plus gros que Mercator
-étire la latitude, puisqu'une ligne de tuile y couvre moins de degrés qu'une
-ligne de source. Mesuré à −79° de latitude Étoile : des blocs de **cinq pixels**.
-
-**Catmull-Rom est C¹, et l'artefact disparaît entièrement — à source
-identique.** Ce n'était donc pas un problème de résolution : lire le MNT en
-pleine résolution au lieu de la résolution du niveau rend le résultat *pire*, du
-crénelage à la place des blocs.
-
-Contrepartie d'un noyau cubique : il dépasse légèrement l'intervalle de ses
-voisins près d'une rupture de pente. Sans conséquence sur un champ fBm, à
-surveiller quand le relief aura des arêtes franches.
-
-> **La leçon dépasse ce cas.** On savait qu'il ne fallait pas de plus-proche-
-> voisin pour un MNT ; on s'arrêtait un cran trop tôt. Dès qu'une sortie sera
-> **dérivée** — ombrage, pente, exposition, courbure — le noyau doit être C¹.
-
-## La pyramide a deux régimes, et le seuil est imposé
-
-```
-z ≤ 4   monde entier, rendu DIRECTEMENT depuis le MNT
-z > 4   bande du terminateur seule, construite PAR LE BAS
-```
-
-Construire par le bas exige que **les quatre enfants d'un parent existent** :
-
-```
-parent [a, b] à z−1   exige   enfants [2a, 2b+1] à z
-```
-
-La bande vérifie cette fermeture entre z=6 et z=5 — les enfants de
-`row_range(5) = (15, 17)` sont exactement `(30, 35) = row_range(6)` — et la
-**rompt** à z=4, dont les parents `(7, 8)` réclament des lignes `(14, 17)` que
-la bande ne contient pas. Le coût de la poursuivre :
-
-| minzoom visé | lignes à z=6 | tuiles z=6 | pyramide |
-|---:|---|---:|---:|
-| 5 | 30..35 | 384 | 480 |
-| 4 | 28..35 | 512 | 672 |
-| 3 | 24..39 | 1 024 | 1 360 |
-| 2 | 16..47 | 2 048 | 2 728 |
-| 1 | **0..63** | **4 096** | 5 460 |
-
-**En dessous de z=4 on ne tuile plus une bande mais une planète.** Le régime
-direct prend donc le relais exactement là où la fermeture cesse d'être gratuite,
-et le monde entier de z=0 à z=4 ne coûte que 341 tuiles.
-
-Deux conséquences heureuses. **Aucune moyenne n'est jamais partielle**, donc le
-`NODATA` ne se pose pas — une valeur manquante moyennée à −32 768 m creuserait
-une falaise. Et la pyramide est **globale depuis z=0**, ce que la fermeture
-seule n'offrait pas.
-
-⚠️ Les niveaux de bande ne se déduisent **pas** de `row_range` appliqué à
-chacun : il faut les descendre par la fermeture. Les deux définitions coïncident
-entre z=5 et z=6, ce qui est une **coïncidence de cette bande-ci**. À z=7,
-`row_range` commence à la ligne 61 quand la fermeture en réclame 60 — la
-réduction manquerait un enfant.
-
-### Ce que la construction par le bas achète
-
-Un pixel de `z−1` est **exactement** la moyenne de ses quatre enfants. Vérifié
-sur les fichiers écrits : écart médian **0,25 m**, maximum 0,75 — exactement les
-multiples de ¼ que produit la moyenne de quatre valeurs quantifiées au mètre. Il
-n'y a aucune autre source d'écart.
-
-Sans cette égalité, l'ombrage saute au franchissement d'un seuil de zoom.
-
-On aurait pu évaluer chaque niveau analytiquement, le terrain étant aujourd'hui
-une fonction pure. **Écarté à dessein** : cette propriété disparaîtra au premier
-modèle tectonique, et le tuileur doit prendre un raster en entrée — c'est
-l'interface réaliste, et la seule qui survivra au changement de générateur.
-
-### Lire la source à la résolution du niveau
-
-`source_shape(zoom)` fait lire une grille de même pas que le niveau, ce qui fait
-choisir à GDAL l'aperçu adapté du COG — et nos aperçus sont en moyenne, donc une
-vraie moyenne d'aire plutôt qu'un échantillonnage ponctuel.
-
-Un pixel de destination à z=2 couvre 16 × 16 pixels source ; l'interpolation
-n'en regarde que quatre, et les 252 autres se replieraient en crénelage.
-
-⚠️ Mesuré sur le terrain actuel, l'écart entre lecture adaptée et pleine
-résolution vaut **1,6 % de σ**. C'est faible **parce que ce terrain-ci est
-lisse** — bande limitée à 4,66 km, dominé par ses basses fréquences. Ne pas en
-conclure que le crénelage est négligeable en général.
-
-## L'encodage terrarium, canal bleu à zéro
-
-Mesuré sur 36 tuiles réelles :
-
-| encodage | précision | poids |
-|---|---|---:|
-| terrarium complet | 4 mm | 137,0 Kio |
-| **canal B à zéro** | **1 m** | **54,9 Kio** (−60 %) |
-| canal R seul | 256 m | 4,7 Kio |
-| brut non compressé | — | 192,0 Kio |
-
-**Le canal B coûte 82 Kio par tuile pour encoder des millimètres sur un monde
-qui a 11,8 km de relief.** La partie fractionnaire d'un champ flottant est du
-bruit : incompressible par construction.
-
-Ce n'est pas un écart au standard — un décodeur terrarium lit `B = 0` et rend
-des mètres entiers, la source MapLibre reste `"encoding": "terrarium"`. C'est un
-choix de précision *à l'intérieur* du format.
-
-Et `k.NODATA` n'a besoin d'aucun cas particulier : à −32 768 m, les trois canaux
-valent 0. La valeur « pas de mesure » est le plancher exact de l'encodage.
-
-> **Jamais de compression avec perte.** Un JPEG sur du terrain-RGB ne dégrade
-> pas l'image, il **fabrique des altitudes fausses** : une erreur de 1 sur le
-> canal rouge vaut 256 m. PNG ou WebP sans perte, rien d'autre.
-
-## Ce que le tuilage a mesuré
-
-| mesure | valeur | ce qu'elle a changé |
-|---|---|---|
-| poids réel d'une tuile | **129,6 Kio**, pas 40 | toutes les projections de volume étaient fausses d'un facteur 3,2 |
-| tuiles grossières | **105 Kio à z=0** contre 58 à z=6 | la compression suit la **douceur locale**, pas la surface couverte |
-| rendu d'une tuile | 21 ms | mais **79 ms** avec le PNG : le compresseur pèse les ¾ |
-| autocorrélation du relief | demi-valeur à **491 km** | à z=1 le motif fait 4 px |
-| tuile vs bruit évalué directement | **44,7 m** médian pour σ = 2 333 | il n'y avait pas de bug à corriger |
-
-Deux de ces lignes méritent un paragraphe.
-
-**Les tuiles grossières sont plus lourdes, une par une.** Contre-intuitif
-jusqu'à ce qu'on y pense : une tuile z=0 étale les 11,8 km de relief de la
-planète sur 256 pixels, donc chaque pixel diffère beaucoup de son voisin et le
-filtre prédictif du PNG n'a plus rien à prédire.
-
-**Le fBm ne tient pas la vue planétaire.** Son échelle dominante est 491 km ; à
-z=1 un pixel couvre 117 km, donc le motif caractéristique fait quatre pixels et
-ne peut ressembler qu'à du bruit. Ce n'est pas un défaut de rendu — comparée au
-bruit évalué directement aux positions des pixels, notre tuile s'en écarte de
-1,9 % et se trouve même *plus lisse*, ce qui est correct. **Le Lot 7 n'est pas
-un raffinement esthétique : c'est ce qui rendra les zooms 0 à 3 lisibles.**
-
-## Le contrat avec le client
-
-`tiles.json` suit TileJSON 3.0.0 et porte en plus un objet `aeonir` — le
-standard tolère les clés inconnues, les clients les ignorent. Sans lui, le
-visualiseur recopierait des constantes qui vivent dans `constants.py`, et les
-deux dériveraient.
-
-⚠️ **Deux emprises distinctes, et les confondre coûte cher :**
-
-| champ | valeur | ce qu'il dit |
-|---|---|---|
-| `aeonir.band` | −21° … +6° | ce que la bande **signifie** — les seuils de `climat.md` |
-| `aeonir.band_bounds` | −21,94° … +11,18° | ce que le client peut **demander** |
-
-Une ligne de tuiles entamée est rendue en entier, donc l'emprise réelle déborde
-les seuils de près de six degrés côté face ardente. Annoncer les seuils du lore
-ferait renoncer le client à des tuiles qui existent ; annoncer plus large lui
-ferait réclamer des tuiles absentes.
-
-## Deux sources côté client, pour une pyramide creuse
-
-Une source `raster-dem` n'a **qu'un** couple `bounds`/`maxzoom` : elle ne sait
-pas dire « global jusqu'à 4, ruban au-delà ». Déclarée globale jusqu'à z=6, elle
-réclame hors bande des tuiles absentes et laisse un trou.
-
-Le style en déclare donc **deux, sur le même jeu de fichiers** :
-
-| source | zooms | emprise |
-|---|---|---|
-| `monde` | 0 → 4 | globale |
-| `bande` | 5 → 6 | `band_bounds` |
-
-Le mécanisme qui fait tout marcher : **sous son `minzoom`, MapLibre ne couvre
-pas une source du tout.** `bande` n'existe qu'à partir du zoom 5, et jamais hors
-de son emprise. **Plus aucun 404** — ce qu'on croyait réservé à PMTiles se règle
-par une déclaration honnête.
-
-Contrepartie assumée : dans la bande, deux ombrages du même relief se
-superposent. On a tenté de faire décroître l'exagération du fond au profit de la
-bande ; **le remède était pire** — hors bande, où le fond est seul, il ne restait
-presque rien à voir au-delà de z=5. Exagération constante, donc, et la frontière
-se lit comme un gain de netteté, ce qui est l'information juste.
-
-Le relief 3D ne peut viser qu'**une** source ; il vise la source globale, seule
-à couvrir à la fois tous les niveaux et tout le globe.
-
-## Ce que MapLibre fait, et ne fait pas
-
-**Il ne précharge rien.** La demande d'anticipation pendant les mouvements de
-caméra est [l'issue #116](https://github.com/maplibre/maplibre-gl-js/issues/116),
-toujours ouverte ; le vide est comblé par des greffons tiers. Ce qui existe
-nativement va dans l'autre sens : `prefetchZoomDelta`, **à 4 par défaut**, charge
-les tuiles **parentes** — donc plus grossières — pour afficher une version basse
-résolution pendant que les fines arrivent.
-
-L'asymétrie est de l'économie. Dézoomer demande 1 parent pour 4 enfants, souvent
-déjà en cache ; zoomer demande 4 enfants par tuile visible, soit ×4 de la vue
-par niveau, pour un mouvement que l'utilisateur ne fera peut-être pas. **On ne
-parie pas sur le futur, on garantit le présent.**
-
-**Il reconstitue les bordures des tuiles MNT** depuis leurs voisines —
-`backfillBorder` et `neighboringTiles` sont dans le bundle. Le calcul des
-normales ne fabrique donc pas de couture, sauf transitoirement.
-
-Et `map.showTileBoundaries = true` trace le contour de chaque tuile **et son
-triplet z/x/y**, sans avoir besoin de `glyphs` : il embarque sa propre fonte.
-Voisins utiles : `showCollisionBoxes`, `showPadding`, `showOverdrawInspector`.
-
-## Le visualiseur
-
-`viewer/index.html`, MapLibre 6 vendue localement et épinglée dans
-`package.json`. Quatre bascules : relief 3D, une source / deux sources,
-graticule, bords de tuiles.
-
-**MapLibre 6 est ESM uniquement** — plus de bundle UMD, plus de variable globale
-`maplibregl`, et **aucun export `default`** : il faut `import * as maplibregl`.
-Corollaire, un module ES ne se charge **jamais** depuis `file://` — origine
-opaque, la requête n'est pas HTTP. Un serveur statique est obligatoire :
-
-```
-cd geo/viewer && npm start        puis  http://localhost:8765/viewer/
-```
-
-La graticule est fabriquée en GeoJSON, MapLibre n'en fournit aucune. Le style
-n'ayant pas de `glyphs`, aucun calque `symbol` n'est possible — pas de libellés,
-l'information passe par la couleur. Dans le repère Étoile la latitude **est**
-l'élévation de l'étoile, donc l'équateur est le milieu du terminateur, +6° le
-Mur des Tempêtes et −21° le Linceul : la graticule dit quelque chose du monde,
-pas seulement de la grille.
-
----
-
-# PROJ : les commandes, paramètre par paramètre
-
-Documentation de référence : **[proj.org](https://proj.org/)**. La navigation
-utile est *Operations → Projections → `<nom>`* pour une projection donnée, et
-*Usage → Ellipsoids* pour les paramètres de forme.
-
-## Paramètres communs à toutes les projections
-
-*Réf. [Usage → Projections](https://proj.org/en/stable/usage/projections.html)*
-
-| Paramètre | Rôle |
-|---|---|
-| `+proj=` | nom de la projection. `longlat` signifie « pas de projection », coordonnées géographiques |
-| `+lon_0=` | méridien central, en degrés. PROJ le **soustrait** de la longitude d'entrée avant tout calcul |
-| `+lat_0=` | parallèle d'origine |
-| `+x_0=` `+y_0=` | *false easting* / *false northing*, en mètres — décalage pour éviter les coordonnées négatives |
-| `+k_0=` (ou `+k=`) | facteur d'échelle au point d'origine |
-| `+units=` | unité linéaire de sortie, `m` par défaut |
-| `+no_defs` | n'applique aucune valeur par défaut issue des fichiers de définition. Vestige historique, inoffensif |
-| `+type=crs` | déclare que la chaîne décrit un **CRS** et non une simple opération. Nécessaire pour `CRS.from_proj4()` |
-
-## Paramètres de forme
-
-*Réf. [Usage → Ellipsoids](https://proj.org/en/stable/usage/ellipsoids.html)*
-
-| Paramètre | Rôle |
-|---|---|
-| `+ellps=` | ellipsoïde nommé du catalogue — `WGS84`, `GRS80`, `clrk66`… |
-| `+a=` | demi-grand axe (équatorial), en mètres |
-| `+b=` | demi-petit axe (polaire), en mètres |
-| `+f=` | aplatissement, `(a−b)/a` |
-| `+rf=` | aplatissement **inverse**, `a/(a−b)` — la forme sous laquelle il est habituellement publié (298,257 pour WGS84) |
-| `+R=` | **rayon d'une sphère.** Forme idiomatique quand `a = b` |
-
-Pour Aeonir, les deux écritures sont équivalentes ; `+R` est préférée car elle
-énonce l'intention :
-
-```
-+R=4775000                      ← retenu
-+a=4775000 +b=4775000           ← équivalent
-```
-
-En WKT, cela s'écrit `ELLIPSOID["Aeonir", 4775000, 0]` — le second nombre est
-l'aplatissement inverse, et **zéro y signifie sphère**, par convention.
-
-> **Piège vérifié** — PROJ **ignore silencieusement les paramètres inconnus**.
-> `+c=6300000`, `+axis_rot=45` et même `+ceci_nexiste_pas=42` sont acceptés sans
-> broncher et sans effet. Une chaîne `+proj=` qui ne lève pas d'erreur ne prouve
-> **rien** sur ce qu'elle fait. Toujours vérifier le résultat, jamais la syntaxe.
-
-> **Piège vérifié, et celui-ci est une bonne nouvelle** — PROJ **refuse** de
-> transformer entre `AEONIR:1` et `EPSG:4326` :
->
-> ```
-> Source and target ellipsoid do not belong to the same celestial body
-> (Non-Earth body vs Earth)
-> ```
->
-> Il déduit du rayon qu'Aeonir n'est pas la Terre, et bloque. C'est exactement ce
-> qu'on veut : reprojeter des degrés d'une sphère de 4 775 km vers WGS84 n'a
-> aucun sens. Conséquence pratique dans QGIS — voir plus bas.
->
-> La dérogation `PROJ_IGNORE_CELESTIAL_BODY=YES` existe, et **il ne faut pas
-> s'en servir** : elle produit un `Ballpark geographic offset`, c'est-à-dire une
-> identité. Mesurée, elle rend `(60, 45) → (60, 45)`. Elle ne transforme rien,
-> elle se contente de mentir en silence.
-
-> **Troisième piège vérifié** — `ID["AEONIR",1]` est bien conservé dans le WKT et
-> survit à toute re-sérialisation, mais **`to_authority()` renvoie `None`** et
-> `list_authority()` une liste vide. Ces méthodes interrogent la **base de
-> données** de PROJ plutôt que de relire le nœud `ID`, et une autorité maison n'y
-> est pas enregistrée. L'identité est donc dans le fichier, jamais confirmée par
-> l'API. Tester la présence de la chaîne, pas le retour de la méthode.
-
-## `ob_tran` — la transformation oblique
-
-*Réf. [Operations → Projections →
-ob_tran](https://proj.org/en/stable/operations/projections/ob_tran.html)*
-
-C'est l'opération qui déplace le pôle. Elle applique une rotation sphérique aux
-coordonnées, puis exécute une projection ordinaire dans le repère tourné.
-
-| Paramètre | Rôle |
-|---|---|
-| `+o_proj=` | la projection à appliquer **après** rotation — `eqc`, `merc`, `longlat`… |
-| `+o_lat_p=` | latitude du pôle tourné |
-| `+o_lon_p=` | **origine des longitudes** du repère tourné (voir mesure ci-dessous) |
-| `+lon_0=` | fixe la **longitude** du pôle tourné |
-
-Deux paramétrages alternatifs existent pour définir la rotation autrement :
-`+o_alpha` avec `+o_lon_c`/`+o_lat_c` (par azimut), ou `+o_lon_1`/`+o_lat_1` avec
-`+o_lon_2`/`+o_lat_2` (par deux points).
-
-### Sémantique mesurée, pas recopiée
-
-La convention de pôle d'`ob_tran` est ambiguë selon les communautés. Voici ce
-que PROJ 9.5.1 fait réellement, mesuré avec `+o_lat_p=0` (la configuration
-d'Aeonir) :
-
-```
-o_lat_p  o_lon_p  lon_0 |  pôle Nord géo.  |  pôle nord tourné
-      0        0      0 | lat'=0  lon'=  0 | (180, 0)  → lat'= 90
-      0       45      0 | lat'=0  lon'= 45 | (180, 0)  → lat'= 90
-      0       90      0 | lat'=0  lon'= 90 | (180, 0)  → lat'= 90
-      0      -90      0 | lat'=0  lon'=-90 | (180, 0)  → lat'= 90
-      0        0     45 | lat'=0  lon'=  0 | (180, 0)  → lat'= 45
-```
-
-Trois enseignements :
-
-1. **`+o_lon_p` ne déplace pas le pôle.** Il fait tourner le repère *autour* de
-   l'axe polaire, c'est-à-dire qu'il choisit où tombe `lon' = 0`. Avec
-   `o_lon_p=0`, le pôle Nord géographique reçoit `lon' = 0`.
-2. **`+lon_0` déplace le pôle.** Le pôle nord tourné se trouve au point
-   d'entrée de longitude `180 + lon_0`, latitude `o_lat_p`.
-3. **Avec `o_lat_p = 0`, les pôles géographiques réels atterrissent sur
-   l'équateur tourné** (`lat' = 0`). C'est exactement la géométrie d'Aeonir, et
-   elle sort du paramétrage sans effort.
-
-> **Conséquence pour le Lot 0** — si `λₛ(t)` désigne la longitude du point
-> substellaire dans le repère Croûte à l'époque *t*, alors la transformation
-> Croûte → Étoile s'écrit avec **`+lon_0 = λₛ(t) − 180`**. Toute la dépendance
-> rotationnelle du datum tient dans un seul paramètre PROJ.
-
-### Invariance de l'origine des longitudes — mesuré
-
-Six époques réparties sur une rotation complète, avec `+o_lon_p=0` :
-
-```
-λₛ (époque) |   pôle Nord géo   |   pôle Sud géo    | substellaire
-          0 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
-         45 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
-         90 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
-        180 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
-        270 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
-        359 | lat'=0   lon'=  0 | lat'=0   lon'=180 |   lat'=90
-```
-
-Les pôles géographiques sont les points fixes de la rotation qu'applique
-`+lon_0`. L'origine des longitudes Étoile ne dérive donc jamais, et le point
-substellaire reste à `lat' = 90` par construction.
-
-### `ob_tran` est sphérique — mesuré
-
-Même calcul avec `+ellps=WGS84` puis avec `+R=6378137` :
-
-```
-(10, 45)  ellipsoïde  1096616.7771  -4913200.3255
-          sphère      1096616.7771  -4913200.3255    écart 0.000000 m
-```
-
-Zéro à la précision machine, sur les trois points testés. Ce n'est pas une
-négligence de PROJ : faire tourner le pôle d'un ellipsoïde n'a pas de sens comme
-opération conservant la forme.
-
-**Contrôle** avec `omerc` (Hotine oblique Mercator), qui est authentiquement
-ellipsoïdal :
-
-```
-(30, 60)  écart ellipsoïde/sphère   2711.24 m
-( 0, 80)  écart ellipsoïde/sphère   3678.55 m
-```
-
-La distinction est essentielle : **`omerc` incline la projection** — l'ellipsoïde
-reste aligné sur l'axe de rotation — alors qu'Aeonir demanderait d'**incliner
-l'ellipsoïde lui-même**, ce que personne ne sait faire. C'est la projection de la
-Suisse, de la Malaisie et de la zone 1 de l'Alaska.
-
-### Mais `ob_tran` n'est pas ce qu'on a retenu
-
-PROJ sait exposer un `ob_tran` comme CRS **dérivé** — mais avec une méthode
-privée :
-
-```
-METHOD["PROJ ob_tran o_proj=longlat"]
-```
-
-Aucun autre logiciel ne saurait la lire. La convention **netCDF CF**
-`rotated_latitude_longitude` — celle des grilles climatiques CORDEX et COSMO —
-donne le même résultat avec une méthode normalisée :
-
-```
-METHOD["Pole rotation (netCDF CF convention)"]
-    PARAMETER["Grid north pole latitude",  <déclinaison>]
-    PARAMETER["Grid north pole longitude", <longitude substellaire>]
-    PARAMETER["North pole grid longitude", 0]
-```
-
-Deux avantages, mesurés. La méthode est **portable**. Et les paramètres sont
-**naturels** : le pôle est donné directement par les coordonnées du point
-substellaire, sans le détour par `lon_0 = λₛ − 180` qu'impose `ob_tran`. Les
-deux voies donnent le même résultat à **1,1 × 10⁻¹³ degré**.
-
-C'est cette déclaration qui est retenue pour `AEONIR:2`. Bénéfice supplémentaire
-vérifié : avec l'inclinaison, le pôle Nord géographique conserve `lon' = 0`
-exactement — seule sa latitude bouge.
-
-### `+o_proj=longlat` renvoie des radians
-
-Piège vérifié, qui ne s'annonce nulle part dans la chaîne :
-
-```
-o_proj=longlat  ->  x=       0.886077   y=      -0.659058     ← radians
-o_proj=latlong  ->  x=       0.886077   y=      -0.659058     ← radians
-o_proj=eqc      ->  x= 5645197.355683   y= -4198858.746250    ← mètres
-o_proj=merc     ->  x= 5645197.355683   y= -4540665.672151    ← mètres
-```
-
-Les projections métriques se comportent normalement ; seule la sortie
-géographique sort en radians et doit être convertie.
-
-## Reproduire les mesures
-
-Les sondes qui ont produit tous les chiffres ci-dessus sont jetables et ne sont
-pas versionnées. Elles se réécrivent en quelques lignes :
-
-```python
-from pyproj import Proj
-common = "+proj=ob_tran +o_proj=eqc +o_lat_p=0 +o_lon_p=0 +lon_0=0"
-ell, sph = Proj(f"{common} +ellps=WGS84"), Proj(f"{common} +R=6378137")
-print(ell(10, 45), sph(10, 45))     # identiques → ob_tran est sphérique
-```
-
----
-
-# Contrôles du modèle contre le lore
-
-Le pipeline n'a pas à croire le lore sur parole : là où le texte donne des
-chiffres, le modèle géométrique doit les retrouver. Trois contrôles passés.
-
-## Deux largeurs, qui ne mesurent pas la même chose
-
-J'avais d'abord écrit que les 1 500 km du lore valaient exactement la plage
-`−12° → +6°`, en « cohérence vérifiée ». C'était une **coïncidence arithmétique
-promue en fait** — le même travers que la calotte polaire. Le −12° n'a aucun
-statut particulier.
-
-La structure réelle distingue deux grandeurs :
-
-| | Étendue | Largeur |
-|---|---|---:|
-| **Franchissable**, Levant | −18° → +6° | 24° = 2 000 km |
-| **Franchissable**, Couchant | +4,5° → −21° | 25,5° = 2 125 km |
-| **Habitée et explorée** | bornes non fixées par le lore | ~**1 500 km** |
-
-Les extrémités sont traversées mais pas peuplées : trop hostiles. Les 1 500 km
-sont un ordre de grandeur pour le cœur habité — et c'est bien cette largeur-là
-qu'`climat.md` utilise pour ses durées de traversée, « soixante et onze ans à
-l'équateur pour franchir les mille cinq cents kilomètres ».
-
-Le pipeline encode les quatre seuils, qui sont des données sûres, et la largeur
-habitée comme ordre de grandeur. **Il n'invente pas les bornes en latitude du
-cœur habité**, que le lore ne donne pas.
-
-## Les durées de traversée — et l'horloge qu'il ne faut pas confondre
-
-Le terminateur **ne se déplace pas à la vitesse de rotation**. Sur un monde
-quasi-verrouillé, rotation et orbite ne diffèrent que de 4 %, et c'est cet écart
-qui promène le point substellaire autour de la croûte : la période est le **jour
-solaire**, ~1 375 ans, pas les 56,75 ans de la rotation sidérale.
-
-Confondre les deux donne un terminateur **vingt-cinq fois trop rapide** — la
-zone habitée franchie en 2,8 ans au lieu de 71. C'est l'erreur que le pipeline a
-faite avant correction, et un test la garde fermée.
-
-Avec la bonne horloge, la vitesse à l'équateur vaut 21,8 km/an, modulée par
-`cos β` puisque la croûte tourne moins vite aux hautes latitudes :
-
-| Latitude géographique | Modèle | `climat.md` |
-|---|---:|---:|
-| 0° | 68,7 ans | 71 ans |
-| 45° | 97,2 ans | 100 ans |
-| 60° | 137,4 ans | 140 ans |
-
-Les trois valeurs sortent du jour solaire et des 1 500 km, sans qu'on ait fourni
-ni la loi en `1/cos β` ni aucune des durées. L'écart de 3 % est exactement celui
-qui sépare notre jour solaire de 1 375 ans des 1 414 du vault — une différence
-d'arrondi sur la période orbitale.
-
-## Les étés polaires
-
-Tout le tableau d'asymétrie de `climat.md` se reconstruit depuis Kepler avec
-**deux entrées seulement** : périhélie 14 UA, aphélie 21 UA.
-
-| | Modèle | `climat.md` |
-|---|---:|---:|
-| Excentricité | 0,2000 | 0,20 |
-| Été du Nord (périhélie) | 20,4 ans | 20,4 ans |
-| Été du Sud (aphélie) | 34,1 ans | 34,2 ans |
-| Flux au solstice, Nord / Sud | 1,56 / 0,69 F₀ | 1,56 / 0,69 F₀ |
-| Flux moyen, Nord / Sud | 1,37 / 0,81 F₀ | 1,37 / 0,82 F₀ |
-
-Et l'affirmation la plus contre-intuitive du texte se vérifie exactement :
-
-```
-Nord    20,4 ans × 1,366 F₀ = 27,81 F₀·an
-Sud     34,1 ans × 0,815 F₀ = 27,81 F₀·an
-```
-
-Énergie totale identique aux quatre chiffres significatifs — l'analogie du
-chalumeau et de la bougie est littéralement exacte, pas seulement imagée.
-
-Contrôle indépendant : en modélisant la **déclinaison** du point substellaire,
-`δ(t) = 3° × cos(ν(t))`, et en comptant les années où `δ > 0`, on retrouve
-20,4 ans de jour polaire Nord et 34,1 de nuit. Deux routes distinctes — l'angle
-balayé de Kepler, et le signe de la déclinaison — donnent le même résultat.
-
-Bénéfice pour le Lot 2 : `flux(pôle, phase orbitale)` est entièrement déterminé,
-sans paramètre libre.
-
----
 
 # Ce qui reste ouvert
 
@@ -1596,6 +688,101 @@ Les constantes physiques viennent de `rules/fr/univers/astronomie.md` et
 unique les portera, et tout le reste s'y réfèrera.
 
 ---
+
+
+---
+
+
+# Contrôles du modèle contre le lore
+
+Le pipeline n'a pas à croire le lore sur parole : là où le texte donne des
+chiffres, le modèle géométrique doit les retrouver. Trois contrôles passés.
+
+## Deux largeurs, qui ne mesurent pas la même chose
+
+J'avais d'abord écrit que les 1 500 km du lore valaient exactement la plage
+`−12° → +6°`, en « cohérence vérifiée ». C'était une **coïncidence arithmétique
+promue en fait** — le même travers que la calotte polaire. Le −12° n'a aucun
+statut particulier.
+
+La structure réelle distingue deux grandeurs :
+
+| | Étendue | Largeur |
+|---|---|---:|
+| **Franchissable**, Levant | −18° → +6° | 24° = 2 000 km |
+| **Franchissable**, Couchant | +4,5° → −21° | 25,5° = 2 125 km |
+| **Habitée et explorée** | bornes non fixées par le lore | ~**1 500 km** |
+
+Les extrémités sont traversées mais pas peuplées : trop hostiles. Les 1 500 km
+sont un ordre de grandeur pour le cœur habité — et c'est bien cette largeur-là
+qu'`climat.md` utilise pour ses durées de traversée, « soixante et onze ans à
+l'équateur pour franchir les mille cinq cents kilomètres ».
+
+Le pipeline encode les quatre seuils, qui sont des données sûres, et la largeur
+habitée comme ordre de grandeur. **Il n'invente pas les bornes en latitude du
+cœur habité**, que le lore ne donne pas.
+
+## Les durées de traversée — et l'horloge qu'il ne faut pas confondre
+
+Le terminateur **ne se déplace pas à la vitesse de rotation**. Sur un monde
+quasi-verrouillé, rotation et orbite ne diffèrent que de 4 %, et c'est cet écart
+qui promène le point substellaire autour de la croûte : la période est le **jour
+solaire**, ~1 375 ans, pas les 56,75 ans de la rotation sidérale.
+
+Confondre les deux donne un terminateur **vingt-cinq fois trop rapide** — la
+zone habitée franchie en 2,8 ans au lieu de 71. C'est l'erreur que le pipeline a
+faite avant correction, et un test la garde fermée.
+
+Avec la bonne horloge, la vitesse à l'équateur vaut 21,8 km/an, modulée par
+`cos β` puisque la croûte tourne moins vite aux hautes latitudes :
+
+| Latitude géographique | Modèle | `climat.md` |
+|---|---:|---:|
+| 0° | 68,7 ans | 71 ans |
+| 45° | 97,2 ans | 100 ans |
+| 60° | 137,4 ans | 140 ans |
+
+Les trois valeurs sortent du jour solaire et des 1 500 km, sans qu'on ait fourni
+ni la loi en `1/cos β` ni aucune des durées. L'écart de 3 % est exactement celui
+qui sépare notre jour solaire de 1 375 ans des 1 414 du vault — une différence
+d'arrondi sur la période orbitale.
+
+## Les étés polaires
+
+Tout le tableau d'asymétrie de `climat.md` se reconstruit depuis Kepler avec
+**deux entrées seulement** : périhélie 14 UA, aphélie 21 UA.
+
+| | Modèle | `climat.md` |
+|---|---:|---:|
+| Excentricité | 0,2000 | 0,20 |
+| Été du Nord (périhélie) | 20,4 ans | 20,4 ans |
+| Été du Sud (aphélie) | 34,1 ans | 34,2 ans |
+| Flux au solstice, Nord / Sud | 1,56 / 0,69 F₀ | 1,56 / 0,69 F₀ |
+| Flux moyen, Nord / Sud | 1,37 / 0,81 F₀ | 1,37 / 0,82 F₀ |
+
+Et l'affirmation la plus contre-intuitive du texte se vérifie exactement :
+
+```
+Nord    20,4 ans × 1,366 F₀ = 27,81 F₀·an
+Sud     34,1 ans × 0,815 F₀ = 27,81 F₀·an
+```
+
+Énergie totale identique aux quatre chiffres significatifs — l'analogie du
+chalumeau et de la bougie est littéralement exacte, pas seulement imagée.
+
+Contrôle indépendant : en modélisant la **déclinaison** du point substellaire,
+`δ(t) = 3° × cos(ν(t))`, et en comptant les années où `δ > 0`, on retrouve
+20,4 ans de jour polaire Nord et 34,1 de nuit. Deux routes distinctes — l'angle
+balayé de Kepler, et le signe de la déclinaison — donnent le même résultat.
+
+Bénéfice pour le Lot 2 : `flux(pôle, phase orbitale)` est entièrement déterminé,
+sans paramètre libre.
+
+---
+
+
+---
+
 
 # Références
 
