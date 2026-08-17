@@ -41,6 +41,10 @@
     border: 1px solid rgba(255, 255, 255, .18); border-radius: 4px;
   }
   #hud button[aria-pressed="true"] { background: #24435f; border-color: #47739b; }
+  #exagLigne { display: block; margin-top: 8px; color: #6f8299; font-size: 11px; }
+  #exagLigne[hidden] { display: none; }
+  #exagValeur { color: #d8dee8; font-variant-numeric: tabular-nums; }
+  #exageration { width: 100%; margin-top: 4px; accent-color: #47739b; }
   #legende { margin: 9px 0 0; font-size: 11px; line-height: 1.7; color: #8fa3bd; }
   #erreur { color: #ff9b9b; grid-column: 1 / -1; }
 </style>
@@ -63,6 +67,10 @@
     <dd id="erreur"></dd>
   </dl>
   <button id="relief3d" aria-pressed="false">relief 3D</button>
+  <label id="exagLigne" for="exageration">
+    exagération <output id="exagValeur">10</output>×
+    <input id="exageration" type="range" min="1" max="20" step="1" value="10" />
+  </label>
   <button id="deuxsources" aria-pressed="false">deux sources (monde + bande)</button>
   <button id="graticule" aria-pressed="false">parallèles &amp; méridiens</button>
   <button id="tuiles" aria-pressed="false">bords de tuiles (z/x/y)</button>
@@ -210,6 +218,28 @@ function demarrer(tilejson) {
     center: [0, 0],
     zoom: 2.2,
     maxPitch: 75,
+
+    // ⚠️ LAISSÉ À `true`, après l'avoir coupé et remis. L'histoire vaut le
+    // commentaire, parce que la première correction marchait.
+    //
+    // Le relief 3D n'ombre pas toutes les colonnes de tuiles pareil. Mesuré
+    // sur deux captures au même zoom, mêmes réglages, seule la largeur de
+    // fenêtre changeant :
+    //
+    //   fenêtre 1 278 px = largeur exacte du monde, AUCUNE copie visible
+    //     colonnes à 22,25 · 22,36 · 22,83          écart  +2,6 %
+    //   fenêtre 1 560 px, 282 px de copies visibles
+    //     colonnes à 31,71 · 20,43 · 20,97 · 31,00  écart +55,2 %
+    //
+    // Le défaut n'apparaît donc que lorsqu'une copie du monde entre dans le
+    // champ, et `renderWorldCopies: false` le supprime — vérifié. Mais il
+    // coûte trop cher : MapLibre contraint alors la caméra pour que le monde
+    // remplisse la fenêtre, donc le zoom minimal dépend de la largeur d'écran
+    // et **la vue planétaire devient inatteignable**. Sur une planète, non.
+    //
+    // La sortie est ailleurs, et elle tombe juste : une copie n'est visible
+    // que si le monde est plus étroit que l'écran, donc à bas zoom — la plage
+    // exacte où le relief 3D ne montre rien. Voir `SEUIL_RELIEF_3D`.
     style: {
       version: 8,
       // DEUX sources sur le même jeu de tuiles, distinguées par la plage de
@@ -257,6 +287,41 @@ function demarrer(tilejson) {
           // L'emprise RENDUE, pas les seuils climatiques : une ligne de
           // tuiles entamée est rendue en entier, donc elle déborde.
           bounds: a.band_bounds,
+        },
+        // Source dédiée au relief 3D, sur le MÊME jeu de fichiers que
+        // « relief ». La duplication est voulue, et MapLibre la réclame
+        // explicitement en console :
+        //
+        //   You are using the same source for a hillshade layer and for 3D
+        //   terrain. Please consider using two separate sources to improve
+        //   rendering quality.
+        //
+        // ⚠️ La raison est mesurable, et elle est brutale : activer le relief
+        // 3D **mute la source qu'il vise**. Le gestionnaire de terrain fait
+        //
+        //   this.deltaZoom = 1;
+        //   tileManager.tileSize = source.tileSize * 2 ** this.deltaZoom;
+        //
+        // donc notre `tileSize: 256` devient 512 chez celui qui l'héberge, et
+        // le niveau de tuile — `round(zoom + log2(512/tileSize))` — recule
+        // d'un cran pour TOUT ce qui consomme cette source. Vérifié : à zoom
+        // 1,32 la grille passe de `2/x/y` à `1/x/y` au clic sur le bouton.
+        //
+        // Tant que l'ombrage partageait cette source, il héritait donc de la
+        // réquisition : moitié moins de résolution, et 2,07 fois plus de
+        // contraste puisque le boost interne de MapLibre est indexé sur
+        // `overscaledZ`. Ici, la mutation ne touche plus que cette source-ci.
+        //
+        // Le coût est nul en pratique : mêmes URLs, donc le cache HTTP du
+        // navigateur sert la seconde demande.
+        terrain: {
+          type: "raster-dem",
+          tiles: [gabarit],
+          encoding: tilejson.encoding,
+          tileSize: 256,
+          minzoom: tilejson.minzoom,
+          maxzoom: tilejson.maxzoom,
+          bounds: tilejson.bounds,
         },
         graticule: {
           type: "geojson",
@@ -339,15 +404,137 @@ function demarrer(tilejson) {
   // facteur restitue la proportion angulaire correcte. Il vient du TileJSON.
   //
   // Le relief 3D ne peut viser qu'UNE source, indépendamment du montage de
-  // l'ombrage. On le pointe sur « relief », la seule qui couvre à la fois tous
-  // les niveaux et tout le globe.
+  // l'ombrage. Il vise « terrain », qui lui est réservée : la source qu'un
+  // terrain vise se fait muter, et l'ombrage n'a pas à subir ça. Voir le long
+  // commentaire de la déclaration.
   const bouton = $("relief3d");
+
+  /**
+   * Zoom en deçà duquel le relief 3D reste éteint, quoi que demande le bouton.
+   *
+   * **Une seule raison, et il faut être précis sur laquelle.**
+   *
+   * *C'est là que vit le défaut d'ombrage.* Une copie du monde n'entre dans le
+   * champ que si le monde est plus étroit que la fenêtre, `512·2^z < largeur`
+   * — donc sous z=3,9 pour un écran de 8 192 px, plus tôt pour tout écran
+   * réel. Au-delà du seuil, aucune copie ne peut être visible, et le défaut
+   * mesuré à +55 % entre colonnes ne peut pas se produire.
+   *
+   * ⚠️ **Ce seuil n'a rien à voir avec la lisibilité du relief**, contrairement
+   * à ce qui était écrit ici. Le terrain est un fBm de persistance 0,5 et
+   * lacunarité 2, donc d'exposant de Hurst 1 : il est **invariant d'échelle**.
+   * Mesuré sur le MNT de production, sa pente médiane vaut 0,33° à 3,7 km de
+   * portée et 0,16° à 938 km — et le relief local visible à l'écran reste
+   * entre 6 et 12 px à *tous* les niveaux de zoom. Monter dans la pyramide ne
+   * rend pas le relief plus escarpé ; seule l'exagération le fait.
+   */
+  const SEUIL_RELIEF_3D = 4;
+
+  const PITCH_MAX_DEG = 60;
+  const PLAGE_TILT = 2;
+
+  /**
+   * Inclinaison de la caméra en fonction du zoom, au-delà du seuil.
+   *
+   * Un relief 3D regardé à la verticale ne se voit pas : la seule chose qu'il
+   * reste alors est un changement d'éclairage global. Il faut incliner, et le
+   * faire **progressivement depuis le seuil** — à `z = SEUIL` l'inclinaison
+   * vaut exactement 0, donc l'allumage du relief ne produit aucun saut de
+   * caméra. Elle atteint son maximum deux niveaux plus haut, à z=6, où le
+   * relief fait 13,6 px et mérite d'être regardé de biais.
+   *
+   * Interpolation en *smoothstep* `t²(3−2t)` plutôt que linéaire : sa dérivée
+   * s'annule aux deux bouts, donc ni départ ni arrivée brusques pendant un
+   * zoom continu.
+   *
+   * ⚠️ Conséquence assumée : tant que le relief est actif, **l'inclinaison est
+   * une fonction du zoom**, et un réglage manuel à la souris est écrasé au
+   * prochain événement de zoom. C'est le prix d'une caméra qui se règle seule.
+   */
+  const tiltPour = (zoom) => {
+    const t = Math.min(1, Math.max(0, (zoom - SEUIL_RELIEF_3D) / PLAGE_TILT));
+    return PITCH_MAX_DEG * t * t * (3.0 - 2.0 * t);
+  };
+
+  let reliefDemande = false;
+
+  /**
+   * Exagération **de lisibilité**, réglée au curseur — à ne pas confondre avec
+   * la correction de rayon.
+   *
+   * Deux facteurs distincts se multiplient, et les mélanger serait une faute :
+   *
+   *   a.terrain_exaggeration = 1,336 = R⊕ / R_Aeonir
+   *       Correction de rayon. MapLibre raisonne en mètres terrestres ; ce
+   *       facteur restitue la proportion angulaire **exacte**. C'est la
+   *       vérité, et le curseur à 1 la donne telle quelle.
+   *
+   *   le curseur, de 1 à 20
+   *       Choix visuel, et rien d'autre. Il est nécessaire parce que le
+   *       terrain d'Aeonir a une pente médiane mesurée de **0,3°** — une
+   *       plaine alluviale. À 1× le relief est exact et invisible ; il faut
+   *       ×11 pour un aspect de collines, ×36 pour un relief marqué.
+   *
+   * Le curseur affiche donc le facteur visuel seul, jamais le produit :
+   * l'utilisateur choisit une lisibilité, pas une physique.
+   *
+   * ⚠️ Rustine assumée, et datée. Le vrai remède est un zoom plus profond dans
+   * le terminateur — de l'ordre de z=10 — pour que le relief occupe assez de
+   * pixels sans qu'on l'étire. C'est le Lot 7.
+   */
+  const curseur = $("exageration");
+  const exagerationVisuelle = () => Number(curseur.value);
+  const exagerationEffective = () =>
+    exagerationVisuelle() * a.terrain_exaggeration;
+
+  /** Applique le relief si l'utilisateur le veut ET que le zoom le permet. */
+  const appliquerRelief = () => {
+    const permis = map.getZoom() >= SEUIL_RELIEF_3D;
+    const voulu = reliefDemande && permis;
+    const actif = !!map.getTerrain();
+
+    // `setTerrain` reconstruit le maillage : on ne l'appelle que sur
+    // changement d'état, sinon chaque image de zoom le relancerait.
+    if (voulu !== actif) {
+      map.setTerrain(voulu
+        ? { source: "terrain", exaggeration: exagerationEffective() }
+        : null);
+      // En extinction depuis un zoom élevé, l'inclinaison ne peut pas
+      // redescendre par la rampe — elle serait restée à 60°. On la ramène.
+      if (!voulu) map.easeTo({ pitch: 0, duration: 400 });
+    }
+    $("exagLigne").hidden = !reliefDemande;
+    // `setPitch` et non `easeTo` : on suit le zoom image par image, une
+    // animation par événement se mettrait en travers de la suivante.
+    if (voulu) map.setPitch(tiltPour(map.getZoom()));
+
+    bouton.textContent = reliefDemande && !permis
+      ? `relief 3D — en attente de z ${SEUIL_RELIEF_3D}`
+      : "relief 3D";
+  };
+
   bouton.addEventListener("click", () => {
-    const actif = bouton.getAttribute("aria-pressed") === "true";
-    map.setTerrain(actif ? null
-      : { source: "relief", exaggeration: a.terrain_exaggeration });
-    bouton.setAttribute("aria-pressed", String(!actif));
+    reliefDemande = !reliefDemande;
+    bouton.setAttribute("aria-pressed", String(reliefDemande));
+    appliquerRelief();
   });
+  map.on("zoom", appliquerRelief);
+
+  // `input` et non `change` : le relief suit le curseur pendant qu'on le
+  // tire, ce qui est tout l'intérêt d'un réglage visuel — on cherche une
+  // valeur à l'œil, on ne la connaît pas d'avance.
+  //
+  // ⚠️ `setTerrain` et pas seulement une propriété : l'exagération est portée
+  // par la déclaration du terrain, il faut donc la redéclarer. Le maillage se
+  // reconstruit, ce qui reste fluide aux zooms concernés.
+  curseur.addEventListener("input", () => {
+    $("exagValeur").textContent = curseur.value;
+    if (map.getTerrain()) {
+      map.setTerrain({ source: "terrain",
+                       exaggeration: exagerationEffective() });
+    }
+  });
+  $("exagLigne").hidden = true;
 
   /** Bascule un bouton et renvoie son nouvel état. */
   const basculer = (id, effet) => {
