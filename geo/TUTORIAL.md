@@ -30,7 +30,7 @@ les empêche de regonfler :
 | **1** | MNT global — fBm échantillonné en 3D sur la sphère → GeoTIFF → COG | ✅ |
 | **2** | Hydrologie — D8, accumulation, réseau, Strahler, bassins → GeoPackage | ✅ |
 | **3** | Tuileur maison — pyramide XYZ, terrarium, TileJSON | ✅ |
-| **4** | Viewer MapLibre — style spec, `hillshade`, `terrain` | 🚧 porté en React à la route `/sig`, CI `geo` en place ; reste la production des tuiles en CI |
+| **4** | Viewer MapLibre — style spec, `hillshade`, `terrain` | ✅ porté en React à la route `/sig` ; tests en CI, tuiles produites au déploiement |
 | **5** | Tuiles vectorielles MVT — fleuves, lacs, biomes | |
 | **6** | Tuileur **dynamique** — le même code déclenché par requête HTTP, lisant des plages dans le COG, l'époque en paramètre d'URL | |
 | **7** | Relief tectonique — plancher dominant, chaînes de collision, fosses en eau dans le seul terminateur, croûte dilatée/contractée | |
@@ -213,6 +213,22 @@ sur un échantillon de graines puis l'appliquait à celle qu'elle retenait. La
 graine retenue étant plus extrême que l'échantillon, le terrain crevait le
 plafond de relief. Chaque graine est désormais jugée avec **son propre** pic —
 et c'est gratuit, la passe qui calcule le décalage rendait déjà les extrêmes.
+
+## Ce qui se fabrique au déploiement, et pas à l'intégration
+
+Les tuiles ne sont ni versionnées ni produites par `ci.yml` : elles se
+fabriquent dans le workflow de déploiement, en **deux étapes séparables** —
+obtenir le MNT, puis le tuiler — avec un cache indexé sur l'empreinte de
+`calibration.json` et des cinq modules qui déterminent le résultat.
+
+La séparation n'est pas cosmétique. Au Lot 7 le terrain sera défini à la main :
+le MNT cessera d'être une sortie reproductible pour devenir un **actif**, et
+c'est la première étape seule qui changera — « produire » deviendra
+« récupérer ». Le tuilage, le cache et le site n'auront pas à bouger.
+
+Le prix assumé : une régression du tuileur se voit au déploiement et non à
+l'intégration. C'est ce qui justifie que la suite pytest couvre `tiles.py` et
+`pyramid.py` plutôt que de se reposer sur un tuilage de bout en bout.
 
 ---
 
