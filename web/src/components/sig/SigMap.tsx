@@ -40,7 +40,14 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 // MapLibre, qui n'a de sens qu'une fois la carte présente.
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { LAYERS, TERRAIN_SOURCE, buildStyle } from "@/lib/sig/style";
+import {
+  ALL_COLOR_LAYERS,
+  ALL_HILLSHADE_LAYERS,
+  LAYERS,
+  MONTAGES,
+  TERRAIN_SOURCE,
+  buildStyle,
+} from "@/lib/sig/style";
 import {
   EARTH_HYPSOMETRIC,
   TINT_OPACITY_DEFAULT,
@@ -327,30 +334,21 @@ export function SigMap({ tilejsonUrl }: Props) {
   useEffect(() => {
     if (!map) return;
     const shown = (on: boolean) => (on ? "visible" : "none");
+    const actif = multiSource ? MONTAGES.multi : MONTAGES.single;
+    const dormant = multiSource ? MONTAGES.single : MONTAGES.multi;
 
-    map.setLayoutProperty(
-      LAYERS.singleSourceHillshade,
-      "visibility",
-      shown(!multiSource)
-    );
-    map.setLayoutProperty(LAYERS.worldHillshade, "visibility", shown(multiSource));
-    map.setLayoutProperty(LAYERS.bandHillshade, "visibility", shown(multiSource));
-
-    map.setLayoutProperty(
-      LAYERS.singleSourceColor,
-      "visibility",
-      shown(paletteOn && !multiSource)
-    );
-    map.setLayoutProperty(
-      LAYERS.worldColor,
-      "visibility",
-      shown(paletteOn && multiSource)
-    );
-    map.setLayoutProperty(
-      LAYERS.bandColor,
-      "visibility",
-      shown(paletteOn && multiSource)
-    );
+    for (const id of actif.hillshade) {
+      map.setLayoutProperty(id, "visibility", shown(true));
+    }
+    for (const id of dormant.hillshade) {
+      map.setLayoutProperty(id, "visibility", shown(false));
+    }
+    for (const id of actif.color) {
+      map.setLayoutProperty(id, "visibility", shown(paletteOn));
+    }
+    for (const id of dormant.color) {
+      map.setLayoutProperty(id, "visibility", shown(false));
+    }
   }, [map, multiSource, paletteOn]);
 
   // ── L'éclairage ───────────────────────────────────────────────────────
@@ -369,11 +367,7 @@ export function SigMap({ tilejsonUrl }: Props) {
 
   useEffect(() => {
     if (!map) return;
-    const layers = [
-      LAYERS.singleSourceHillshade,
-      LAYERS.worldHillshade,
-      LAYERS.bandHillshade,
-    ];
+    const layers = ALL_HILLSHADE_LAYERS;
 
     // Dernière LATITUDE appliquée : `move` tire des dizaines d'événements par
     // seconde, et repousser un uniforme identique ne sert à rien.
@@ -437,11 +431,7 @@ export function SigMap({ tilejsonUrl }: Props) {
   // le rendu au prochain changement de montage.
   useEffect(() => {
     if (!map) return;
-    for (const id of [
-      LAYERS.singleSourceColor,
-      LAYERS.worldColor,
-      LAYERS.bandColor,
-    ]) {
+    for (const id of ALL_COLOR_LAYERS) {
       map.setPaintProperty(id, "color-relief-opacity", tintOpacity);
     }
   }, [map, tintOpacity]);
