@@ -95,7 +95,7 @@ geo/
   aeonir_gis/     code du pipeline
     calibration.json   produit par calibrate, versionné
   tests/          suite pytest
-  viewer/         visualiseur MapLibre
+  viewer/         prototype MapLibre autonome (la version servie est web/src/{app,components,lib}/sig)
   out/            produits générés (gitignoré)
 ```
 
@@ -253,10 +253,14 @@ qu'il s'agit d'acquérir. Réimplémenter GDAL en TypeScript n'apprendrait rien 
 métier.
 
 Le viewer reste en TypeScript parce que MapLibre est une bibliothèque navigateur.
-Il vivra d'abord en application Vite autonome dans `geo/viewer/`, et ne sera
-porté en route du site qu'une fois fonctionnel : le Next.js de `web/` a des
-particularités documentées dans son `AGENTS.md`, et déboguer du rendu serveur
-pendant qu'on apprend MapLibre est une mauvaise dépense.
+Il a d'abord vécu en page autonome dans `geo/viewer/`, le temps d'apprendre
+MapLibre sans déboguer en même temps du rendu serveur. **C'est fait** : il est
+porté en React + TypeScript dans `web/`, servi à la route `/sig`.
+
+Le prototype de `geo/viewer/` est conservé — il tourne avec le seul `npm` de
+`geo/`, sans le site — mais il n'est plus la référence, et deux implémentations
+du même style finiront par diverger. Voir les dettes de
+[TUTORIAL.md](TUTORIAL.md).
 
 
 

@@ -122,6 +122,12 @@ diagnostiquant un défaut d'ombrage :
 Chaque fois, le chiffre était juste et la conclusion fausse. **Avant de
 conclure, se demander ce que la fenêtre de mesure exclut.**
 
+Et une quatrième, au portage du viewer : une sonde lisait des pixels *dans* le
+canevas et y trouvait bien du relief — ce qui prouvait que le canevas rendait,
+pas que la carte occupait la page. Elle en faisait 300 px de haut sur 1 270
+(piège 39). La mesure avait raison ; elle ne portait simplement pas sur la
+question posée, qui était « pourquoi l'écran est-il noir ».
+
 ## Lire la console avant de sonder
 
 Trois heures de rétro-ingénierie du moteur de rendu de MapLibre pour arriver à
@@ -221,6 +227,13 @@ et c'est gratuit, la passe qui calcule le décalage rendait déjà les extrêmes
   locale d'installer les mêmes roues sur un autre Python — donc un autre GDAL.
 - **L'anisotropie polaire du D8** est mesurée et documentée, pas corrigée : le
   remède professionnel est de traiter les calottes en stéréographique polaire.
+- **Deux visualiseurs pour un seul style.** Le prototype `geo/viewer/index.html`
+  et le portage React de `web/` portent chacun leur copie du style, de la
+  graticule et de la politique du relief. Le portage est la référence ; le
+  prototype survit parce qu'il tourne sans le site. Ils divergeront.
+- **`aeonir_gis/calibrate.py` porte des identifiants français** (`echelle`,
+  `crans`, `rencontres`, `valeurs`, `par_cran`…), contre la règle du dépôt —
+  code en anglais, commentaires en français.
 - **L'artefact d'ombrage de MapLibre** — les colonnes de tuiles ne s'ombrent pas
   toutes pareil dès qu'une copie du monde entre dans le champ. Contourné en
   conditionnant le relief 3D au zoom, pas réparé.
@@ -492,3 +505,51 @@ renumérote pas — du code et des documents y renvoient.
     cible de 0,5, mais 0,884 pour une cible de 1,0 — à `H` élevé, ce sont les
     octaves basses qui portent l'énergie, précisément celles que la fréquence de
     base tronque.
+
+36. **Bundlé, MapLibre 6 ne trouve plus son worker — et ne le dit pas.** La
+    bibliothèque déduit l'URL de son worker de son propre `import.meta.url`, et
+    abandonne si ce n'est pas une URL `http` : `new Worker("")` se résout alors
+    contre le document, et le navigateur reçoit du HTML là où il attendait un
+    module. Symptôme : la carte se construit, le canevas apparaît, `getZoom()`
+    répond — mais le style n'est **jamais** analysé, puisque c'est le travail du
+    worker. `isStyleLoaded()` reste indéfiniment `false`, `getStyle()` ne rend
+    rien, et **aucune erreur ne remonte à `map.on("error")`**. Remède :
+    `setWorkerUrl()`, qui l'emporte sur la déduction, et servir
+    `maplibre-gl-worker.mjs` **avec son voisin `maplibre-gl-shared.mjs`**, que
+    le worker importe en relatif.
+
+    Le prototype vanilla n'y était pas exposé : chargé en module depuis
+    `node_modules/`, son `import.meta.url` était bien une URL `http`.
+
+37. **Un onglet non composé ne rend pas MapLibre — et ça ressemble à une
+    panne.** `Style.loadJSON` attend une frame d'animation avant d'analyser le
+    style. Dans un onglet masqué, en arrière-plan, ou dans un volet que rien
+    n'affiche, `requestAnimationFrame` ne tourne pas : le style reste en
+    suspens, exactement comme au piège 36. Vérifier `document.visibilityState`
+    **avant** d'accuser le code.
+
+    Corollaire d'outillage : sous SwiftShader, une capture d'écran ne composite
+    pas le canevas WebGL — elle rend du noir alors que le tampon de dessin
+    contient l'image. Une capture ne prouve donc rien ; `gl.readPixels()`
+    appelé pendant l'événement `render`, si.
+
+38. **Un `width: 100%` dans une boîte à largeur adaptative gonfle la boîte.**
+    Le panneau du visualiseur, positionné en absolu sans largeur posée, mesurait
+    672 px pour un titre de 171 px : ses boutons en `width: 100%` faisaient
+    résoudre le pourcentage contre la largeur *disponible*, pas contre le
+    contenu. Poser une largeur explicite casse la circularité — et un cadran
+    d'instrument a de toute façon une largeur, contrairement à un bloc de texte.
+
+39. **MapLibre pose sa classe sur VOTRE conteneur, et sa feuille gagne.** Le
+    div qu'on lui donne reçoit `maplibregl-map`, et la feuille de la
+    bibliothèque déclare `.maplibregl-map { position: relative }`. À
+    spécificité égale — deux classes simples — c'est l'**ordre d'injection** qui
+    tranche, et celui d'un bundler ne se décrète pas. Un conteneur en
+    `position: absolute; inset: 0` repasse donc en `relative`, cesse d'être
+    dimensionné, et tombe à **hauteur 0** ; MapLibre retombe alors sur la
+    hauteur par défaut d'un `<canvas>`, 300 px, et la page est noire alors que
+    `isStyleLoaded()` répond `true` et que les tuiles sont chargées.
+
+    Un sélecteur descendant (`.sig .sig-map`) suffit. Le prototype vanilla n'y
+    était pas exposé : il ciblait `#map`, un id, qui bat toute classe — le
+    portage a donc *introduit* le défaut en traduisant un id en classe.
