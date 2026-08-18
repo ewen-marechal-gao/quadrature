@@ -5,8 +5,14 @@
  * contrat ; ce fichier n'apporte que la mise en scène.
  */
 
-import type { StyleSpecification } from "maplibre-gl";
+import type { LayerSpecification, StyleSpecification } from "maplibre-gl";
 import { buildGraticule } from "./graticule";
+import {
+  EARTH_HYPSOMETRIC,
+  TINT_OPACITY_DEFAULT,
+  colorReliefExpression,
+} from "./palette";
+import { NEUTRAL_METHOD, VACUUM_SHADOW } from "./sun";
 import type { AeonirTileJSON } from "./tilejson";
 
 /** Identifiants de couches, pour que les bascules ne manipulent pas de chaînes libres. */
@@ -14,9 +20,25 @@ export const LAYERS = {
   singleSourceHillshade: "hillshade-single",
   worldHillshade: "hillshade-world",
   bandHillshade: "hillshade-band",
+  singleSourceColor: "color-relief-single",
+  worldColor: "color-relief-world",
+  bandColor: "color-relief-band",
   graticule: "graticule",
   graticuleDashed: "graticule-dashed",
 } as const;
+
+/**
+ * Les trois sources de relief, et la couche de chaque famille qui les vise.
+ *
+ * `dem` sert le montage à **source unique**, `world` + `band` celui à **sources
+ * multiples**. Toute famille de couches qui consomme le relief doit exister en
+ * trois exemplaires, sinon la bascule ne compare plus la même chose.
+ */
+const RELIEF_SOURCES = [
+  { source: "dem", hillshade: LAYERS.singleSourceHillshade, color: LAYERS.singleSourceColor },
+  { source: "world", hillshade: LAYERS.worldHillshade, color: LAYERS.worldColor },
+  { source: "band", hillshade: LAYERS.bandHillshade, color: LAYERS.bandColor },
+] as const;
 
 /** Source réservée au relief 3D — voir le commentaire de sa déclaration. */
 export const TERRAIN_SOURCE = "terrain";
@@ -31,7 +53,12 @@ export const TERRAIN_SOURCE = "terrain";
 const LIGHTING = {
   "hillshade-illumination-direction": 0,
   "hillshade-illumination-anchor": "map",
-  "hillshade-shadow-color": "#050a12",
+  // Le régime de départ : ombrage neutre, sans notion d'angle, et sans air.
+  // Les deux bascules le remplacent sur les trois ombrages — voir sun.ts, qui
+  // porte les mesures et la limite : l'éclairage est un uniforme, il ne peut
+  // PAS varier avec la latitude à l'intérieur d'une couche.
+  "hillshade-method": NEUTRAL_METHOD,
+  "hillshade-shadow-color": VACUUM_SHADOW,
   "hillshade-highlight-color": "#cfe0f2",
   "hillshade-accent-color": "#33506e",
 } as const;
@@ -162,6 +189,27 @@ export function buildStyle(
         layout: { visibility: "none" },
         paint: { ...LIGHTING, "hillshade-exaggeration": HILLSHADE_EXAGGERATION },
       },
+
+      // ── Les teintes hypsométriques, PAR-DESSUS l'ombrage ──────────
+      //
+      // Éteintes au départ : le visualiseur reste un instrument de mesure du
+      // relief, la couleur est une lecture qu'on demande.
+      //
+      // Trois couches, une par source, pour que la bascule des montages
+      // continue de comparer deux ensembles complets et non un ombrage d'un
+      // côté contre un ombrage teinté de l'autre.
+      ...RELIEF_SOURCES.map(
+        ({ source, color }): LayerSpecification => ({
+          id: color,
+          type: "color-relief",
+          source,
+          layout: { visibility: "none" },
+          paint: {
+            "color-relief-color": colorReliefExpression(EARTH_HYPSOMETRIC),
+            "color-relief-opacity": TINT_OPACITY_DEFAULT,
+          },
+        })
+      ),
 
       // Éteintes au départ. Le style n'ayant pas de `glyphs`, aucun calque
       // `symbol` n'est possible — donc pas de libellés : l'information passe

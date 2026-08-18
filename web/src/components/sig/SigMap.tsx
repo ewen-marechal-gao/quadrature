@@ -41,6 +41,22 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { LAYERS, TERRAIN_SOURCE, buildStyle } from "@/lib/sig/style";
+import {
+  EARTH_HYPSOMETRIC,
+  TINT_OPACITY_DEFAULT,
+  TINT_OPACITY_MAX,
+  TINT_OPACITY_MIN,
+} from "@/lib/sig/palette";
+import {
+  ATMOSPHERE_SHADOW,
+  NEUTRAL_METHOD,
+  ambientShadow,
+  REALISTIC_METHOD,
+  STAR_AZIMUTH_DEG,
+  VACUUM_SHADOW,
+  starElevationDeg,
+  starHighlight,
+} from "@/lib/sig/sun";
 import { fetchTileJSON, resolveTileTemplate } from "@/lib/sig/tilejson";
 import type { AeonirTileJSON } from "@/lib/sig/tilejson";
 import { tileIndex, wrapLongitude } from "@/lib/sig/mercator";
@@ -79,7 +95,13 @@ export function SigMap({ tilejsonUrl }: Props) {
 
   const [terrainRequested, setTerrainRequested] = useState(false);
   const [exaggeration, setExaggeration] = useState(EXAGGERATION_DEFAULT);
-  const [twoSources, setTwoSources] = useState(false);
+  const [multiSource, setMultiSource] = useState(false);
+  const [realisticLight, setRealisticLight] = useState(false);
+  const [atmosphere, setAtmosphere] = useState(true);
+  /** Élévation de l'étoile au centre de la vue, affichée sur le bouton. */
+  const [starElevation, setStarElevation] = useState(0);
+  const [paletteOn, setPaletteOn] = useState(false);
+  const [tintOpacity, setTintOpacity] = useState(TINT_OPACITY_DEFAULT);
   const [graticuleOn, setGraticuleOn] = useState(false);
   const [tileBoundaries, setTileBoundaries] = useState(false);
 
@@ -298,17 +320,131 @@ export function SigMap({ tilejsonUrl }: Props) {
   //            tuiles hors bande qui n'existent pas : 404, et MapLibre laisse
   //            ce qu'il peut.
   //   allumé — DEUX sources, chacune ne demandant que ce qui existe.
+  //
+  // Les teintes suivent le MÊME montage : sinon la bascule comparerait un
+  // ombrage nu d'un côté à un ombrage teinté de l'autre, et ne dirait plus rien
+  // du montage lui-même.
   useEffect(() => {
     if (!map) return;
+    const shown = (on: boolean) => (on ? "visible" : "none");
+
     map.setLayoutProperty(
       LAYERS.singleSourceHillshade,
       "visibility",
-      twoSources ? "none" : "visible"
+      shown(!multiSource)
     );
-    for (const id of [LAYERS.worldHillshade, LAYERS.bandHillshade]) {
-      map.setLayoutProperty(id, "visibility", twoSources ? "visible" : "none");
+    map.setLayoutProperty(LAYERS.worldHillshade, "visibility", shown(multiSource));
+    map.setLayoutProperty(LAYERS.bandHillshade, "visibility", shown(multiSource));
+
+    map.setLayoutProperty(
+      LAYERS.singleSourceColor,
+      "visibility",
+      shown(paletteOn && !multiSource)
+    );
+    map.setLayoutProperty(
+      LAYERS.worldColor,
+      "visibility",
+      shown(paletteOn && multiSource)
+    );
+    map.setLayoutProperty(
+      LAYERS.bandColor,
+      "visibility",
+      shown(paletteOn && multiSource)
+    );
+  }, [map, multiSource, paletteOn]);
+
+  // ── L'éclairage ───────────────────────────────────────────────────────
+  //
+  // Un seul effet, parce que les deux bascules touchent les mêmes propriétés :
+  // les séparer ferait que la dernière à s'appliquer écraserait l'autre.
+  //
+  // ⚠️ La méthode change avec le réalisme, et ce n'est pas décoratif :
+  // `standard` ignore l'altitude du soleil. Sans ce changement, suivre la
+  // latitude ne produirait strictement rien. Voir sun.ts.
+  //
+  // L'abonnement à `move` est la contrepartie assumée de la limite de MapLibre :
+  // l'élévation ne pouvant pas varier DANS une couche, on la recalcule sur le
+  // centre du champ à chaque déplacement.
+  const twilightFloor = tilejson?.aeonir.band.south_deg ?? -21;
+
+  useEffect(() => {
+    if (!map) return;
+    const layers = [
+      LAYERS.singleSourceHillshade,
+      LAYERS.worldHillshade,
+      LAYERS.bandHillshade,
+    ];
+
+    // Dernière LATITUDE appliquée : `move` tire des dizaines d'événements par
+    // seconde, et repousser un uniforme identique ne sert à rien.
+    //
+    // ⚠️ La latitude, et surtout pas l'élévation. Sous l'équateur l'étoile est
+    // couchée, donc l'élévation est bornée à 0 partout : un garde-fou indexé
+    // sur elle se court-circuiterait dès le premier point négatif et figerait
+    // le crépuscule. Or c'est là, entre l'équateur et le Linceul, que la
+    // lumière varie le plus.
+    let applied = Number.NaN;
+
+    const apply = () => {
+      const lat = map.getCenter().lat;
+      if (Math.abs(lat - applied) < 0.25) return;
+      applied = lat;
+      const elevation = starElevationDeg(lat);
+      setStarElevation(elevation);
+      // L'ombre AVANT la haute lumière : celle-ci se fond vers celle-là, donc
+      // elle a besoin de la valeur du moment, pas de celle d'avant.
+      const shadow = ambientShadow(lat, twilightFloor, atmosphere);
+      for (const id of layers) {
+        map.setPaintProperty(id, "hillshade-illumination-altitude", elevation);
+        map.setPaintProperty(id, "hillshade-shadow-color", shadow);
+        map.setPaintProperty(
+          id,
+          "hillshade-highlight-color",
+          starHighlight(lat, twilightFloor, shadow)
+        );
+      }
+    };
+
+    for (const id of layers) {
+      map.setPaintProperty(
+        id,
+        "hillshade-method",
+        realisticLight ? REALISTIC_METHOD : NEUTRAL_METHOD
+      );
+      // Régime neutre : pas de latitude qui compte, donc l'atmosphère seule.
+      map.setPaintProperty(
+        id,
+        "hillshade-shadow-color",
+        atmosphere ? ATMOSPHERE_SHADOW : VACUUM_SHADOW
+      );
+      map.setPaintProperty(
+        id,
+        "hillshade-illumination-direction",
+        STAR_AZIMUTH_DEG
+      );
     }
-  }, [map, twoSources]);
+
+    if (!realisticLight) return;
+    apply();
+    map.on("move", apply);
+    return () => {
+      map.off("move", apply);
+    };
+  }, [map, realisticLight, atmosphere, twilightFloor]);
+
+  // L'opacité se pousse sur les trois couches à la fois : seule l'une d'elles
+  // est visible, mais laisser les deux autres à l'ancienne valeur ferait sauter
+  // le rendu au prochain changement de montage.
+  useEffect(() => {
+    if (!map) return;
+    for (const id of [
+      LAYERS.singleSourceColor,
+      LAYERS.worldColor,
+      LAYERS.bandColor,
+    ]) {
+      map.setPaintProperty(id, "color-relief-opacity", tintOpacity);
+    }
+  }, [map, tintOpacity]);
 
   useEffect(() => {
     if (!map) return;
@@ -389,7 +525,7 @@ export function SigMap({ tilejsonUrl }: Props) {
         </button>
 
         {terrainRequested && (
-          <label className="sig-exaggeration" htmlFor="sig-exaggeration">
+          <label className="sig-slider" htmlFor="sig-exaggeration">
             exagération <output>{exaggeration}</output>×
             <input
               id="sig-exaggeration"
@@ -407,13 +543,59 @@ export function SigMap({ tilejsonUrl }: Props) {
           </label>
         )}
 
+        {/* ⚠️ Libellé qui RAPPORTE l'état, au lieu de nommer la cible de la
+            bascule comme les autres boutons. Leur convention marche parce que
+            leur état éteint est une absence ; ici les deux positions sont deux
+            montages également réels, et « sources multiples » sur un bouton
+            terne se lit comme une affirmation de ce qui tourne. */}
         <button
           type="button"
-          aria-pressed={twoSources}
-          onClick={toggle(twoSources, setTwoSources)}
+          aria-pressed={multiSource}
+          onClick={toggle(multiSource, setMultiSource)}
+          title="Une source globale sur tous les niveaux, ou plusieurs — le monde jusqu'au partage, la bande au-delà. Le montage multiple supprime les 404 hors bande, au prix d'un double ombrage dans la bande."
         >
-          deux sources (monde + bande)
+          montage — {multiSource ? "sources multiples" : "source unique"}
         </button>
+        <button
+          type="button"
+          aria-pressed={realisticLight}
+          onClick={toggle(realisticLight, setRealisticLight)}
+          title="L'élévation de l'étoile suit la latitude du centre de la vue : dans le repère Étoile, la latitude EST cette élévation."
+        >
+          lumière réaliste
+          {realisticLight ? ` — ☀ ${starElevation.toFixed(1)}°` : ""}
+        </button>
+        <button
+          type="button"
+          aria-pressed={atmosphere}
+          onClick={toggle(atmosphere, setAtmosphere)}
+          title="La lumière diffusée par l'air : sans elle, ce que l'étoile n'atteint pas est noir."
+        >
+          atmosphère
+        </button>
+        <button
+          type="button"
+          aria-pressed={paletteOn}
+          onClick={toggle(paletteOn, setPaletteOn)}
+        >
+          {EARTH_HYPSOMETRIC.label}
+        </button>
+
+        {paletteOn && (
+          <label className="sig-slider" htmlFor="sig-tint-opacity">
+            opacité des teintes{" "}
+            <output>{Math.round(tintOpacity * 100)}</output> %
+            <input
+              id="sig-tint-opacity"
+              type="range"
+              min={TINT_OPACITY_MIN * 100}
+              max={TINT_OPACITY_MAX * 100}
+              step={5}
+              value={Math.round(tintOpacity * 100)}
+              onChange={(e) => setTintOpacity(Number(e.target.value) / 100)}
+            />
+          </label>
+        )}
         <button
           type="button"
           aria-pressed={graticuleOn}

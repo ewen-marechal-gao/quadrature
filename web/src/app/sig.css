@@ -123,19 +123,19 @@
   border-color: #47739b;
 }
 
-.sig-exaggeration {
+.sig-slider {
   display: block;
   margin-top: 8px;
   color: #6f8299;
   font-size: 11px;
 }
 
-.sig-exaggeration output {
+.sig-slider output {
   color: #d8dee8;
   font-variant-numeric: tabular-nums;
 }
 
-.sig-exaggeration input {
+.sig-slider input {
   width: 100%;
   margin-top: 4px;
   accent-color: #47739b;
