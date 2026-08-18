@@ -2,28 +2,37 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "geo-viewer",
-      "runtimeExecutable": "geo/.venv/Scripts/python.exe",
-      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "geo"],
-      "port": 8765
-    },
-    {
       "name": "cv-web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-l", "3456", "C:\\Users\\Ewen\\Documents\\Emploi\\cv-web"],
+      "runtimeArgs": [
+        "serve",
+        "-l",
+        "3456",
+        "C:\\Users\\Ewen\\Documents\\Emploi\\cv-web"
+      ],
       "port": 3456
     },
     {
       "name": "quadrature-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "C:\\Users\\Ewen\\Documents\\Quadrature\\web"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "C:\\Users\\Ewen\\Documents\\Quadrature\\web"
+      ],
       "port": 3000,
       "autoPort": true
     },
     {
       "name": "quadrature-public",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-l", "4321", "C:\\Users\\Ewen\\Documents\\Quadrature\\web\\out"],
+      "runtimeArgs": [
+        "serve",
+        "-l",
+        "4321",
+        "C:\\Users\\Ewen\\Documents\\Quadrature\\web\\out"
+      ],
       "port": 4321
     }
   ]

@@ -95,7 +95,6 @@ geo/
   aeonir_gis/     code du pipeline
     calibration.json   produit par calibrate, versionné
   tests/          suite pytest
-  viewer/         prototype MapLibre autonome (la version servie est web/src/{app,components,lib}/sig)
   out/            produits générés (gitignoré)
 ```
 
@@ -150,14 +149,9 @@ La pyramide de tuiles terrarium. `--split-zoom` déplace la bascule monde/bande,
 `--epoch` change l'époque du repère Étoile, `--full-precision` encode le canal
 bleu.
 
-Le visualiseur se sert en **HTTP** — un module ES ne se charge jamais depuis
-`file://` :
-
-```bash
-cd viewer && npm install && npm start
-```
-
-puis <http://localhost:8765/viewer/>.
+Le visualiseur ne vit plus ici : il est servi par le site, à la route `/sig`.
+Depuis `web/`, `npm run dev` — le script `copy-aeonir-tiles.mjs` y recopie
+`out/tiles` avant de démarrer.
 
 ---
 
@@ -167,7 +161,7 @@ puis <http://localhost:8765/viewer/>.
 calibrate.py ──→ calibration.json   graine et échelle, mesurées
                         │
 noise.py ──→ dem.py ────┴──→ COG ─┬─→ hydro.py + export.py ──→ GeoPackage
-                                  └─→ tiles.py + pyramid.py ──→ PNG + TileJSON ──→ viewer/
+                                  └─→ tiles.py + pyramid.py ──→ PNG + TileJSON ──→ web/ (/sig)
 ```
 
 Chaque module porte sa propre justification en docstring — **ce tableau ne la
@@ -184,7 +178,6 @@ répète pas**, il dit où chercher.
 | `export.py` | raster → vecteur, GeoPackage | découpage à l'antiméridien du repère |
 | `tiles.py` | adressage XYZ, cartographie inverse, terrarium | le schéma XYZ ne référence **aucun rayon** |
 | `pyramid.py` | empilement, PNG, TileJSON | deux régimes, seuil imposé par la fermeture |
-| `viewer/` | MapLibre 6, ESM, vendu localement | une source dédiée au terrain |
 
 ## La grille se déduit, elle ne se choisit pas
 
@@ -252,15 +245,20 @@ Rupture assumée avec le monoculture TypeScript du dépôt. L'écosystème géom
 qu'il s'agit d'acquérir. Réimplémenter GDAL en TypeScript n'apprendrait rien du
 métier.
 
-Le viewer reste en TypeScript parce que MapLibre est une bibliothèque navigateur.
-Il a d'abord vécu en page autonome dans `geo/viewer/`, le temps d'apprendre
-MapLibre sans déboguer en même temps du rendu serveur. **C'est fait** : il est
-porté en React + TypeScript dans `web/`, servi à la route `/sig`.
+Le viewer reste en TypeScript parce que MapLibre est une bibliothèque
+navigateur. Il a d'abord vécu en page autonome dans `geo/viewer/`, le temps
+d'apprendre MapLibre sans déboguer en même temps du rendu serveur. Cette page a
+été **supprimée** une fois le portage fait : deux implémentations du même style
+n'auraient pas tenu longtemps identiques, et c'est précisément le style qui
+porte les enseignements du chantier.
 
-Le prototype de `geo/viewer/` est conservé — il tourne avec le seul `npm` de
-`geo/`, sans le site — mais il n'est plus la référence, et deux implémentations
-du même style finiront par diverger. Voir les dettes de
-[TUTORIAL.md](TUTORIAL.md).
+Le visualiseur vit donc dans `web/` :
+
+| | |
+|---|---|
+| `src/lib/sig/` | ce qui se relit sans navigateur — contrat TileJSON, style, graticule, politique du relief |
+| `src/components/sig/` | le cycle de vie et le branchement React ↔ MapLibre |
+| `src/app/sig/` | la route, publique mais non annoncée |
 
 
 

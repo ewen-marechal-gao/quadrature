@@ -3,7 +3,9 @@
 /**
  * SigMap — le visualiseur MapLibre du relief d'Aeonir.
  *
- * Portage du prototype `geo/viewer/index.html`. Le partage des rôles :
+ * Portage du prototype `geo/viewer/index.html`, supprimé une fois ce fichier
+ * en place — le chercher dans l'historique git plutôt que sur le disque. Le
+ * partage des rôles :
  * `src/lib/sig/` porte tout ce qui se relit sans navigateur (contrat TileJSON,
  * style, graticule, politique du relief), ce fichier ne porte que le **cycle de
  * vie** et le **branchement React ↔ MapLibre**.

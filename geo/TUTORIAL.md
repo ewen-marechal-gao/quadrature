@@ -30,7 +30,7 @@ les empêche de regonfler :
 | **1** | MNT global — fBm échantillonné en 3D sur la sphère → GeoTIFF → COG | ✅ |
 | **2** | Hydrologie — D8, accumulation, réseau, Strahler, bassins → GeoPackage | ✅ |
 | **3** | Tuileur maison — pyramide XYZ, terrarium, TileJSON | ✅ |
-| **4** | Viewer MapLibre — style spec, `hillshade`, `terrain` | 🚧 visualiseur local en place, CI `geo` en place |
+| **4** | Viewer MapLibre — style spec, `hillshade`, `terrain` | 🚧 porté en React à la route `/sig`, CI `geo` en place ; reste la production des tuiles en CI |
 | **5** | Tuiles vectorielles MVT — fleuves, lacs, biomes | |
 | **6** | Tuileur **dynamique** — le même code déclenché par requête HTTP, lisant des plages dans le COG, l'époque en paramètre d'URL | |
 | **7** | Relief tectonique — plancher dominant, chaînes de collision, fosses en eau dans le seul terminateur, croûte dilatée/contractée | |
@@ -227,10 +227,6 @@ et c'est gratuit, la passe qui calcule le décalage rendait déjà les extrêmes
   locale d'installer les mêmes roues sur un autre Python — donc un autre GDAL.
 - **L'anisotropie polaire du D8** est mesurée et documentée, pas corrigée : le
   remède professionnel est de traiter les calottes en stéréographique polaire.
-- **Deux visualiseurs pour un seul style.** Le prototype `geo/viewer/index.html`
-  et le portage React de `web/` portent chacun leur copie du style, de la
-  graticule et de la politique du relief. Le portage est la référence ; le
-  prototype survit parce qu'il tourne sans le site. Ils divergeront.
 - **`aeonir_gis/calibrate.py` porte des identifiants français** (`echelle`,
   `crans`, `rencontres`, `valeurs`, `par_cran`…), contre la règle du dépôt —
   code en anglais, commentaires en français.
