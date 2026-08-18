@@ -233,7 +233,7 @@ def elevation_bands(width: int = WIDTH, height: int = HEIGHT, *,
     tomberait exactement sur le pôle et la dernière un pixel avant l'autre.
     """
     noise = GradientNoise3D(default_seed() if seed is None else seed)
-    echelle = (default_relief_sigma_m() if relief_sigma_m is None
+    scale = (default_relief_sigma_m() if relief_sigma_m is None
                else relief_sigma_m)
     longitudes = -180.0 + (np.arange(width) + 0.5) * (360.0 / width)
 
@@ -246,7 +246,7 @@ def elevation_bands(width: int = WIDTH, height: int = HEIGHT, *,
                     base_frequency=base_frequency, lacunarity=lacunarity,
                     persistence=persistence)
 
-        yield first_row, (field * echelle).astype(np.float32)
+        yield first_row, (field * scale).astype(np.float32)
 
 
 def crust_transform(width: int = WIDTH, height: int = HEIGHT):

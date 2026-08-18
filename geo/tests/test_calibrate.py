@@ -20,7 +20,7 @@ from aeonir_gis import dem
 
 
 @pytest.fixture(scope="module")
-def enregistre():
+def recorded():
     return calibration.load()
 
 
@@ -28,7 +28,7 @@ def enregistre():
 #  Le contrat : le fichier décrit-il encore le générateur du code ?
 # ─────────────────────────────────────────────────────────────────────────
 
-def test_the_calibration_describes_the_current_generator(enregistre):
+def test_the_calibration_describes_the_current_generator(recorded):
     """**Le garde-fou principal.**
 
     `calibration.json` n'est valable que pour la cascade qui l'a produit.
@@ -36,19 +36,19 @@ def test_the_calibration_describes_the_current_generator(enregistre):
     `python -m aeonir_gis.calibrate` laisserait une graine choisie pour un
     autre terrain — et un datum faux, silencieusement.
     """
-    assert enregistre.octaves == dem.OCTAVES
-    assert enregistre.base_frequency == pytest.approx(dem.BASE_FREQUENCY)
-    assert enregistre.lacunarity == pytest.approx(dem.LACUNARITY)
-    assert enregistre.persistence == pytest.approx(dem.PERSISTENCE, abs=1e-6)
-    assert enregistre.hurst_target == pytest.approx(dem.HURST_TARGET)
-    assert enregistre.relief_ceiling_m == pytest.approx(k.MAX_RELIEF_M)
+    assert recorded.octaves == dem.OCTAVES
+    assert recorded.base_frequency == pytest.approx(dem.BASE_FREQUENCY)
+    assert recorded.lacunarity == pytest.approx(dem.LACUNARITY)
+    assert recorded.persistence == pytest.approx(dem.PERSISTENCE, abs=1e-6)
+    assert recorded.hurst_target == pytest.approx(dem.HURST_TARGET)
+    assert recorded.relief_ceiling_m == pytest.approx(k.MAX_RELIEF_M)
 
 
-def test_the_modules_read_the_file_rather_than_a_copy(enregistre):
+def test_the_modules_read_the_file_rather_than_a_copy(recorded):
     """`dem` ne doit porter aucune copie des valeurs calibrées."""
-    assert dem.default_seed() == enregistre.seed
+    assert dem.default_seed() == recorded.seed
     assert dem.default_relief_sigma_m() == pytest.approx(
-        k.MAX_RELIEF_M / enregistre.peak_to_sigma)
+        k.MAX_RELIEF_M / recorded.peak_to_sigma)
     assert not hasattr(dem, "DEFAULT_SEED")
     assert not hasattr(dem, "RELIEF_SIGMA_M")
 
@@ -66,17 +66,17 @@ def test_the_scan_returns_the_first_acceptable_seed_not_the_best():
     """
     cascade = {"octaves": 3, "base_frequency": 2.0, "lacunarity": 2.0,
                "persistence": 0.5}
-    seed, offset, echelle, rencontres = calibrate.scan_seeds(
+    seed, offset, scale, offsets_seen = calibrate.scan_seeds(
         64, 50, 60.0, **cascade)
 
     assert abs(offset) <= 60.0
     # Le balayage s'arrête à la première réussite, et rend tout ce qu'il a vu.
-    assert len(rencontres) == seed + 1
-    assert rencontres[-1] == pytest.approx(offset)
+    assert len(offsets_seen) == seed + 1
+    assert offsets_seen[-1] == pytest.approx(offset)
     # Chaque graine écartée devait effectivement l'être.
-    assert all(abs(v) > 60.0 for v in rencontres[:-1])
+    assert all(abs(v) > 60.0 for v in offsets_seen[:-1])
     # L'échelle rendue est celle de CETTE graine, pas d'un échantillon.
-    assert echelle > 0.0
+    assert scale > 0.0
 
 
 def test_the_scan_fails_loudly_rather_than_returning_a_bad_seed():
@@ -86,17 +86,17 @@ def test_the_scan_fails_loudly_rather_than_returning_a_bad_seed():
                              lacunarity=2.0, persistence=0.5)
 
 
-def test_the_recorded_offset_is_stable_across_resolutions(enregistre):
+def test_the_recorded_offset_is_stable_across_resolutions(recorded):
     """Ce qui autorise à choisir sur une petite grille.
 
     Sans cette propriété, un balayage à 512 px ne dirait rien du raster de
     production, et le critère ne serait qu'un rituel.
     """
-    valeurs = list(enregistre.resolution_offsets_m.values())
-    assert max(valeurs) - min(valeurs) <= enregistre.offset_tolerance_m
+    values = list(recorded.resolution_offsets_m.values())
+    assert max(values) - min(values) <= recorded.offset_tolerance_m
 
 
-def test_the_measured_hurst_follows_the_target(enregistre):
+def test_the_measured_hurst_follows_the_target(recorded):
     """La rugosité demandée par construction est bien celle qu'on obtient.
 
     ⚠️ `p = l^(−H)` est une identité de la cascade **idéale**, à octaves
@@ -109,11 +109,11 @@ def test_the_measured_hurst_follows_the_target(enregistre):
     D'où une tolérance large et assumée : ce test garde l'ordre de grandeur et
     la direction, pas une égalité que la cascade finie ne peut pas tenir.
     """
-    assert enregistre.hurst_measured == pytest.approx(dem.HURST_TARGET,
+    assert recorded.hurst_measured == pytest.approx(dem.HURST_TARGET,
                                                       abs=0.15)
     # Et surtout : la mesure ne doit jamais DÉPASSER la cible. Un fBm tronqué
     # est toujours plus lisse que son idéal, jamais plus rugueux.
-    assert enregistre.hurst_measured <= dem.HURST_TARGET + 0.01
+    assert recorded.hurst_measured <= dem.HURST_TARGET + 0.01
 
 
 def test_a_flatter_cascade_would_measure_a_higher_hurst():
@@ -159,17 +159,17 @@ def test_a_missing_calibration_names_the_command_that_produces_it(tmp_path):
         calibration.load(tmp_path / "absent.json")
 
 
-def test_the_calibration_round_trips(tmp_path, enregistre):
-    chemin = tmp_path / "calibration.json"
-    calibration.save(enregistre, chemin)
-    assert calibration.load(chemin) == enregistre
+def test_the_calibration_round_trips(tmp_path, recorded):
+    path = tmp_path / "calibration.json"
+    calibration.save(recorded, path)
+    assert calibration.load(path) == recorded
 
 
-def test_the_file_stays_readable_in_diff(tmp_path, enregistre):
+def test_the_file_stays_readable_in_diff(tmp_path, recorded):
     """Indenté et trié : un résultat de mesure se relit en revue de code."""
-    chemin = tmp_path / "calibration.json"
-    calibration.save(enregistre, chemin)
-    lignes = chemin.read_text(encoding="utf-8").splitlines()
-    assert len(lignes) > 10
-    cles = [ligne.split('"')[1] for ligne in lignes if ligne.startswith('  "')]
-    assert cles == sorted(cles)
+    path = tmp_path / "calibration.json"
+    calibration.save(recorded, path)
+    lines = path.read_text(encoding="utf-8").splitlines()
+    assert len(lines) > 10
+    keys = [line.split('"')[1] for line in lines if line.startswith('  "')]
+    assert keys == sorted(keys)

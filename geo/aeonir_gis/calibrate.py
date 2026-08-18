@@ -122,16 +122,16 @@ def scan_seeds(width: int = SCAN_WIDTH, count: int = SCAN_SEEDS,
     reste une affirmation ; avec elle, on sait de combien on manquerait le
     datum en ne choisissant pas.
     """
-    rencontres = []
+    offsets_seen = []
     for seed in range(count):
         normalise, low, high = area_weighted_mean(width, seed=seed,
                                                   relief_sigma_m=1.0,
                                                   **cascade)
-        echelle = k.MAX_RELIEF_M / (max(abs(low), abs(high)) * growth)
-        offset = normalise * echelle
-        rencontres.append(offset)
+        scale = k.MAX_RELIEF_M / (max(abs(low), abs(high)) * growth)
+        offset = normalise * scale
+        offsets_seen.append(offset)
         if abs(offset) <= tolerance:
-            return seed, offset, echelle, rencontres
+            return seed, offset, scale, offsets_seen
     raise RuntimeError(
         f"aucune graine parmi {count} ne tient dans ±{tolerance} m — "
         "élargir le balayage ou revoir le générateur")
@@ -185,9 +185,9 @@ def measure_hurst(width: int = 4096, *, seed: int, **generator) -> float:
             rows.append(band[lo:hi].astype(np.float64))
     strip = np.vstack(rows)
 
-    metres_par_px = k.CIRCUMFERENCE_M / width
-    plus_grande_structure_m = k.RADIUS_M / generator["base_frequency"]
-    separation_max = max(4, int(plus_grande_structure_m / 4 / metres_par_px))
+    metres_per_px = k.CIRCUMFERENCE_M / width
+    largest_structure_m = k.RADIUS_M / generator["base_frequency"]
+    separation_max = max(4, int(largest_structure_m / 4 / metres_per_px))
 
     separations, deltas = [], []
     step = 1
@@ -220,29 +220,29 @@ def calibrate(*, scan_width: int = SCAN_WIDTH, count: int = SCAN_SEEDS,
     #
     # Seule la CROISSANCE se mesure ici, jamais le pic lui-même : celui-ci est
     # propre à chaque graine, et c'est le balayage qui l'établit.
-    large = max(verify_widths)
-    print(f"Croissance du pic entre {scan_width} et {large} px")
-    peak_petit = measure_peak_to_sigma(scan_width, range(8), **cascade)
-    peak_grand = measure_peak_to_sigma(large, range(8), **cascade)
-    par_cran = peak_grand / peak_petit
-    crans = math.log(dem.WIDTH / scan_width) / math.log(large / scan_width)
-    croissance = par_cran ** crans
-    print(f"  {peak_petit:.3f} σ  puis  {peak_grand:.3f} σ "
-          f"— ×{par_cran:.4f} par cran")
-    print(f"  extrapolation sur {crans:.2f} cran(s) jusqu'à {dem.WIDTH} px : "
-          f"×{croissance:.4f}")
+    wide = max(verify_widths)
+    print(f"Croissance du pic entre {scan_width} et {wide} px")
+    peak_narrow = measure_peak_to_sigma(scan_width, range(8), **cascade)
+    peak_wide = measure_peak_to_sigma(wide, range(8), **cascade)
+    per_step = peak_wide / peak_narrow
+    steps = math.log(dem.WIDTH / scan_width) / math.log(wide / scan_width)
+    growth_to_full = per_step ** steps
+    print(f"  {peak_narrow:.3f} σ  puis  {peak_wide:.3f} σ "
+          f"— ×{per_step:.4f} par cran")
+    print(f"  extrapolation sur {steps:.2f} cran(s) jusqu'à {dem.WIDTH} px : "
+          f"×{growth_to_full:.4f}")
 
     # ── 2. la graine, jugée avec SA propre échelle ───────────────────────
     print(f"Balayage de {count} graines, tolérance ±{tolerance:g} m")
-    seed, offset, relief_sigma, rencontres = scan_seeds(
-        scan_width, count, tolerance, croissance, **cascade)
-    offset_std = float(np.std(rencontres))
+    seed, offset, relief_sigma, offsets_seen = scan_seeds(
+        scan_width, count, tolerance, growth_to_full, **cascade)
+    offset_std = float(np.std(offsets_seen))
     peak = k.MAX_RELIEF_M / relief_sigma
-    print(f"  graine {seed} retenue au bout de {len(rencontres)} essais "
+    print(f"  graine {seed} retenue au bout de {len(offsets_seen)} essais "
           f"— décalage {offset:+.2f} m")
     print(f"  pic {peak:.3f} σ  →  RELIEF_SIGMA_M = {relief_sigma:.1f} m")
     print(f"  dispersion des décalages écartés : σ = {offset_std:.0f} m, "
-          f"pire {max(abs(v) for v in rencontres):.0f} m")
+          f"pire {max(abs(v) for v in offsets_seen):.0f} m")
 
     generator = {**cascade, "relief_sigma_m": relief_sigma}
 
@@ -266,9 +266,9 @@ def calibrate(*, scan_width: int = SCAN_WIDTH, count: int = SCAN_SEEDS,
         area_weighted_offset_m=round(offset, 4),
         offset_tolerance_m=tolerance,
         seeds_scanned=count,
-        seeds_tried=len(rencontres),
+        seeds_tried=len(offsets_seen),
         offset_std_m=round(offset_std, 1),
-        offset_worst_m=round(max(abs(v) for v in rencontres), 1),
+        offset_worst_m=round(max(abs(v) for v in offsets_seen), 1),
         scan_width=scan_width,
         resolution_offsets_m={w: round(v, 4) for w, v in offsets.items()},
         minimum_m=round(minimum, 1),
@@ -307,20 +307,20 @@ def main(argv=None) -> int:
                        tolerance=args.tolerance)
     print(f"\n{result}")
 
-    depasse = max(abs(result.minimum_m), abs(result.maximum_m))
-    if depasse > result.relief_ceiling_m:
+    extreme = max(abs(result.minimum_m), abs(result.maximum_m))
+    if extreme > result.relief_ceiling_m:
         print(f"\n  ⚠️  les extrêmes dépassent le plafond de relief "
-              f"({depasse:.0f} > {result.relief_ceiling_m:.0f} m). Le "
+              f"({extreme:.0f} > {result.relief_ceiling_m:.0f} m). Le "
               f"générateur n'écrête pas : revoir RELIEF_SIGMA_M ou le plafond.")
 
     # Le balayage sur petite grille n'est légitime que si le décalage ne bouge
     # pas d'une résolution à l'autre. S'il bouge plus que la tolérance, le
     # critère ne veut plus rien dire : la graine retenue pourrait le violer à
     # la résolution de production.
-    valeurs = list(result.resolution_offsets_m.values())
-    dispersion = max(valeurs) - min(valeurs)
-    if dispersion > result.offset_tolerance_m:
-        print(f"\n  ⚠️  le décalage varie de {dispersion:.2f} m selon la "
+    values = list(result.resolution_offsets_m.values())
+    spread = max(values) - min(values)
+    if spread > result.offset_tolerance_m:
+        print(f"\n  ⚠️  le décalage varie de {spread:.2f} m selon la "
               f"résolution, soit plus que la tolérance de "
               f"±{result.offset_tolerance_m:g} m. Le choix sur petite grille "
               f"ne garantit alors rien : élargir --scan-width.")
