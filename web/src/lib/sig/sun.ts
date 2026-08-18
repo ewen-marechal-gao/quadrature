@@ -76,8 +76,25 @@ export const STAR_HIGHLIGHT = "#ffd9a0";
 /** Ombre sans atmosphère : ce que l'étoile n'atteint pas ne reçoit rien. */
 export const VACUUM_SHADOW = "#050a12";
 
-/** Ombre avec atmosphère : la lumière diffusée par l'air. */
+/**
+ * Ombre avec atmosphère : la couleur que prend une face privée de lumière
+ * directe — c'est-à-dire, physiquement, la couleur du ciel.
+ *
+ * Réglable au panneau : un air plus dense, plus poussiéreux ou d'une autre
+ * composition ne diffuse pas la même teinte.
+ */
 export const ATMOSPHERE_SHADOW = "#26333f";
+
+/**
+ * Densité de l'atmosphère, de 0 (vide) à 1 (l'air de référence ci-dessus).
+ *
+ * ⚠️ Ce facteur multiplie l'atténuation par la latitude, il ne la remplace pas :
+ * l'utilisateur règle l'air qu'il y a **en plein jour**, et le modèle
+ * l'assombrit ensuite à mesure que l'étoile se couche.
+ */
+export const ATMOSPHERE_DENSITY_MIN = 0.1;
+export const ATMOSPHERE_DENSITY_MAX = 1;
+export const ATMOSPHERE_DENSITY_DEFAULT = 1;
 
 /**
  * Élévation de l'étoile pour une latitude Étoile, en degrés.
@@ -170,15 +187,24 @@ export function starHighlight(
  * Sans atmosphère il n'y a rien à diffuser, et la couleur ne dépend donc pas de
  * la latitude — un monde sans air a la même nuit partout.
  */
+export interface AtmosphereSettings {
+  /** Éteinte, l'air disparaît et la nuit devient la même partout. */
+  enabled: boolean;
+  /** Couleur du ciel, `#rrggbb`. */
+  color: string;
+  /** Densité, de `ATMOSPHERE_DENSITY_MIN` à `ATMOSPHERE_DENSITY_MAX`. */
+  density: number;
+}
+
 export function ambientShadow(
   latDeg: number,
   twilightFloorDeg: number,
-  atmosphere: boolean
+  atmosphere: AtmosphereSettings
 ): string {
-  if (!atmosphere) return VACUUM_SHADOW;
+  if (!atmosphere.enabled) return VACUUM_SHADOW;
   return mixHex(
     "#000000",
-    ATMOSPHERE_SHADOW,
-    ambientIntensity(latDeg, twilightFloorDeg)
+    atmosphere.color,
+    atmosphere.density * ambientIntensity(latDeg, twilightFloorDeg)
   );
 }

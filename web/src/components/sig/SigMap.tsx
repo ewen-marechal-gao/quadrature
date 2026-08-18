@@ -55,6 +55,9 @@ import {
   TINT_OPACITY_MIN,
 } from "@/lib/sig/palette";
 import {
+  ATMOSPHERE_DENSITY_DEFAULT,
+  ATMOSPHERE_DENSITY_MAX,
+  ATMOSPHERE_DENSITY_MIN,
   ATMOSPHERE_SHADOW,
   NEUTRAL_METHOD,
   ambientShadow,
@@ -90,6 +93,28 @@ interface Props {
   tilejsonUrl: string;
 }
 
+/**
+ * Le point d'interrogation d'une option, et son explication au survol.
+ *
+ * Le texte vit dans `data-aide` et l'infobulle est un `::after` — voir sig.css
+ * pour le pourquoi. `tabIndex` le rend atteignable au clavier, où `:focus-visible`
+ * ouvre la même boîte : une aide qu'on ne peut pas lire sans souris n'en est pas
+ * une.
+ */
+function Aide({ texte }: { texte: string }) {
+  return (
+    <span
+      className="sig-aide"
+      data-aide={texte}
+      tabIndex={0}
+      role="note"
+      aria-label={texte}
+    >
+      ?
+    </span>
+  );
+}
+
 export function SigMap({ tilejsonUrl }: Props) {
   const container = useRef<HTMLDivElement>(null);
 
@@ -105,6 +130,8 @@ export function SigMap({ tilejsonUrl }: Props) {
   const [multiSource, setMultiSource] = useState(false);
   const [realisticLight, setRealisticLight] = useState(false);
   const [atmosphere, setAtmosphere] = useState(true);
+  const [skyColor, setSkyColor] = useState(ATMOSPHERE_SHADOW);
+  const [skyDensity, setSkyDensity] = useState(ATMOSPHERE_DENSITY_DEFAULT);
   /** Élévation de l'étoile au centre de la vue, affichée sur le bouton. */
   const [starElevation, setStarElevation] = useState(0);
   const [paletteOn, setPaletteOn] = useState(false);
@@ -368,6 +395,7 @@ export function SigMap({ tilejsonUrl }: Props) {
   useEffect(() => {
     if (!map) return;
     const layers = ALL_HILLSHADE_LAYERS;
+    const air = { enabled: atmosphere, color: skyColor, density: skyDensity };
 
     // Dernière LATITUDE appliquée : `move` tire des dizaines d'événements par
     // seconde, et repousser un uniforme identique ne sert à rien.
@@ -387,7 +415,7 @@ export function SigMap({ tilejsonUrl }: Props) {
       setStarElevation(elevation);
       // L'ombre AVANT la haute lumière : celle-ci se fond vers celle-là, donc
       // elle a besoin de la valeur du moment, pas de celle d'avant.
-      const shadow = ambientShadow(lat, twilightFloor, atmosphere);
+      const shadow = ambientShadow(lat, twilightFloor, air);
       for (const id of layers) {
         map.setPaintProperty(id, "hillshade-illumination-altitude", elevation);
         map.setPaintProperty(id, "hillshade-shadow-color", shadow);
@@ -406,10 +434,11 @@ export function SigMap({ tilejsonUrl }: Props) {
         realisticLight ? REALISTIC_METHOD : NEUTRAL_METHOD
       );
       // Régime neutre : pas de latitude qui compte, donc l'atmosphère seule.
+      // Régime neutre : la latitude ne compte pas, seul l'air répond.
       map.setPaintProperty(
         id,
         "hillshade-shadow-color",
-        atmosphere ? ATMOSPHERE_SHADOW : VACUUM_SHADOW
+        ambientShadow(0, twilightFloor, air)
       );
       map.setPaintProperty(
         id,
@@ -424,7 +453,7 @@ export function SigMap({ tilejsonUrl }: Props) {
     return () => {
       map.off("move", apply);
     };
-  }, [map, realisticLight, atmosphere, twilightFloor]);
+  }, [map, realisticLight, atmosphere, skyColor, skyDensity, twilightFloor]);
 
   // L'opacité se pousse sur les trois couches à la fois : seule l'une d'elles
   // est visible, mais laisser les deux autres à l'ancienne valeur ferait sauter
@@ -504,19 +533,25 @@ export function SigMap({ tilejsonUrl }: Props) {
           {error && <dd className="sig-error">{error}</dd>}
         </dl>
 
-        <button
-          type="button"
-          aria-pressed={terrainRequested}
-          onClick={toggle(terrainRequested, setTerrainRequested)}
-        >
-          {waitingForZoom
-            ? `relief 3D — en attente de z ${TERRAIN_MIN_ZOOM}`
-            : "relief 3D"}
-        </button>
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={terrainRequested}
+            onClick={toggle(terrainRequested, setTerrainRequested)}
+          >
+            {waitingForZoom
+              ? `relief 3D — en attente de z ${TERRAIN_MIN_ZOOM}`
+              : "relief 3D"}
+          </button>
+          <Aide
+            texte={`Déforme réellement le maillage au lieu de simuler du volume. Reste éteint sous le zoom ${TERRAIN_MIN_ZOOM} : c'est là que vit un défaut d'ombrage de MapLibre, visible dès qu'une copie du monde entre dans le champ.`}
+          />
+        </div>
 
         {terrainRequested && (
           <label className="sig-slider" htmlFor="sig-exaggeration">
             exagération <output>{exaggeration}</output>×
+            <Aide texte="Le curseur affiche le facteur VISUEL seul. Il se multiplie en interne par la correction de rayon 1,336 — Aeonir est plus petite que la Terre, dont MapLibre suppose le rayon. À 1×, le relief est exact et presque invisible." />
             <input
               id="sig-exaggeration"
               type="range"
@@ -538,43 +573,86 @@ export function SigMap({ tilejsonUrl }: Props) {
             leur état éteint est une absence ; ici les deux positions sont deux
             montages également réels, et « sources multiples » sur un bouton
             terne se lit comme une affirmation de ce qui tourne. */}
-        <button
-          type="button"
-          aria-pressed={multiSource}
-          onClick={toggle(multiSource, setMultiSource)}
-          title="Une source globale sur tous les niveaux, ou plusieurs — le monde jusqu'au partage, la bande au-delà. Le montage multiple supprime les 404 hors bande, au prix d'un double ombrage dans la bande."
-        >
-          montage — {multiSource ? "sources multiples" : "source unique"}
-        </button>
-        <button
-          type="button"
-          aria-pressed={realisticLight}
-          onClick={toggle(realisticLight, setRealisticLight)}
-          title="L'élévation de l'étoile suit la latitude du centre de la vue : dans le repère Étoile, la latitude EST cette élévation."
-        >
-          lumière réaliste
-          {realisticLight ? ` — ☀ ${starElevation.toFixed(1)}°` : ""}
-        </button>
-        <button
-          type="button"
-          aria-pressed={atmosphere}
-          onClick={toggle(atmosphere, setAtmosphere)}
-          title="La lumière diffusée par l'air : sans elle, ce que l'étoile n'atteint pas est noir."
-        >
-          atmosphère
-        </button>
-        <button
-          type="button"
-          aria-pressed={paletteOn}
-          onClick={toggle(paletteOn, setPaletteOn)}
-        >
-          {EARTH_HYPSOMETRIC.label}
-        </button>
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={multiSource}
+            onClick={toggle(multiSource, setMultiSource)}
+          >
+            montage — {multiSource ? "sources multiples" : "source unique"}
+          </button>
+          <Aide texte="Une source globale sur tous les niveaux, ou quatre couches qui ne se recouvrent jamais. Le rendu est identique ; la source unique réclame seize tuiles inexistantes, que MapLibre remplace en silence par leur ancêtre." />
+        </div>
+
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={realisticLight}
+            onClick={toggle(realisticLight, setRealisticLight)}
+          >
+            lumière réaliste
+            {realisticLight ? ` — ☀ ${starElevation.toFixed(1)}°` : ""}
+          </button>
+          <Aide texte="Dans le repère Étoile, la latitude EST l'élévation de l'étoile. MapLibre n'admettant qu'un soleil par couche, on la recale sur le centre de la vue : monter vers le nord fait réellement lever l'astre, descendre vers le Linceul le couche." />
+        </div>
+
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={atmosphere}
+            onClick={toggle(atmosphere, setAtmosphere)}
+          >
+            atmosphère
+          </button>
+          <Aide texte="La couleur qu'une face prend quand aucune lumière directe ne l'atteint — c'est-à-dire celle du ciel. Sans elle, l'éclairage rasant du terminateur module du noir sur du noir et la carte s'éteint." />
+        </div>
+
+        {atmosphere && (
+          <>
+            <label className="sig-color" htmlFor="sig-sky-color">
+              <input
+                id="sig-sky-color"
+                type="color"
+                value={skyColor}
+                onChange={(e) => setSkyColor(e.target.value)}
+              />
+              couleur du ciel
+              <Aide texte="Un air plus dense, plus poussiéreux ou d'une autre composition ne diffuse pas la même teinte. C'est elle que prennent les versants privés de l'étoile." />
+            </label>
+
+            <label className="sig-slider" htmlFor="sig-sky-density">
+              densité de l&apos;air{" "}
+              <output>{Math.round(skyDensity * 100)}</output> %
+              <Aide texte="La densité règle l'air qu'il y a EN PLEIN JOUR. Le modèle l'assombrit ensuite de lui-même à mesure que l'étoile se couche, jusqu'à un plancher atteint au Linceul." />
+              <input
+                id="sig-sky-density"
+                type="range"
+                min={ATMOSPHERE_DENSITY_MIN * 100}
+                max={ATMOSPHERE_DENSITY_MAX * 100}
+                step={5}
+                value={Math.round(skyDensity * 100)}
+                onChange={(e) => setSkyDensity(Number(e.target.value) / 100)}
+              />
+            </label>
+          </>
+        )}
+
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={paletteOn}
+            onClick={toggle(paletteOn, setPaletteOn)}
+          >
+            {EARTH_HYPSOMETRIC.label}
+          </button>
+          <Aide texte="Teintes hypsométriques terrestres, posées sur l'ombrage. Étalon de lecture et non carte d'Aeonir : elles postulent une mer à l'altitude 0, alors que le zéro d'ici est le datum sphérique." />
+        </div>
 
         {paletteOn && (
           <label className="sig-slider" htmlFor="sig-tint-opacity">
             opacité des teintes{" "}
             <output>{Math.round(tintOpacity * 100)}</output> %
+            <Aide texte="Ce qui survit de l'ombrage sous les teintes vaut 1 moins cette opacité. À 100 %, il ne reste que des aplats par tranche d'altitude ; plus bas, le modelé réapparaît mais la carte s'assombrit." />
             <input
               id="sig-tint-opacity"
               type="range"
@@ -586,20 +664,28 @@ export function SigMap({ tilejsonUrl }: Props) {
             />
           </label>
         )}
-        <button
-          type="button"
-          aria-pressed={graticuleOn}
-          onClick={toggle(graticuleOn, setGraticuleOn)}
-        >
-          parallèles &amp; méridiens
-        </button>
-        <button
-          type="button"
-          aria-pressed={tileBoundaries}
-          onClick={toggle(tileBoundaries, setTileBoundaries)}
-        >
-          bords de tuiles (z/x/y)
-        </button>
+
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={graticuleOn}
+            onClick={toggle(graticuleOn, setGraticuleOn)}
+          >
+            parallèles &amp; méridiens
+          </button>
+          <Aide texte="Les latitudes remarquables ne sont pas décoratives : dans le repère Étoile, l'équateur est le milieu du terminateur, +6° le Mur des Tempêtes et −21° le Linceul." />
+        </div>
+
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={tileBoundaries}
+            onClick={toggle(tileBoundaries, setTileBoundaries)}
+          >
+            bords de tuiles (z/x/y)
+          </button>
+          <Aide texte="Drapeau de débogage natif de MapLibre. Ses étiquettes sont tracées en blanc en haut à gauche de chaque tuile : ne jamais mesurer une luminance avec ce calque allumé." />
+        </div>
 
         {graticuleOn && (
           <p className="sig-legend">
