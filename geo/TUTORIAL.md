@@ -128,6 +128,11 @@ pas que la carte occupait la page. Elle en faisait 300 px de haut sur 1 270
 (piège 39). La mesure avait raison ; elle ne portait simplement pas sur la
 question posée, qui était « pourquoi l'écran est-il noir ».
 
+Et une cinquième, au premier déploiement : tout avait été vérifié en local, sur
+un serveur de développement qui n'est pas celui de la production. Le défaut
+vivait précisément dans l'écart entre les deux (piège 40). Une vérification qui
+n'interroge jamais l'hôte réel ne dit rien de l'hôte réel.
+
 ## Lire la console avant de sonder
 
 Trois heures de rétro-ingénierie du moteur de rendu de MapLibre pour arriver à
@@ -565,3 +570,23 @@ renumérote pas — du code et des documents y renvoient.
     Un sélecteur descendant (`.sig .sig-map`) suffit. Le prototype vanilla n'y
     était pas exposé : il ciblait `#map`, un id, qui bat toute classe — le
     portage a donc *introduit* le défaut en traduisant un id en classe.
+
+40. **`.mjs` n'est pas servi par tout le monde — et le développement ne peut
+    pas le montrer.** nginx ne connaît pas cette extension et sert le fichier
+    en `application/octet-stream`, que le navigateur REFUSE pour un script de
+    module. Le worker de MapLibre échoue donc à se charger, le style n'est
+    jamais analysé, et la page est noire — le piège 36 exactement, par une
+    autre cause. Or le serveur de développement de Next répond
+    `application/javascript` : **aucun test local, si complet soit-il, ne peut
+    révéler ce défaut.**
+
+    Deux remèdes possibles, et le choix n'est pas indifférent. Déclarer le type
+    dans nginx suppose d'atteindre sa configuration — ici elle vit à la main
+    sur le VPS, la CI ne synchronisant que le contenu du site — et ne protège
+    que cet hôte-là. Servir les fichiers en `.js` supprime la question partout.
+    Le second a été retenu ; il exige de réécrire l'import relatif que le
+    worker fait vers son voisin.
+
+    L'enseignement dépasse MapLibre : **une route servie par un hôte statique
+    configuré hors du dépôt n'est vérifiée que contre cet hôte.** Le test qui
+    compte est celui qui interroge la production, et il doit exister.
