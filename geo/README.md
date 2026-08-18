@@ -256,9 +256,49 @@ Le visualiseur vit donc dans `web/` :
 
 | | |
 |---|---|
-| `src/lib/sig/` | ce qui se relit sans navigateur — contrat TileJSON, style, graticule, politique du relief |
+| `src/lib/sig/` | ce qui se relit sans navigateur — contrat TileJSON, style, graticule, palette, éclairage, politique du relief |
 | `src/components/sig/` | le cycle de vie et le branchement React ↔ MapLibre |
 | `src/app/sig/` | la route, publique mais non annoncée |
+
+Dans `src/lib/sig/`, chaque fichier porte sa propre justification en docstring —
+ce tableau dit où chercher, il ne la répète pas.
+
+| module | rôle | la décision qui le structure |
+|---|---|---|
+| `tilejson.ts` | le contrat, lu avant toute tuile | plage de zoom et emprises viennent du fichier, jamais du code |
+| `mercator.ts` | adressage XYZ, repli de longitude | la grille ne référence **aucun** rayon |
+| `graticule.ts` | parallèles et méridiens en GeoJSON | tracés par tronçons, et densifiés pour le drapé |
+| `palette.ts` | teintes hypsométriques et opacité | la palette ignore le terrain — c'est la pièce qu'on remplace |
+| `sun.ts` | éclairage direct et diffus | l'angle est un uniforme : on le recale sur le centre de la vue |
+| `relief.ts` | seuil et rampe d'inclinaison du relief 3D | le seuil vient du défaut d'ombrage, pas de la lisibilité |
+| `style.ts` | sources, couches et leurs portées | une couche coûte, une source non |
+
+### Le montage des couches de relief
+
+Deux montages, comparables à la bascule du panneau.
+
+**Source unique** — une source couvrant tous les niveaux avec l'emprise globale.
+Au-delà du partage et hors bande, elle réclame des tuiles qui n'existent pas :
+MapLibre reçoit un 404 et retombe silencieusement sur l'ancêtre. Rendu correct,
+seize requêtes perdues.
+
+**Sources multiples** — quatre couches qui ne se recouvrent jamais :
+
+| couche | emprise de source | portée de couche |
+|---|---|---|
+| monde global | globale, z ≤ partage | jusqu'au relais |
+| monde nord | au-dessus de la bande | au-delà du relais |
+| monde sud | en dessous de la bande | au-delà du relais |
+| bande | bande, z > partage | au-delà du relais |
+
+⚠️ **Deux emprises pour le hors-bande**, parce que `bounds` est une boîte et que
+« partout sauf cette bande » ne s'écrit pas d'un seul rectangle. Mais c'est
+`minzoom`/`maxzoom` **de couche** qui réalise l'exclusion en zoom, les bornes de
+source ne découpant qu'en latitude.
+
+⚠️ **Le relais se mesure en zoom de carte, pas en niveau de tuile.** Avec des
+tuiles de 256 px, MapLibre sert `round(zoom + 1)` : le partager sur `split_zoom`
+décalerait le relais d'un cran entier.
 
 
 

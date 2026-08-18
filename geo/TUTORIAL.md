@@ -48,7 +48,8 @@ au **Lot 7** : le Lot 2 ne devait produire qu'une couche vectorielle honnête à
 tuiler, la cible étant un poste frontend.
 
 **PMTiles** — attendu pour régler la bordure dentelée d'une pyramide creuse.
-Deux sources déclarées côté client le font sans lui et suppriment les 404.
+Un découpage de couches déclaré côté client le fait sans lui et supprime les
+404, sans rien coûter au rendu (piège 41).
 L'argument du fichier unique redevient décisif au **Lot 6**, quand les tuiles
 seront *servies* plutôt que posées à côté du viewer.
 
@@ -132,6 +133,12 @@ Et une cinquième, au premier déploiement : tout avait été vérifié en local
 un serveur de développement qui n'est pas celui de la production. Le défaut
 vivait précisément dans l'écart entre les deux (piège 40). Une vérification qui
 n'interroge jamais l'hôte réel ne dit rien de l'hôte réel.
+
+Et une sixième, en comparant deux montages de sources : le compteur de 404
+était remis à zéro **après** le déplacement, donc la fenêtre excluait exactement
+les requêtes à compter. Les deux montages sortaient à zéro, et la conclusion
+aurait été qu'ils ne diffèrent pas — alors que l'un réclame seize tuiles
+inexistantes et l'autre aucune.
 
 ## Lire la console avant de sonder
 
@@ -590,3 +597,62 @@ renumérote pas — du code et des documents y renvoient.
     L'enseignement dépasse MapLibre : **une route servie par un hôte statique
     configuré hors du dépôt n'est vérifiée que contre cet hôte.** Le test qui
     compte est celui qui interroge la production, et il doit exister.
+
+41. **Ce n'est pas une source qui coûte, c'est une couche.** Une source que plus
+    aucune couche visible ne vise tombe à **zéro tuile** — vérifié en masquant
+    ses couches, et vrai aussi de la source dédiée au terrain tant que le relief
+    3D est éteint. Déclarer des sources est donc gratuit. En revanche **chaque
+    couche `hillshade` visible fait sa propre passe hors écran** : elle calcule
+    les dérivées du MNT dans une texture, puis la composite.
+
+    Conséquence directe, et coûteuse à voir : deux couches d'ombrage qui se
+    recouvrent géographiquement **s'additionnent**. Un fond grossier suragrandi
+    sous un relief net ne l'enrichit pas, il le dilue — mesuré dans la bande,
+    moyenne 27,1 avec le fond contre 14,5 sans, à détail fin inchangé.
+
+    Le remède s'écrit donc en **couches**, jamais en sources : `minzoom` et
+    `maxzoom` de couche pour exclure en zoom, et autant de sources que
+    nécessaire pour découper en latitude — `bounds` étant une boîte, « partout
+    sauf cette bande » demande deux emprises.
+
+42. **Le zoom de la carte n'est pas le niveau de tuile.** Avec des tuiles de
+    256 px, MapLibre sert le niveau `round(zoom + 1)` : la source de bande, dont
+    le `minzoom` vaut 5, ne rend rien jusqu'à un zoom de carte de 3,4 et sert du
+    z=5 dès 3,6. Placer un seuil de couche sur `split_zoom` — un niveau de
+    tuile — décalerait donc le relais d'un cran entier, et ouvrirait un trou ou
+    un recouvrement selon le sens de l'erreur.
+
+    La règle : un seuil qui sépare des **couches** se mesure en zoom de carte,
+    et se vérifie en balayant le zoom plutôt qu'en le dérivant.
+
+43. **L'éclairage d'un `hillshade` est un uniforme, pas un champ.** La
+    spécification donne à `hillshade-illumination-direction` comme à
+    `-altitude` le `property-type` `data-constant`, avec `zoom` pour seul
+    paramètre d'expression : une couche porte **un seul soleil** pour toute la
+    carte, et rien ne permet de le faire varier avec la position.
+
+    Gênant sur un monde verrouillé par les marées, où la latitude EST
+    l'élévation de l'astre. La sortie retenue — recalculer l'angle sur le centre
+    de la vue à chaque déplacement — n'est pas exacte au pixel, mais elle est
+    exacte là où l'on regarde, et elle rend sensible le fait qui définit le
+    monde. Assumer une contrainte vaut mieux que la maquiller.
+
+44. **`hillshade-method: "standard"` ignore l'altitude du soleil.** De 80° à 5°,
+    rendu identique à l'octet près. `igor` l'ignore aussi ; `basic`,
+    `multidirectional` et `combined` la lisent. Un réglage sans effet n'est donc
+    pas forcément un réglage cassé : il peut être branché sur un algorithme qui
+    ne le consomme pas. Croiser les deux avant de conclure.
+
+45. **Sans lumière diffuse, un éclairage rasant est noir.** À 11° d'élévation,
+    l'angle réel au bord du terminateur, l'amplitude du rendu tombe à 6,7
+    niveaux sur 255 ; en relevant la seule couleur d'ombre — qui *est* le terme
+    atmosphérique — elle remonte à 62,3, au-dessus de ce que donne la méthode
+    neutre à n'importe quel angle.
+
+    On avait conclu que la platitude du terrain interdisait l'angle physique.
+    C'était l'absence d'air. **Un modèle d'éclairage incomplet se diagnostique en
+    défaut du sujet.**
+
+    Corollaire trouvé en corrigeant : l'atmosphère ne fabrique pas de lumière,
+    elle en diffuse. Éteindre l'astre sans réduire le terme diffus donne une
+    nuit aussi claire que le jour.
