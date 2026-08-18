@@ -118,9 +118,12 @@ export function SigMap({ tilejsonUrl }: Props) {
       // worker, `isStyleLoaded()` reste indéfiniment false, sans qu'aucune
       // erreur ne remonte à `map.on("error")`.
       //
-      // Le fichier est copié dans public/ par scripts/copy-maplibre-worker.mjs,
-      // qui porte le détail.
-      maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
+      // ⚠️ `.js` et non `.mjs` : nginx ne connaît pas la seconde extension et
+      // sert alors le worker en `application/octet-stream`, que le navigateur
+      // refuse pour un module — même panne, autre cause, et invisible en
+      // développement. Voir scripts/copy-maplibre-worker.mjs, qui copie les
+      // fichiers et porte le détail.
+      maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.js");
 
       const urlTemplate = resolveTileTemplate(
         tilejsonUrl,
