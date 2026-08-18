@@ -7,38 +7,130 @@
 
 import type { LayerSpecification, StyleSpecification } from "maplibre-gl";
 import { buildGraticule } from "./graticule";
+import { MERCATOR_LIMIT_DEG } from "./mercator";
 import {
   EARTH_HYPSOMETRIC,
   TINT_OPACITY_DEFAULT,
   colorReliefExpression,
 } from "./palette";
 import { NEUTRAL_METHOD, VACUUM_SHADOW } from "./sun";
-import type { AeonirTileJSON } from "./tilejson";
+import type { AeonirTileJSON, Bounds } from "./tilejson";
 
-/** Identifiants de couches, pour que les bascules ne manipulent pas de chaînes libres. */
+/**
+ * Le partage entre les deux montages, en zoom de CARTE.
+ *
+ * ⚠️ Ce n'est pas `split_zoom`, qui est un niveau de TUILE. Avec des tuiles de
+ * 256 px, MapLibre sert le niveau `round(zoom + 1)` : mesuré, la source `band`
+ * ne rend rien jusqu'à 3,4 et sert du z=5 dès 3,6. Le relais se fait donc à
+ * **3,5**, et c'est là que les couches doivent se passer la main.
+ */
+const LAYER_SPLIT_ZOOM = 3.5;
+
+/**
+ * Les couches de relief, et la portée de chacune.
+ *
+ * ── Pourquoi quatre couches pour le montage à sources multiples ────────
+ *
+ * ⚠️ **Deux couches `hillshade` qui se recouvrent calculent chacune leur
+ * ombrage, et les deux se composent.** Ce n'est pas une source qui coûte, c'est
+ * une couche : une source que plus aucune couche visible ne vise tombe à zéro
+ * tuile (mesuré), mais chaque couche visible fait sa propre passe hors écran.
+ *
+ * La version précédente laissait `world` peindre PARTOUT, y compris sous
+ * `band` là où la donnée nette existe déjà. Le modelé grossier du z=4 étiré
+ * concurrençait alors le détail du z=6 : dans la bande, le montage à sources
+ * multiples rendait moins bien que celui à source unique — moyenne 27,1 contre
+ * 14,5, le fin dilué dans le grossier.
+ *
+ * D'où le découpage : au-delà du partage, `world` s'efface et laisse la place à
+ * deux couches qui ne couvrent QUE le hors-bande. Plus aucun recouvrement.
+ *
+ * ⚠️ Il faut deux emprises, nord et sud, parce que `bounds` est une **boîte** :
+ * « partout sauf cette bande » ne s'écrit pas d'un seul rectangle. Mais c'est
+ * bien `minzoom`/`maxzoom` **de couche** qui réalise l'exclusion en zoom — les
+ * bornes de source ne découpent qu'en latitude.
+ */
+interface ReliefLayer {
+  /** Identifiant interne, sert à distinguer le montage à source unique. */
+  key: "single" | "world" | "worldNorth" | "worldSouth" | "band";
+  source: string;
+  hillshade: string;
+  color: string;
+  /** Portées de COUCHE, en zoom de carte. C'est elles qui excluent en zoom. */
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+const RELIEF_LAYERS: readonly ReliefLayer[] = [
+  {
+    key: "single",
+    source: "dem",
+    hillshade: "hillshade-single",
+    color: "color-relief-single",
+  },
+  {
+    key: "world",
+    source: "world",
+    hillshade: "hillshade-world",
+    color: "color-relief-world",
+    // Le fond global, jusqu'au partage seulement : au-delà, les trois suivantes
+    // se partagent le monde sans se marcher dessus.
+    maxzoom: LAYER_SPLIT_ZOOM,
+  },
+  {
+    key: "worldNorth",
+    source: "world-north",
+    hillshade: "hillshade-world-north",
+    color: "color-relief-world-north",
+    minzoom: LAYER_SPLIT_ZOOM,
+  },
+  {
+    key: "worldSouth",
+    source: "world-south",
+    hillshade: "hillshade-world-south",
+    color: "color-relief-world-south",
+    minzoom: LAYER_SPLIT_ZOOM,
+  },
+  {
+    key: "band",
+    source: "band",
+    hillshade: "hillshade-band",
+    color: "color-relief-band",
+  },
+];
+
+const par = (key: ReliefLayer["key"]) =>
+  RELIEF_LAYERS.find((l) => l.key === key)!;
+
+/**
+ * Les couches de chaque montage, prêtes à être allumées ou éteintes en bloc.
+ *
+ * Le composant n'a ainsi jamais à connaître le détail du découpage : il bascule
+ * entre deux ensembles.
+ */
+export const MONTAGES = {
+  single: {
+    hillshade: [par("single").hillshade],
+    color: [par("single").color],
+  },
+  multi: {
+    hillshade: RELIEF_LAYERS.filter((l) => l.key !== "single").map(
+      (l) => l.hillshade
+    ),
+    color: RELIEF_LAYERS.filter((l) => l.key !== "single").map((l) => l.color),
+  },
+} as const;
+
+/** Toutes les couches d'ombrage, tous montages confondus — pour l'éclairage. */
+export const ALL_HILLSHADE_LAYERS = RELIEF_LAYERS.map((l) => l.hillshade);
+
+/** Toutes les couches de teintes — pour l'opacité. */
+export const ALL_COLOR_LAYERS = RELIEF_LAYERS.map((l) => l.color);
+
 export const LAYERS = {
-  singleSourceHillshade: "hillshade-single",
-  worldHillshade: "hillshade-world",
-  bandHillshade: "hillshade-band",
-  singleSourceColor: "color-relief-single",
-  worldColor: "color-relief-world",
-  bandColor: "color-relief-band",
   graticule: "graticule",
   graticuleDashed: "graticule-dashed",
 } as const;
-
-/**
- * Les trois sources de relief, et la couche de chaque famille qui les vise.
- *
- * `dem` sert le montage à **source unique**, `world` + `band` celui à **sources
- * multiples**. Toute famille de couches qui consomme le relief doit exister en
- * trois exemplaires, sinon la bascule ne compare plus la même chose.
- */
-const RELIEF_SOURCES = [
-  { source: "dem", hillshade: LAYERS.singleSourceHillshade, color: LAYERS.singleSourceColor },
-  { source: "world", hillshade: LAYERS.worldHillshade, color: LAYERS.worldColor },
-  { source: "band", hillshade: LAYERS.bandHillshade, color: LAYERS.bandColor },
-] as const;
 
 /** Source réservée au relief 3D — voir le commentaire de sa déclaration. */
 export const TERRAIN_SOURCE = "terrain";
@@ -123,6 +215,28 @@ export function buildStyle(
         bounds: a.band_bounds,
       },
 
+      // ── Le monde HORS bande, en deux moitiés ──────────────────────
+      //
+      // Mêmes fichiers et même plafond que `world` : ces sources ne servent
+      // qu'à découper en latitude ce qu'une seule boîte `bounds` ne sait pas
+      // exprimer. Voir RELIEF_LAYERS pour le pourquoi.
+      //
+      // Les bornes sont celles de l'emprise RÉELLEMENT tuilée, pas les seuils
+      // climatiques : le raccord doit tomber exactement là où `band` s'arrête,
+      // sinon on rouvre un recouvrement d'un côté ou un trou de l'autre.
+      "world-north": {
+        ...shared,
+        minzoom: tilejson.minzoom,
+        maxzoom: a.split_zoom,
+        bounds: [-180, a.band_bounds[3], 180, MERCATOR_LIMIT_DEG] as Bounds,
+      },
+      "world-south": {
+        ...shared,
+        minzoom: tilejson.minzoom,
+        maxzoom: a.split_zoom,
+        bounds: [-180, -MERCATOR_LIMIT_DEG, 180, a.band_bounds[1]] as Bounds,
+      },
+
       // ── Source dédiée au relief 3D, sur le MÊME jeu de fichiers que « dem ».
       // La duplication est voulue, et MapLibre la réclame explicitement en
       // console :
@@ -166,43 +280,39 @@ export function buildStyle(
         type: "background",
         paint: { "background-color": "#05070a" },
       },
-      {
-        id: LAYERS.singleSourceHillshade,
-        type: "hillshade",
-        source: "dem",
-        layout: { visibility: "visible" },
-        paint: { ...LIGHTING, "hillshade-exaggeration": HILLSHADE_EXAGGERATION },
-      },
-      {
-        // Le fond de relief : présent partout, suragrandi au-delà du partage.
-        id: LAYERS.worldHillshade,
-        type: "hillshade",
-        source: "world",
-        layout: { visibility: "none" },
-        paint: { ...LIGHTING, "hillshade-exaggeration": HILLSHADE_EXAGGERATION },
-      },
-      {
-        // Le relief net du terminateur, par-dessus.
-        id: LAYERS.bandHillshade,
-        type: "hillshade",
-        source: "band",
-        layout: { visibility: "none" },
-        paint: { ...LIGHTING, "hillshade-exaggeration": HILLSHADE_EXAGGERATION },
-      },
+      // ── Les ombrages, un par couche de la table ───────────────────
+      //
+      // `single` est allumée au départ : le montage à source unique est le
+      // défaut, et c'est celui qui rend le mieux dans la bande.
+      ...RELIEF_LAYERS.map(
+        ({ key, source, hillshade, minzoom, maxzoom }): LayerSpecification => ({
+          id: hillshade,
+          type: "hillshade",
+          source,
+          ...(minzoom === undefined ? {} : { minzoom }),
+          ...(maxzoom === undefined ? {} : { maxzoom }),
+          layout: { visibility: key === "single" ? "visible" : "none" },
+          paint: {
+            ...LIGHTING,
+            "hillshade-exaggeration": HILLSHADE_EXAGGERATION,
+          },
+        })
+      ),
 
       // ── Les teintes hypsométriques, PAR-DESSUS l'ombrage ──────────
       //
       // Éteintes au départ : le visualiseur reste un instrument de mesure du
       // relief, la couleur est une lecture qu'on demande.
       //
-      // Trois couches, une par source, pour que la bascule des montages
-      // continue de comparer deux ensembles complets et non un ombrage d'un
-      // côté contre un ombrage teinté de l'autre.
-      ...RELIEF_SOURCES.map(
-        ({ source, color }): LayerSpecification => ({
+      // Même découpage que les ombrages, et pour la même raison : deux couches
+      // de teintes superposées se composeraient au lieu de se relayer.
+      ...RELIEF_LAYERS.map(
+        ({ source, color, minzoom, maxzoom }): LayerSpecification => ({
           id: color,
           type: "color-relief",
           source,
+          ...(minzoom === undefined ? {} : { minzoom }),
+          ...(maxzoom === undefined ? {} : { maxzoom }),
           layout: { visibility: "none" },
           paint: {
             "color-relief-color": colorReliefExpression(EARTH_HYPSOMETRIC),
