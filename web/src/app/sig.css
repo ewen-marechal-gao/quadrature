@@ -1,0 +1,149 @@
+/*
+ * sig.css — visualiseur SIG (/sig).
+ *
+ * Importé par SigViewer, et non par globals.css : la page occupe tout l'écran
+ * et impose un fond sombre, ce qui n'a rien à faire dans la feuille commune.
+ *
+ * Aucune classe Tailwind ici. La palette est celle d'un outil de mesure —
+ * lisible sur une carte sombre, chiffres à chasse fixe et à largeur constante —
+ * et non celle du site, qui est une identité de livre.
+ */
+
+.sig {
+  position: fixed;
+  inset: 0;
+  color-scheme: dark;
+  background: #05070a;
+}
+
+/* ⚠️ Sélecteur DESCENDANT, et ce n'est pas du confort.
+ *
+ * MapLibre pose sa propre classe sur le conteneur qu'on lui donne, et sa
+ * feuille déclare `.maplibregl-map { position: relative }`. À spécificité
+ * égale — deux classes simples — c'est l'ordre d'injection qui tranche, et
+ * celle de MapLibre passe après la nôtre. Le conteneur repassait donc en
+ * `relative`, `inset: 0` cessait de le dimensionner, et un div sans contenu
+ * propre tombait à **hauteur 0** : MapLibre retombait alors sur la hauteur par
+ * défaut d'un `<canvas>`, 300 px, pour une page entièrement noire.
+ *
+ * `.sig .sig-map` vaut (0,2,0) et l'emporte proprement. Le prototype vanilla
+ * n'y était pas exposé : il ciblait `#map`, un id, qui bat toute classe. */
+.sig .sig-map {
+  position: absolute;
+  inset: 0;
+}
+
+/* Écran d'attente pendant le chargement du module MapLibre. */
+.sig-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6f8299;
+  font: 12px/1.55 ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+.sig-hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  background: rgba(8, 11, 16, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font: 12px/1.55 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color: #d8dee8;
+
+  /* Largeur EXPLICITE, et non adaptative.
+   *
+   * Le prototype vanilla laissait ce panneau en largeur adaptative avec des
+   * boutons en `width: 100%` : dans une boîte positionnée en absolu, le
+   * pourcentage se résout contre la largeur disponible et non contre le
+   * contenu, si bien que le panneau mesurait 672 px pour un titre de 171 px.
+   * Une largeur posée casse la circularité — et c'est de toute façon ce qu'est
+   * ce panneau : un cadran d'instrument, pas un bloc de texte.
+   *
+   * 17,5rem tient le plus long libellé, « relief 3D — en attente de z 4 ».
+   */
+  width: 17.5rem;
+}
+
+.sig-hud h1 {
+  font-size: 12px;
+  margin: 0 0 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8fa3bd;
+  font-weight: 600;
+}
+
+.sig-hud dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  margin: 0;
+}
+
+.sig-hud dt { color: #6f8299; }
+
+.sig-hud dd {
+  margin: 0;
+  text-align: right;
+  /* Sans quoi les relevés dansent horizontalement au survol. */
+  font-variant-numeric: tabular-nums;
+}
+
+.sig-sep {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin: 6px 0;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sig-error {
+  color: #ff9b9b;
+  grid-column: 1 / -1;
+  text-align: left;
+}
+
+.sig-hud button {
+  margin-top: 9px;
+  width: 100%;
+  padding: 5px;
+  cursor: pointer;
+  background: #16202e;
+  color: #d8dee8;
+  font: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+}
+
+.sig-hud button[aria-pressed="true"] {
+  background: #24435f;
+  border-color: #47739b;
+}
+
+.sig-exaggeration {
+  display: block;
+  margin-top: 8px;
+  color: #6f8299;
+  font-size: 11px;
+}
+
+.sig-exaggeration output {
+  color: #d8dee8;
+  font-variant-numeric: tabular-nums;
+}
+
+.sig-exaggeration input {
+  width: 100%;
+  margin-top: 4px;
+  accent-color: #47739b;
+}
+
+.sig-legend {
+  margin: 9px 0 0;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #8fa3bd;
+}

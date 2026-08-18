@@ -3,19 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/copy-pagedjs.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-web-images.mjs && node scripts/generate-content-index.mjs fr",
+    "predev": "node scripts/copy-pagedjs.mjs && node scripts/copy-maplibre-worker.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-web-images.mjs && node scripts/generate-content-index.mjs fr && node scripts/copy-aeonir-tiles.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/copy-pagedjs.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-web-images.mjs && node scripts/generate-content-index.mjs fr",
+    "prebuild": "node scripts/copy-pagedjs.mjs && node scripts/copy-maplibre-worker.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-web-images.mjs && node scripts/generate-content-index.mjs fr && node scripts/copy-aeonir-tiles.mjs",
     "build": "next build",
-    "build:public": "node scripts/copy-pagedjs.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-web-images.mjs && node scripts/generate-content-index.mjs fr && node scripts/build-public.mjs",
+    "build:public": "node scripts/copy-pagedjs.mjs && node scripts/copy-maplibre-worker.mjs && node scripts/copy-bestiary-art.mjs && node scripts/generate-web-images.mjs && node scripts/generate-content-index.mjs fr && node scripts/copy-aeonir-tiles.mjs && node scripts/build-public.mjs",
     "check:ci": "node scripts/check-ci.mjs",
     "start": "next start",
-    "refresh-content": "node scripts/generate-content-index.mjs fr",
-    "generate-pdf": "node scripts/copy-pagedjs.mjs && node scripts/generate-content-index.mjs fr && node scripts/generate-pdf.mjs"
+    "refresh-content": "node scripts/generate-content-index.mjs fr && node scripts/copy-aeonir-tiles.mjs",
+    "generate-pdf": "node scripts/copy-pagedjs.mjs && node scripts/copy-maplibre-worker.mjs && node scripts/generate-content-index.mjs fr && node scripts/generate-pdf.mjs"
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.2.0",
+    "maplibre-gl": "6.2.0",
     "next": "16.2.7",
     "next-mdx-remote": "^6.0.0",
     "pagedjs": "^0.4.3",

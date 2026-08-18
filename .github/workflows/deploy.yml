@@ -10,6 +10,11 @@
 # point. Le build public les exclut de toute façon (cf. next.config.ts), mais
 # passer par la CI garantit la propriété plutôt que de la supposer.
 #
+# ── Le relief d'Aeonir ───────────────────────────────────────────────────────
+# La route /sig sert une pyramide de tuiles que le pipeline Python produit. Elle
+# n'est pas versionnée — la reproductibilité est assurée par le code, pas par le
+# stockage — donc elle se fabrique ici, avant le build du site.
+#
 # ── Secrets à définir dans Settings → Secrets and variables → Actions ─────────
 #   VPS_SSH_KEY      clé PRIVÉE (ed25519) autorisée sur le VPS
 #   VPS_HOST         51.210.102.237
@@ -44,6 +49,67 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ── Le relief : obtenir le MNT, puis le tuiler ───────────────────
+      #
+      # DEUX étapes, et la séparation est délibérée. Au Lot 7, le terrain
+      # d'Aeonir sera défini à la main plutôt que tiré : le MNT cessera d'être
+      # une SORTIE reproductible pour devenir un ACTIF. C'est alors la première
+      # étape seule qui changera — « produire » deviendra « récupérer » — et le
+      # tuilage, le cache et le site n'auront pas à bouger.
+      #
+      # ⚠️ Ces étapes ne tournent PAS dans ci.yml. Six minutes mesurées en
+      # local — davantage sur un runner — sur chaque poussée de chaque branche,
+      # pour un artefact que seul le déploiement consomme, serait un mauvais
+      # échange. Le prix est assumé : une régression
+      # du tuileur se voit ici et non en CI — c'est aussi pourquoi la suite
+      # pytest du job `geo`, elle, couvre tiles.py et pyramid.py.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: geo/requirements.txt
+
+      # La clé porte l'empreinte de TOUT ce qui détermine les tuiles : les
+      # valeurs de calibration et les cinq modules qui les consomment. Changer
+      # une graine, une constante ou une formule invalide le cache — ce qui est
+      # exactement le comportement voulu.
+      #
+      # Pas de `restore-keys` : une pyramide à moitié périmée serait servie sans
+      # que rien ne le signale, ce qui coûte bien plus cher à diagnostiquer
+      # qu'une reconstruction.
+      - name: Restaurer la pyramide de tuiles
+        id: tuiles
+        uses: actions/cache@v4
+        with:
+          path: geo/out/tiles
+          key: >-
+            aeonir-tuiles-${{ hashFiles(
+            'geo/aeonir_gis/calibration.json',
+            'geo/aeonir_gis/constants.py',
+            'geo/aeonir_gis/noise.py',
+            'geo/aeonir_gis/dem.py',
+            'geo/aeonir_gis/tiles.py',
+            'geo/aeonir_gis/pyramid.py') }}
+
+      - name: Installer le pipeline
+        if: steps.tuiles.outputs.cache-hit != 'true'
+        run: pip install -r requirements.txt
+        working-directory: geo
+
+      # ÉTAPE 1 — obtenir le MNT. C'est celle que le Lot 7 remplacera.
+      # Une grille 16 384 × 8 192, soit 422 Mio de GeoTIFF puis COG : 5 min 37 s
+      # mesurées en local, à quoi le runner ajoutera sa part.
+      - name: Produire le MNT
+        if: steps.tuiles.outputs.cache-hit != 'true'
+        run: python -m aeonir_gis.dem
+        working-directory: geo
+
+      # ÉTAPE 2 — le tuiler. Lit le COG, écrit out/tiles + tiles.json.
+      - name: Tuiler le MNT
+        if: steps.tuiles.outputs.cache-hit != 'true'
+        run: python -m aeonir_gis.pyramid
+        working-directory: geo
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -65,6 +131,26 @@ jobs:
             exit 1
           fi
           test -f web/out/index.html || { echo "::error::Export vide."; exit 1; }
+
+      # `copy-aeonir-tiles.mjs` ne tombe PAS en erreur quand les tuiles
+      # manquent — c'est voulu, un clone frais doit pouvoir construire le site.
+      # Ici, en revanche, leur absence signifierait publier /sig sans relief. On
+      # compare donc les deux comptes plutôt que d'inscrire un nombre en dur,
+      # qui mentirait dès que --split-zoom bougerait.
+      - name: Vérifier que le relief a atteint l'export
+        run: |
+          test -f web/out/aeonir/tiles.json || {
+            echo "::error::L'export ne contient pas tiles.json — /sig serait sans relief."
+            exit 1
+          }
+          attendu=$(find geo/out/tiles -name '*.png' | wc -l)
+          obtenu=$(find web/out/aeonir -name '*.png' | wc -l)
+          echo "tuiles produites $attendu, exportées $obtenu"
+          test "$attendu" -gt 0 || { echo "::error::Aucune tuile produite."; exit 1; }
+          test "$attendu" = "$obtenu" || {
+            echo "::error::L'export ne porte pas toutes les tuiles."
+            exit 1
+          }
 
       - name: Préparer la connexion SSH
         run: |

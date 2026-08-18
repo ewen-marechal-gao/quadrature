@@ -1,6 +1,6 @@
 # CI — vérifie que le dépôt reste sain à chaque poussée.
 #
-# Deux sous-projets ont une chaîne de vérification, et ils sont indépendants :
+# Trois sous-projets ont une chaîne de vérification, et ils sont indépendants :
 # on les teste en parallèle pour qu'un échec côté simulateur n'attende pas le
 # build du site.
 
@@ -59,3 +59,29 @@ jobs:
       # qu'exécute le workflow de déploiement.
       - run: npm run build:public
         working-directory: web
+
+  geo:
+    name: SIG — tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # geo/requirements.txt épingle les bibliothèques mais pas l'interpréteur ;
+      # la version vit donc ici. 3.13 est celle des roues installées en local —
+      # rasterio et fiona embarquent chacun leur GDAL, et ces roues sont
+      # compilées par version de Python : en changer, c'est changer de GDAL.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: geo/requirements.txt
+
+      - run: pip install -r requirements.txt
+        working-directory: geo
+
+      # La calibration ne tourne PAS ici : aeonir_gis/calibration.json est
+      # versionné, et la suite contient un test qui compare ce fichier aux
+      # paramètres du générateur. Toucher au bruit sans recalibrer casse la CI,
+      # ce qui est exactement l'alerte qu'on veut.
+      - run: python -m pytest
+        working-directory: geo

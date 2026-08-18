@@ -1,0 +1,26 @@
+{
+  "area_weighted_offset_m": 1.3174,
+  "base_frequency": 2.0,
+  "hurst_measured": 0.8842,
+  "hurst_target": 1.0,
+  "lacunarity": 2.0,
+  "maximum_m": 7960.0,
+  "minimum_m": -11458.0,
+  "octaves": 10,
+  "offset_std_m": 317.9,
+  "offset_tolerance_m": 2.0,
+  "offset_worst_m": 908.5,
+  "peak_to_sigma": 4.3241,
+  "persistence": 0.5,
+  "relief_ceiling_m": 11800.0,
+  "relief_sigma_m": 2728.89,
+  "resolution_offsets_m": {
+    "1024": 1.3743,
+    "2048": 1.3834,
+    "512": 1.3174
+  },
+  "scan_width": 512,
+  "seed": 70,
+  "seeds_scanned": 1000,
+  "seeds_tried": 71
+}

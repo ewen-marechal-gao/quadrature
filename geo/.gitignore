@@ -1,0 +1,25 @@
+# Environnement Python local
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Produits générés — reproductibles par le pipeline, jamais versionnés.
+# Le MNT global fait ~500 Mo, les pyramides de tuiles davantage.
+out/
+*.tif
+*.tiff
+*.pmtiles
+*.mbtiles
+*.gpkg
+
+# Captures d'inspection QGIS — utiles à la discussion, jamais à la reproduction.
+debug/
+
+# Sidecar binaire que QGIS régénère à chaque enregistrement d'un .qgs. Il ne
+# porte que la bibliothèque de styles du projet, vide ici ; le style appliqué
+# aux couches vit dans le .qgs lui-même, qui se suffit.
+*_attachments.zip
+
+# Sauvegarde de la version précédente, écrite par QGIS à chaque enregistrement.
+*.qgs~
