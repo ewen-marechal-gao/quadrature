@@ -149,6 +149,31 @@ La pyramide de tuiles terrarium. `--split-zoom` déplace la bascule monde/bande,
 `--epoch` change l'époque du repère Étoile, `--full-precision` encode le canal
 bleu.
 
+```bash
+.venv/Scripts/python.exe -m aeonir_gis.mvt
+```
+
+La pyramide de tuiles vectorielles MVT — les trois couches hydrographiques dans
+un même fichier par tuile. `--budget` fixe le nombre d'entités admis dans la
+tuile la plus lourde, et c'est lui qui pilote toute la généralisation :
+`--split-zoom` et `--epoch` ont le même sens que pour la pyramide raster.
+
+L'encodage MVT lui-même est délégué à `mapbox-vector-tile` ; tout ce qui le
+précède est écrit ici. Voir « Le tuileur est écrit à la main ».
+
+### Ce que le client fait de ces tuiles
+
+`web/src/lib/sig/hydro.ts` porte le rendu, et l'écart avec le relief y est le
+sujet. Une source `raster-dem` livre des pixels : le style choisit comment les
+éclairer. Une source `vector` livre des **géométries et des attributs** — le
+client décide de tout, y compris de ce qui est visible.
+
+C'est là que l'ordre de Strahler retrouve son emploi. Il ne sélectionne rien —
+le pipeline a mesuré qu'il ne le pouvait pas — mais il **hiérarchise le trait**,
+via un `match` imbriqué dans un `interpolate` sur le zoom. Les exutoires, eux,
+tirent leur rayon de `drainage_km2` par un `interpolate` sur la valeur : une
+grandeur continue n'a aucune valeur exacte à comparer, donc pas de `match`.
+
 Le visualiseur ne vit plus ici : il est servi par le site, à la route `/sig`.
 Depuis `web/`, `npm run dev` — le script `copy-aeonir-tiles.mjs` y recopie
 `out/tiles` avant de démarrer.
@@ -161,8 +186,14 @@ Depuis `web/`, `npm run dev` — le script `copy-aeonir-tiles.mjs` y recopie
 calibrate.py ──→ calibration.json   graine et échelle, mesurées
                         │
 noise.py ──→ dem.py ────┴──→ COG ─┬─→ hydro.py + export.py ──→ GeoPackage
-                                  └─→ tiles.py + pyramid.py ──→ PNG + TileJSON ──→ web/ (/sig)
+                                  │                                  │
+                                  │                        mvt.py ───┘
+                                  │                           └──→ MVT + TileJSON ─┐
+                                  └─→ tiles.py + pyramid.py ──→ PNG + TileJSON ────┴──→ web/ (/sig)
 ```
+
+Les deux branches se rejoignent au client : `/sig` monte les tuiles raster et
+les tuiles vectorielles dans le même style, chacune avec son contrat.
 
 Chaque module porte sa propre justification en docstring — **ce tableau ne la
 répète pas**, il dit où chercher.
@@ -178,6 +209,8 @@ répète pas**, il dit où chercher.
 | `export.py` | raster → vecteur, GeoPackage | découpage à l'antiméridien du repère |
 | `tiles.py` | adressage XYZ, cartographie inverse, terrarium | le schéma XYZ ne référence **aucun rayon** |
 | `pyramid.py` | empilement, PNG, TileJSON | deux régimes, seuil imposé par la fermeture |
+| `geometry.py` | Douglas-Peucker, Cohen-Sutherland, Sutherland-Hodgman | pur — comme `noise.py`, il ignore tout d'Aeonir |
+| `mvt.py` | tuiles vectorielles, généralisation, TileJSON | la sélection tourne sur le débit, pas sur Strahler |
 
 ## La grille se déduit, elle ne se choisit pas
 
@@ -256,9 +289,49 @@ Le visualiseur vit donc dans `web/` :
 
 | | |
 |---|---|
-| `src/lib/sig/` | ce qui se relit sans navigateur — contrat TileJSON, style, graticule, politique du relief |
+| `src/lib/sig/` | ce qui se relit sans navigateur — contrat TileJSON, style, graticule, palette, éclairage, politique du relief |
 | `src/components/sig/` | le cycle de vie et le branchement React ↔ MapLibre |
 | `src/app/sig/` | la route, publique mais non annoncée |
+
+Dans `src/lib/sig/`, chaque fichier porte sa propre justification en docstring —
+ce tableau dit où chercher, il ne la répète pas.
+
+| module | rôle | la décision qui le structure |
+|---|---|---|
+| `tilejson.ts` | le contrat, lu avant toute tuile | plage de zoom et emprises viennent du fichier, jamais du code |
+| `mercator.ts` | adressage XYZ, repli de longitude | la grille ne référence **aucun** rayon |
+| `graticule.ts` | parallèles et méridiens en GeoJSON | tracés par tronçons, et densifiés pour le drapé |
+| `palette.ts` | teintes hypsométriques et opacité | la palette ignore le terrain — c'est la pièce qu'on remplace |
+| `sun.ts` | éclairage direct et diffus | l'angle est un uniforme : on le recale sur le centre de la vue |
+| `relief.ts` | seuil et rampe d'inclinaison du relief 3D | le seuil vient du défaut d'ombrage, pas de la lisibilité |
+| `style.ts` | sources, couches et leurs portées | une couche coûte, une source non |
+
+### Le montage des couches de relief
+
+Deux montages, comparables à la bascule du panneau.
+
+**Source unique** — une source couvrant tous les niveaux avec l'emprise globale.
+Au-delà du partage et hors bande, elle réclame des tuiles qui n'existent pas :
+MapLibre reçoit un 404 et retombe silencieusement sur l'ancêtre. Rendu correct,
+seize requêtes perdues.
+
+**Sources multiples** — quatre couches qui ne se recouvrent jamais :
+
+| couche | emprise de source | portée de couche |
+|---|---|---|
+| monde global | globale, z ≤ partage | jusqu'au relais |
+| monde nord | au-dessus de la bande | au-delà du relais |
+| monde sud | en dessous de la bande | au-delà du relais |
+| bande | bande, z > partage | au-delà du relais |
+
+⚠️ **Deux emprises pour le hors-bande**, parce que `bounds` est une boîte et que
+« partout sauf cette bande » ne s'écrit pas d'un seul rectangle. Mais c'est
+`minzoom`/`maxzoom` **de couche** qui réalise l'exclusion en zoom, les bornes de
+source ne découpant qu'en latitude.
+
+⚠️ **Le relais se mesure en zoom de carte, pas en niveau de tuile.** Avec des
+tuiles de 256 px, MapLibre sert `round(zoom + 1)` : le partager sur `split_zoom`
+décalerait le relais d'un cran entier.
 
 
 
@@ -275,6 +348,51 @@ La frontière s'est déplacée d'elle-même au Lot 3, et pas dans le sens prévu
 PROJ **refusant** un Mercator bâti sur le repère Étoile, la reprojection a dû
 rentrer dans le tuileur sous forme de cartographie inverse. La plomberie qu'on
 comptait déléguer n'existait pas.
+
+### Le tuileur vectoriel a fait bouger la frontière, dans l'autre sens
+
+`tippecanoe` ferait toute la pyramide MVT : il n'est pas utilisé, parce que le
+changement de repère, le déroulement de la couture, la simplification, le
+découpage et la politique de généralisation sont le sujet du lot.
+
+Mais **l'encodage, lui, est délégué** à `mapbox-vector-tile`, et la première
+version de ce module ne le faisait pas — elle écrivait son protobuf à la main.
+Le partage a été refait sur un argument simple : « l'encodage MVT » recouvre
+deux choses de natures différentes.
+
+Le **cadrage protobuf** — varint, zigzag, types de fil, entiers de commande — est
+de la sérialisation générique. Ce n'est pas de la géomatique, et le savoir
+qu'il porte n'a pas besoin d'être exécutable pour être acquis : il est consigné
+dans `TUTORIAL.md`. La **cartographie**, elle, n'existe dans aucune
+bibliothèque d'encodage.
+
+Trois faits ont tranché, et aucun n'est une question de lignes économisées :
+
+* la bibliothèque **corrige l'enroulement des anneaux** et répare les polygones
+  dégénérés. `clip_ring` est un Sutherland-Hodgman, qui produit sur un anneau
+  concave des liaisons longeant le bord de la tuile — et tous les bassins
+  versants sont concaves. Déléguer **améliore la correction** ;
+* elle sort une tuile d'essai en **236 octets** contre 245 pour l'implémentation
+  à la main, ayant un module d'optimisation que celle-ci n'avait pas ;
+* garder l'encodage de géométrie en ne déléguant que le cadrage aurait supposé
+  d'importer `mapbox_vector_tile.Mapbox.vector_tile_pb2`, un sous-module
+  *interne* — une dépendance aux entrailles d'une bibliothèque, pire que l'un
+  ou l'autre extrême.
+
+**La règle n'a pas changé ; c'est la lecture de ce qui est « plomberie » qui
+s'est affinée.** Le tuileur raster, lui, reste écrit à la main : la pyramide de
+Mercator et l'encodage terrain-RGB sont des concepts, pas du transport.
+
+### Et il inverse le sens de la reprojection
+
+C'est la symétrie la plus instructive des deux lots. Un rééchantillonnage raster
+itère sur les pixels d'**arrivée** et demande à chacun d'où il vient, donc le
+tuileur raster applique `star_to_crust` — la cartographie inverse. Un tuileur
+vectoriel n'a aucun pixel à remplir : il transporte des **sommets**, donc il
+applique `crust_to_star`, le sens direct.
+
+Se tromper de sens ne lève rien. Et, à l'époque par défaut, ne se voit pas non
+plus — voir le piège 46.
 
 
 

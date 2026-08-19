@@ -12,6 +12,9 @@
 .sig {
   position: fixed;
   inset: 0;
+  /* Largeur du panneau, partagée : l'infobulle se place juste à sa droite et
+     doit suivre si elle change. */
+  --sig-hud-width: 17.5rem;
   color-scheme: dark;
   background: #05070a;
 }
@@ -65,7 +68,13 @@
    *
    * 17,5rem tient le plus long libellé, « relief 3D — en attente de z 4 ».
    */
-  width: 17.5rem;
+  width: var(--sig-hud-width);
+
+  /* ⚠️ Le panneau dépasse la fenêtre dès que plusieurs options sont ouvertes —
+     mesuré à 821 px de haut pour 700 de fenêtre, les dernières commandes étant
+     alors inatteignables. Il défile donc. */
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
 }
 
 .sig-hud h1 {
@@ -106,6 +115,112 @@
   text-align: left;
 }
 
+/* Une option = sa commande, et son point d'interrogation. Le (?) est HORS du
+   bouton : dans le bouton, il ferait partie de la cible de clic et survoler
+   l'aide reviendrait à viser la bascule. */
+.sig-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.sig-option button {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+
+/* ── L'aide au survol ──────────────────────────────────────────────────
+ *
+ * Infobulle en CSS plutôt que l'attribut `title` natif : celui-ci met une
+ * seconde à paraître, ne se met pas en forme, et ne s'ouvre pas au clavier.
+ *
+ * Elle se déploie à DROITE du panneau, jamais à l'intérieur : le panneau fait
+ * 280 px et une explication d'une phrase n'y tiendrait pas sans le déformer. */
+.sig-aide {
+  position: relative;
+  /* ⚠️ `inline-block` obligatoire : dans les lignes `.sig-option` le marqueur
+     est un élément flex et prend ses dimensions, mais dans le libellé d'un
+     curseur il est en flux inline, où `width` et `height` seraient ignorés — le
+     cercle disparaîtrait et il ne resterait qu'un point d'interrogation nu. */
+  display: inline-block;
+  vertical-align: middle;
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #10161f;
+  color: #8fa3bd;
+  font-size: 10px;
+  line-height: 13px;
+  text-align: center;
+  cursor: help;
+}
+
+/* ⚠️ `fixed` et non `absolute`, et ce n'est pas un détail de placement : le
+   panneau défile, donc il découpe ce qu'il contient. Un élément fixé échappe au
+   découpage d'un ancêtre défilant — à condition qu'aucun ancêtre ne porte
+   `transform`, `filter` ou `perspective`, ce qui n'est le cas d'aucun ici.
+   L'infobulle paraît donc toujours au même endroit, à droite du panneau, et
+   jamais tronquée. */
+.sig-aide::after {
+  content: attr(data-aide);
+  position: fixed;
+  left: calc(12px + var(--sig-hud-width) + 14px);
+  top: 12px;
+  z-index: 3;
+  width: 20rem;
+  max-width: calc(100vw - 12px - var(--sig-hud-width) - 26px);
+  padding: 8px 10px;
+  background: rgba(8, 11, 16, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 5px;
+  color: #c6d2e2;
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: left;
+  /* `visibility` en plus de l'opacité : sans elle, la boîte resterait dans le
+     flux des cibles de survol et clignoterait au passage du pointeur. */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+
+.sig-aide:hover::after,
+.sig-aide:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Dans un libellé de curseur, aucun `gap` ne l'espace du texte. */
+.sig-slider .sig-aide {
+  margin-left: 5px;
+}
+
+/* Sélecteur de couleur natif, ramené aux dimensions du panneau. */
+.sig-color {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: #6f8299;
+  font-size: 11px;
+}
+
+.sig-color input[type="color"] {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+}
+
 .sig-hud button {
   margin-top: 9px;
   width: 100%;
@@ -123,19 +238,19 @@
   border-color: #47739b;
 }
 
-.sig-exaggeration {
+.sig-slider {
   display: block;
   margin-top: 8px;
   color: #6f8299;
   font-size: 11px;
 }
 
-.sig-exaggeration output {
+.sig-slider output {
   color: #d8dee8;
   font-variant-numeric: tabular-nums;
 }
 
-.sig-exaggeration input {
+.sig-slider input {
   width: 100%;
   margin-top: 4px;
   accent-color: #47739b;

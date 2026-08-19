@@ -27,6 +27,12 @@ const DynamicSigMap = dynamic(
   }
 );
 
-export function SigViewer({ tilejsonUrl }: { tilejsonUrl: string }) {
-  return <DynamicSigMap tilejsonUrl={tilejsonUrl} />;
+export function SigViewer({
+  tilejsonUrl,
+  hydroUrl,
+}: {
+  tilejsonUrl: string;
+  hydroUrl: string;
+}) {
+  return <DynamicSigMap tilejsonUrl={tilejsonUrl} hydroUrl={hydroUrl} />;
 }

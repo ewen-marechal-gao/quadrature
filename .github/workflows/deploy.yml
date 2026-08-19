@@ -91,16 +91,44 @@ jobs:
             'geo/aeonir_gis/tiles.py',
             'geo/aeonir_gis/pyramid.py') }}
 
+      # La pyramide vectorielle a sa PROPRE clé, et ce n'est pas une commodité :
+      # elle dépend de modules que le relief ignore (`hydro`, `export`, `mvt`) et
+      # ignore des modules dont le relief dépend. Une clé commune ferait
+      # reconstruire les deux à chaque retouche de l'un, soit le coût le plus
+      # lourd du déploiement payé pour rien.
+      - name: Restaurer la pyramide vectorielle
+        id: vecteur
+        uses: actions/cache@v4
+        with:
+          path: geo/out/vector
+          key: >-
+            aeonir-vecteur-${{ hashFiles(
+            'geo/aeonir_gis/calibration.json',
+            'geo/aeonir_gis/constants.py',
+            'geo/aeonir_gis/noise.py',
+            'geo/aeonir_gis/dem.py',
+            'geo/aeonir_gis/hydro.py',
+            'geo/aeonir_gis/export.py',
+            'geo/aeonir_gis/tiles.py',
+            'geo/aeonir_gis/pyramid.py',
+            'geo/aeonir_gis/mvt.py') }}
+
       - name: Installer le pipeline
-        if: steps.tuiles.outputs.cache-hit != 'true'
+        if: steps.tuiles.outputs.cache-hit != 'true' || steps.vecteur.outputs.cache-hit != 'true'
         run: pip install -r requirements.txt
         working-directory: geo
 
       # ÉTAPE 1 — obtenir le MNT. C'est celle que le Lot 7 remplacera.
       # Une grille 16 384 × 8 192, soit 422 Mio de GeoTIFF puis COG : 5 min 37 s
       # mesurées en local, à quoi le runner ajoutera sa part.
+      #
+      # ⚠️ Elle tourne dès que l'une OU l'autre pyramide manque, et le `||` n'est
+      # pas de la prudence : le cache ne conserve que les pyramides, jamais le
+      # MNT. Un cache de tuiles à jour et un cache vectoriel périmé laisseraient
+      # donc l'hydrologie sans son entrée — et elle échouerait sur un fichier
+      # absent, à l'étape suivante, pour une raison qui ne s'y lit pas.
       - name: Produire le MNT
-        if: steps.tuiles.outputs.cache-hit != 'true'
+        if: steps.tuiles.outputs.cache-hit != 'true' || steps.vecteur.outputs.cache-hit != 'true'
         run: python -m aeonir_gis.dem
         working-directory: geo
 
@@ -108,6 +136,27 @@ jobs:
       - name: Tuiler le MNT
         if: steps.tuiles.outputs.cache-hit != 'true'
         run: python -m aeonir_gis.pyramid
+        working-directory: geo
+
+      # ── L'hydrologie : l'analyser, puis la tuiler ────────────────────
+      #
+      # Même découpage en deux, pour la même raison : l'analyse est la partie
+      # coûteuse et le tuilage la partie qui bouge.
+      #
+      # ÉTAPE 3 — D8, accumulation, réseau, Strahler, bassins → GeoPackage.
+      # C'est l'étape la plus gourmande de toute la chaîne, mais en MÉMOIRE et
+      # non en temps : 1,65 Go de pic mesuré, contre 16 Go sur un runner
+      # standard. C'est aussi elle qui plafonne le zoom maximal du chantier.
+      - name: Analyser l'hydrologie
+        if: steps.vecteur.outputs.cache-hit != 'true'
+        run: python -m aeonir_gis.export
+        working-directory: geo
+
+      # ÉTAPE 4 — la tuiler. Lit le GeoPackage, écrit out/vector + hydro.json.
+      # 821 tuiles pour 8,8 Mio, une dizaine de secondes en local.
+      - name: Tuiler l'hydrologie
+        if: steps.vecteur.outputs.cache-hit != 'true'
+        run: python -m aeonir_gis.mvt
         working-directory: geo
 
       - uses: actions/setup-node@v4
@@ -137,20 +186,30 @@ jobs:
       # Ici, en revanche, leur absence signifierait publier /sig sans relief. On
       # compare donc les deux comptes plutôt que d'inscrire un nombre en dur,
       # qui mentirait dès que --split-zoom bougerait.
-      - name: Vérifier que le relief a atteint l'export
+      # ⚠️ Le garde compte les DEUX pyramides, et il compte plutôt qu'il ne
+      # constate une présence. `copy-aeonir-tiles.mjs` sort en 0 quand une
+      # source manque — c'est voulu, un clone frais n'en a aucune — donc une
+      # pyramide absente ou tronquée traverserait le build sans un mot et ne se
+      # verrait qu'en production, sur une carte à moitié vide.
+      - name: Vérifier que les pyramides ont atteint l'export
         run: |
-          test -f web/out/aeonir/tiles.json || {
-            echo "::error::L'export ne contient pas tiles.json — /sig serait sans relief."
-            exit 1
+          verifier() {
+            nom="$1"; contrat="$2"; source="$3"; cible="$4"; motif="$5"
+            test -f "$cible/$contrat" || {
+              echo "::error::L'export ne contient pas $contrat — /sig serait sans $nom."
+              exit 1
+            }
+            attendu=$(find "$source" -name "$motif" | wc -l)
+            obtenu=$(find "$cible" -name "$motif" | wc -l)
+            echo "$nom — produites $attendu, exportées $obtenu"
+            test "$attendu" -gt 0 || { echo "::error::Aucune tuile de $nom produite."; exit 1; }
+            test "$attendu" = "$obtenu" || {
+              echo "::error::L'export ne porte pas toutes les tuiles de $nom."
+              exit 1
+            }
           }
-          attendu=$(find geo/out/tiles -name '*.png' | wc -l)
-          obtenu=$(find web/out/aeonir -name '*.png' | wc -l)
-          echo "tuiles produites $attendu, exportées $obtenu"
-          test "$attendu" -gt 0 || { echo "::error::Aucune tuile produite."; exit 1; }
-          test "$attendu" = "$obtenu" || {
-            echo "::error::L'export ne porte pas toutes les tuiles."
-            exit 1
-          }
+          verifier "relief" tiles.json geo/out/tiles web/out/aeonir '*.png'
+          verifier "hydrologie" hydro.json geo/out/vector web/out/aeonir-hydro '*.pbf'
 
       - name: Préparer la connexion SSH
         run: |

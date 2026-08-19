@@ -31,7 +31,7 @@ les empêche de regonfler :
 | **2** | Hydrologie — D8, accumulation, réseau, Strahler, bassins → GeoPackage | ✅ |
 | **3** | Tuileur maison — pyramide XYZ, terrarium, TileJSON | ✅ |
 | **4** | Viewer MapLibre — style spec, `hillshade`, `terrain` | ✅ porté en React à la route `/sig` ; tests en CI, tuiles produites au déploiement |
-| **5** | Tuiles vectorielles MVT — fleuves, lacs, biomes | |
+| **5** | Tuiles vectorielles MVT — fleuves, exutoires, bassins | ✅ tuileur maison, encodage délégué, rendu MapLibre à `/sig`, produit au déploiement |
 | **6** | Tuileur **dynamique** — le même code déclenché par requête HTTP, lisant des plages dans le COG, l'époque en paramètre d'URL | |
 | **7** | Relief tectonique — plancher dominant, chaînes de collision, fosses en eau dans le seul terminateur, croûte dilatée/contractée | |
 
@@ -48,7 +48,8 @@ au **Lot 7** : le Lot 2 ne devait produire qu'une couche vectorielle honnête à
 tuiler, la cible étant un poste frontend.
 
 **PMTiles** — attendu pour régler la bordure dentelée d'une pyramide creuse.
-Deux sources déclarées côté client le font sans lui et suppriment les 404.
+Un découpage de couches déclaré côté client le fait sans lui et supprime les
+404, sans rien coûter au rendu (piège 41).
 L'argument du fichier unique redevient décisif au **Lot 6**, quand les tuiles
 seront *servies* plutôt que posées à côté du viewer.
 
@@ -133,6 +134,29 @@ un serveur de développement qui n'est pas celui de la production. Le défaut
 vivait précisément dans l'écart entre les deux (piège 40). Une vérification qui
 n'interroge jamais l'hôte réel ne dit rien de l'hôte réel.
 
+Et une sixième, en comparant deux montages de sources : le compteur de 404
+était remis à zéro **après** le déplacement, donc la fenêtre excluait exactement
+les requêtes à compter. Les deux montages sortaient à zéro, et la conclusion
+aurait été qu'ils ne diffèrent pas — alors que l'un réclame seize tuiles
+inexistantes et l'autre aucune.
+
+Une septième vit au piège 49 — un argument par défaut mesuré à « coût
+exactement nul », l'égalité parfaite étant le seul indice.
+
+Et une huitième, en pesant la contribution de chaque couche vectorielle :
+`areTilesLoaded()` répond **vrai juste après avoir allumé un calque**, parce que
+ses requêtes ne sont mises en file qu'au tour de boucle suivant. Trois couches
+mesurées ainsi sortaient à 0, 20 186 et 0 pixels touchés — pour un ensemble à
+151 841. **L'incohérence était la seule chose vraie du relevé**, et c'est elle
+qui a mis sur la piste : une somme inférieure à son tout ne peut pas venir d'un
+recouvrement.
+
+La même mesure a d'ailleurs menti deux fois de suite, d'abord par son critère.
+Compter les pixels « assez bleus » n'est pas additif : un remplissage
+translucide qui ne franchit pas le seuil tout seul y fait passer les pixels du
+trait qu'il recouvre. Un **différentiel de pixels** entre deux états mesure la
+contribution ; un prédicat de couleur mesure autre chose.
+
 ## Lire la console avant de sonder
 
 Trois heures de rétro-ingénierie du moteur de rendu de MapLibre pour arriver à
@@ -170,6 +194,45 @@ appel isolé engage sa propre transaction SQLite. Sur l'écriture complète :
 411,7 s → 1,7 s.
 
 ---
+
+## Ce que le tuilage vectoriel a mesuré, et qui a changé le code
+
+Le lot devait produire une **matrice Strahler × zoom**. La mesure l'a écartée
+avant la première ligne de tuileur, et c'est le seul arbitrage de ce chantier
+qu'un chiffre a retourné.
+
+L'ordre de Strahler ne distribue pas : sur ce réseau, `≥1` garde 100 % des
+lignes, `≥2` en garde 19,04 %, `≥3` 1,38 %, `≥4` 0,02 %. Quatre paliers, dont
+trois utilisables, pour sept niveaux de zoom — et des sauts de ×5, ×14 puis ×66
+entre eux. Un budget par tuile demande un réglage à chaque niveau ; l'ordre de
+Strahler n'en propose aucun entre « tout » et « un cinquième ».
+
+Pire, il ne classe pas par ce qu'on croit. Un tronçon d'ordre 1 draine jusqu'à
+226 421 km², au-dessus du minimum de l'ordre 3 (33 648 km²), et 8,5 % des lignes
+d'ordre 1 dépassent la médiane de l'ordre 2. Ce n'est pas du bruit : **Strahler
+compte des confluences, pas de l'eau.** Un long tronc sans affluent de rang égal
+reste d'ordre 1 quelle qu'en soit l'importance, et c'est le régime ordinaire
+d'un terrain fBm, pauvre en confluences.
+
+`drainage_km2` — une aire accumulée, donc continue et monotone par construction
+— n'a aucun des deux défauts. À budget égal de 1 000 entités dans la tuile la
+plus lourde :
+
+| z | Strahler retient | `drainage_km2` retient |
+|---|---|---|
+| 0 | 263 (`≥3`) | **931** |
+| 1 | 85 (`≥3`) | **924** |
+| 2 | 524 (`≥2`) | **957** |
+| 3 | 241 (`≥2`) | **980** |
+
+À z=1, `≥2` donne 1 004 entités — quatre de trop — donc il faut retomber sur
+`≥3` et ses 85. Le seuil continu tient le budget à 2 % près partout, et garde à
+z=3 dix-huit mille lignes sur dix-neuf mille là où Strahler en garderait 3 649.
+
+**L'attribut qu'on affiche et l'attribut qui sélectionne n'ont aucune raison
+d'être le même.** Strahler reste porté sur chaque trait — c'est lui qui donnera
+la largeur du trait, et c'est l'idiome du métier. Il ne décide simplement rien.
+
 
 # L'essai `H = 0,5`, et pourquoi il a été écarté
 
@@ -590,3 +653,248 @@ renumérote pas — du code et des documents y renvoient.
     L'enseignement dépasse MapLibre : **une route servie par un hôte statique
     configuré hors du dépôt n'est vérifiée que contre cet hôte.** Le test qui
     compte est celui qui interroge la production, et il doit exister.
+
+41. **Ce n'est pas une source qui coûte, c'est une couche.** Une source que plus
+    aucune couche visible ne vise tombe à **zéro tuile** — vérifié en masquant
+    ses couches, et vrai aussi de la source dédiée au terrain tant que le relief
+    3D est éteint. Déclarer des sources est donc gratuit. En revanche **chaque
+    couche `hillshade` visible fait sa propre passe hors écran** : elle calcule
+    les dérivées du MNT dans une texture, puis la composite.
+
+    Conséquence directe, et coûteuse à voir : deux couches d'ombrage qui se
+    recouvrent géographiquement **s'additionnent**. Un fond grossier suragrandi
+    sous un relief net ne l'enrichit pas, il le dilue — mesuré dans la bande,
+    moyenne 27,1 avec le fond contre 14,5 sans, à détail fin inchangé.
+
+    Le remède s'écrit donc en **couches**, jamais en sources : `minzoom` et
+    `maxzoom` de couche pour exclure en zoom, et autant de sources que
+    nécessaire pour découper en latitude — `bounds` étant une boîte, « partout
+    sauf cette bande » demande deux emprises.
+
+42. **Le zoom de la carte n'est pas le niveau de tuile.** Avec des tuiles de
+    256 px, MapLibre sert le niveau `round(zoom + 1)` : la source de bande, dont
+    le `minzoom` vaut 5, ne rend rien jusqu'à un zoom de carte de 3,4 et sert du
+    z=5 dès 3,6. Placer un seuil de couche sur `split_zoom` — un niveau de
+    tuile — décalerait donc le relais d'un cran entier, et ouvrirait un trou ou
+    un recouvrement selon le sens de l'erreur.
+
+    La règle : un seuil qui sépare des **couches** se mesure en zoom de carte,
+    et se vérifie en balayant le zoom plutôt qu'en le dérivant.
+
+43. **L'éclairage d'un `hillshade` est un uniforme, pas un champ.** La
+    spécification donne à `hillshade-illumination-direction` comme à
+    `-altitude` le `property-type` `data-constant`, avec `zoom` pour seul
+    paramètre d'expression : une couche porte **un seul soleil** pour toute la
+    carte, et rien ne permet de le faire varier avec la position.
+
+    Gênant sur un monde verrouillé par les marées, où la latitude EST
+    l'élévation de l'astre. La sortie retenue — recalculer l'angle sur le centre
+    de la vue à chaque déplacement — n'est pas exacte au pixel, mais elle est
+    exacte là où l'on regarde, et elle rend sensible le fait qui définit le
+    monde. Assumer une contrainte vaut mieux que la maquiller.
+
+44. **`hillshade-method: "standard"` ignore l'altitude du soleil.** De 80° à 5°,
+    rendu identique à l'octet près. `igor` l'ignore aussi ; `basic`,
+    `multidirectional` et `combined` la lisent. Un réglage sans effet n'est donc
+    pas forcément un réglage cassé : il peut être branché sur un algorithme qui
+    ne le consomme pas. Croiser les deux avant de conclure.
+
+45. **Sans lumière diffuse, un éclairage rasant est noir.** À 11° d'élévation,
+    l'angle réel au bord du terminateur, l'amplitude du rendu tombe à 6,7
+    niveaux sur 255 ; en relevant la seule couleur d'ombre — qui *est* le terme
+    atmosphérique — elle remonte à 62,3, au-dessus de ce que donne la méthode
+    neutre à n'importe quel angle.
+
+    On avait conclu que la platitude du terrain interdisait l'angle physique.
+    C'était l'absence d'air. **Un modèle d'éclairage incomplet se diagnostique en
+    défaut du sujet.**
+
+    Corollaire trouvé en corrigeant : l'atmosphère ne fabrique pas de lumière,
+    elle en diffuse. Éteindre l'astre sans réduire le terme diffus donne une
+    nuit aussi claire que le jour.
+
+46. **À l'époque nulle, le changement de repère est sa propre réciproque.** La
+    longitude subsolaire y est nulle et la transformation se réduit à un
+    basculement de pôle, qui est une **involution** : `crust_to_star` et
+    `star_to_crust` rendent le même point, à 0,0000° près. L'asymétrie ne naît
+    que de la longitude subsolaire — 0,0856° à 0,25 a, 1,2637° à 3,7 a.
+
+    Conséquence, et elle est vicieuse : **un test du *sens* de la transformation
+    écrit à l'époque par défaut passe aussi bien avec le bon sens qu'avec le
+    mauvais.** Il laisse également passer un `epoch_a` accepté puis jamais
+    transmis, ce qui est exactement le défaut qu'a eu `mvt._to_world` — deux
+    fautes muettes qui se couvraient l'une l'autre.
+
+    Vérifié à 3,7 a : la tuile écrite tombe à 0,14 pas de quantification du sens
+    direct, et à 246 pas du sens inverse. **Tout test de repère doit porter une
+    époque où les deux sens diffèrent.**
+
+47. **La couture se déroule ; elle ne se coupe que faute de tuiles.** Le piège 16
+    impose de couper à l'antiméridien du repère d'affichage — c'est vrai pour un
+    GeoPackage, qui n'a rien pour absorber le débordement. Un tuileur n'a pas à
+    couper : il suffit de laisser la longitude sortir de `[−180, 180]` par
+    déroulement, puis de replier les colonnes **modulo la largeur du monde**. Le
+    morceau qui traverse retombe dans la bonne tuile par construction, et aucune
+    entité n'est scindée. Mesuré sur le réseau : 126 sommets sortent du carré
+    unité, et aucun ne produit de trait fantôme.
+
+    Couper *et* tuiler serait même nuisible : la coupure du GeoPackage tombe au
+    méridien du repère de stockage, donc au mauvais endroit une fois affiché.
+
+48. **Simplifier après découpage décale les bords de tuile.** Douglas-Peucker
+    préserve les extrémités de ce qu'on lui donne ; appliqué aux deux moitiés
+    d'un même fleuve, il travaille sur deux points de coupure différents et ne
+    retient plus les mêmes sommets de part et d'autre. Simplifier **avant**, dans
+    les unités du niveau, garantit que deux tuiles voisines partagent exactement
+    les sommets de leur frontière.
+
+49. **Un argument par défaut est lié à la définition, pas au module.** Réassigner
+    `mvt.BUFFER` à l'exécution ne change rien à `def tile_layer(..., buffer=BUFFER)`,
+    dont la valeur a été capturée à l'import. Une première mesure du coût de la
+    marge est ainsi sortie à « exactement zéro octet, exactement zéro entité » —
+    une égalité *parfaite* qui aurait dû alerter tout de suite. Le vrai coût,
+    obtenu en passant le paramètre, est de **+6,4 % de volume** à z=4.
+
+    C'est la septième fois dans ce chantier qu'une fenêtre de mesure ment. Le
+    signe distinctif est toujours le même : un résultat trop propre.
+
+50. **« L'encodage MVT » recouvre deux métiers, et un seul est le vôtre.** Le
+    *cadrage protobuf* — varint, zigzag, types de fil, champs délimités — est de
+    la sérialisation générique. L'*encodage de géométrie* — entiers de commande,
+    curseur relatif, enroulement des anneaux — est spécifique au domaine. Une
+    bibliothèque masque les deux, ce qui rend le choix « écrire ou déléguer »
+    plus grossier qu'il n'y paraît.
+
+    Ce que le format a d'instructif, et qui n'a pas besoin d'être écrit pour
+    être su :
+
+    * les coordonnées sont **relatives au sommet précédent**, un curseur unique
+      traversant toutes les parties d'une multi-géométrie. Le réinitialiser
+      entre les parties est l'erreur classique, et elle est silencieuse : la
+      première partie sort juste, les suivantes s'envolent ;
+    * la répétition est **portée dans l'entier de commande** — `MoveTo` suivi
+      de 3 se lit « déplace-toi trois fois », et non « trois commandes » ;
+    * le **zigzag** entrelace les signes pour que −1 coûte un octet au lieu de
+      dix. Une géométrie de tuile étant faite de petits déplacements des deux
+      signes, c'est exactement le cas qu'il existe pour servir ;
+    * un anneau extérieur a une **aire positive** au sens du géomètre dans un
+      repère où **y descend** — celui de la tuile. Recopier une convention
+      géographique produit des polygones troués à l'envers, qu'aucun décodeur
+      ne signale ;
+    * les attributs vivent dans **deux dictionnaires de couche**, l'entité ne
+      gardant que des indices. Mille traits d'ordre 3 ne stockent qu'un seul
+      « 3 ».
+
+    Le module a d'abord été écrit à la main, puis délégué — non pour économiser
+    des lignes, mais parce que la bibliothèque **répare les polygones
+    dégénérés** que `clip_ring` produit sur les anneaux concaves, et que tous
+    les bassins versants sont concaves. Quand la délégation améliore la
+    correction, l'argument pédagogique ne tient plus.
+
+    ⚠️ Le contrat qui reste à surveiller est `y_coord_down`. Sans lui,
+    l'encodeur retourne verticalement ce qu'on lui donne : les tuiles se
+    chargent, s'affichent, et la carte est en miroir — le piège 3 déplacé d'un
+    cran, et tout aussi muet.
+
+51. **`source-layer` est obligatoire sur un calque vectoriel, et son oubli ne
+    dit rien.** Une tuile MVT porte plusieurs couches nommées ; un calque doit
+    déclarer laquelle il lit. Sans ce champ — ou avec un nom qui ne correspond à
+    aucune entrée de `vector_layers` — MapLibre télécharge les tuiles, les
+    analyse, ne dessine rien, et ne signale rien. Aucun équivalent n'existe côté
+    raster, où la source *est* la donnée.
+
+    C'est le premier endroit à regarder quand une couche vectorielle reste
+    invisible, avant même de douter des tuiles.
+
+52. **`maxzoom` ne veut pas dire la même chose pour une source vectorielle.**
+    Sur un `raster-dem`, dépasser `maxzoom` fait servir la tuile du plafond.
+    Sur une source `vector`, c'est pareil — mais la conséquence ne l'est pas :
+    la géométrie reste **nette** en sur-zoom, puisqu'elle est vectorielle, et
+    rien ne signale qu'on regarde un niveau généralisé pour un autre.
+
+    Un relief flou se voit ; un réseau hydrographique appauvri ne se voit pas.
+    D'où le seuil de généralisation porté dans le TileJSON et affiché au
+    panneau : c'est le seul moyen de lire une couche clairsemée pour ce qu'elle
+    est.
+
+53. **La généralisation a deux étages, qui ne mesurent pas la même chose.** Le
+    producteur borne ce qu'une **tuile** peut porter — ici 1 000 entités dans la
+    plus lourde, et la borne est tenue. Il ne borne pas ce qu'un **écran**
+    montre, où plusieurs dizaines de tuiles coexistent.
+
+    Mesuré à z=4,2 : les exutoires touchaient 0,5 % du canevas — 10 084 pixels —
+    en mouchetures d'un pixel réparties partout, contre 1 % pour les fleuves,
+    qui sont le sujet. Le budget par tuile était respecté et le rendu était
+    quand même du bruit. Le remède est un `minzoom` de calque, c'est-à-dire une
+    généralisation **de style**.
+
+    Chercher la cause dans le pipeline aurait été chercher au mauvais étage.
+
+54. **Une `const` dérivée d'une fonction déclarée plus bas explose au
+    chargement, et TypeScript ne le voit pas.** `export const HYDRO_LAYERS =
+    hydroLayers()` en tête de module type-vérifie parfaitement : la *fonction*
+    est hissée. Les `const` qu'elle lit ne le sont pas, et sont en zone morte
+    temporelle au moment de l'appel — `ReferenceError` à l'import, donc page
+    blanche.
+
+    Le typage prouve que l'appel est bien formé, jamais qu'il est bien placé.
+
+55. **Le cache de déploiement ne conserve que ce qu'on lui nomme.** Deux
+    pyramides, deux clés — mais une seule entrée commune, le MNT, qu'aucune des
+    deux ne met en cache. Conditionner sa production au seul cache raster
+    laisserait l'hydrologie sans son entrée dès que l'un des deux caches touche
+    et l'autre non, et l'échec tomberait à l'étape suivante, sur un fichier
+    absent, pour une raison qui ne s'y lit pas.
+
+56. **Le zoom de bascule d'une source vectorielle n'est pas celui d'une source
+    raster.** Lu dans `coveringZoomLevel` de MapLibre :
+
+        niveau = (roundZoom ? round : floor)(zoom + log2(512 / tileSize))
+
+    Une source raster pose `roundZoom = true`, et la nôtre déclare
+    `tileSize: 256` — d'où `round(zoom + 1)`. Une source vectorielle ne pose pas
+    `roundZoom`, donc `floor`, et n'a **pas de `tileSize` du tout**, la valeur
+    valant 512 par convention — d'où `floor(zoom)`.
+
+    Pour une bande qui n'existe qu'à partir du niveau `s + 1`, cela donne
+    `z ≥ s − 0,5` d'un côté et `z ≥ s + 1` de l'autre : **un cran et demi
+    d'écart**, pour la même pyramide et le même partage.
+
+    Recopier le 3,5 du relief sur les couches vectorielles a ouvert un trou de
+    3,5 à 5,0 dans le terminateur — `world` éteint par son plafond, `band` pas
+    encore servie par sa source. Hors bande rien ne se voyait, les couches
+    nord/sud couvrant la zone ; **le défaut n'existait qu'à l'endroit le plus
+    intéressant de la carte**, ce qui est la définition d'un défaut qu'on ne
+    trouve pas en regardant vite.
+
+    Les deux valeurs sont désormais dérivées de `split_zoom` et d'aucune saisie.
+
+    La même confusion avait contaminé un second endroit, moins visible : le
+    relevé du seuil de généralisation, qui convertissait le zoom de carte en
+    niveau de tuile avec la règle raster. Les deux formules **coïncident par
+    endroits** — à z=4,2 elles donnent toutes deux 5 099 km² — et divergent
+    ailleurs : à z=2,6, 24 030 km² contre 5 099, soit un facteur 4,7 sur un
+    chiffre affiché comme un fait. Une capture d'écran prise au mauvais zoom
+    l'aurait validé. La conversion vit maintenant **dans** la fonction qui lit
+    le seuil, là où l'appelant ne peut plus y appliquer la règle de l'autre
+    famille par habitude.
+
+57. **L'extent n'achète pas ce qu'on croit, et ne coûte pas ce qu'on craint.**
+    Le nombre d'entiers de commande ne dépend pas de lui — il est fixé par le
+    nombre de sommets. Mesuré sur les fleuves à z=4, de 512 à 16 384 : les
+    sommets varient de 0,7 %, les octets de +18 %. Ce qui change est la
+    **largeur** des paramètres, un déplacement zigzagué tenant sur un octet
+    jusqu'à ±63 et sur deux jusqu'à ±8 191 : la part des déplacements sur un
+    octet passe de 99,9 % à 40,2 %.
+
+    Trente-deux fois plus de finesse pour dix-huit pour cent de volume. Le
+    facteur qui pilote le poids d'une tuile reste le nombre de sommets, donc la
+    simplification.
+
+    ⚠️ Et l'extent n'est pas un réglage isolé : `BUFFER` et `SIMPLIFY_TOLERANCE`
+    sont eux aussi en unités de tuile. Le changer seul en change trois. Mesurée
+    ainsi, la courbe des octets forme un **U de minimum 4 096** — un résultat
+    qui « confirme » la valeur retenue pour une raison entièrement fausse : à
+    extent 512, une marge de 64 unités vaut 12,5 % de la tuile contre 1,6 %, et
+    c'est la duplication de bordure qu'on mesure. **Un chiffre qui confirme ce
+    qu'on espérait mérite le même examen qu'un chiffre qui dérange.**

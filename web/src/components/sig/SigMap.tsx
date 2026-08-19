@@ -40,7 +40,40 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 // MapLibre, qui n'a de sens qu'une fois la carte présente.
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { LAYERS, TERRAIN_SOURCE, buildStyle } from "@/lib/sig/style";
+import {
+  ALL_COLOR_LAYERS,
+  ALL_HILLSHADE_LAYERS,
+  LAYERS,
+  MONTAGES,
+  TERRAIN_SOURCE,
+  buildStyle,
+} from "@/lib/sig/style";
+import {
+  EARTH_HYPSOMETRIC,
+  TINT_OPACITY_DEFAULT,
+  TINT_OPACITY_MAX,
+  TINT_OPACITY_MIN,
+} from "@/lib/sig/palette";
+import {
+  ATMOSPHERE_DENSITY_DEFAULT,
+  ATMOSPHERE_DENSITY_MAX,
+  ATMOSPHERE_DENSITY_MIN,
+  ATMOSPHERE_SHADOW,
+  NEUTRAL_METHOD,
+  ambientShadow,
+  REALISTIC_METHOD,
+  STAR_AZIMUTH_DEG,
+  VACUUM_SHADOW,
+  starElevationDeg,
+  starHighlight,
+} from "@/lib/sig/sun";
+import {
+  SOURCE_LAYERS,
+  fetchHydroTileJSON,
+  generalisationAt,
+  mountedHydroLayers,
+} from "@/lib/sig/hydro";
+import type { HydroTileJSON } from "@/lib/sig/hydro";
 import { fetchTileJSON, resolveTileTemplate } from "@/lib/sig/tilejson";
 import type { AeonirTileJSON } from "@/lib/sig/tilejson";
 import { tileIndex, wrapLongitude } from "@/lib/sig/mercator";
@@ -63,11 +96,35 @@ interface Readout {
 }
 
 interface Props {
-  /** URL du TileJSON, résolue contre le document. */
+  /** URL du TileJSON du relief, résolue contre le document. */
   tilejsonUrl: string;
+  /** URL du TileJSON de l'hydrologie. Son absence n'est pas une erreur. */
+  hydroUrl: string;
 }
 
-export function SigMap({ tilejsonUrl }: Props) {
+/**
+ * Le point d'interrogation d'une option, et son explication au survol.
+ *
+ * Le texte vit dans `data-aide` et l'infobulle est un `::after` — voir sig.css
+ * pour le pourquoi. `tabIndex` le rend atteignable au clavier, où `:focus-visible`
+ * ouvre la même boîte : une aide qu'on ne peut pas lire sans souris n'en est pas
+ * une.
+ */
+function Aide({ texte }: { texte: string }) {
+  return (
+    <span
+      className="sig-aide"
+      data-aide={texte}
+      tabIndex={0}
+      role="note"
+      aria-label={texte}
+    >
+      ?
+    </span>
+  );
+}
+
+export function SigMap({ tilejsonUrl, hydroUrl }: Props) {
   const container = useRef<HTMLDivElement>(null);
 
   // La carte passe en état — et non en simple référence — une fois son style
@@ -79,7 +136,17 @@ export function SigMap({ tilejsonUrl }: Props) {
 
   const [terrainRequested, setTerrainRequested] = useState(false);
   const [exaggeration, setExaggeration] = useState(EXAGGERATION_DEFAULT);
-  const [twoSources, setTwoSources] = useState(false);
+  const [multiSource, setMultiSource] = useState(false);
+  const [realisticLight, setRealisticLight] = useState(false);
+  const [atmosphere, setAtmosphere] = useState(true);
+  const [skyColor, setSkyColor] = useState(ATMOSPHERE_SHADOW);
+  const [skyDensity, setSkyDensity] = useState(ATMOSPHERE_DENSITY_DEFAULT);
+  /** Élévation de l'étoile au centre de la vue, affichée sur le bouton. */
+  const [starElevation, setStarElevation] = useState(0);
+  const [paletteOn, setPaletteOn] = useState(false);
+  const [tintOpacity, setTintOpacity] = useState(TINT_OPACITY_DEFAULT);
+  const [hydro, setHydro] = useState<HydroTileJSON | null>(null);
+  const [hydroOn, setHydroOn] = useState(false);
   const [graticuleOn, setGraticuleOn] = useState(false);
   const [tileBoundaries, setTileBoundaries] = useState(false);
 
@@ -97,7 +164,13 @@ export function SigMap({ tilejsonUrl }: Props) {
     let created: MapLibreMap | null = null;
 
     (async () => {
-      const contract = await fetchTileJSON(tilejsonUrl);
+      // ⚠️ Les deux contrats en PARALLÈLE, et le second toléré absent. En
+      // série, l'hydrologie retarderait l'apparition du relief pour une couche
+      // qui n'est même pas allumée au départ.
+      const [contract, hydroContract] = await Promise.all([
+        fetchTileJSON(tilejsonUrl),
+        fetchHydroTileJSON(hydroUrl),
+      ]);
       // StrictMode rejoue l'effet : la requête lancée par le premier montage
       // peut revenir après son démontage. Sans ce garde-fou, elle bâtirait une
       // carte dans un conteneur détaché.
@@ -161,7 +234,23 @@ export function SigMap({ tilejsonUrl }: Props) {
         // La sortie est ailleurs, et elle tombe juste : une copie n'est visible
         // que si le monde est plus étroit que l'écran, donc à bas zoom — la
         // plage exacte où le relief 3D ne montre rien. Voir `TERRAIN_MIN_ZOOM`.
-        style: buildStyle(contract, urlTemplate),
+        style: buildStyle(
+          contract,
+          urlTemplate,
+          hydroContract
+            ? {
+                contract: hydroContract,
+                urlTemplate: resolveTileTemplate(
+                  hydroUrl,
+                  // `resolveTileTemplate` ne lit que `tiles[0]` : les deux
+                  // contrats se ressemblent assez pour le partager, et le
+                  // dupliquer ferait diverger la gestion des accolades.
+                  hydroContract as unknown as AeonirTileJSON,
+                  window.location.href
+                ),
+              }
+            : undefined
+        ),
       });
 
       created.addControl(
@@ -171,7 +260,9 @@ export function SigMap({ tilejsonUrl }: Props) {
 
       // Exposé volontairement : un visualiseur sert à inspecter, et un module
       // ne laisserait rien atteindre depuis la console autrement.
-      Object.assign(window, { aeonir: { map: created, tilejson: contract } });
+      Object.assign(window, {
+        aeonir: { map: created, tilejson: contract, hydro: hydroContract },
+      });
 
       created.on("error", (e) => {
         // Hors de la bande, au-delà de `split_zoom`, les tuiles n'existent
@@ -185,6 +276,7 @@ export function SigMap({ tilejsonUrl }: Props) {
       created.on("load", () => {
         if (cancelled) return;
         setTilejson(contract);
+        setHydro(hydroContract);
         setMap(created);
       });
     })().catch((e: unknown) => {
@@ -196,7 +288,7 @@ export function SigMap({ tilejsonUrl }: Props) {
       created?.remove();
       setMap(null);
     };
-  }, [tilejsonUrl]);
+  }, [tilejsonUrl, hydroUrl]);
 
   // ── Lecture continue : zoom, puis pointeur ────────────────────────────
   useEffect(() => {
@@ -298,17 +390,133 @@ export function SigMap({ tilejsonUrl }: Props) {
   //            tuiles hors bande qui n'existent pas : 404, et MapLibre laisse
   //            ce qu'il peut.
   //   allumé — DEUX sources, chacune ne demandant que ce qui existe.
+  //
+  // Les teintes suivent le MÊME montage : sinon la bascule comparerait un
+  // ombrage nu d'un côté à un ombrage teinté de l'autre, et ne dirait plus rien
+  // du montage lui-même.
   useEffect(() => {
     if (!map) return;
-    map.setLayoutProperty(
-      LAYERS.singleSourceHillshade,
-      "visibility",
-      twoSources ? "none" : "visible"
-    );
-    for (const id of [LAYERS.worldHillshade, LAYERS.bandHillshade]) {
-      map.setLayoutProperty(id, "visibility", twoSources ? "visible" : "none");
+    const shown = (on: boolean) => (on ? "visible" : "none");
+    const actif = multiSource ? MONTAGES.multi : MONTAGES.single;
+    const dormant = multiSource ? MONTAGES.single : MONTAGES.multi;
+
+    for (const id of actif.hillshade) {
+      map.setLayoutProperty(id, "visibility", shown(true));
     }
-  }, [map, twoSources]);
+    for (const id of dormant.hillshade) {
+      map.setLayoutProperty(id, "visibility", shown(false));
+    }
+    for (const id of actif.color) {
+      map.setLayoutProperty(id, "visibility", shown(paletteOn));
+    }
+    for (const id of dormant.color) {
+      map.setLayoutProperty(id, "visibility", shown(false));
+    }
+  }, [map, multiSource, paletteOn]);
+
+  // ── L'hydrologie ──────────────────────────────────────────────────────
+  //
+  // Les calques s'allument en bloc : le découpage monde/bande est un détail de
+  // production, pas une commande offerte à l'utilisateur. C'est déjà le parti
+  // pris des montages de relief.
+  //
+  // ⚠️ Les SOURCES ne bougent pas, et il ne faut pas les faire bouger. Une
+  // source que plus aucun calque visible ne vise tombe d'elle-même à zéro tuile
+  // (piège 41, mesuré) : la démonter à l'extinction ne gagnerait rien et
+  // forcerait un rechargement complet au rallumage. Seule la visibilité change.
+  useEffect(() => {
+    if (!map || !hydro) return;
+    for (const id of mountedHydroLayers(map)) {
+      map.setLayoutProperty(id, "visibility", hydroOn ? "visible" : "none");
+    }
+  }, [map, hydro, hydroOn]);
+
+  // ── L'éclairage ───────────────────────────────────────────────────────
+  //
+  // Un seul effet, parce que les deux bascules touchent les mêmes propriétés :
+  // les séparer ferait que la dernière à s'appliquer écraserait l'autre.
+  //
+  // ⚠️ La méthode change avec le réalisme, et ce n'est pas décoratif :
+  // `standard` ignore l'altitude du soleil. Sans ce changement, suivre la
+  // latitude ne produirait strictement rien. Voir sun.ts.
+  //
+  // L'abonnement à `move` est la contrepartie assumée de la limite de MapLibre :
+  // l'élévation ne pouvant pas varier DANS une couche, on la recalcule sur le
+  // centre du champ à chaque déplacement.
+  const twilightFloor = tilejson?.aeonir.band.south_deg ?? -21;
+
+  useEffect(() => {
+    if (!map) return;
+    const layers = ALL_HILLSHADE_LAYERS;
+    const air = { enabled: atmosphere, color: skyColor, density: skyDensity };
+
+    // Dernière LATITUDE appliquée : `move` tire des dizaines d'événements par
+    // seconde, et repousser un uniforme identique ne sert à rien.
+    //
+    // ⚠️ La latitude, et surtout pas l'élévation. Sous l'équateur l'étoile est
+    // couchée, donc l'élévation est bornée à 0 partout : un garde-fou indexé
+    // sur elle se court-circuiterait dès le premier point négatif et figerait
+    // le crépuscule. Or c'est là, entre l'équateur et le Linceul, que la
+    // lumière varie le plus.
+    let applied = Number.NaN;
+
+    const apply = () => {
+      const lat = map.getCenter().lat;
+      if (Math.abs(lat - applied) < 0.25) return;
+      applied = lat;
+      const elevation = starElevationDeg(lat);
+      setStarElevation(elevation);
+      // L'ombre AVANT la haute lumière : celle-ci se fond vers celle-là, donc
+      // elle a besoin de la valeur du moment, pas de celle d'avant.
+      const shadow = ambientShadow(lat, twilightFloor, air);
+      for (const id of layers) {
+        map.setPaintProperty(id, "hillshade-illumination-altitude", elevation);
+        map.setPaintProperty(id, "hillshade-shadow-color", shadow);
+        map.setPaintProperty(
+          id,
+          "hillshade-highlight-color",
+          starHighlight(lat, twilightFloor, shadow)
+        );
+      }
+    };
+
+    for (const id of layers) {
+      map.setPaintProperty(
+        id,
+        "hillshade-method",
+        realisticLight ? REALISTIC_METHOD : NEUTRAL_METHOD
+      );
+      // Régime neutre : pas de latitude qui compte, donc l'atmosphère seule.
+      // Régime neutre : la latitude ne compte pas, seul l'air répond.
+      map.setPaintProperty(
+        id,
+        "hillshade-shadow-color",
+        ambientShadow(0, twilightFloor, air)
+      );
+      map.setPaintProperty(
+        id,
+        "hillshade-illumination-direction",
+        STAR_AZIMUTH_DEG
+      );
+    }
+
+    if (!realisticLight) return;
+    apply();
+    map.on("move", apply);
+    return () => {
+      map.off("move", apply);
+    };
+  }, [map, realisticLight, atmosphere, skyColor, skyDensity, twilightFloor]);
+
+  // L'opacité se pousse sur les trois couches à la fois : seule l'une d'elles
+  // est visible, mais laisser les deux autres à l'ancienne valeur ferait sauter
+  // le rendu au prochain changement de montage.
+  useEffect(() => {
+    if (!map) return;
+    for (const id of ALL_COLOR_LAYERS) {
+      map.setPaintProperty(id, "color-relief-opacity", tintOpacity);
+    }
+  }, [map, tintOpacity]);
 
   useEffect(() => {
     if (!map) return;
@@ -370,6 +578,34 @@ export function SigMap({ tilejsonUrl }: Props) {
                 : `${Math.round(readout.elevation)} m`}
           </dd>
 
+          {/* Le seuil de généralisation du niveau SERVI, lu dans le contrat.
+              Sans lui, une couche clairsemée au dézoom se lit comme une donnée
+              pauvre au lieu d'une donnée généralisée — c'est toute la raison
+              pour laquelle le producteur l'écrit. */}
+          {hydroOn && hydro && zoom !== null && (
+            <>
+              <div className="sig-sep" />
+              <dt>fleuves ≥</dt>
+              <dd>
+                {(() => {
+                  // Le zoom de CARTE se passe tel quel : la conversion en
+                  // niveau de tuile appartient à `generalisationAt`, qui
+                  // applique la règle vectorielle. La première version passait
+                  // `zoom + 1` — la règle raster — et annonçait donc, hors
+                  // coïncidence, le seuil d'un niveau qui n'était pas servi.
+                  const seuil = generalisationAt(
+                    hydro,
+                    SOURCE_LAYERS.rivers,
+                    zoom
+                  );
+                  return seuil === null
+                    ? "—"
+                    : `${Math.round(seuil).toLocaleString("fr-FR")} km²`;
+                })()}
+              </dd>
+            </>
+          )}
+
           <div className="sig-sep" />
 
           <dt>époque</dt>
@@ -378,19 +614,25 @@ export function SigMap({ tilejsonUrl }: Props) {
           {error && <dd className="sig-error">{error}</dd>}
         </dl>
 
-        <button
-          type="button"
-          aria-pressed={terrainRequested}
-          onClick={toggle(terrainRequested, setTerrainRequested)}
-        >
-          {waitingForZoom
-            ? `relief 3D — en attente de z ${TERRAIN_MIN_ZOOM}`
-            : "relief 3D"}
-        </button>
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={terrainRequested}
+            onClick={toggle(terrainRequested, setTerrainRequested)}
+          >
+            {waitingForZoom
+              ? `relief 3D — en attente de z ${TERRAIN_MIN_ZOOM}`
+              : "relief 3D"}
+          </button>
+          <Aide
+            texte={`Déforme réellement le maillage au lieu de simuler du volume. Reste éteint sous le zoom ${TERRAIN_MIN_ZOOM} : c'est là que vit un défaut d'ombrage de MapLibre, visible dès qu'une copie du monde entre dans le champ.`}
+          />
+        </div>
 
         {terrainRequested && (
-          <label className="sig-exaggeration" htmlFor="sig-exaggeration">
+          <label className="sig-slider" htmlFor="sig-exaggeration">
             exagération <output>{exaggeration}</output>×
+            <Aide texte="Le curseur affiche le facteur VISUEL seul. Il se multiplie en interne par la correction de rayon 1,336 — Aeonir est plus petite que la Terre, dont MapLibre suppose le rayon. À 1×, le relief est exact et presque invisible." />
             <input
               id="sig-exaggeration"
               type="range"
@@ -407,27 +649,148 @@ export function SigMap({ tilejsonUrl }: Props) {
           </label>
         )}
 
-        <button
-          type="button"
-          aria-pressed={twoSources}
-          onClick={toggle(twoSources, setTwoSources)}
-        >
-          deux sources (monde + bande)
-        </button>
-        <button
-          type="button"
-          aria-pressed={graticuleOn}
-          onClick={toggle(graticuleOn, setGraticuleOn)}
-        >
-          parallèles &amp; méridiens
-        </button>
-        <button
-          type="button"
-          aria-pressed={tileBoundaries}
-          onClick={toggle(tileBoundaries, setTileBoundaries)}
-        >
-          bords de tuiles (z/x/y)
-        </button>
+        {/* ⚠️ Libellé qui RAPPORTE l'état, au lieu de nommer la cible de la
+            bascule comme les autres boutons. Leur convention marche parce que
+            leur état éteint est une absence ; ici les deux positions sont deux
+            montages également réels, et « sources multiples » sur un bouton
+            terne se lit comme une affirmation de ce qui tourne. */}
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={multiSource}
+            onClick={toggle(multiSource, setMultiSource)}
+          >
+            montage — {multiSource ? "sources multiples" : "source unique"}
+          </button>
+          <Aide texte="Une source globale sur tous les niveaux, ou quatre couches qui ne se recouvrent jamais. Le rendu est identique ; la source unique réclame seize tuiles inexistantes, que MapLibre remplace en silence par leur ancêtre." />
+        </div>
+
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={realisticLight}
+            onClick={toggle(realisticLight, setRealisticLight)}
+          >
+            lumière réaliste
+            {realisticLight ? ` — ☀ ${starElevation.toFixed(1)}°` : ""}
+          </button>
+          <Aide texte="Dans le repère Étoile, la latitude EST l'élévation de l'étoile. MapLibre n'admettant qu'un soleil par couche, on la recale sur le centre de la vue : monter vers le nord fait réellement lever l'astre, descendre vers le Linceul le couche." />
+        </div>
+
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={atmosphere}
+            onClick={toggle(atmosphere, setAtmosphere)}
+          >
+            atmosphère
+          </button>
+          <Aide texte="La couleur qu'une face prend quand aucune lumière directe ne l'atteint — c'est-à-dire celle du ciel. Sans elle, l'éclairage rasant du terminateur module du noir sur du noir et la carte s'éteint." />
+        </div>
+
+        {atmosphere && (
+          <>
+            <label className="sig-color" htmlFor="sig-sky-color">
+              <input
+                id="sig-sky-color"
+                type="color"
+                value={skyColor}
+                onChange={(e) => setSkyColor(e.target.value)}
+              />
+              couleur du ciel
+              <Aide texte="Un air plus dense, plus poussiéreux ou d'une autre composition ne diffuse pas la même teinte. C'est elle que prennent les versants privés de l'étoile." />
+            </label>
+
+            <label className="sig-slider" htmlFor="sig-sky-density">
+              densité de l&apos;air{" "}
+              <output>{Math.round(skyDensity * 100)}</output> %
+              <Aide texte="La densité règle l'air qu'il y a EN PLEIN JOUR. Le modèle l'assombrit ensuite de lui-même à mesure que l'étoile se couche, jusqu'à un plancher atteint au Linceul." />
+              <input
+                id="sig-sky-density"
+                type="range"
+                min={ATMOSPHERE_DENSITY_MIN * 100}
+                max={ATMOSPHERE_DENSITY_MAX * 100}
+                step={5}
+                value={Math.round(skyDensity * 100)}
+                onChange={(e) => setSkyDensity(Number(e.target.value) / 100)}
+              />
+            </label>
+          </>
+        )}
+
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={paletteOn}
+            onClick={toggle(paletteOn, setPaletteOn)}
+          >
+            {EARTH_HYPSOMETRIC.label}
+          </button>
+          <Aide texte="Teintes hypsométriques terrestres, posées sur l'ombrage. Étalon de lecture et non carte d'Aeonir : elles postulent une mer à l'altitude 0, alors que le zéro d'ici est le datum sphérique." />
+        </div>
+
+        {paletteOn && (
+          <label className="sig-slider" htmlFor="sig-tint-opacity">
+            opacité des teintes{" "}
+            <output>{Math.round(tintOpacity * 100)}</output> %
+            <Aide texte="Ce qui survit de l'ombrage sous les teintes vaut 1 moins cette opacité. À 100 %, il ne reste que des aplats par tranche d'altitude ; plus bas, le modelé réapparaît mais la carte s'assombrit." />
+            <input
+              id="sig-tint-opacity"
+              type="range"
+              min={TINT_OPACITY_MIN * 100}
+              max={TINT_OPACITY_MAX * 100}
+              step={5}
+              value={Math.round(tintOpacity * 100)}
+              onChange={(e) => setTintOpacity(Number(e.target.value) / 100)}
+            />
+          </label>
+        )}
+
+        {/* L'hydrologie n'apparaît QUE si son contrat a été trouvé. Un bouton
+            qui n'allume rien vaut moins qu'un bouton absent : le message du
+            panneau, lui, dit quoi lancer pour la produire. */}
+        {hydro ? (
+          <div className="sig-option">
+            <button
+              type="button"
+              aria-pressed={hydroOn}
+              onClick={toggle(hydroOn, setHydroOn)}
+            >
+              hydrologie
+            </button>
+            <Aide texte="Tuiles VECTORIELLES : la tuile livre des géométries et des attributs, et c'est le style qui décide de tout. La largeur d'un fleuve vient de son ordre de Strahler, le rayon d'un exutoire de sa surface drainée." />
+          </div>
+        ) : (
+          <p className="sig-legend">
+            hydrologie absente — la produire depuis <code>geo/</code> :
+            <br />
+            <code>python -m aeonir_gis.export</code>
+            <br />
+            <code>python -m aeonir_gis.mvt</code>
+          </p>
+        )}
+
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={graticuleOn}
+            onClick={toggle(graticuleOn, setGraticuleOn)}
+          >
+            parallèles &amp; méridiens
+          </button>
+          <Aide texte="Les latitudes remarquables ne sont pas décoratives : dans le repère Étoile, l'équateur est le milieu du terminateur, +6° le Mur des Tempêtes et −21° le Linceul." />
+        </div>
+
+        <div className="sig-option">
+          <button
+            type="button"
+            aria-pressed={tileBoundaries}
+            onClick={toggle(tileBoundaries, setTileBoundaries)}
+          >
+            bords de tuiles (z/x/y)
+          </button>
+          <Aide texte="Drapeau de débogage natif de MapLibre. Ses étiquettes sont tracées en blanc en haut à gauche de chaque tuile : ne jamais mesurer une luminance avec ce calque allumé." />
+        </div>
 
         {graticuleOn && (
           <p className="sig-legend">
