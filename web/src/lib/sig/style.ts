@@ -7,7 +7,9 @@
 
 import type { LayerSpecification, StyleSpecification } from "maplibre-gl";
 import { buildGraticule } from "./graticule";
-import { MERCATOR_LIMIT_DEG } from "./mercator";
+import { hydroLayers, hydroSources } from "./hydro";
+import type { HydroTileJSON } from "./hydro";
+import { MERCATOR_LIMIT_DEG, rasterSplitZoom } from "./mercator";
 import {
   EARTH_HYPSOMETRIC,
   TINT_OPACITY_DEFAULT,
@@ -15,16 +17,6 @@ import {
 } from "./palette";
 import { NEUTRAL_METHOD, VACUUM_SHADOW } from "./sun";
 import type { AeonirTileJSON, Bounds } from "./tilejson";
-
-/**
- * Le partage entre les deux montages, en zoom de CARTE.
- *
- * ⚠️ Ce n'est pas `split_zoom`, qui est un niveau de TUILE. Avec des tuiles de
- * 256 px, MapLibre sert le niveau `round(zoom + 1)` : mesuré, la source `band`
- * ne rend rien jusqu'à 3,4 et sert du z=5 dès 3,6. Le relais se fait donc à
- * **3,5**, et c'est là que les couches doivent se passer la main.
- */
-const LAYER_SPLIT_ZOOM = 3.5;
 
 /**
  * Les couches de relief, et la portée de chacune.
@@ -56,9 +48,14 @@ interface ReliefLayer {
   source: string;
   hillshade: string;
   color: string;
-  /** Portées de COUCHE, en zoom de carte. C'est elles qui excluent en zoom. */
-  minzoom?: number;
-  maxzoom?: number;
+  /**
+   * Côté du partage où vit la couche — `undefined` = des deux côtés.
+   *
+   * ⚠️ Un RÔLE, et non un zoom. Le zoom correspondant se dérive du `split_zoom`
+   * du contrat au montage du style : le recopier ici en ferait un nombre
+   * orphelin, et un nombre orphelin faux ouvre un trou (voir `hydro.ts`).
+   */
+  side?: "below" | "above";
 }
 
 const RELIEF_LAYERS: readonly ReliefLayer[] = [
@@ -75,21 +72,21 @@ const RELIEF_LAYERS: readonly ReliefLayer[] = [
     color: "color-relief-world",
     // Le fond global, jusqu'au partage seulement : au-delà, les trois suivantes
     // se partagent le monde sans se marcher dessus.
-    maxzoom: LAYER_SPLIT_ZOOM,
+    side: "below",
   },
   {
     key: "worldNorth",
     source: "world-north",
     hillshade: "hillshade-world-north",
     color: "color-relief-world-north",
-    minzoom: LAYER_SPLIT_ZOOM,
+    side: "above",
   },
   {
     key: "worldSouth",
     source: "world-south",
     hillshade: "hillshade-world-south",
     color: "color-relief-world-south",
-    minzoom: LAYER_SPLIT_ZOOM,
+    side: "above",
   },
   {
     key: "band",
@@ -165,11 +162,38 @@ const LIGHTING = {
  */
 const HILLSHADE_EXAGGERATION = 0.85;
 
+/**
+ * Ce que le style doit savoir de l'hydrologie — ou rien du tout.
+ *
+ * ⚠️ L'hydrologie est FACULTATIVE, et ce n'est pas de la complaisance : les
+ * deux pyramides sont produites par deux commandes distinctes et gitignorées
+ * toutes les deux. Un clone frais n'a ni l'une ni l'autre, et un dépôt où seul
+ * le relief a été tuilé est un état de travail parfaitement ordinaire. Le
+ * visualiseur doit s'ouvrir dans les trois cas.
+ */
+export interface HydroInput {
+  contract: HydroTileJSON;
+  urlTemplate: string;
+}
+
 export function buildStyle(
   tilejson: AeonirTileJSON,
-  urlTemplate: string
+  urlTemplate: string,
+  hydro?: HydroInput
 ): StyleSpecification {
   const a = tilejson.aeonir;
+
+  // Le partage, en zoom de CARTE, dérivé du niveau de tuile déclaré au
+  // contrat. Voir `mercator.ts` : la règle n'est pas la même pour une source
+  // vectorielle, et l'écart vaut un cran et demi.
+  const split = rasterSplitZoom(a.split_zoom);
+  const portee = (side?: "below" | "above") =>
+    side === "below"
+      ? { maxzoom: split }
+      : side === "above"
+        ? { minzoom: split }
+        : {};
+
   const shared = {
     type: "raster-dem" as const,
     tiles: [urlTemplate],
@@ -272,6 +296,9 @@ export function buildStyle(
         type: "geojson",
         data: buildGraticule(a),
       },
+
+      // Quatre sources vectorielles, ou aucune. Voir `hydro.ts`.
+      ...(hydro ? hydroSources(hydro.contract, hydro.urlTemplate) : {}),
     },
 
     layers: [
@@ -285,12 +312,11 @@ export function buildStyle(
       // `single` est allumée au départ : le montage à source unique est le
       // défaut, et c'est celui qui rend le mieux dans la bande.
       ...RELIEF_LAYERS.map(
-        ({ key, source, hillshade, minzoom, maxzoom }): LayerSpecification => ({
+        ({ key, source, hillshade, side }): LayerSpecification => ({
           id: hillshade,
           type: "hillshade",
           source,
-          ...(minzoom === undefined ? {} : { minzoom }),
-          ...(maxzoom === undefined ? {} : { maxzoom }),
+          ...portee(side),
           layout: { visibility: key === "single" ? "visible" : "none" },
           paint: {
             ...LIGHTING,
@@ -307,12 +333,11 @@ export function buildStyle(
       // Même découpage que les ombrages, et pour la même raison : deux couches
       // de teintes superposées se composeraient au lieu de se relayer.
       ...RELIEF_LAYERS.map(
-        ({ source, color, minzoom, maxzoom }): LayerSpecification => ({
+        ({ source, color, side }): LayerSpecification => ({
           id: color,
           type: "color-relief",
           source,
-          ...(minzoom === undefined ? {} : { minzoom }),
-          ...(maxzoom === undefined ? {} : { maxzoom }),
+          ...portee(side),
           layout: { visibility: "none" },
           paint: {
             "color-relief-color": colorReliefExpression(EARTH_HYPSOMETRIC),
@@ -320,6 +345,13 @@ export function buildStyle(
           },
         })
       ),
+
+      // ── L'hydrologie, par-dessus le relief et sous le graticule ───
+      //
+      // L'ordre du tableau EST l'ordre de dessin. Les fleuves doivent passer
+      // au-dessus de l'ombrage, qu'ils décrivent, et sous les parallèles, qui
+      // sont une grille de lecture et non un objet du monde.
+      ...(hydro ? hydroLayers(hydro.contract["aeonir:split_zoom"]) : []),
 
       // Éteintes au départ. Le style n'ayant pas de `glyphs`, aucun calque
       // `symbol` n'est possible — donc pas de libellés : l'information passe

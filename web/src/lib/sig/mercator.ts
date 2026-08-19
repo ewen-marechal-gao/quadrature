@@ -14,6 +14,53 @@
 /** Latitude de coupure de Web Mercator — gd(π), la grille étant carrée. */
 export const MERCATOR_LIMIT_DEG = 85.0511287798066;
 
+/**
+ * Le zoom de CARTE auquel les couches monde et bande se passent la main.
+ *
+ * ⚠️ Ce n'est pas `split_zoom`, qui est un niveau de TUILE — et le passage de
+ * l'un à l'autre **n'est pas le même selon le type de source**. Lu dans
+ * `coveringZoomLevel` de MapLibre :
+ *
+ *     niveau = (roundZoom ? round : floor)(zoom + log2(512 / tileSize))
+ *
+ * Une source raster pose `roundZoom = true` et déclare ici `tileSize: 256`,
+ * d'où `round(zoom + 1)`. Une source vectorielle ne pose pas `roundZoom` — donc
+ * `floor` — et n'a pas de `tileSize` du tout, la valeur valant 512 par
+ * convention, d'où `floor(zoom)`.
+ *
+ * La bande n'existant qu'à partir du niveau `split_zoom + 1`, on résout :
+ *
+ *     raster    round(z + 1) ≥ s + 1   ⟺   z ≥ s − 0,5
+ *     vectoriel floor(z)     ≥ s + 1   ⟺   z ≥ s + 1
+ *
+ * Soit **un cran et demi d'écart** entre les deux, pour la même pyramide et le
+ * même partage. Les deux valeurs ont été mesurées avant d'être dérivées : la
+ * bande raster ne rend rien jusqu'à 3,4 et sert du z=5 dès 3,6 ; la bande
+ * vectorielle ne rend rien jusqu'à 4,6 et sert dès 5,0.
+ */
+export function rasterSplitZoom(splitZoom: number): number {
+  return splitZoom - 0.5;
+}
+
+export function vectorSplitZoom(splitZoom: number): number {
+  return splitZoom + 1;
+}
+
+/**
+ * Niveau de tuile réellement servi par une source **vectorielle**.
+ *
+ * ⚠️ `floor`, jamais `round(zoom + 1)`. La seconde est la règle raster, et
+ * l'appliquer à une couche vectorielle donne un niveau faux d'un à deux crans —
+ * ce qui, pour lire un seuil de généralisation, annonce une valeur qui n'est
+ * pas celle appliquée. Les deux formules coïncident par endroits, ce qui rend
+ * l'erreur difficile à voir : à z=4,2 elles s'accordent, à z=2,6 elles donnent
+ * 4 et 2.
+ */
+export function vectorTileZoom(mapZoom: number): number {
+  return Math.floor(mapZoom);
+}
+
+
 export interface TileIndex {
   x: number;
   y: number;

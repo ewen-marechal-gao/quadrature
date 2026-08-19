@@ -52,6 +52,8 @@ next-env.d.ts
 # worker MapLibre, copié depuis node_modules par
 # scripts/copy-maplibre-worker.mjs (cf. ce script pour le pourquoi)
 /public/maplibre/
-# pyramide de tuiles du SIG, copiée depuis geo/out/tiles par
-# scripts/copy-aeonir-tiles.mjs — ~50 Mio, reproduite par le pipeline Python
+# Les deux pyramides du SIG, copiées depuis geo/out/ par
+# scripts/copy-aeonir-tiles.mjs — ~50 Mio et ~9 Mio, reproduites par le
+# pipeline Python. Ni l'origine ni la destination ne sont versionnées.
 /public/aeonir/
+/public/aeonir-hydro/

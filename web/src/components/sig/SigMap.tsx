@@ -67,6 +67,13 @@ import {
   starElevationDeg,
   starHighlight,
 } from "@/lib/sig/sun";
+import {
+  SOURCE_LAYERS,
+  fetchHydroTileJSON,
+  generalisationAt,
+  mountedHydroLayers,
+} from "@/lib/sig/hydro";
+import type { HydroTileJSON } from "@/lib/sig/hydro";
 import { fetchTileJSON, resolveTileTemplate } from "@/lib/sig/tilejson";
 import type { AeonirTileJSON } from "@/lib/sig/tilejson";
 import { tileIndex, wrapLongitude } from "@/lib/sig/mercator";
@@ -89,8 +96,10 @@ interface Readout {
 }
 
 interface Props {
-  /** URL du TileJSON, résolue contre le document. */
+  /** URL du TileJSON du relief, résolue contre le document. */
   tilejsonUrl: string;
+  /** URL du TileJSON de l'hydrologie. Son absence n'est pas une erreur. */
+  hydroUrl: string;
 }
 
 /**
@@ -115,7 +124,7 @@ function Aide({ texte }: { texte: string }) {
   );
 }
 
-export function SigMap({ tilejsonUrl }: Props) {
+export function SigMap({ tilejsonUrl, hydroUrl }: Props) {
   const container = useRef<HTMLDivElement>(null);
 
   // La carte passe en état — et non en simple référence — une fois son style
@@ -136,6 +145,8 @@ export function SigMap({ tilejsonUrl }: Props) {
   const [starElevation, setStarElevation] = useState(0);
   const [paletteOn, setPaletteOn] = useState(false);
   const [tintOpacity, setTintOpacity] = useState(TINT_OPACITY_DEFAULT);
+  const [hydro, setHydro] = useState<HydroTileJSON | null>(null);
+  const [hydroOn, setHydroOn] = useState(false);
   const [graticuleOn, setGraticuleOn] = useState(false);
   const [tileBoundaries, setTileBoundaries] = useState(false);
 
@@ -153,7 +164,13 @@ export function SigMap({ tilejsonUrl }: Props) {
     let created: MapLibreMap | null = null;
 
     (async () => {
-      const contract = await fetchTileJSON(tilejsonUrl);
+      // ⚠️ Les deux contrats en PARALLÈLE, et le second toléré absent. En
+      // série, l'hydrologie retarderait l'apparition du relief pour une couche
+      // qui n'est même pas allumée au départ.
+      const [contract, hydroContract] = await Promise.all([
+        fetchTileJSON(tilejsonUrl),
+        fetchHydroTileJSON(hydroUrl),
+      ]);
       // StrictMode rejoue l'effet : la requête lancée par le premier montage
       // peut revenir après son démontage. Sans ce garde-fou, elle bâtirait une
       // carte dans un conteneur détaché.
@@ -217,7 +234,23 @@ export function SigMap({ tilejsonUrl }: Props) {
         // La sortie est ailleurs, et elle tombe juste : une copie n'est visible
         // que si le monde est plus étroit que l'écran, donc à bas zoom — la
         // plage exacte où le relief 3D ne montre rien. Voir `TERRAIN_MIN_ZOOM`.
-        style: buildStyle(contract, urlTemplate),
+        style: buildStyle(
+          contract,
+          urlTemplate,
+          hydroContract
+            ? {
+                contract: hydroContract,
+                urlTemplate: resolveTileTemplate(
+                  hydroUrl,
+                  // `resolveTileTemplate` ne lit que `tiles[0]` : les deux
+                  // contrats se ressemblent assez pour le partager, et le
+                  // dupliquer ferait diverger la gestion des accolades.
+                  hydroContract as unknown as AeonirTileJSON,
+                  window.location.href
+                ),
+              }
+            : undefined
+        ),
       });
 
       created.addControl(
@@ -227,7 +260,9 @@ export function SigMap({ tilejsonUrl }: Props) {
 
       // Exposé volontairement : un visualiseur sert à inspecter, et un module
       // ne laisserait rien atteindre depuis la console autrement.
-      Object.assign(window, { aeonir: { map: created, tilejson: contract } });
+      Object.assign(window, {
+        aeonir: { map: created, tilejson: contract, hydro: hydroContract },
+      });
 
       created.on("error", (e) => {
         // Hors de la bande, au-delà de `split_zoom`, les tuiles n'existent
@@ -241,6 +276,7 @@ export function SigMap({ tilejsonUrl }: Props) {
       created.on("load", () => {
         if (cancelled) return;
         setTilejson(contract);
+        setHydro(hydroContract);
         setMap(created);
       });
     })().catch((e: unknown) => {
@@ -252,7 +288,7 @@ export function SigMap({ tilejsonUrl }: Props) {
       created?.remove();
       setMap(null);
     };
-  }, [tilejsonUrl]);
+  }, [tilejsonUrl, hydroUrl]);
 
   // ── Lecture continue : zoom, puis pointeur ────────────────────────────
   useEffect(() => {
@@ -377,6 +413,23 @@ export function SigMap({ tilejsonUrl }: Props) {
       map.setLayoutProperty(id, "visibility", shown(false));
     }
   }, [map, multiSource, paletteOn]);
+
+  // ── L'hydrologie ──────────────────────────────────────────────────────
+  //
+  // Les calques s'allument en bloc : le découpage monde/bande est un détail de
+  // production, pas une commande offerte à l'utilisateur. C'est déjà le parti
+  // pris des montages de relief.
+  //
+  // ⚠️ Les SOURCES ne bougent pas, et il ne faut pas les faire bouger. Une
+  // source que plus aucun calque visible ne vise tombe d'elle-même à zéro tuile
+  // (piège 41, mesuré) : la démonter à l'extinction ne gagnerait rien et
+  // forcerait un rechargement complet au rallumage. Seule la visibilité change.
+  useEffect(() => {
+    if (!map || !hydro) return;
+    for (const id of mountedHydroLayers(map)) {
+      map.setLayoutProperty(id, "visibility", hydroOn ? "visible" : "none");
+    }
+  }, [map, hydro, hydroOn]);
 
   // ── L'éclairage ───────────────────────────────────────────────────────
   //
@@ -525,6 +578,34 @@ export function SigMap({ tilejsonUrl }: Props) {
                 : `${Math.round(readout.elevation)} m`}
           </dd>
 
+          {/* Le seuil de généralisation du niveau SERVI, lu dans le contrat.
+              Sans lui, une couche clairsemée au dézoom se lit comme une donnée
+              pauvre au lieu d'une donnée généralisée — c'est toute la raison
+              pour laquelle le producteur l'écrit. */}
+          {hydroOn && hydro && zoom !== null && (
+            <>
+              <div className="sig-sep" />
+              <dt>fleuves ≥</dt>
+              <dd>
+                {(() => {
+                  // Le zoom de CARTE se passe tel quel : la conversion en
+                  // niveau de tuile appartient à `generalisationAt`, qui
+                  // applique la règle vectorielle. La première version passait
+                  // `zoom + 1` — la règle raster — et annonçait donc, hors
+                  // coïncidence, le seuil d'un niveau qui n'était pas servi.
+                  const seuil = generalisationAt(
+                    hydro,
+                    SOURCE_LAYERS.rivers,
+                    zoom
+                  );
+                  return seuil === null
+                    ? "—"
+                    : `${Math.round(seuil).toLocaleString("fr-FR")} km²`;
+                })()}
+              </dd>
+            </>
+          )}
+
           <div className="sig-sep" />
 
           <dt>époque</dt>
@@ -663,6 +744,30 @@ export function SigMap({ tilejsonUrl }: Props) {
               onChange={(e) => setTintOpacity(Number(e.target.value) / 100)}
             />
           </label>
+        )}
+
+        {/* L'hydrologie n'apparaît QUE si son contrat a été trouvé. Un bouton
+            qui n'allume rien vaut moins qu'un bouton absent : le message du
+            panneau, lui, dit quoi lancer pour la produire. */}
+        {hydro ? (
+          <div className="sig-option">
+            <button
+              type="button"
+              aria-pressed={hydroOn}
+              onClick={toggle(hydroOn, setHydroOn)}
+            >
+              hydrologie
+            </button>
+            <Aide texte="Tuiles VECTORIELLES : la tuile livre des géométries et des attributs, et c'est le style qui décide de tout. La largeur d'un fleuve vient de son ordre de Strahler, le rayon d'un exutoire de sa surface drainée." />
+          </div>
+        ) : (
+          <p className="sig-legend">
+            hydrologie absente — la produire depuis <code>geo/</code> :
+            <br />
+            <code>python -m aeonir_gis.export</code>
+            <br />
+            <code>python -m aeonir_gis.mvt</code>
+          </p>
         )}
 
         <div className="sig-option">

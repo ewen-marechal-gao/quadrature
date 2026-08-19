@@ -23,8 +23,14 @@ import type { Metadata } from "next";
 
 import { SigViewer } from "@/components/sig/SigViewer";
 
-/** Le joint. Le Lot 6 y branchera le tuileur dynamique sans toucher au reste. */
+/** Les joints. Le Lot 6 y branchera le tuileur dynamique sans toucher au reste. */
 const TILEJSON_URL = "/aeonir/tiles.json";
+
+/**
+ * L'hydrologie, produite par une commande distincte et donc FACULTATIVE — le
+ * visualiseur s'ouvre sans elle. Voir `fetchHydroTileJSON`.
+ */
+const HYDRO_URL = "/aeonir-hydro/hydro.json";
 
 export const metadata: Metadata = {
   title: "Aeonir — SIG",
@@ -37,5 +43,5 @@ export const metadata: Metadata = {
 };
 
 export default function SigPage() {
-  return <SigViewer tilejsonUrl={TILEJSON_URL} />;
+  return <SigViewer tilejsonUrl={TILEJSON_URL} hydroUrl={HYDRO_URL} />;
 }
